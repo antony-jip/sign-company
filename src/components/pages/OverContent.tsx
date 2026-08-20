@@ -32,25 +32,26 @@ export default function OverContent() {
               </span>
             </h1>
             <p className="hero-fade text-[17px] md:text-[19px] leading-[1.6] max-w-xl text-ink" style={{ animationDelay: '0.35s' }}>
-              Signing, wrapping, lichtreclame, belettering. Dat is waar je goed in
-              bent. Maar elke dag gaan er uren op aan offertes, planning, facturen
-              en klantcommunicatie. Dat moet anders.
+              Signing, wrapping, lichtreclame, belettering. Jouw werk hangt aan
+              de straat, iedereen ziet het. Maar elke dag gaan er uren op aan
+              offertes, planning, facturen en nabellen. Die uren horen aan de
+              gevel te hangen, niet in een ordner.
             </p>
           </div>
 
-          {/* De kop gaat over administreren in plaats van maken; dit beeld laat
-              zien hoe dat er op een gewone ochtend uitziet. */}
+          {/* De kop gaat over maken. Dit beeld laat het moment zien waar het
+              om draait: twee makers die kijken of het staat. */}
           <div
             className="hero-fade mt-12 md:mt-20 relative aspect-[16/7] w-full overflow-hidden rounded-[10px] bg-petrol-deep/5"
             style={{ animationDelay: '0.5s' }}
           >
             <Image
-              src="/images/fotos/ondernemer-aan-de-telefoon.webp"
-              alt="Ondernemer aan de telefoon achter een bureau vol papieren en ordners, uitzicht op een Nederlandse straat"
+              src="/images/fotos/kijken-of-het-staat.webp"
+              alt="Twee signmakers staan op de stoep en kijken omhoog naar de gevel waar hun werk komt te hangen"
               fill
               priority
               sizes="(max-width: 1280px) 100vw, 1200px"
-              className="object-cover"
+              className="object-cover object-[center_30%]"
             />
           </div>
         </div>
@@ -73,25 +74,29 @@ export default function OverContent() {
                 className="font-heading font-bold text-white leading-[1.02] mb-6 md:mb-10"
                 style={{ fontSize: 'clamp(30px, 4vw, 52px)', letterSpacing: '-0.03em', textWrap: 'balance' }}
               >
-                Gebouwd vanuit de werkplaats, niet vanuit een kantoor
-                <span className="text-flame">.</span>
+                Gebouwd uit trots op het vak<span className="text-flame">.</span>{' '}
+                En uit irritatie<span className="text-flame">.</span>
               </h2>
             </Reveal>
             <Reveal delay={0.1}>
               <div className="space-y-5 md:space-y-7 text-[17px] md:text-[19px] leading-[1.7]" style={{ color: 'rgba(226,240,241,0.82)' }}>
                 <p>
-                  doen. is geboren uit frustratie. De frustratie van een signbedrijf
-                  dat al sinds 1983 bestaat. Elke dag dezelfde strijd: offertes die
-                  kwijtraken, planning die niet klopt, klanten die niet reageren, en
-                  software die aanvoelt alsof die in een ander tijdperk is gebouwd.
+                  Sign Company zet sinds 1983 namen op panden. Ruim veertig jaar
+                  lichtbakken, gevels en bussen, door heel Nederland. Daar zijn we
+                  trots op. Op de software waarmee we dat werk moesten bijhouden,
+                  niet. Offertes die kwijtraakten, een planning die niet klopte,
+                  pakketten die aanvoelden alsof ze voor een accountant waren
+                  gebouwd.
                 </p>
                 <p>
-                  Dus bouwden we ons eigen systeem. Geen consultants die kwamen
-                  vertellen hoe het moest. Geen framework dat bedacht is voor elke
-                  branche. Maar software die begrijpt hoe jouw dag eruitziet.
+                  Dus bouwden we het zelf. Geen consultants die kwamen vertellen
+                  hoe het moest. Geen framework voor elke branche. Software die
+                  weet wat een hoogwerker kost, wat een PMS-kleur is en waarom een
+                  montage alleen op sluitingsdag kan.
                 </p>
                 <p className="font-medium text-white">
-                  En nu delen we het met iedereen die hetzelfde voelt.
+                  Het werkte zo goed dat we het niet voor onszelf wilden houden.
+                  Nu is het er voor elke signmaker die hetzelfde voelt.
                 </p>
               </div>
             </Reveal>
@@ -176,10 +181,11 @@ export default function OverContent() {
                 </p>
                 <p>
                   Ik noemde het <strong>doen.</strong> Omdat dat is wat wij doen.
-                  Andere signmakers herkenden hetzelfde: de losse eindjes, de
-                  administratie die het echte werk in de weg zit. Ik wilde dit niet
-                  voor mezelf houden. doen. is gebouwd voor ons vak. Ik deel het
-                  graag met iedereen die er beter van wordt.
+                  Niet praten over werk, maar werk maken dat de hele straat ziet.
+                  Andere signmakers herkenden het meteen: de losse eindjes, de
+                  administratie die het echte werk in de weg zit. doen. is gebouwd
+                  voor ons vak, door iemand uit ons vak. Ik deel het graag met
+                  iedereen die er beter van wordt.
                 </p>
                 <p className="font-heading font-bold text-petrol text-[19px] md:text-[21px]">
                   Voor het vak<span className="text-flame">.</span> Door het vak

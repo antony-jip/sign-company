@@ -21,3 +21,4 @@ tsconfig.tsbuildinfo
 # Agent-worktrees en Trigger.dev build-artefacten
 .claude/worktrees/
 forgedesk/.trigger/
+scratch/

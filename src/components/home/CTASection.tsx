@@ -13,10 +13,10 @@ export default function CTASection() {
               className="font-heading font-bold text-white leading-[1.0] mb-3"
               style={{ fontSize: 'clamp(32px, 4.5vw, 56px)', letterSpacing: '-0.03em' }}
             >
-              Vandaag nog aan de slag.
+              Jij gaat maken<span className="text-white/70">.</span> Wij doen de rest<span className="text-white/70">.</span>
             </h2>
             <p className="text-[15px] font-medium" style={{ color: 'rgba(255,255,255,0.8)' }}>
-              Account aanmaken duurt 5 minuten · 30 dagen gratis
+              Account in 5 minuten · 30 dagen gratis · geen creditcard
             </p>
           </div>
           <a

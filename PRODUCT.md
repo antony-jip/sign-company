@@ -16,6 +16,8 @@ De site verkoopt doen.: alles-in-één software voor signbedrijven, van eerste k
 
 ## Brand Personality
 
+**De WHY (aug 2026):** signmakers maken bedrijven zichtbaar; elke gevel, bus en winkelnaam is hun werk. Daar hoort trots bij, en gereedschap dat net zo goed is als dat werk. Elke pagina draagt die trots: hero "Jij maakt de stad zichtbaar. Wij regelen de rest.", Manifest-sectie op home (`components/home/Manifest.tsx`), origin-verhaal op /over vanuit trots in plaats van frustratie. Beeld toont het moment van trots (het werk dat hangt, de stap achteruit), nooit de ordner-ellende. Energie en enthousiasme mogen eraf spatten, binnen de nuchtere toon.
+
 Nuchter, vakkundig, zelfverzekerd. "Slim gedaan." — de toon van een goede collega-ondernemer, niet van een marketeer. Copy is kort, actief en concreet (geen em-dashes in UI-copy; middle dot als separator). De flame-punt aan het eind van koppen is het merkteken.
 
 ## Anti-references

@@ -24,7 +24,7 @@ export default function Hero() {
       <div
         aria-hidden
         className="absolute inset-0 pointer-events-none bg-petrol"
-        style={{ opacity: 0.45, mixBlendMode: 'multiply' }}
+        style={{ opacity: 0.3, mixBlendMode: 'multiply' }}
       />
       {/* En een verloop dat links dicht genoeg is voor witte tekst en rechts
           open genoeg om de gevel te laten zien. */}
@@ -33,7 +33,7 @@ export default function Hero() {
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            'linear-gradient(100deg, rgba(13,52,60,0.92) 0%, rgba(13,52,60,0.84) 40%, rgba(13,52,60,0.55) 70%, rgba(13,52,60,0.42) 100%)',
+            'linear-gradient(100deg, rgba(13,52,60,0.92) 0%, rgba(13,52,60,0.82) 38%, rgba(13,52,60,0.42) 68%, rgba(13,52,60,0.22) 100%)',
         }}
       />
       {/* Eén diepe lichtval linksboven — verder niets */}
@@ -53,12 +53,12 @@ export default function Hero() {
         >
           <span className="block overflow-hidden pb-[0.08em] -mb-[0.08em]">
             <span className="hero-line" style={{ animationDelay: '0.05s' }}>
-              Eén plek voor je
+              Jij maakt de stad zichtbaar<span className="text-flame">.</span>
             </span>
           </span>
           <span className="block overflow-hidden pb-[0.08em] -mb-[0.08em]">
             <span className="hero-line" style={{ animationDelay: '0.15s' }}>
-              hele signbedrijf<span className="text-flame">.</span>
+              Wij regelen de rest<span className="text-flame">.</span>
             </span>
           </span>
         </h1>
@@ -67,8 +67,10 @@ export default function Hero() {
           className="hero-fade text-[17px] md:text-[20px] leading-[1.6] max-w-xl mb-10"
           style={{ color: 'rgba(226,240,241,0.82)', animationDelay: '0.35s' }}
         >
-          Van eerste klantvraag tot betaalde factuur. Offertes, planning,
-          werkbonnen en facturen in één systeem, gebouwd voor signmakers.
+          Elke gevel, elke bus, elke winkelnaam: daar stond een signmaker
+          achter. doen. is gebouwd door zo&apos;n bedrijf, voor zo&apos;n bedrijf.
+          Offerte, planning, werkbon en factuur in één systeem, zodat jij doet
+          waar je goed in bent: maken.
         </p>
 
         <div className="hero-fade flex flex-wrap items-center gap-x-7 gap-y-5" style={{ animationDelay: '0.45s' }}>
@@ -84,7 +86,7 @@ export default function Hero() {
             className="group inline-flex items-center gap-2 text-[15px] font-semibold text-white"
           >
             <span className="relative">
-              Zie hoe het werkt
+              Kijk hoe een klus loopt
               <span
                 className="absolute left-0 -bottom-1 h-px w-full origin-left transition-transform duration-300 group-hover:scale-x-0"
                 style={{ backgroundColor: 'rgba(255,255,255,0.4)' }}

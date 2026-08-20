@@ -17,8 +17,8 @@ export default function Modules() {
             Eén systeem<span className="text-flame">.</span>
           </h2>
           <p className="text-[15px] md:text-[16px] text-muted max-w-sm leading-[1.55]">
-            Geen losse tools die elkaar niet kennen. Alles zit erin en alles
-            werkt samen, voor één prijs.
+            Gebouwd rond hoe een signklus echt loopt, van aanvraag tot
+            montage. Alles kent elkaar, alles werkt samen, voor één prijs.
           </p>
         </div>
 

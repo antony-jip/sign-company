@@ -33,7 +33,7 @@ export default function Demo() {
           <div className="max-w-sm">
             <p className="text-[15px] md:text-[16px] text-muted leading-[1.55]">
               <span className="md:hidden">Geen mockup, de echte app. Op desktop klik je er zelf doorheen.</span>
-              <span className="hidden md:inline">Negen schermen, geen video en geen mockup. Zo ziet je werkdag eruit.</span>
+              <span className="hidden md:inline">Geen mockup, de echte app. Zo ziet je dag eruit als alles gewoon klopt.</span>
             </p>
             <Link
               href="/demo"

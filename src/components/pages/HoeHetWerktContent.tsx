@@ -44,8 +44,8 @@ function Hero() {
           className="hero-fade text-[16px] md:text-[19px] leading-[1.6] text-muted max-w-xl"
           style={{ animationDelay: '0.3s' }}
         >
-          Eén klus, van de eerste klantvraag tot de betaalde factuur. Elk scherm
-          hieronder komt uit de app.
+          Eén klus, van de eerste klantvraag tot het geld op je rekening. Zeven
+          stappen, nul dubbel werk. Elk scherm hieronder komt uit de app.
         </p>
         <EigenGebruikRegel className="hero-fade mt-4 max-w-xl" />
 

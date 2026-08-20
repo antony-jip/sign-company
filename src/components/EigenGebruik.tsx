@@ -56,20 +56,21 @@ export function EigenGebruikBand() {
               className="font-heading font-bold text-white leading-[1.06] mb-4"
               style={{ fontSize: 'clamp(26px, 3.4vw, 42px)', letterSpacing: '-0.03em', textWrap: 'balance' }}
             >
-              Wij gebruiken het zelf, elke dag<span className="text-flame">.</span>
+              Wij draaien er zelf op<span className="text-flame">.</span> Elke dag, elke klus<span className="text-flame">.</span>
             </h2>
             <p className="text-[16px] md:text-[17px] leading-[1.65]" style={{ color: 'rgba(226,240,241,0.82)' }}>
-              doen. is niet gebouwd om te verkopen. Het is gebouwd omdat wij het nodig hadden.
-              Al {EIGEN_GEBRUIK_DUUR} loopt het complete werk van Sign Company erdoorheen: elke
-              aanvraag, elke offerte, elke werkbon en elke factuur. Wat niet werkte hebben we
-              eruit gesloopt voordat jij het zag.
+              doen. is niet bedacht in een vergaderzaal. Het is gebouwd omdat wij het zelf
+              nodig hadden, tussen de montages door. Al {EIGEN_GEBRUIK_DUUR} loopt het complete
+              werk van Sign Company erdoorheen: elke aanvraag, elke offerte, elke werkbon,
+              elke factuur. Wat ons irriteerde, hebben we eruit gesloopt. Wat ons sneller
+              maakte, zit erin. Dat is de software die je krijgt.
             </p>
             <Link
               href="/over"
               className="group inline-flex items-center gap-2 mt-6 text-[15px] font-semibold text-white"
             >
               <span className="relative">
-                Lees hoe het ontstond
+                Lees waarom we het bouwden
                 <span className="absolute left-0 -bottom-1 h-px w-full origin-left transition-transform duration-300 group-hover:scale-x-0 bg-white/40" />
               </span>
               <span aria-hidden className="text-flame transition-transform duration-300 group-hover:translate-x-1">

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Navbar from '@/components/Navbar'
 import Hero from '@/components/home/Hero'
+import Manifest from '@/components/home/Manifest'
 import Demo from '@/components/home/Demo'
 import { EigenGebruikBand } from '@/components/EigenGebruik'
 import Modules from '@/components/home/Modules'
@@ -23,6 +24,7 @@ export default function Home() {
       <Navbar theme="dark" />
       <main id="main-content">
         <Hero />
+        <Manifest />
         <Demo />
         <EigenGebruikBand />
         <Modules />
