@@ -136,7 +136,7 @@ export default function AppShowcase({ initialView = 'dashboard' }: { initialView
    APP FRAME — browser-frame mockup
    ────────────────────────────────────────────────────────────── */
 
-function AppFrame({ view, setView }: { view: View; setView: (v: View) => void }) {
+export function AppFrame({ view, setView }: { view: View; setView: (v: View) => void }) {
   const url =
     view === 'dashboard' ? 'dashboard'
     : view === 'projecten' ? 'projecten'
