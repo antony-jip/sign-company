@@ -64,8 +64,8 @@ export default function ContactContent() {
               <p className="hero-fade text-[16px] md:text-[17px] leading-[1.6] text-ink max-w-md mb-6 md:mb-10" style={{ animationDelay: '0.3s' }}>
                 Nieuwsgierig, een idee, of wil je weten of doen. bij je past?
                 Vertel wat je bezighoudt. We reageren binnen één werkdag. Wil je dat
-                we je bedrijf inrichten, zeg het erbij: online doen we dat gratis, en
-                langskomen kan ook.
+                we doen. een keer met je doorlopen, zeg het erbij: online is dat gratis,
+                en langskomen kan ook.
               </p>
             </div>
 

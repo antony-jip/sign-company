@@ -101,8 +101,8 @@ export const articles: Article[] = [
             </P>
             <P>
               Geen haast? doen. werkt direct. Je kunt altijd later terugkomen om dingen aan te scherpen.
-              Liever niet alleen? De basisinrichting doen we gratis met je mee in een onboarding-sessie
-              van ongeveer een uur.
+              Liever niet alleen? In een gratis onboarding-sessie van ongeveer een uur lopen we
+              doen. helemaal met je door en leggen we alles uit.
             </P>
           </>
         ),
@@ -1268,7 +1268,7 @@ export const articles: Article[] = [
             <P>
               Wij geloven in één simpele som: <B>€129 per maand ex. btw</B>, flat, tot 10
               gebruikers. Geen opzetkosten, geen add-ons, alle modules en de AI-assistent
-              inbegrepen. De onboarding waarin wij het systeem met je inrichten zit erbij.
+              inbegrepen. De onboarding waarin wij het systeem aan je uitleggen zit erbij.
               Maandelijks opzegbaar. Wil je dat we op locatie komen, dan is dat eenmalig
               <B> €250 ex. btw plus reiskosten</B>, en dat is een keuze en geen opstartkost.
             </P>

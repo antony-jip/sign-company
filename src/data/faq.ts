@@ -55,7 +55,7 @@ export const faqs: { category: CategoryId; q: string; a: string }[] = [
   {
     category: 'prijs',
     q: 'Hoeveel kost doen. na de proefperiode?',
-    a: '**€129 per maand ex. btw**, tot **10 gebruikers**. Dat is alles. Geen opzetkosten, geen add-ons, geen aparte prijs per kop die later omhoog duikt. Groter team? Dan schuif je een maat op: **€199 tot 20 gebruikers**, **€279 tot 35**. Alle modules zitten in elke maat, er gaat niets achter een duurder pakket zitten.',
+    a: '**€129 per maand ex. btw**, tot **10 gebruikers**. Dat is alles. Geen opzetkosten, geen add-ons, geen prijs per seat die meegroeit met je team. Groter team? Dan schuif je een maat op: **€199 tot 20 gebruikers**, **€279 tot 35**. Alle modules zitten in elke maat, er gaat niets achter een duurder pakket zitten.',
   },
   {
     category: 'prijs',
@@ -65,7 +65,7 @@ export const faqs: { category: CategoryId; q: string; a: string }[] = [
   {
     category: 'prijs',
     q: 'Zijn er opzetkosten of verborgen kosten?',
-    a: 'Nee. **Alles zit in het abonnement**, inclusief toekomstige updates en de **onboarding-sessie waarin we doen. samen inrichten**. Geen premium-tiers, geen "pakket uitbreiden om feature X te gebruiken". Het enige dat los kan: wil je dat we **bij je op de zaak langskomen**, dan kost dat € 250 ex. btw plus reiskosten. Dat is een keuze, geen opstartkost.',
+    a: 'Nee. **Alles zit in het abonnement**, inclusief toekomstige updates en de **onboarding-sessie waarin we doen. helemaal met je doorlopen**. Geen premium-tiers, geen "pakket uitbreiden om feature X te gebruiken". Het enige dat los kan: wil je dat we **bij je op de zaak langskomen**, dan kost dat € 250 ex. btw plus reiskosten. Dat is een keuze, geen opstartkost.',
   },
   {
     category: 'prijs',
@@ -138,7 +138,7 @@ export const faqs: { category: CategoryId; q: string; a: string }[] = [
   {
     category: 'support',
     q: 'Hoe lang duurt de implementatie?',
-    a: 'Je account staat in **vijf minuten**. De basisinrichting, dus je producten, templates, team en klanten, kost ongeveer **een halve dag**, en die doen we in de onboarding-sessie samen met je. De meeste bedrijven draaien **binnen een week** hun echte werk in doen.',
+    a: 'Je account staat in **vijf minuten**. In de onboarding-sessie lopen we doen. helemaal met je door, zodat je weet hoe alles werkt. Daarna zet je je eigen producten, marges en templates erin, want dat is jouw calculatie en jouw prijsbeleid. Reken daar een halve dag voor. De meeste bedrijven draaien **binnen een week** hun echte werk in doen.',
   },
   {
     category: 'support',
@@ -148,13 +148,13 @@ export const faqs: { category: CategoryId; q: string; a: string }[] = [
   {
     category: 'support',
     q: 'Krijg ik uitleg of training?',
-    a: 'Zeker, en dat kost je niets. Elke nieuwe klant krijgt een **gratis onboarding-sessie van ongeveer een uur** via scherm-deling. We zetten samen je bedrijfsgegevens, producten en templates klaar en versturen je eerste offerte. Wil je liever iemand aan tafel, [dan komen we langs](/prijzen#onboarding).',
+    a: 'Zeker, en dat kost je niets. Elke nieuwe klant krijgt een **gratis onboarding-sessie van ongeveer een uur** via scherm-deling. We lopen doen. helemaal met je door: bedrijfsgegevens, templates, offerte, portaal, planning en factuur. Je eigen producten en marges zet je daarna zelf in, want dat is jouw calculatie. Wil je liever iemand aan tafel, [dan komen we langs](/prijzen#onboarding).',
   },
 
   {
     category: 'support',
-    q: 'Kunnen jullie langskomen om het in te richten?',
-    a: 'Ja. Je hele bedrijf in één keer meegenomen, bij je op de zaak: **€ 250 ex. btw plus reiskosten**, eenmalig. We richten doen. dan in op jouw manier van werken en lopen je lopende klussen door met werkvoorbereiding en monteurs erbij. Online kan het ook, en dat is gratis. [Bekijk beide routes](/prijzen#onboarding) of [vraag het aan](/contact).',
+    q: 'Kunnen jullie langskomen om het uit te leggen?',
+    a: 'Ja. Je hele team in één keer meegenomen, bij je op de zaak: **€ 250 ex. btw plus reiskosten**, eenmalig. We lopen doen. door met werkvoorbereiding en monteurs erbij en kijken mee met de manier waarop jij calculeert en plant. Online kan het ook, en dat is gratis. [Bekijk beide routes](/prijzen#onboarding) of [vraag het aan](/contact).',
   },
 
   {
@@ -183,7 +183,7 @@ export const prijzenFaqs: { q: string; a: string }[] = [
   { q: 'Kan ik het eerst proberen?', a: 'Eerste 30 dagen gratis. Geen creditcard nodig. Geen verplichtingen.' },
   { q: 'Moet ik extra betalen voor AI of het klantportaal?', a: 'Nee. Alles zit erin, geen feature-gates of premium-tiers. Voor AI heb je **€ 15 gebruik per maand** voor je hele organisatie. Dat is ruim voor mails samenvatten, teksten schrijven en inkoopfacturen uitlezen. Maak je veel beelden in **Studio**, dan gaat dat er sneller doorheen en koop je bij.' },
   { q: 'Welke koppelingen zitten erbij?', a: 'Mollie, Exact Online, email (IMAP/SMTP) en AI. Alles standaard, geen extra kosten.' },
-  { q: 'Helpen jullie met het inrichten?', a: 'Ja, en dat is gratis. In een onboarding-sessie van ongeveer een uur zetten we samen je bedrijfsgegevens, producten en templates klaar. Wil je dat we langskomen op de zaak, dan kost dat **€ 250 ex. btw plus reiskosten**, eenmalig.' },
+  { q: 'Helpen jullie bij de start?', a: 'Ja, en dat kost je niets. In een onboarding-sessie van ongeveer een uur lopen we doen. helemaal met je door en leggen we alles uit, van offerte tot factuur. Je eigen producten en marges zet je daarna zelf in. Wil je dat we langskomen op de zaak, dan kost dat **€ 250 ex. btw plus reiskosten**, eenmalig.' },
   { q: 'Kan ik mijn data exporteren?', a: 'Altijd. CSV, PDF, wat je nodig hebt. Jouw data is van jou.' },
   { q: 'Moet ik een contract tekenen?', a: 'Nee. Maandelijks opzegbaar. Je blijft omdat het werkt.' },
   { q: 'Hoe verschilt doen. van andere software?', a: 'Gebouwd door vakmensen uit de branche. Alles in één systeem. Klantportaal, AI en planning zitten standaard in je abonnement.' },

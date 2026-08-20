@@ -156,10 +156,10 @@ export const hoofdstukken: Hoofdstuk[] = [
         nr: '11',
         titel: 'Prijs',
         leden: [
-          'Het abonnement kost € 129 per maand, exclusief btw, voor maximaal tien gebruikers. Alle onderdelen zitten erbij, net als de onboarding waarin wij doen. samen met jou inrichten. Er zijn geen opstartkosten.',
+          'Het abonnement kost € 129 per maand, exclusief btw, voor maximaal tien gebruikers. Alle onderdelen zitten erbij, net als de onboarding waarin wij doen. aan jou uitleggen. Er zijn geen opstartkosten.',
           'Heb je meer gebruikers nodig, dan geldt een staffel: € 199 per maand tot twintig gebruikers en € 279 per maand tot vijfendertig, allebei exclusief btw. De staffel telt het aantal gebruikersplekken dat je afneemt, niet het aantal mensen dat in een bepaalde maand inlogt. Wij rekenen niet per gebruiker af en alle onderdelen zitten in elke staffel.',
           'Het AI-budget zit bij de prijs in en schaalt mee met de staffel: € 15 per maand tot tien gebruikers, € 30 tot twintig en € 50 tot vijfendertig. Het budget geldt voor je organisatie samen. Extra budget koop je los bij tegen het tarief dat op dat moment in de app staat. Bijgekocht budget is niet inwisselbaar voor geld.',
-          'Kom je liever niet online maar wil je dat wij bij jou op locatie komen inrichten, dan rekenen wij daarvoor eenmalig € 250, exclusief btw, plus reiskosten. Dat spreken wij vooraf af en het staat los van het abonnement.',
+          'Wil je dat wij bij jou op locatie langskomen om doen. aan je team uit te leggen, dan rekenen wij daarvoor eenmalig € 250, exclusief btw, plus reiskosten. Dat spreken wij vooraf af en het staat los van het abonnement.',
           'Wij mogen de prijs aanpassen. Een verhoging kondigen wij minimaal 30 dagen van tevoren per e-mail aan. Ben je het er niet mee eens, dan mag je opzeggen tegen de datum waarop de nieuwe prijs ingaat.',
         ],
       },
