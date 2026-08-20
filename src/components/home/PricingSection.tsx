@@ -1,10 +1,10 @@
 import Link from 'next/link'
 import { ArrowRight, Check } from 'lucide-react'
-import { PRICE_PER_MONTH } from '@/data/pricing'
+import { PRICE_PER_MONTH, STAFFEL_ZIN } from '@/data/pricing'
 
 const INCLUDED = [
   'Alle modules, in elke maat',
-  'Tot 10 gebruikers, uit te breiden tot 35',
+  'Tot 10 gebruikers, € 199 tot 20 en € 279 tot 35',
   'Klantportaal zonder inlog',
   'AI-assistent Daan',
   'Koppeling Exact Online en Mollie',
@@ -45,11 +45,14 @@ export default function PricingSection() {
                 per maand, ex btw
               </span>
             </div>
+            <p className="text-[15px] mb-3" style={{ color: 'rgba(226,240,241,0.7)' }}>
+              Alles erin, tot 10 gebruikers. Geen pakketten, geen prijs per seat, geen
+              verrassingen. De onboarding zit erbij.
+            </p>
             <p className="text-[15px] mb-10" style={{ color: 'rgba(226,240,241,0.7)' }}>
-              Tot 10 gebruikers. Geen pakketten, geen prijs per kop, geen verrassingen. De
-              onboarding waarin we doen. met je doorlopen zit erbij.{' '}
+              Groter team? {STAFFEL_ZIN}, allebei ex btw. Alle modules zitten in elke maat.{' '}
               <Link href="/prijzen" className="underline underline-offset-4 decoration-white/30 hover:decoration-white transition-colors">
-                Groter team of het AI-budget
+                Zo zit het AI-budget erin
               </Link>
               .
             </p>

@@ -8,6 +8,8 @@ import Footer from '@/components/Footer'
 import DemoVideo from '@/components/DemoVideo'
 import AppShowcase from '@/components/home/AppShowcase'
 import { EigenGebruikBand, EigenGebruikNotitie, EIGEN_GEBRUIK_DUUR } from '@/components/EigenGebruik'
+import { STAFFEL_ZIN } from '@/data/pricing'
+import { AanmeldKaart } from '@/components/Aanmelden'
 import { OnboardingRegel } from '@/components/Onboarding'
 import JsonLd from '@/components/JsonLd'
 import { softwareApplicationSchema } from '@/lib/structured-data'
@@ -130,51 +132,7 @@ export default function DemoPage() {
                 </ul>
               </div>
 
-              {/* Zelfde kaart als in de app: e-mail hier, de rest daar (Supabase blijft in de app) */}
-              <form
-                action="https://app.doen.team/register"
-                method="get"
-                className="rounded-[18px] bg-white border border-petrol/10 shadow-[0_1px_2px_rgba(20,40,40,0.04),0_24px_56px_-32px_rgba(13,52,60,0.35)] p-7 md:p-9"
-              >
-                <h3 className="font-heading text-[26px] md:text-[28px] font-bold text-petrol leading-none">
-                  Aan de slag<span className="text-flame">.</span>
-                </h3>
-                <p className="mt-2.5 text-[14px] md:text-[15px] text-muted">
-                  Maak een account. Kost je een minuut.
-                </p>
-
-                <label
-                  htmlFor="demo-email"
-                  className="mt-6 block text-[11px] font-semibold uppercase tracking-[0.1em] text-petrol/70"
-                >
-                  E-mailadres
-                </label>
-                <div className="mt-2 flex items-center gap-3 rounded-[12px] border border-petrol/20 bg-white px-4 h-[52px] focus-within:border-petrol transition-colors">
-                  <span aria-hidden className="text-petrol/40 text-[15px]">✉</span>
-                  <input
-                    id="demo-email"
-                    name="email"
-                    type="email"
-                    required
-                    placeholder="naam@bedrijf.nl"
-                    className="flex-1 bg-transparent text-[15px] text-petrol outline-none placeholder:text-petrol/35 min-w-0"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className="group mt-5 w-full inline-flex items-center justify-center gap-2.5 text-[15px] font-semibold text-white bg-petrol h-[54px] rounded-full transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98]"
-                >
-                  <span>Aan de slag</span>
-                  <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={2.5} />
-                </button>
-                <p className="mt-4 text-center text-[13px] text-muted">
-                  Hierna kies je alleen nog een wachtwoord.
-                </p>
-                <p className="mt-1.5 text-center text-[12.5px] text-muted/80">
-                  Door aan te melden ga je akkoord met onze voorwaarden.
-                </p>
-              </form>
+              <AanmeldKaart veldId="demo-email" />
             </div>
           </div>
         </section>
@@ -204,7 +162,7 @@ export default function DemoPage() {
             </div>
 
             <p className="mt-10 md:mt-14 text-[16px] md:text-[18px] text-petrol font-semibold">
-              vanaf € 129 per maand ex btw · per organisatie, niet per kop ·{' '}
+              vanaf € 129 per maand ex btw · all-in, niet per seat · {STAFFEL_ZIN} ·{' '}
               <a href="/prijzen" className="underline decoration-flame decoration-2 underline-offset-4 hover:text-flame transition-colors">
                 bekijk wat je krijgt
               </a>

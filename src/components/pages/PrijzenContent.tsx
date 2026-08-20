@@ -3,31 +3,37 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowRight, Check, Plus } from 'lucide-react'
-import CTASection from '@/components/home/CTASection'
 import JsonLd from '@/components/JsonLd'
-import { PRICE_PER_MONTH } from '@/data/pricing'
+import {
+  MAX_GEBRUIKERS, PER_SEAT_EERSTE, PER_SEAT_EERSTE_AANTAL,
+  PER_SEAT_EXTRA, PER_SEAT_OPSTART_MIN, PER_SEAT_OPSTART_MAX, OMSLAGPUNT,
+  perSeatPerMaand, maatVoor,
+} from '@/data/pricing'
 import { prijzenFaqs } from '@/data/faq'
 import { prijzenFaqPageSchema } from '@/lib/structured-data'
 import { EigenGebruikBand } from '@/components/EigenGebruik'
 import FaqAnswer from '@/components/FaqAnswer'
 import { OnboardingSectie } from '@/components/Onboarding'
+import AanmeldSectie from '@/components/Aanmelden'
 
-/* Gangbare branchesoftware: richtprijs per maand voor een vergelijkbaar
-   pakket. De besparing rekent zichzelf uit vanaf PRICE_PER_MONTH. */
-const GANGBAAR_PER_MAAND = 208
-const BESPARING_PER_JAAR = (GANGBAAR_PER_MAAND - PRICE_PER_MONTH) * 12
+// Hun tarief loopt op centen, het onze niet. Eén formatter voor allebei,
+// zodat € 129 niet als € 129,00 in beeld komt naast € 253,15.
+const euro = (n: number) =>
+  n.toLocaleString('nl-NL', {
+    minimumFractionDigits: Number.isInteger(n) ? 0 : 2,
+    maximumFractionDigits: 2,
+  })
+const perPersoon = (totaal: number, gebruikers: number) => euro(Math.round(totaal / gebruikers))
 
 const INBEGREPEN = [
-  'Alle modules, in elke maat',
-  'Tot 10 gebruikers, uit te breiden tot 35',
-  'Onbeperkt projecten, offertes en facturen',
+  'Alle elf modules',
+  'Onbeperkt offertes en facturen',
   'Klantportaal zonder inlog',
   'AI-assistent Daan',
-  'Koppeling Exact Online en Mollie',
-  '€ 15 AI-gebruik per maand, bijkopen kan altijd',
-  'Gratis onboarding, online met ons samen',
+  'Exact Online en Mollie',
+  'Gratis onboarding',
   'Nederlandse support',
-  'Updates inbegrepen',
+  'Geen opzetkosten',
 ]
 
 export default function PrijzenContent() {
@@ -37,7 +43,11 @@ export default function PrijzenContent() {
       <OnboardingSectie />
       <PrijzenFaq />
       <EigenGebruikBand />
-      <CTASection />
+      <AanmeldSectie
+        kop="Nu jouw bedrijf"
+        intro="Dertig dagen gratis. Bevalt het niet, dan stop je met één klik."
+        veldId="prijzen-email"
+      />
     </div>
   )
 }
@@ -46,22 +56,44 @@ export default function PrijzenContent() {
    De prijs wordt hier één keer verteld; verder rekent niets op deze pagina.
    Entree via CSS-keyframes (globals.css: .hero-line / .hero-fade). */
 function PriceHero() {
+  // Eén schuif stuurt beide kaarten. Standaard op 10: de maat waar de meeste
+  // signbedrijven in vallen, en meteen het punt waar een prijs per seat pijn
+  // begint te doen.
+  const [gebruikers, setGebruikers] = useState(10)
+  const maat = maatVoor(gebruikers)
+  const perSeat = perSeatPerMaand(gebruikers)
+  const verschilPerJaar = Math.round((perSeat - maat.prijs) * 12)
+
   return (
     <section className="bg-bg">
       <div className="container-site pt-28 md:pt-44 pb-14 md:pb-32">
-        <div className="hero-fade flex flex-wrap items-end justify-between gap-x-10 gap-y-5 mb-8 md:mb-16" style={{ animationDelay: '0.05s' }}>
-          <h1
-            className="font-heading font-bold text-petrol leading-[0.97]"
-            style={{ fontSize: 'clamp(34px, 5.2vw, 72px)', letterSpacing: '-0.03em', textWrap: 'balance' }}
-          >
-            Eén plan, geen verrassingen<span className="text-flame">.</span>
-          </h1>
-          <p className="text-[15px] md:text-[16px] text-muted max-w-sm leading-[1.55]">
-            Alles wat je bedrijf nodig hebt voor €{PRICE_PER_MONTH} per maand, ex btw.
-            Geen pakketten, geen prijs per kop, geen opzetkosten. Het inrichten
-            doen we gratis met je mee. Groeit je team, dan schuif je een maat op:
-            € 199 tot 20 gebruikers, € 279 tot 35.
-          </p>
+        <h1
+          className="hero-fade font-heading font-bold text-petrol leading-[0.97] mb-8 md:mb-14 max-w-3xl"
+          style={{ fontSize: 'clamp(34px, 5.2vw, 72px)', letterSpacing: '-0.03em', textWrap: 'balance', animationDelay: '0.05s' }}
+        >
+          Alles erin<span className="text-flame">.</span> Niet per seat<span className="text-flame">.</span>
+        </h1>
+
+        <div className="hero-fade mb-5 md:mb-6" style={{ animationDelay: '0.15s' }}>
+          <label htmlFor="gebruikers" className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 mb-3">
+            <span className="text-[15px] font-semibold text-ink">Hoeveel mensen werken er bij je?</span>
+            <span className="text-[15px] text-muted">
+              <span className="font-semibold text-petrol tabular-nums">{gebruikers}</span>
+              {gebruikers === 1 ? ' gebruiker' : ' gebruikers'}
+              {gebruikers === MAX_GEBRUIKERS ? ' of meer' : ''}
+            </span>
+          </label>
+          <input
+            id="gebruikers"
+            type="range"
+            min={1}
+            max={MAX_GEBRUIKERS}
+            step={1}
+            value={gebruikers}
+            onChange={(e) => setGebruikers(Number(e.target.value))}
+            className="seat-slider w-full"
+            aria-valuetext={`${gebruikers} gebruikers`}
+          />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 md:gap-6">
@@ -71,7 +103,7 @@ function PriceHero() {
             style={{ animationDelay: '0.25s' }}
           >
             <span className="absolute top-6 right-6 md:top-7 md:right-7 text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-[3px] bg-flame text-white">
-              Aanbevolen
+              Alles inbegrepen
             </span>
 
             <h2
@@ -80,21 +112,21 @@ function PriceHero() {
             >
               doen<span className="text-flame">.</span>
             </h2>
-            <p className="text-[15px] text-muted leading-[1.6] mb-6 md:mb-8 max-w-sm">
-              Eén plan voor je hele bedrijf, van eerste klantvraag tot betaalde factuur.
-            </p>
 
             <div className="flex items-baseline gap-3 mb-2">
               <span
                 className="font-heading font-bold text-ink leading-none tabular-nums"
                 style={{ fontSize: 'clamp(56px, 6vw, 84px)', letterSpacing: '-0.03em' }}
               >
-                €{PRICE_PER_MONTH}
+                €{euro(maat.prijs)}
               </span>
               <span className="text-[15px] text-muted">per maand, ex btw</span>
             </div>
+            <p className="text-[15px] font-semibold text-petrol mb-1.5 tabular-nums">
+              € {perPersoon(maat.prijs, gebruikers)} per persoon per maand
+            </p>
             <p className="text-[14px] text-muted mb-6 md:mb-9">
-              Per bedrijf · 30 dagen gratis · maandelijks opzegbaar
+              Eén bedrag tot {maat.tot} gebruikers · 30 dagen gratis · maandelijks opzegbaar
             </p>
 
             <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 mb-7 md:mb-9 flex-1">
@@ -143,43 +175,48 @@ function PriceHero() {
                 className="font-heading font-bold text-white leading-[1.05] mb-3"
                 style={{ fontSize: 'clamp(24px, 3vw, 36px)', letterSpacing: '-0.03em' }}
               >
-                Wat je nu betaalt<span className="text-flame">.</span>
+                Wat je per seat betaalt<span className="text-flame">.</span>
               </h2>
-              <p className="text-[15px] leading-[1.6] mb-6 md:mb-8 max-w-sm" style={{ color: 'rgba(226,240,241,0.82)' }}>
-                Losse abonnementen voor offertes, planning, werkbonnen en je
-                boekhoudkoppeling. Elk met een eigen factuur.
-              </p>
 
               <div className="flex items-baseline gap-3 mb-2">
                 <span
                   className="font-heading font-bold text-white leading-none tabular-nums"
                   style={{ fontSize: 'clamp(56px, 6vw, 84px)', letterSpacing: '-0.03em' }}
                 >
-                  €{GANGBAAR_PER_MAAND}
+                  €{euro(perSeat)}
                 </span>
                 <span className="text-[15px]" style={{ color: 'rgba(226,240,241,0.82)' }}>
-                  per maand, gemiddeld
+                  per maand, ex btw
                 </span>
               </div>
-              <p className="text-[14px] mb-6 md:mb-9" style={{ color: 'rgba(226,240,241,0.55)' }}>
-                En dan komen de opzetkosten, add-ons en prijzen per gebruiker er nog bij.
+              <p className="text-[15px] font-semibold mb-1.5 tabular-nums" style={{ color: 'rgba(226,240,241,0.82)' }}>
+                € {perPersoon(perSeat, gebruikers)} per persoon per maand
+              </p>
+              <p className="text-[14px] flex-1" style={{ color: 'rgba(226,240,241,0.55)' }}>
+                € {euro(PER_SEAT_EERSTE)} voor de eerste {PER_SEAT_EERSTE_AANTAL},
+                dan € {euro(PER_SEAT_EXTRA)} per seat · eenmalig
+                € {euro(PER_SEAT_OPSTART_MIN)} tot € {euro(PER_SEAT_OPSTART_MAX)} opzetkosten
               </p>
 
-              <ul className="space-y-3 flex-1">
-                {['Opzetkosten vooraf', 'Add-ons per module', 'Prijs per gebruiker'].map((item) => (
-                  <li key={item} className="flex items-start gap-2.5">
-                    <span aria-hidden className="mt-[9px] w-3 h-px shrink-0 bg-flame" />
-                    <span className="text-[15px] leading-snug" style={{ color: 'rgba(226,240,241,0.82)' }}>
-                      {item}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-
-              <p className="mt-9 pt-6 border-t border-white/10 text-[16px] md:text-[17px] font-semibold text-white">
-                Met doen. bespaar je{' '}
-                <span className="text-flame tabular-nums">€{BESPARING_PER_JAAR.toLocaleString('nl-NL')}</span>{' '}
-                per jaar<span className="text-flame">.</span>
+              <p
+                className="mt-9 pt-6 border-t border-white/10 font-heading font-bold text-white leading-[1.15]"
+                style={{ fontSize: 'clamp(20px, 2.2vw, 28px)', letterSpacing: '-0.02em' }}
+              >
+                {verschilPerJaar > 0 ? (
+                  <>
+                    Met doen. bespaar je{' '}
+                    <span className="text-flame tabular-nums">€ {euro(verschilPerJaar)}</span> per
+                    jaar<span className="text-flame">.</span>
+                  </>
+                ) : (
+                  <>
+                    Met minder dan {OMSLAGPUNT} mensen ben je daar goedkoper uit. Vanaf{' '}
+                    {OMSLAGPUNT} draait het om<span className="text-flame">.</span>
+                  </>
+                )}
+              </p>
+              <p className="mt-3 text-[13px]" style={{ color: 'rgba(226,240,241,0.55)' }}>
+                Gepubliceerd tarief per gebruiker, ex btw, augustus 2026. Opzetkosten niet meegerekend.
               </p>
             </div>
           </div>
@@ -192,7 +229,8 @@ function PriceHero() {
 /* Zelfde accordion-grammatica als de home-FAQ: hairlines, plus-icoon flame.
    Op bg in plaats van wit, want de onboarding-sectie erboven is al wit. */
 function PrijzenFaq() {
-  const [open, setOpen] = useState<number | null>(0)
+  // Dicht bij binnenkomst: zes korte regels lezen sneller dan één open alinea.
+  const [open, setOpen] = useState<number | null>(null)
 
   return (
     <section className="bg-bg">
