@@ -2059,6 +2059,8 @@ export interface InkoopOfferte {
   totaal: number;
   created_at: string;
   regels?: InkoopRegel[];
+  /** Alleen-lezen join voor lijstweergaven; niet meesturen bij opslaan. */
+  project?: { naam?: string; project_nummer?: string } | null;
 }
 
 export interface InkoopRegel {

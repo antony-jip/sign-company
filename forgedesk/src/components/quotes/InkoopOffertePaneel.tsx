@@ -14,6 +14,7 @@ import {
   GripVertical,
   Copy,
   ArrowRight,
+  Sparkles,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { round2 } from '@/utils/budgetUtils'
@@ -22,14 +23,16 @@ import { useAuth } from '@/contexts/AuthContext'
 import {
   getInkoopOffertes,
   getInkoopOffertesByOfferte,
+  getInkoopOffertesByProject,
   createInkoopOfferte,
   createInkoopRegel,
   deleteInkoopOfferte,
 } from '@/services/supabaseService'
+import { leesInkoopOfferteUit } from '@/services/inkoopOfferteService'
 import type { InkoopOfferte, InkoopRegel } from '@/types'
 import { logger } from '../../utils/logger'
 import { InkoopAILimietBanner } from '@/components/shared/InkoopAILimietBanner'
-import { gooiBijBudgetError } from '@/lib/aiBudgetError'
+import { gooiBijBudgetError, AIBudgetError } from '@/lib/aiBudgetError'
 
 // Drag data type for inkoop regels
 export const INKOOP_DRAG_TYPE = 'application/x-forgedesk-inkoop-regel'
@@ -56,11 +59,13 @@ interface GeanalyseerdeRegel {
 interface InkoopOffertePaneelProps {
   userId: string
   offerteId?: string
+  /** Project van deze offerte; haalt ook de inkoopoffertes op die vanuit de mail zijn vastgelegd. */
+  projectId?: string
   onRegelToevoegen: (regel: InkoopRegel) => void
   onRegelAlsPrijsvariant?: (regel: InkoopRegel, leverancier: string) => void
 }
 
-export function InkoopOffertePaneel({ userId, offerteId, onRegelToevoegen, onRegelAlsPrijsvariant }: InkoopOffertePaneelProps) {
+export function InkoopOffertePaneel({ userId, offerteId, projectId, onRegelToevoegen, onRegelAlsPrijsvariant }: InkoopOffertePaneelProps) {
   const { session } = useAuth()
 
   // Opgeslagen offertes
@@ -87,6 +92,9 @@ export function InkoopOffertePaneel({ userId, offerteId, onRegelToevoegen, onReg
   // Verwijder bevestiging
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
 
+  // Uitlezen van een vastgelegde offerte die nog geen regels heeft
+  const [uitleesId, setUitleesId] = useState<string | null>(null)
+
   const fileInputRef = useRef<HTMLInputElement>(null)
   const leverancierWrapperRef = useRef<HTMLDivElement>(null)
 
@@ -97,17 +105,30 @@ export function InkoopOffertePaneel({ userId, offerteId, onRegelToevoegen, onReg
     return namen.filter(n => n.toLowerCase().includes(leverancierNaam.toLowerCase()))
   }, [offertes, leverancierNaam])
 
-  // Laad offertes (gefilterd op offerte als offerteId meegegeven)
+  // Laad offertes. Hier komen twee sporen samen: wat bij deze offerte hoort en
+  // wat vanuit de mail al bij het project is vastgelegd. Een leveranciersofferte
+  // die per mail binnenkwam hoort immers thuis in dezelfde calculatie.
   const loadOffertes = useCallback(async () => {
     try {
-      const data = offerteId
-        ? await getInkoopOffertesByOfferte(offerteId)
-        : await getInkoopOffertes(userId)
-      setOffertes(data)
+      if (!offerteId && !projectId) {
+        setOffertes(await getInkoopOffertes(userId))
+        return
+      }
+      const [bijOfferte, bijProject] = await Promise.all([
+        offerteId ? getInkoopOffertesByOfferte(offerteId) : Promise.resolve([] as InkoopOfferte[]),
+        projectId ? getInkoopOffertesByProject(projectId) : Promise.resolve([] as InkoopOfferte[]),
+      ])
+      const gezien = new Set<string>()
+      const samen = [...bijOfferte, ...bijProject].filter((o) => {
+        if (gezien.has(o.id)) return false
+        gezien.add(o.id)
+        return true
+      })
+      setOffertes(samen)
     } catch (err) {
       logger.error('Inkoop offertes laden mislukt:', err)
     }
-  }, [userId, offerteId])
+  }, [userId, offerteId, projectId])
 
   // Laad bij mount
   useEffect(() => {
@@ -222,6 +243,7 @@ export function InkoopOffertePaneel({ userId, offerteId, onRegelToevoegen, onReg
         datum: new Date().toISOString().split('T')[0],
         totaal,
         ...(offerteId ? { offerte_id: offerteId } : {}),
+        ...(projectId ? { project_id: projectId } : {}),
       })
 
       await Promise.all(geanalyseerdeRegels.map((regel) =>
@@ -253,7 +275,7 @@ export function InkoopOffertePaneel({ userId, offerteId, onRegelToevoegen, onReg
     } finally {
       setIsSaving(false)
     }
-  }, [geanalyseerdeRegels, userId, leverancierNaam, loadOffertes])
+  }, [geanalyseerdeRegels, userId, leverancierNaam, offerteId, projectId, loadOffertes])
 
   // Verwijderen
   const handleDelete = useCallback(async (id: string) => {
@@ -267,6 +289,27 @@ export function InkoopOffertePaneel({ userId, offerteId, onRegelToevoegen, onReg
       toast.error('Kon inkoopofferte niet verwijderen')
     }
   }, [])
+
+  // Een inkoopofferte die vanuit de mail is vastgelegd heeft nog geen regels:
+  // uitlezen kost AI-budget en gebeurt daarom pas hier, op het moment dat je de
+  // prijzen daadwerkelijk in een calculatie wilt gebruiken.
+  const handleUitlezen = useCallback(async (offerte: InkoopOfferte) => {
+    setUitleesId(offerte.id)
+    try {
+      const { regels } = await leesInkoopOfferteUit(offerte, session?.access_token)
+      setExpandedOffertes((prev) => new Set(prev).add(offerte.id))
+      await loadOffertes()
+      toast.success(`${regels.length} regels uitgelezen`)
+    } catch (err) {
+      logger.error('Inkoopofferte uitlezen mislukt:', err)
+      // Bij een budgetfout staat de melding er al, met de link naar het verbruik.
+      if (!(err instanceof AIBudgetError)) {
+        toast.error(err instanceof Error ? err.message : 'Uitlezen mislukt')
+      }
+    } finally {
+      setUitleesId(null)
+    }
+  }, [session?.access_token, loadOffertes])
 
   const toggleExpanded = useCallback((id: string) => {
     setExpandedOffertes(prev => {
@@ -526,6 +569,29 @@ export function InkoopOffertePaneel({ userId, offerteId, onRegelToevoegen, onReg
                 </div>
               </div>
             </CardHeader>
+            {(offerte.regels?.length ?? 0) === 0 && (
+              <CardContent className="p-3 pt-2">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs text-muted-foreground">
+                    {offerte.bestand_url ? 'Nog niet uitgelezen' : 'Nog geen regels · geen bestand bewaard'}
+                  </p>
+                  {offerte.bestand_url && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 gap-1.5 text-xs shrink-0"
+                      disabled={uitleesId === offerte.id}
+                      onClick={(e) => { e.stopPropagation(); handleUitlezen(offerte) }}
+                    >
+                      {uitleesId === offerte.id
+                        ? <Loader2 className="h-3 w-3 animate-spin" />
+                        : <Sparkles className="h-3 w-3" />}
+                      Regels uitlezen
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            )}
             {isExpanded && offerte.regels && (
               <CardContent className="p-3 pt-2">
                 <div className="space-y-1">

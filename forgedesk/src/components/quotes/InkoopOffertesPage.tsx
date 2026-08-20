@@ -130,7 +130,8 @@ export function InkoopOffertesPage() {
             <FileText className="h-12 w-12 text-muted-foreground opacity-30 mx-auto mb-3" />
             <p className="text-muted-foreground">Nog geen inkoopoffertes</p>
             <p className="text-xs text-muted-foreground/60 mt-1">
-              Upload inkoopoffertes via het offerte-scherm bij het aanmaken van een nieuwe offerte.
+              Upload inkoopoffertes via het offerte-scherm bij het aanmaken van een nieuwe offerte,
+              of zet een offerte van een leverancier vanuit de mail bij een project.
             </p>
           </CardContent>
         </Card>
@@ -146,7 +147,14 @@ export function InkoopOffertesPage() {
                       {isExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" /> : <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />}
                       <div className="min-w-0">
                         <CardTitle className="text-base font-bold truncate">{offerte.leverancier_naam}</CardTitle>
-                        <p className="text-xs text-muted-foreground">{offerte.datum} &middot; {offerte.regels?.length || 0} regels</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {offerte.datum}
+                          {offerte.project?.naam ? ` · ${offerte.project.naam}` : ''}
+                          {' · '}
+                          {(offerte.regels?.length || 0) === 0
+                            ? 'nog niet uitgelezen'
+                            : `${offerte.regels?.length} regels`}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 shrink-0">

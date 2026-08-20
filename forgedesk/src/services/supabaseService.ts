@@ -151,7 +151,7 @@ export {
   getAllLeadInzendingen,
   createLeadInzending, updateLeadInzending,
   getInkoopOffertes, getInkoopOffertesByProject, getInkoopOffertesByOfferte,
-  createInkoopOfferte, createInkoopRegel, updateInkoopRegel, deleteInkoopOfferte,
+  createInkoopOfferte, updateInkoopOfferte, createInkoopRegel, updateInkoopRegel, deleteInkoopOfferte,
 } from './crmService'
 
 export {

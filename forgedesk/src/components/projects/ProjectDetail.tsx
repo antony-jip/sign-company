@@ -122,6 +122,7 @@ import {
   getFactuur,
   getFacturenByProject,
   getUitgavenByProject,
+  getInkoopOffertesByProject,
   getMontageAfsprakenByProject,
   createMontageAfspraak,
   updateMontageAfspraak,
@@ -133,7 +134,7 @@ import {
 } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
-import { uploadFile, uploadMontageBijlage } from '@/services/storageService'
+import { uploadFile, uploadMontageBijlage, getSignedUrl } from '@/services/storageService'
 import { getOrgId } from '@/services/supabaseHelpers'
 import { analyzeProject } from '@/services/aiService'
 import { sendEmail } from '@/services/gmailService'
@@ -167,7 +168,7 @@ const PdfPreviewDialog = React.lazy(() => import('@/components/shared/PdfPreview
 import { generateOpdrachtbevestigingPDF } from '@/services/pdfService'
 import { useProjectSidebarConfig } from '@/hooks/useProjectSidebarConfig'
 import { SchattingSelect } from '@/components/shared/TaakVelden'
-import type { Taak, Project, Document, Offerte, TekeningGoedkeuring, Klant, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon, Factuur, Uitgave, MontageAfspraak, MontageBijlage, ProjectFoto, AuditLogEntry, Contactpersoon, ContactpersoonRecord, Maatje } from '@/types'
+import type { Taak, Project, Document, Offerte, TekeningGoedkeuring, Klant, Tijdregistratie, Medewerker, ProjectToewijzing, Werkbon, Factuur, Uitgave, InkoopOfferte, MontageAfspraak, MontageBijlage, ProjectFoto, AuditLogEntry, Contactpersoon, ContactpersoonRecord, Maatje } from '@/types'
 import { berekenBudgetStatus } from '@/utils/budgetUtils'
 import { logger } from '../../utils/logger'
 import { logWijziging, logCreate, resolveMedewerkerNaam } from '@/utils/auditLogger'
@@ -639,6 +640,21 @@ export function ProjectDetail() {
   const [projectMontages, setProjectMontages] = useState<MontageAfspraak[]>([])
   const [projectFacturen, setProjectFacturen] = useState<Factuur[]>([])
   const [projectUitgaven, setProjectUitgaven] = useState<Uitgave[]>([])
+  const [projectInkoop, setProjectInkoop] = useState<InkoopOfferte[]>([])
+
+  // Het bronbestand van een inkoopofferte staat in de projectopslag; openen gaat
+  // via een tijdelijke URL, net als bij de bestanden op het overzicht.
+  const openInkoopBestand = useCallback(async (inkoop: InkoopOfferte) => {
+    if (!inkoop.bestand_url) return
+    try {
+      const url = await getSignedUrl(inkoop.bestand_url)
+      if (!url) throw new Error('Geen URL ontvangen')
+      window.open(url, '_blank')
+    } catch (err) {
+      logger.error('Inkoopofferte openen mislukt:', err)
+      toast.error('Kon het bestand niet openen')
+    }
+  }, [])
   const [projectEmails, setProjectEmails] = useState<ProjectMail[]>([])
   const [projectMaatjes, setProjectMaatjes] = useState<Maatje[]>([])
   const [emailsLoading, setEmailsLoading] = useState(false)
@@ -1129,7 +1145,7 @@ export function ProjectDetail() {
       if (!id) return
       setIsLoading(true)
       try {
-        const [projectData, takenData, allDocumenten, offertesData, goedkeuringenData, tijdData, medewerkersData, toewijzingenData, werkbonnenData, montageData, fotosData, facturenData, uitgavenData] = await Promise.all([
+        const [projectData, takenData, allDocumenten, offertesData, goedkeuringenData, tijdData, medewerkersData, toewijzingenData, werkbonnenData, montageData, fotosData, facturenData, uitgavenData, inkoopData] = await Promise.all([
           getProject(id),
           getTakenByProject(id),
           getDocumenten(),
@@ -1143,6 +1159,7 @@ export function ProjectDetail() {
           getProjectFotos(id).catch(() => []),
           getFacturenByProject(id).catch(() => [] as Factuur[]),
           getUitgavenByProject(id).catch(() => [] as Uitgave[]),
+          getInkoopOffertesByProject(id).catch(() => [] as InkoopOfferte[]),
         ])
         if (!cancelled) {
           setProject(projectData)
@@ -1158,6 +1175,7 @@ export function ProjectDetail() {
           setProjectFotos(fotosData || [])
           setProjectFacturen(facturenData || [])
           setProjectUitgaven(uitgavenData || [])
+          setProjectInkoop(inkoopData || [])
 
           // Gekoppelde email-threads (laad onafhankelijk, los van overige Promise.all)
           setEmailsLoading(true)
@@ -2434,6 +2452,51 @@ export function ProjectDetail() {
                         <span className="text-xs" style={{ color: accentColor }}>
                           {uitgaveStatusLabel}<span className="text-flame">.</span>
                         </span>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Inkoopoffertes · leveranciersoffertes die bij dit project horen. De
+            regels eruit lezen gebeurt in het inkooppaneel bij het maken van een
+            offerte; hier zie je alleen wat er ligt. */}
+        {projectInkoop.length > 0 && (
+          <div>
+            <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider mb-4">Inkoopoffertes</h3>
+            <div className="space-y-3">
+              {projectInkoop.map((inkoop) => {
+                const aantalRegels = inkoop.regels?.length ?? 0
+                const uitgelezen = aantalRegels > 0
+                const accentColor = uitgelezen ? '#8A7A4A' : '#B8B8B8'
+                return (
+                  <div
+                    key={inkoop.id}
+                    className={`bg-card rounded-xl overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.05)] ${inkoop.bestand_url ? 'cursor-pointer hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-all' : ''}`}
+                    onClick={() => openInkoopBestand(inkoop)}
+                  >
+                    <div className="h-1" style={{ backgroundColor: accentColor }} />
+                    <div className="p-4 flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{inkoop.leverancier_naam}</p>
+                        <p className="text-xs text-muted-foreground font-mono mt-0.5">{new Date(inkoop.datum).toLocaleDateString('nl-NL')}</p>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        {uitgelezen ? (
+                          <>
+                            <p className="text-lg font-mono font-semibold text-foreground">{formatCurrency(inkoop.totaal)}</p>
+                            <span className="text-xs" style={{ color: accentColor }}>
+                              {aantalRegels} {aantalRegels === 1 ? 'regel' : 'regels'}<span className="text-flame">.</span>
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">
+                            Nog niet uitgelezen<span className="text-flame">.</span>
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>

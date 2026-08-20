@@ -782,6 +782,7 @@ export function QuoteSidebar({
                             <InkoopOffertePaneel
                               userId={userId!}
                               offerteId={editOfferteId || autoSaveIdRef.current || undefined}
+                              projectId={selectedProjectId || undefined}
                               onRegelToevoegen={handleInkoopRegelToevoegen}
                               onRegelAlsPrijsvariant={handleInkoopRegelAlsPrijsvariant}
                             />

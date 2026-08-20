@@ -10,8 +10,12 @@ import {
 } from '@/services/emailProjectService'
 import { kiesVoorgesteldProject } from '@/utils/bijlageVoorstel'
 
-/** Een project kent maar twee bestemmingen: de situatiefoto's of de bestanden. */
-export type BijlageBestemming = 'foto' | 'bestand'
+/**
+ * Drie bestemmingen: de situatiefoto's, de bestanden, of de inkoopoffertes van
+ * het project. Die laatste wordt alleen vastgelegd; de regels eruit lezen kost
+ * AI-budget en gebeurt in het inkooppaneel bij het maken van een offerte.
+ */
+export type BijlageBestemming = 'foto' | 'bestand' | 'inkoop'
 
 export interface BijlageKandidaat {
   filename: string
@@ -28,6 +32,8 @@ export interface BijlageProjectKeuze {
   project: Project
   /** De bijlagen die aangevinkt bleven staan, elk met hun bestemming. */
   bestanden: BijlageMetBestemming[]
+  /** Alleen gevuld als er een bijlage naar de inkoopoffertes gaat. */
+  leverancier?: string
 }
 
 interface Props {
@@ -37,6 +43,8 @@ interface Props {
   bijlagen: BijlageKandidaat[]
   threadId?: string | null
   senderEmail?: string
+  /** Weergavenaam van de afzender; vult de leverancier voor bij een inkoopofferte. */
+  senderNaam?: string
   bezig?: boolean
   /** Voortgang tijdens het toevoegen, bijvoorbeeld "2 van 3". */
   voortgang?: string | null
@@ -45,12 +53,27 @@ interface Props {
 
 type VoorstelReden = 'thread' | 'klant' | null
 
+/**
+ * De leverancier is bij een inkoopofferte vrijwel altijd de afzender. Uit
+ * "BMD Signs <verkoop@bmd.nl>" komt "BMD Signs"; zonder naam blijft het domein
+ * over. Het veld blijft bewerkbaar, want een doorgestuurde offerte komt soms
+ * van een collega.
+ */
+function leverancierUitAfzender(naam?: string, email?: string): string {
+  const schoon = (naam || '').replace(/["']/g, '').trim()
+  if (schoon && !schoon.includes('@')) return schoon
+  const domein = (email || '').split('@')[1] || ''
+  const kern = domein.split('.')[0]
+  return kern ? kern.charAt(0).toUpperCase() + kern.slice(1) : ''
+}
+
 export function BijlageProjectDialog({
   open,
   onOpenChange,
   bijlagen,
   threadId,
   senderEmail,
+  senderNaam,
   bezig = false,
   voortgang = null,
   onBevestig,
@@ -70,6 +93,7 @@ export function BijlageProjectDialog({
   // foto van de gevel hoort bij de situatiefoto's, maar een JPG met kleurcodes
   // is een document. Dat verschil ziet alleen de gebruiker.
   const [bestemmingen, setBestemmingen] = useState<Record<string, BijlageBestemming>>({})
+  const [leverancier, setLeverancier] = useState('')
 
   const meervoud = bijlagen.length > 1
   const eerste = bijlagen[0]
@@ -79,6 +103,10 @@ export function BijlageProjectDialog({
     () => bijlagen.filter((b) => aangevinkt.has(b.filename)),
     [bijlagen, aangevinkt],
   )
+  const heeftInkoop = useMemo(
+    () => selectie.some((b) => bestemmingen[b.filename] === 'inkoop'),
+    [selectie, bestemmingen],
+  )
 
   // Het bestandstype bepaalt alleen de beginstand van de foto/bestand-keuze.
   const isAfbeeldingBestand = useCallback((b: BijlageKandidaat) => {
@@ -86,6 +114,15 @@ export function BijlageProjectDialog({
     return (b.contentType || '').toLowerCase().startsWith('image/') ||
       ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif'].includes(extensie)
   }, [])
+
+  // Inkoop alleen aanbieden waar het uitlezen later ook kan: PDF of afbeelding.
+  // Een DWG of zip als inkoopofferte vastleggen levert straks een lege offerte op.
+  const kanInkoop = useCallback((b: BijlageKandidaat) => {
+    const extensie = b.filename.split('.').pop()?.toLowerCase() || ''
+    return isAfbeeldingBestand(b) ||
+      (b.contentType || '').toLowerCase().includes('pdf') ||
+      extensie === 'pdf'
+  }, [isAfbeeldingBestand])
 
 
   // Voorstel opbouwen zodra de dialog opengaat: eerst de thread-koppeling,
@@ -100,6 +137,7 @@ export function BijlageProjectDialog({
     setBestemmingen(Object.fromEntries(
       bijlagen.map((b) => [b.filename, isAfbeeldingBestand(b) ? 'foto' : 'bestand'] as const),
     ))
+    setLeverancier(leverancierUitAfzender(senderNaam, senderEmail))
 
     const bepaalVoorstel = async () => {
       if (threadId) {
@@ -126,7 +164,7 @@ export function BijlageProjectDialog({
       if (!afgebroken) setLaden(false)
     })
     return () => { afgebroken = true }
-  }, [open, threadId, senderEmail, bestandsnaam, contentType, bijlagen, isAfbeeldingBestand])
+  }, [open, threadId, senderEmail, senderNaam, bestandsnaam, contentType, bijlagen, isAfbeeldingBestand])
 
   // Zoeken pas laden als er ook echt een lijst getoond wordt.
   const lijstZichtbaar = !laden && (kiesZelf || !gekozenProject)
@@ -360,11 +398,16 @@ export function BijlageProjectDialog({
                     >
                       {b.filename}
                     </span>
-                    {/* Twee bestemmingen, want meer heeft een project niet. Het
-                        bestandstype kiest de eerste stand; een JPG met kleurcodes
-                        is immers geen situatiefoto. */}
+                    {/* Drie bestemmingen: situatiefoto's, bestanden, inkoopoffertes.
+                        Het bestandstype kiest de eerste stand; een JPG met
+                        kleurcodes is immers geen situatiefoto. Inkoop verschijnt
+                        alleen bij PDF of afbeelding, want alleen die kan het
+                        inkooppaneel later uitlezen. */}
                     <div className={cn('flex flex-shrink-0 rounded-md border border-border overflow-hidden', !aan && 'opacity-40')}>
-                      {([['foto', 'Foto'], ['bestand', 'Bestand']] as const).map(([waarde, label]) => (
+                      {(kanInkoop(b)
+                        ? [['foto', 'Foto'], ['bestand', 'Bestand'], ['inkoop', 'Inkoop']] as const
+                        : [['foto', 'Foto'], ['bestand', 'Bestand']] as const
+                      ).map(([waarde, label]) => (
                         <button
                           key={waarde}
                           type="button"
@@ -385,8 +428,27 @@ export function BijlageProjectDialog({
                 )
               })}
             </div>
+            {heeftInkoop && (
+              <div className="space-y-1.5 pt-1">
+                <label
+                  htmlFor="bijlage-leverancier"
+                  className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground block"
+                >
+                  Leverancier
+                </label>
+                <input
+                  id="bijlage-leverancier"
+                  type="text"
+                  value={leverancier}
+                  onChange={(e) => setLeverancier(e.target.value)}
+                  placeholder="Naam leverancier"
+                  className="w-full h-9 px-2.5 bg-background rounded-lg text-[13px] text-foreground outline-none focus:ring-2 focus:ring-petrol/20 transition-shadow placeholder:text-muted-foreground"
+                />
+              </div>
+            )}
             <p className="text-[11px] text-muted-foreground">
               Foto’s komen bij de situatiefoto’s van het project, bestanden bij de bestanden.
+              {heeftInkoop && ' Een inkoopofferte wordt vastgelegd bij het project; de regels lees je uit in het inkooppaneel bij het maken van een offerte.'}
             </p>
           </div>
 
@@ -402,8 +464,12 @@ export function BijlageProjectDialog({
           </button>
           <button
             type="button"
-            onClick={() => gekozenProject && selectie.length > 0 && onBevestig({ project: gekozenProject, bestanden: selectie.map((b) => ({ ...b, bestemming: bestemmingen[b.filename] ?? 'bestand' })) })}
-            disabled={!gekozenProject || bezig || selectie.length === 0}
+            onClick={() => gekozenProject && selectie.length > 0 && onBevestig({
+              project: gekozenProject,
+              bestanden: selectie.map((b) => ({ ...b, bestemming: bestemmingen[b.filename] ?? 'bestand' })),
+              ...(heeftInkoop ? { leverancier: leverancier.trim() } : {}),
+            })}
+            disabled={!gekozenProject || bezig || selectie.length === 0 || (heeftInkoop && !leverancier.trim())}
             className="inline-flex items-center gap-1.5 h-9 px-5 rounded-md text-[13px] font-semibold text-white bg-petrol hover:bg-[#0F3A40] shadow-sm disabled:opacity-50 transition-colors"
           >
             {bezig && <Loader2 className="w-3.5 h-3.5 animate-spin" />}

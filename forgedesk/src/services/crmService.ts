@@ -234,7 +234,9 @@ export async function getInkoopOffertes(user_id: string, limit = 50000): Promise
     return fetchAllPages<InkoopOfferte>((van, tot) =>
       sb
         .from('inkoop_offertes')
-        .select('*, regels:inkoop_regels(*)')
+        // Projectnaam mee: de lijst is org-breed en zonder project weet je niet
+        // waar een leveranciersofferte bij hoort.
+        .select('*, regels:inkoop_regels(*), project:projecten(naam, project_nummer)')
         .order('created_at', { ascending: false })
         .order('id', { ascending: true })
         .range(van, tot), limit)
@@ -360,6 +362,31 @@ export async function updateInkoopRegel(id: string, updates: Partial<InkoopRegel
   regels[index] = { ...regels[index], ...safeUpdates }
   setLocalData('inkoop_regels', regels)
   return regels[index]
+}
+
+export async function updateInkoopOfferte(id: string, updates: Partial<InkoopOfferte>): Promise<InkoopOfferte> {
+  assertId(id)
+  // `regels` en `project` zijn joins, geen kolommen; die mogen niet mee in de update.
+  const { regels: _regels, project: _project, ...rest } = updates
+  const safeUpdates = { ...rest }
+  if (safeUpdates.totaal != null) safeUpdates.totaal = round2(safeUpdates.totaal)
+
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('inkoop_offertes')
+      .update(safeUpdates)
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const offertes = getLocalData<InkoopOfferte>('inkoop_offertes')
+  const index = offertes.findIndex((o) => o.id === id)
+  if (index === -1) throw new Error('Inkoop offerte niet gevonden')
+  offertes[index] = { ...offertes[index], ...safeUpdates }
+  setLocalData('inkoop_offertes', offertes)
+  return offertes[index]
 }
 
 export async function deleteInkoopOfferte(id: string): Promise<void> {

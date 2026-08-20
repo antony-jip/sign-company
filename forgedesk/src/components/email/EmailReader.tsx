@@ -23,7 +23,7 @@ import { useVisueleViewport } from '@/hooks/useVisueleViewport'
 import { callForgie } from '@/services/forgieService'
 import { downloadEmailAttachment, downloadAllEmailAttachments } from '@/services/gmailService'
 import { bijlageNaarProject } from '@/services/documentenService'
-import { createProjectFoto } from '@/services/supabaseService'
+import { createProjectFoto, createInkoopOfferte } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { BijlageProjectDialog, type BijlageProjectKeuze, type BijlageKandidaat, type BijlageMetBestemming } from './BijlageProjectDialog'
 import { valideerBijlagen, uploadBijlagenMetLinkFallback } from '@/utils/groteBijlagen'
@@ -602,6 +602,31 @@ export function EmailReader({
         file,
       )
       return 'foto' as const
+    }
+
+    if (bijlage.bestemming === 'inkoop') {
+      if (!user?.id) throw new Error('Niet ingelogd')
+      // Het bestand gaat eerst naar de projectopslag; de inkoopofferte bewaart
+      // dat pad, zodat het inkooppaneel de regels er later uit kan lezen.
+      const bewaardBestand = await bijlageNaarProject({
+        projectId: keuze.project.id,
+        klantId: keuze.project.klant_id,
+        bestandsnaam: result.filename || filename,
+        contentType: result.contentType || contentType,
+        map: 'Inkoop',
+        data: blob,
+      })
+      await createInkoopOfferte({
+        user_id: user.id,
+        leverancier_naam: keuze.leverancier?.trim() || 'Onbekende leverancier',
+        project_id: keuze.project.id,
+        bestand_url: bewaardBestand.storage_path,
+        datum: new Date().toISOString().slice(0, 10),
+        // Nog niets uitgelezen, dus nog geen bedrag. Dat komt bij het uitlezen,
+        // en tot die tijd telt een leeg totaal nergens verkeerd mee.
+        totaal: 0,
+      })
+      return 'inkoop' as const
     }
 
     await bijlageNaarProject({
@@ -2564,6 +2589,7 @@ export function EmailReader({
           bijlagen={bijlagenVoorDialog}
           threadId={email.thread_id}
           senderEmail={senderEmail}
+          senderNaam={senderName}
           bezig={koppelendeBijlage !== null}
           voortgang={koppelVoortgang}
           onBevestig={handleBijlageBevestig}
