@@ -41,6 +41,13 @@ export default defineConfig(({ mode, command }) => {
     'lokaal'
 
   return {
+    // Lokaal heeft Vite geen /api; die serverless functions draaien alleen onder
+    // `vercel dev`. Start die apart op 3001 (vanuit de repo-root:
+    // `vercel dev --listen 3001`), dan stuurt deze proxy /api daarheen en werkt
+    // de ingelogde app op 5173 met echte endpoints (Daan, nieuwsbrief, mail).
+    server: {
+      proxy: { '/api': { target: 'http://localhost:3001', changeOrigin: false } },
+    },
   define: {
     __APP_RELEASE__: JSON.stringify(release),
   },
