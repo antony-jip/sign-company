@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import {
   UserPlus, FolderPlus, ListPlus, Link2,
-  ArrowLeft, X, Loader2, Building2, Search, Check,
+  ArrowLeft, X, Loader2, Building2, Search, Check, Truck,
 } from 'lucide-react'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
@@ -11,6 +11,9 @@ import type { Email, Medewerker, Klant, Project } from '@/types'
 import { useAuth } from '@/contexts/AuthContext'
 import { createKlant, createTaak, getMedewerkers, getKlanten, updateKlant, getProjecten } from '@/services/supabaseService'
 import { getKlantIdByContactEmail } from '@/services/klantService'
+import { getLeveranciers, createLeverancier } from '@/services/boekhoudingService'
+import type { Leverancier } from '@/types'
+import { GENERIEKE_MAILDOMEINEN } from './emailHelpers'
 import { parseHandtekening, heeftGegevens } from './handtekeningParser'
 import { zoekKlantVoorAfzender } from './emailHelpers'
 import { getProjectVoorThread } from '@/services/emailProjectService'
@@ -43,12 +46,33 @@ export function getKlantenGedeeld(): Promise<Klant[]> {
   return klantenCache.belofte
 }
 
+let leveranciersCache: { op: number; belofte: Promise<Leverancier[]> } | null = null
+export function getLeveranciersGedeeld(): Promise<Leverancier[]> {
+  if (!leveranciersCache || Date.now() - leveranciersCache.op > 60_000) {
+    leveranciersCache = { op: Date.now(), belofte: getLeveranciers().catch(() => { leveranciersCache = null; return [] as Leverancier[] }) }
+  }
+  return leveranciersCache.belofte
+}
+
 export function useAfzenderStatus(email: Email | null) {
   const senderName = email ? extractSenderName(email.van) : ''
   const senderEmail = email ? extractSenderEmail(email.van) : ''
   const [klanten, setKlanten] = useState<Klant[]>([])
   const [klantenGeladen, setKlantenGeladen] = useState(false)
-  useEffect(() => { getKlantenGedeeld().then(k => { setKlanten(k); setKlantenGeladen(true) }) }, [])
+  const [leveranciers, setLeveranciers] = useState<Leverancier[]>([])
+  useEffect(() => {
+    getKlantenGedeeld().then(k => { setKlanten(k); setKlantenGeladen(true) })
+    getLeveranciersGedeeld().then(setLeveranciers)
+  }, [])
+  const leverancier = useMemo(() => {
+    const a = senderEmail.toLowerCase()
+    if (!a) return null
+    const exact = leveranciers.find(l => l.email?.toLowerCase() === a)
+    if (exact) return exact
+    const domein = a.split('@')[1]
+    if (!domein || GENERIEKE_MAILDOMEINEN.includes(domein)) return null
+    return leveranciers.find(l => l.email?.toLowerCase().endsWith('@' + domein) || (l.website || '').toLowerCase().replace(/^(https?:\/\/)?(www\.)?/, '').replace(/\/.*$/, '') === domein) || null
+  }, [leveranciers, senderEmail])
   const handtekening = useMemo(() => {
     if (!email?.inhoud) return null
     try { return parseHandtekening(email.inhoud, { naam: senderName, email: senderEmail }) } catch { return null }
@@ -79,7 +103,7 @@ export function useAfzenderStatus(email: Email | null) {
     const a = senderEmail.toLowerCase()
     return klant.email?.toLowerCase() === a || !!klant.contactpersonen?.some(c => c.email?.toLowerCase() === a)
   }, [klant, senderEmail, losKlantId])
-  return { senderName: netteNaam(senderName), senderEmail, handtekening, handtekeningBruikbaar: !!handtekening && heeftGegevens(handtekening), klant, bekend, geladen: klantenGeladen && losKlantId !== undefined }
+  return { senderName: netteNaam(senderName), senderEmail, handtekening, handtekeningBruikbaar: !!handtekening && heeftGegevens(handtekening), klant, bekend: bekend || !!leverancier, leverancier, geladen: klantenGeladen && losKlantId !== undefined }
 }
 
 interface Props {
@@ -124,14 +148,17 @@ export function EmailActionsPopover({ email, onOpenProjectDialog, openKlantSigna
     kvk: handtekening?.kvk || '',
     ...basis,
   }), [handtekening, senderName, senderEmail])
-  const guessedBedrijf = senderDomain && !['gmail.com', 'hotmail.com', 'outlook.com', 'yahoo.com', 'live.nl', 'ziggo.nl'].includes(senderDomain)
+  // "Naam | Bedrijf" in de afzender wint van een gok op het domein.
+  const ruweNaam = email ? extractSenderName(email.van) : ''
+  const bedrijfUitNaam = ruweNaam.match(/\s[|–—-]\s*(.+)$/)?.[1]?.trim() || ''
+  const guessedBedrijf = bedrijfUitNaam || (senderDomain && !GENERIEKE_MAILDOMEINEN.includes(senderDomain)
     ? senderDomain.split('.')[0].charAt(0).toUpperCase() + senderDomain.split('.')[0].slice(1)
-    : ''
+    : '')
 
   // Form state · auto-filled wanneer view opent
   const LEEG_KLANTFORM = { bedrijfsnaam: '', contactpersoon: '', functie: '', email: '', telefoon: '', mobiel: '', adres: '', postcode: '', stad: '', website: '', kvk: '' }
   const [klantForm, setKlantForm] = useState(LEEG_KLANTFORM)
-  const [klantStep, setKlantStep] = useState<'search' | 'add-to-existing' | 'create-new'>('search')
+  const [klantStep, setKlantStep] = useState<'search' | 'add-to-existing' | 'create-new' | 'create-leverancier'>('search')
   const [klantSearch, setKlantSearch] = useState('')
   const [addToKlant, setAddToKlant] = useState<Klant | null>(null)
   const [allKlanten, setAllKlanten] = useState<Klant[]>([])
@@ -160,7 +187,7 @@ export function EmailActionsPopover({ email, onOpenProjectDialog, openKlantSigna
   }, [klantSearch, allKlanten, senderDomain])
 
   // Klant die bij de afzender hoort (exact adres, contactpersoon of domein).
-  const { klant: afzenderKlant, bekend: afzenderBekend } = useAfzenderStatus(email)
+  const { klant: afzenderKlant, bekend: afzenderBekend, leverancier: afzenderLeverancier } = useAfzenderStatus(email)
 
   // Reset bij sluiten
   useEffect(() => {
@@ -251,6 +278,32 @@ export function EmailActionsPopover({ email, onOpenProjectDialog, openKlantSigna
       setSaving(false)
     }
   }, [addToKlant, klantForm])
+
+  const handleSaveLeverancier = useCallback(async () => {
+    if (!klantForm.bedrijfsnaam.trim()) { toast.error('Bedrijfsnaam is verplicht'); return }
+    setSaving(true)
+    try {
+      const lev = await createLeverancier({
+        bedrijfsnaam: klantForm.bedrijfsnaam.trim(),
+        contactpersoon: klantForm.contactpersoon.trim(),
+        email: klantForm.email.trim(),
+        telefoon: (klantForm.telefoon || klantForm.mobiel).trim(),
+        adres: klantForm.adres.trim(), postcode: klantForm.postcode.trim(), stad: klantForm.stad.trim(),
+        website: klantForm.website.trim() || (senderDomain ? `www.${senderDomain}` : ''),
+        kvk_nummer: klantForm.kvk.trim(), btw_nummer: '', iban: '', categorie: '', notitie: '',
+        actief: true,
+      })
+      leveranciersCache = null
+      void lev
+      toast.success('Leverancier aangemaakt')
+      setOpen(false)
+    } catch (err) {
+      logger.error('Leverancier aanmaken mislukt:', err)
+      toast.error('Leverancier aanmaken mislukt')
+    } finally {
+      setSaving(false)
+    }
+  }, [klantForm, senderDomain, user, medewerkers])
 
   const handleSaveKlant = useCallback(async () => {
     if (!klantForm.contactpersoon.trim() || !klantForm.email.trim()) {
@@ -390,7 +443,7 @@ export function EmailActionsPopover({ email, onOpenProjectDialog, openKlantSigna
         >
           {view === 'klant' ? (
             <FormFrame
-              title={klantStep === 'search' ? 'Klant koppelen' : klantStep === 'add-to-existing' ? `Contact toevoegen` : 'Nieuwe klant'}
+              title={klantStep === 'search' ? 'Klant koppelen' : klantStep === 'add-to-existing' ? `Contact toevoegen` : klantStep === 'create-leverancier' ? 'Nieuwe leverancier' : 'Nieuwe klant'}
               onBack={() => {
                 if (klantStep === 'search') setOpen(false)
                 else { setKlantStep('search'); setAddToKlant(null) }
@@ -411,6 +464,9 @@ export function EmailActionsPopover({ email, onOpenProjectDialog, openKlantSigna
                           </p>
                         )}
                       </div>
+                      {afzenderLeverancier && !afzenderKlant && (
+                        <p className="flex items-center gap-1.5 text-[11px] text-[#3A7D52]"><Check className="h-3 w-3" /> Bekend als leverancier: {afzenderLeverancier.bedrijfsnaam}</p>
+                      )}
                       {afzenderKlant ? (
                         afzenderBekend ? (
                           <p className="flex items-center gap-1.5 text-[11px] text-[#3A7D52]"><Check className="h-3 w-3" /> Al bekend bij {afzenderKlant.bedrijfsnaam || afzenderKlant.contactpersoon}</p>
@@ -432,6 +488,16 @@ export function EmailActionsPopover({ email, onOpenProjectDialog, openKlantSigna
                         >
                           <UserPlus className="h-3.5 w-3.5" />
                           Klant toevoegen{handtekeningBruikbaar ? ' uit handtekening' : ''}
+                        </button>
+                      )}
+                      {!afzenderLeverancier && (
+                        <button
+                          type="button"
+                          onClick={() => { setKlantForm(vulUitHandtekening({ bedrijfsnaam: handtekening?.bedrijfsnaam || guessedBedrijf })); setKlantStep('create-leverancier') }}
+                          className="tap-press w-full h-8 rounded-[10px] border border-border bg-white dark:bg-white/[0.05] text-[12px] font-medium text-foreground flex items-center justify-center gap-2 hover:border-petrol/50 transition-colors"
+                        >
+                          <Truck className="h-3.5 w-3.5 text-petrol" />
+                          Leverancier toevoegen{handtekeningBruikbaar ? ' uit handtekening' : ''}
                         </button>
                       )}
                     </div>
@@ -484,6 +550,71 @@ export function EmailActionsPopover({ email, onOpenProjectDialog, openKlantSigna
                   >
                     <UserPlus className="h-3 w-3" />
                     Nieuwe klant aanmaken
+                  </button>
+                </div>
+              ) : klantStep === 'create-leverancier' ? (
+                <div className="space-y-2.5">
+                  <div className="flex items-center gap-2 px-2.5 py-2 bg-petrol/[0.06] rounded-[8px]">
+                    <Truck className="h-3.5 w-3.5 text-petrol flex-shrink-0" />
+                    <span className="text-[12px] font-semibold text-petrol truncate flex-1">Komt in Leveranciers, niet bij klanten</span>
+                  </div>
+                  <div>
+                    <label className={labelCls}>Bedrijf *</label>
+                    <input value={klantForm.bedrijfsnaam} onChange={e => setKlantForm(f => ({ ...f, bedrijfsnaam: e.target.value }))} className={inputCls} placeholder="Bedrijfsnaam" autoFocus />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Contactpersoon</label>
+                    <input value={klantForm.contactpersoon} onChange={e => setKlantForm(f => ({ ...f, contactpersoon: e.target.value }))} className={inputCls} placeholder="Naam" />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Email</label>
+                    <input type="email" value={klantForm.email} onChange={e => setKlantForm(f => ({ ...f, email: e.target.value }))} className={inputCls} placeholder="email@bedrijf.nl" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className={labelCls}>Telefoon</label>
+                      <input type="tel" value={klantForm.telefoon} onChange={e => setKlantForm(f => ({ ...f, telefoon: e.target.value }))} className={inputCls} placeholder="0229…" />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Mobiel</label>
+                      <input type="tel" value={klantForm.mobiel} onChange={e => setKlantForm(f => ({ ...f, mobiel: e.target.value }))} className={inputCls} placeholder="06…" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className={labelCls}>Adres</label>
+                    <input value={klantForm.adres} onChange={e => setKlantForm(f => ({ ...f, adres: e.target.value }))} className={inputCls} placeholder="Straat en nummer" />
+                  </div>
+                  <div className="grid grid-cols-[100px_1fr] gap-2">
+                    <div>
+                      <label className={labelCls}>Postcode</label>
+                      <input value={klantForm.postcode} onChange={e => setKlantForm(f => ({ ...f, postcode: e.target.value }))} className={inputCls} placeholder="1234 AB" />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Plaats</label>
+                      <input value={klantForm.stad} onChange={e => setKlantForm(f => ({ ...f, stad: e.target.value }))} className={inputCls} placeholder="Plaats" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-[1fr_110px] gap-2">
+                    <div>
+                      <label className={labelCls}>Website</label>
+                      <input value={klantForm.website} onChange={e => setKlantForm(f => ({ ...f, website: e.target.value }))} className={inputCls} placeholder="www.bedrijf.nl" />
+                    </div>
+                    <div>
+                      <label className={labelCls}>KvK</label>
+                      <input value={klantForm.kvk} onChange={e => setKlantForm(f => ({ ...f, kvk: e.target.value }))} className={inputCls} placeholder="12345678" />
+                    </div>
+                  </div>
+                  {handtekeningBruikbaar && (
+                    <p className="flex items-center gap-1.5 text-[11px] text-[#3A7D52]"><Check className="h-3 w-3" /> Voorgevuld uit de handtekening. Kijk even na.</p>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleSaveLeverancier}
+                    disabled={saving}
+                    className="tap-press w-full h-9 rounded-[10px] bg-petrol text-white text-[13px] font-semibold flex items-center justify-center gap-2 shadow-[0_2px_8px_rgba(26,83,92,0.25)] hover:shadow-[0_4px_12px_rgba(26,83,92,0.35)] hover:-translate-y-px active:translate-y-0 disabled:opacity-50 transition-all duration-150 mt-2"
+                  >
+                    {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+                    {saving ? 'Aanmaken…' : 'Leverancier aanmaken'}
                   </button>
                 </div>
               ) : klantStep === 'add-to-existing' && addToKlant ? (
