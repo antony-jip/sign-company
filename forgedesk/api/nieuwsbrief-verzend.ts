@@ -68,6 +68,22 @@ function personaliseer(html: string, o: { email: string; voornaam: string; achte
     .replace(/\{\{\{RESEND_UNSUBSCRIBE_URL\}\}\}/g, afmeldUrl(o.email))
 }
 
+// Resend geeft max 100 contacten per pagina (standaard 20): doorbladeren tot
+// has_more uit staat, anders lijkt de lijst altijd bijna leeg.
+async function alleContacten(client: Resend, audienceId: string): Promise<Array<{ email: string; unsubscribed: boolean }>> {
+  const uit: Array<{ email: string; unsubscribed: boolean }> = []
+  let after: string | undefined
+  for (let i = 0; i < 200; i++) {
+    const { data, error } = await client.contacts.list(after ? { audienceId, limit: 100, after } : { audienceId, limit: 100 })
+    if (error) throw new Error(`Contacten ophalen mislukt: ${error.message}`)
+    const rijen = data?.data ?? []
+    for (const c of rijen) uit.push({ email: String(c.email), unsubscribed: !!c.unsubscribed })
+    if (!data?.has_more || rijen.length === 0) break
+    after = String(rijen[rijen.length - 1].id)
+  }
+  return uit
+}
+
 interface Ontvanger { email: string; voornaam: string; achternaam: string }
 
 function splitNaam(naam: string): { voornaam: string; achternaam: string } {
@@ -285,8 +301,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const audienceId = await vindAudienceId(resend)
       if (!audienceId) return geefVrij('Werk eerst je verzendlijst bij (stap Ontvangers)', 400)
 
-      const { data: contacten } = await resend.contacts.list({ audienceId })
-      const actief = (contacten?.data ?? []).filter(c => !c.unsubscribed)
+      const actief = (await alleContacten(resend, audienceId)).filter(c => !c.unsubscribed)
       if (actief.length === 0) return geefVrij('Geen actieve contacten in de lijst. Werk eerst je verzendlijst bij.', 400)
 
       const { data: broadcast, error: bcErr } = await resend.broadcasts.create({

@@ -7,7 +7,7 @@ import { toast } from 'sonner'
 import { cn, formatDateTime } from '@/lib/utils'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import {
-  updateConcept, verstuurNieuwsbrief, verstuurTest, genereerMetDaan, genereerBlokkenMetDaan, stelOnderwerpenVoor, uploadAfbeelding,
+  updateConcept, verstuurNieuwsbrief, verstuurTest, genereerMetDaan, genereerBlokkenMetDaan, stelOnderwerpenVoor, uploadAfbeelding, syncContactenVolledig,
   type Nieuwsbrief, type OntvangerSelectie, STANDAARD_SELECTIE,
 } from '@/services/nieuwsbriefService'
 import { BlokBouwer } from './BlokBouwer'
@@ -66,6 +66,9 @@ export function NieuwsbriefEditor({ nieuwsbrief, onTerug, onGewijzigd, startMetD
   const [inplanOpen, setInplanOpen] = useState(false)
   const [inplanMoment, setInplanMoment] = useState('')
   const [bevestigOpen, setBevestigOpen] = useState<null | { scheduledAt?: string }>(null)
+  const [bevestigAantal, setBevestigAantal] = useState('')
+  const grootPubliek = (aantalOntvangers ?? 0) >= 50
+  const bevestigingKlopt = !grootPubliek || bevestigAantal.trim() === String(aantalOntvangers)
 
   const [aiOpen, setAiOpen] = useState(!!startMetDaan)
   const [aiBrief, setAiBrief] = useState('')
@@ -215,6 +218,18 @@ export function NieuwsbriefEditor({ nieuwsbrief, onTerug, onGewijzigd, startMetD
     setBezig(true)
     try {
       await forceerOpslaan()
+      if (selectie.type === 'alle') {
+        // Broadcast gaat naar de Resend-lijst; die eerst compleet maken.
+        const t = toast.loading('Verzendlijst bijwerken...')
+        try {
+          const r = await syncContactenVolledig(p => toast.loading(`Verzendlijst bijwerken: ${p.aantalContacten} adressen, nog ${p.resterend}`, { id: t }))
+          toast.success(`Verzendlijst compleet: ${r.aantalContacten} adressen`, { id: t })
+          if (r.resterend > 0) throw new Error(`De verzendlijst is nog niet compleet (${r.resterend} te gaan). Probeer het zo nog eens.`)
+        } catch (e) {
+          toast.dismiss(t)
+          throw e
+        }
+      }
       const r = await verstuurNieuwsbrief(nieuwsbrief.id, onderwerp.trim(), gerenderd, preheader.trim() || undefined, scheduledAt, selectie, stijl)
       if (r.nieuwsbrief) onGewijzigd(r.nieuwsbrief)
       toast.success(r.status === 'gepland' ? `Ingepland voor ${r.aantalOntvangers} ontvangers` : `Verzonden naar ${r.aantalOntvangers} ontvangers`)
@@ -234,8 +249,10 @@ export function NieuwsbriefEditor({ nieuwsbrief, onTerug, onGewijzigd, startMetD
 
   const vraagBevestiging = useCallback((scheduledAt?: string) => {
     if (fouten > 0) { toast.error('Los eerst de rode punten in de controle op'); setStap('controle'); return }
+    if (aantalOntvangers == null) { toast.error('Het aantal ontvangers is nog niet geteld. Open eerst de stap Ontvangers.'); setStap('ontvangers'); return }
+    setBevestigAantal('')
     setBevestigOpen({ scheduledAt })
-  }, [fouten])
+  }, [fouten, aantalOntvangers])
 
   const handleInplan = useCallback(() => {
     if (!inplanMoment) { toast.error('Kies een datum en tijd'); return }
@@ -567,9 +584,23 @@ export function NieuwsbriefEditor({ nieuwsbrief, onTerug, onGewijzigd, startMetD
                 <div className="flex gap-3"><dt className="w-24 flex-shrink-0 text-muted-foreground">Afzender</dt><dd className="text-foreground">Sign Company &lt;antony@signcompany.nl&gt;</dd></div>
               </dl>
               {!testVerstuurdOp && <p className="mt-4 rounded-lg bg-[#B7791F]/10 px-3 py-2 text-[12px] text-[#8A5A12] dark:text-[#E3B25C]">Je hebt nog geen testmail gestuurd. Weet je zeker dat alles klopt?</p>}
+              {grootPubliek && (
+                <div className="mt-4 rounded-lg border border-[#C0451A]/30 bg-[#C0451A]/[0.06] px-3 py-3">
+                  <p className="text-[12px] font-semibold text-[#C0451A]">Dit gaat naar {aantalOntvangers} adressen en is niet terug te draaien.</p>
+                  <p className="mt-1 text-[12px] text-muted-foreground">Typ het aantal ontvangers om te bevestigen.</p>
+                  <input
+                    value={bevestigAantal}
+                    onChange={e => setBevestigAantal(e.target.value)}
+                    inputMode="numeric"
+                    placeholder={String(aantalOntvangers)}
+                    autoFocus
+                    className="mt-2 w-40 rounded-lg border border-border bg-background px-3 py-2 font-mono text-[14px] text-foreground outline-none focus:border-[#C0451A]"
+                  />
+                </div>
+              )}
               <div className="mt-5 flex items-center justify-end gap-2">
                 <button type="button" onClick={() => setBevestigOpen(null)} disabled={bezig} className={KNOP_SECUNDAIR}>Terug</button>
-                <button type="button" onClick={() => doeVerzend(bevestigOpen.scheduledAt)} disabled={bezig} className={KNOP_PRIMAIR}>
+                <button type="button" onClick={() => doeVerzend(bevestigOpen.scheduledAt)} disabled={bezig || !bevestigingKlopt} className={KNOP_PRIMAIR}>
                   {bezig ? <RefreshCw className="h-4 w-4 animate-spin" /> : bevestigOpen.scheduledAt ? <Clock className="h-4 w-4" /> : <Send className="h-4 w-4" />}
                   {bezig ? 'Bezig...' : bevestigOpen.scheduledAt ? 'Ja, plan in' : 'Ja, verstuur'}
                 </button>

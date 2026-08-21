@@ -10,7 +10,7 @@ const AUDIENCE_NAAM = 'Sign Company nieuwsbrief'
 // Resend-ratelimit is 10 req/s; met MAX_PER_RUN + throttle blijven we ruim
 // binnen zowel dat als de serverless-tijdslimiet. Resterende contacten volgen
 // bij een volgende sync (incrementeel: alleen nog-niet-bestaande worden gezet).
-const MAX_PER_RUN = 400
+const MAX_PER_RUN = 300
 const THROTTLE_MS = 130
 
 const supabase = createClient(
@@ -38,6 +38,22 @@ async function vindOfMaakAudience(client: Resend): Promise<string> {
   const { data, error } = await client.audiences.create({ name: AUDIENCE_NAAM })
   if (error || !data) throw new Error(`Kon audience niet aanmaken: ${error?.message ?? 'onbekend'}`)
   return data.id
+}
+
+// Resend geeft max 100 contacten per pagina (standaard 20): doorbladeren tot
+// has_more uit staat, anders lijkt de lijst altijd bijna leeg.
+async function alleContacten(client: Resend, audienceId: string): Promise<Array<{ email: string; unsubscribed: boolean }>> {
+  const uit: Array<{ email: string; unsubscribed: boolean }> = []
+  let after: string | undefined
+  for (let i = 0; i < 200; i++) {
+    const { data, error } = await client.contacts.list(after ? { audienceId, limit: 100, after } : { audienceId, limit: 100 })
+    if (error) throw new Error(`Contacten ophalen mislukt: ${error.message}`)
+    const rijen = data?.data ?? []
+    for (const c of rijen) uit.push({ email: String(c.email), unsubscribed: !!c.unsubscribed })
+    if (!data?.has_more || rijen.length === 0) break
+    after = String(rijen[rijen.length - 1].id)
+  }
+  return uit
 }
 
 interface Ontvanger { email: string; voornaam: string; achternaam: string }
@@ -106,8 +122,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const audienceId = await vindOfMaakAudience(resend)
 
-    const { data: bestaandeData } = await resend.contacts.list({ audienceId })
-    const bestaand = new Set((bestaandeData?.data ?? []).map(c => String(c.email).toLowerCase()))
+    const bestaand = new Set((await alleContacten(resend, audienceId)).map(c => c.email.toLowerCase()))
 
     const toeTeVoegen = ontvangers.filter(o => !bestaand.has(o.email) && !afgemeld.has(o.email))
     const batch = toeTeVoegen.slice(0, MAX_PER_RUN)

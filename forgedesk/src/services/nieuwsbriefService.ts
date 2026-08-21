@@ -169,6 +169,18 @@ export interface SyncResultaat {
   afgemeld: number
 }
 
+// Sync loopt in porties van 400 (Resend-ratelimit); herhaal tot de lijst
+// compleet is zodat "Iedereen" echt iedereen is.
+export async function syncContactenVolledig(onVoortgang?: (r: SyncResultaat) => void): Promise<SyncResultaat> {
+  let r = await syncContacten()
+  onVoortgang?.(r)
+  for (let i = 0; i < 12 && r.resterend > 0; i++) {
+    r = await syncContacten()
+    onVoortgang?.(r)
+  }
+  return r
+}
+
 export async function syncContacten(): Promise<SyncResultaat> {
   const res = await fetch('/api/nieuwsbrief-contacten-sync', { method: 'POST', headers: await authHeader() })
   const body = await res.json().catch(() => ({}))

@@ -3,7 +3,7 @@ import { Users, Filter, ListChecks, Search, Check, RefreshCw, UserMinus, Buildin
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import {
-  getKlantKeuzes, verzamelOntvangers, klantVoldoet, syncContacten,
+  getKlantKeuzes, verzamelOntvangers, klantVoldoet, syncContactenVolledig,
   type OntvangerSelectie, type KlantKeuze, type Ontvanger,
 } from '@/services/nieuwsbriefService'
 
@@ -72,10 +72,10 @@ export function OntvangerKiezer({ selectie, onChange, onTelling, disabled }: Pro
   const handleSync = async () => {
     setSyncing(true)
     try {
-      const r = await syncContacten()
-      const extra = r.resterend > 0 ? `, nog ${r.resterend} volgen bij de volgende keer` : ''
-      setSyncInfo(`${r.aantalContacten} adressen bij Resend${extra}`)
-      toast.success(`Lijst bijgewerkt: ${r.nieuwToegevoegd} nieuw toegevoegd`)
+      let nieuw = 0
+      const r = await syncContactenVolledig(p => { nieuw += p.nieuwToegevoegd; setSyncInfo(`Bezig: ${p.aantalContacten} adressen bij Resend, nog ${p.resterend} te gaan`) })
+      setSyncInfo(`${r.aantalContacten} adressen bij Resend, ${r.afgemeld} afgemeld overgeslagen`)
+      toast.success(`Lijst bijgewerkt: ${nieuw} nieuw toegevoegd`)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Bijwerken mislukt')
     } finally {
