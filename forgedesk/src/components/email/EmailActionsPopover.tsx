@@ -10,6 +10,7 @@ import { toast } from 'sonner'
 import type { Email, Medewerker, Klant, Project } from '@/types'
 import { useAuth } from '@/contexts/AuthContext'
 import { createKlant, createTaak, getMedewerkers, getKlanten, updateKlant, getProjecten } from '@/services/supabaseService'
+import { getKlantIdByContactEmail } from '@/services/klantService'
 import { parseHandtekening, heeftGegevens } from './handtekeningParser'
 import { zoekKlantVoorAfzender } from './emailHelpers'
 import { getProjectVoorThread } from '@/services/emailProjectService'
@@ -23,6 +24,16 @@ import { hapticLight } from '@/utils/haptic'
 
 // Status van de afzender t.o.v. de klantendatabase, voor de banner in de
 // reader en de knoppen in het popover.
+function normaliseerBedrijf(naam: string): string {
+  return naam.toLowerCase().replace(/\b(b\.?v\.?|n\.?v\.?|v\.?o\.?f\.?|holding|group|groep|bv|nv)\b/g, '').replace(/[^a-z0-9]/g, '')
+}
+
+// "Appelman, Annemiek" (Outlook-stijl) wordt "Annemiek Appelman".
+export function netteNaam(naam: string): string {
+  const m = naam.match(/^([^,|<]+),\s*([^,|<]+)$/)
+  return m ? `${m[2].trim()} ${m[1].trim()}` : naam
+}
+
 export function useAfzenderStatus(email: Email | null) {
   const senderName = email ? extractSenderName(email.van) : ''
   const senderEmail = email ? extractSenderEmail(email.van) : ''
@@ -32,13 +43,33 @@ export function useAfzenderStatus(email: Email | null) {
     if (!email?.inhoud) return null
     try { return parseHandtekening(email.inhoud, { naam: senderName, email: senderEmail }) } catch { return null }
   }, [email?.inhoud, senderName, senderEmail])
-  const klant = useMemo(() => senderEmail ? zoekKlantVoorAfzender(klanten, senderEmail) : null, [klanten, senderEmail])
+  // De losse contactpersonen-tabel telt ook mee; een deel van de contacten
+  // staat alleen daar en niet in de embedded lijst op de klant.
+  const [losKlantId, setLosKlantId] = useState<string | null | undefined>(undefined)
+  useEffect(() => {
+    let actueel = true
+    setLosKlantId(undefined)
+    if (!senderEmail) { setLosKlantId(null); return }
+    getKlantIdByContactEmail(senderEmail).then(id => { if (actueel) setLosKlantId(id) }).catch(() => { if (actueel) setLosKlantId(null) })
+    return () => { actueel = false }
+  }, [senderEmail])
+  const klant = useMemo(() => {
+    if (!senderEmail) return null
+    if (losKlantId) { const k = klanten.find(x => x.id === losKlantId); if (k) return k }
+    const opAdres = zoekKlantVoorAfzender(klanten, senderEmail)
+    if (opAdres) return opAdres
+    // Geen adres- of domeinmatch: probeer de bedrijfsnaam uit de handtekening.
+    const kern = normaliseerBedrijf(handtekening?.bedrijfsnaam || '')
+    if (kern.length < 4) return null
+    return klanten.find(k => normaliseerBedrijf(k.bedrijfsnaam || '') === kern) || null
+  }, [klanten, senderEmail, losKlantId, handtekening?.bedrijfsnaam])
   const bekend = useMemo(() => {
     if (!klant) return false
+    if (losKlantId && klant.id === losKlantId) return true
     const a = senderEmail.toLowerCase()
     return klant.email?.toLowerCase() === a || !!klant.contactpersonen?.some(c => c.email?.toLowerCase() === a)
-  }, [klant, senderEmail])
-  return { senderName, senderEmail, handtekening, handtekeningBruikbaar: !!handtekening && heeftGegevens(handtekening), klant, bekend, geladen: klanten.length > 0 }
+  }, [klant, senderEmail, losKlantId])
+  return { senderName: netteNaam(senderName), senderEmail, handtekening, handtekeningBruikbaar: !!handtekening && heeftGegevens(handtekening), klant, bekend, geladen: klanten.length > 0 && losKlantId !== undefined }
 }
 
 interface Props {
@@ -59,7 +90,7 @@ export function EmailActionsPopover({ email, onOpenProjectDialog, openKlantSigna
   const titelInputRef = useRef<HTMLInputElement | null>(null)
   const klantInputRef = useRef<HTMLInputElement | null>(null)
 
-  const senderName = email ? extractSenderName(email.van) : ''
+  const senderName = email ? netteNaam(extractSenderName(email.van)) : ''
   const senderEmail = email ? extractSenderEmail(email.van) : ''
   const senderDomain = senderEmail.match(/@(.+)/)?.[1]?.toLowerCase() || ''
   // Gegevens uit de handtekening onder de mail, als voorinvulling.
@@ -119,12 +150,7 @@ export function EmailActionsPopover({ email, onOpenProjectDialog, openKlantSigna
   }, [klantSearch, allKlanten, senderDomain])
 
   // Klant die bij de afzender hoort (exact adres, contactpersoon of domein).
-  const afzenderKlant = useMemo(() => senderEmail ? zoekKlantVoorAfzender(allKlanten, senderEmail) : null, [allKlanten, senderEmail])
-  const afzenderBekend = useMemo(() => {
-    if (!afzenderKlant) return false
-    const a = senderEmail.toLowerCase()
-    return afzenderKlant.email?.toLowerCase() === a || !!afzenderKlant.contactpersonen?.some(c => c.email?.toLowerCase() === a)
-  }, [afzenderKlant, senderEmail])
+  const { klant: afzenderKlant, bekend: afzenderBekend } = useAfzenderStatus(email)
 
   // Reset bij sluiten
   useEffect(() => {
