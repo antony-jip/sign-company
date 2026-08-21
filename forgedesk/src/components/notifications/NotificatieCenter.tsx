@@ -279,6 +279,30 @@ export function NotificatieCenter({ variant = 'bell', userInitial }: Notificatie
 
   const aantalOngelezen = notificaties.filter((n) => !n.gelezen).length;
 
+  // Korte wiebel als het aantal ongelezen stijgt (nieuwe melding binnen).
+
+  const vorigeOngelezen = useRef(aantalOngelezen)
+
+  const [nieuwBinnen, setNieuwBinnen] = useState(false)
+
+  useEffect(() => {
+
+    if (aantalOngelezen > vorigeOngelezen.current) {
+
+      setNieuwBinnen(true)
+
+      const t = setTimeout(() => setNieuwBinnen(false), 3000)
+
+      vorigeOngelezen.current = aantalOngelezen
+
+      return () => clearTimeout(t)
+
+    }
+
+    vorigeOngelezen.current = aantalOngelezen
+
+  }, [aantalOngelezen])
+
   const laadNotificaties = useCallback(async () => {
     try {
       const data = await getNotificaties();
@@ -479,8 +503,8 @@ export function NotificatieCenter({ variant = 'bell', userInitial }: Notificatie
         >
           <span className="text-[13px] font-bold leading-none">{userInitial ?? '·'}</span>
           {aantalOngelezen > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] rounded-full bg-flame text-white text-[9px] font-bold leading-none flex items-center justify-center px-1 ring-2 ring-muted">
-              {aantalOngelezen > 99 ? '99+' : aantalOngelezen}
+            <span className="doen-puls-ring absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] rounded-full bg-flame text-white text-[9px] font-bold leading-none flex items-center justify-center px-1 ring-2 ring-muted">
+              <span className="relative">{aantalOngelezen > 99 ? '99+' : aantalOngelezen}</span>
             </span>
           )}
         </button>
@@ -493,9 +517,9 @@ export function NotificatieCenter({ variant = 'bell', userInitial }: Notificatie
           aria-label={`${aantalOngelezen} nieuwe notificatie${aantalOngelezen === 1 ? '' : 's'} openen`}
           className="relative inline-flex items-center justify-center w-9 h-9 rounded-full hover:bg-muted/60 transition-colors"
         >
-          <Bell className="h-[18px] w-[18px]" style={{ color: 'hsl(var(--muted-foreground))' }} />
-          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] rounded-full bg-flame text-white text-[10px] font-bold leading-none flex items-center justify-center px-1">
-            {aantalOngelezen > 99 ? '99+' : aantalOngelezen}
+          <Bell className={nieuwBinnen ? 'h-[18px] w-[18px] doen-bel-wiebel' : 'h-[18px] w-[18px]'} style={{ color: nieuwBinnen ? '#F15025' : 'hsl(var(--muted-foreground))' }} />
+          <span className="doen-puls-ring absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] rounded-full bg-flame text-white text-[10px] font-bold leading-none flex items-center justify-center px-1">
+            <span className="relative">{aantalOngelezen > 99 ? '99+' : aantalOngelezen}</span>
           </span>
         </button>
       ) : (

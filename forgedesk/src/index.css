@@ -4894,3 +4894,37 @@ button.doen-panel:hover {
 @media (prefers-reduced-motion: reduce) {
   .doen-weer-icoon { animation: none !important; }
 }
+
+
+/* Notificatie-bel: zachte puls zolang er ongelezen meldingen zijn, en een
+   korte wiebel als er net een nieuwe binnenkomt. Uit bij reduced-motion. */
+@keyframes doen-puls-ring {
+  0% { transform: scale(0.9); opacity: 0.55; }
+  70% { transform: scale(1.9); opacity: 0; }
+  100% { transform: scale(1.9); opacity: 0; }
+}
+@keyframes doen-bel-wiebel {
+  0%, 100% { transform: rotate(0); }
+  15% { transform: rotate(-14deg); }
+  30% { transform: rotate(12deg); }
+  45% { transform: rotate(-8deg); }
+  60% { transform: rotate(6deg); }
+  75% { transform: rotate(-3deg); }
+}
+.doen-puls-ring::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 9999px;
+  background: #F15025;
+  opacity: 0;
+  animation: doen-puls-ring 2.4s ease-out infinite;
+  pointer-events: none;
+}
+.doen-bel-wiebel {
+  animation: doen-bel-wiebel 0.9s ease-in-out 3;
+  transform-origin: 50% 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .doen-puls-ring::before, .doen-bel-wiebel { animation: none; }
+}
