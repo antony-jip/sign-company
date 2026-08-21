@@ -34,3 +34,29 @@ describe('parseHandtekening', () => {
     expect(g.website).toBe('')
   })
 })
+
+describe('parseHandtekening, lange handtekening met en-dash', () => {
+  it('leest telefoon met en-dash en het eerste adres', () => {
+    const html = `<p>Voor nu 1.</p><p><b>Carolien van der Veek</b></p><p>Team- en managementondersteuning</p><p><i>(afwezig op dinsdag)</i></p>
+<p>T – 088 – 2037360</p><p>E – cvanderveek@teamsportservice.nl</p><p>Team Sportservice West-Friesland</p><p>Kerkstraat 58</p><p>1687 AS Wognum</p>
+<p>Team Sportservice Zaanstreek-Waterland</p><p>Het Spil 1</p><p>1141 SB Monnickendam</p>`
+    const g = parseHandtekening(html, { naam: 'Carolien van der Veek', email: 'cvanderveek@teamsportservice.nl' })
+    expect(g.telefoon).toBe('088-2037360')
+    expect(g.functie).toBe('Team- en managementondersteuning')
+    expect(g.adres).toBe('Kerkstraat 58')
+    expect(g.postcode).toBe('1687 AS')
+    expect(g.stad).toBe('Wognum')
+    expect(g.bedrijfsnaam).toBe('Team Sportservice West-Friesland')
+  })
+})
+
+describe('parseHandtekening, functioneel postvak', () => {
+  it('neemt de naam uit de handtekening als de afzender "Purchase" heet', () => {
+    const html = '<p>Alvast bedankt.</p><p><b>Eric Lub</b></p><p><i>Buyer</i></p><p>Purchase</p><p>Seed Processing Holland B.V.</p><p>Zoutketen 12, 1601 EX Enkhuizen</p><p>+31 228 784 120</p>'
+    const g = parseHandtekening(html, { naam: 'Purchase', email: 'purchase@seedprocessing.nl' })
+    expect(g.naam).toBe('Eric Lub')
+    expect(g.functie).toBe('Buyer')
+    expect(g.bedrijfsnaam).toBe('Seed Processing Holland B.V.')
+    expect(g.telefoon).toBe('0228-784120')
+  })
+})

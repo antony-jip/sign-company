@@ -251,7 +251,7 @@ export function EmailContextSidebar({
       const h = handtekening
       setKlantForm({
         bedrijfsnaam: h?.bedrijfsnaam || companyGuess,
-        contactpersoon: personName || h?.naam || '',
+        contactpersoon: h?.naam || personName || '',
         functie: h?.functie || '',
         email: contactEmail,
         telefoon: h?.telefoon || '',
@@ -673,6 +673,38 @@ export function EmailContextSidebar({
           onSave: klantSearchMode ? undefined : handleSaveKlant,
           content: klantSearchMode ? (
             <>
+              {hasContact && (
+                <div className="rounded-xl border border-border bg-background p-3 space-y-2">
+                  <div className="flex items-start gap-2.5">
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-[12px] font-bold" style={{ background: avatarStyle.bg, color: avatarStyle.text }}>{avatarInitial}</div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[13px] font-semibold text-foreground truncate">{personName || contactEmail}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">{contactEmail}</p>
+                      {handtekeningBruikbaar && handtekening && (
+                        <p className="text-[11px] text-foreground/70 mt-1 leading-relaxed">
+                          {[[handtekening.bedrijfsnaam, handtekening.functie].filter(Boolean).join(' · '), handtekening.mobiel || handtekening.telefoon, [handtekening.adres, handtekening.postcode, handtekening.stad].filter(Boolean).join(', '), handtekening.website].filter(Boolean).join(' · ')}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  {linkedKlant ? (
+                    bekendContact ? (
+                      <p className="flex items-center gap-1.5 text-[11px] text-[#3A7D52]"><Check className="h-3 w-3" /> Bekend bij {linkedKlant.bedrijfsnaam || linkedKlant.contactpersoon} als {bekendContact}</p>
+                    ) : (
+                      <button onClick={() => openContactPanel(linkedKlant)} className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-petrol text-[12px] text-white font-semibold hover:bg-[#143F46] transition-colors">
+                        <UserPlus className="h-3.5 w-3.5" />
+                        <span className="truncate">Toevoegen als contactpersoon bij {linkedKlant.bedrijfsnaam || linkedKlant.contactpersoon}?</span>
+                      </button>
+                    )
+                  ) : (
+                    <button onClick={() => setKlantSearchMode(false)} className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-petrol text-[12px] text-white font-semibold hover:bg-[#143F46] transition-colors">
+                      <UserPlus className="h-3.5 w-3.5" />
+                      Klant toevoegen{handtekeningBruikbaar ? ' met gegevens uit handtekening' : ''}
+                    </button>
+                  )}
+                </div>
+              )}
+              <p className="text-[10px] uppercase tracking-[0.08em] text-muted-foreground font-semibold pt-1">{linkedKlant ? 'Of koppel aan een andere klant' : 'Of koppel aan een bestaande klant'}</p>
               <div className="relative">
                 <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <input

@@ -16,14 +16,15 @@ export interface HandtekeningGegevens {
   regels: string[]
 }
 
+const GENERIEKE_NAAM = /^(purchase|purchasing|inkoop|verkoop|sales|info|information|administratie|administration|office|support|service|servicedesk|helpdesk|noreply|no-reply|facturen|facturatie|invoices|finance|financien|receptie|reception|secretariaat|planning|orders?|bestellingen|klantenservice|customer\s*service|team|marketing|communicatie|hr|personeelszaken|directie|management|backoffice|frontoffice|webshop|shop|contact|mail|post|algemeen|general)(\s|$)/i
 const GROET = /^(met\s+vriendelijke\s+groet(en)?|vriendelijke\s+groet(en)?|hartelijke\s+groet(en)?|groet(en|jes)?|mvg|met\s+vr\.?\s*gr\.?|kind\s+regards|best\s+regards|regards|warm\s+regards|cheers|thanks|bedankt|alvast\s+bedankt|hoogachtend|gr\.?)[\s,.!]*$/i
 // Samenstellingen (vestigingsmanager, projectleider) tellen mee; korte woorden
 // alleen als los woord, anders matcht "hr" in "Schrijver".
-const FUNCTIEWOORDEN = /(?:[\w-]*(?:directeur|director|eigenaar|owner|oprichter|founder|manager|management|teamleider|leider|coördinator|coordinator|adviseur|consultant|specialist|medewerker|medewerkster|assistent|assistant|accountmanager|verkoper|verkoopster|inkoper|buyer|marketeer|planner|uitvoerder|monteur|ontwerper|designer|vormgever|architect|administrateur|boekhouder|controller|secretaresse|receptionist|voorzitter|penningmeester|secretaris|bestuurder|vennoot|franchisenemer|engineer|technicus|calculator|werkvoorbereider)[\w-]*|\b(?:ceo|cfo|coo|cto|hoofd|head\s+of|sales|verkoop|inkoop|marketing|communicatie|partner|office\s+manager|hr|p&o|financieel|facilitair|projectmanager|projectleider)\b)/i
+const FUNCTIEWOORDEN = /(?:[\w-]*(?:directeur|director|eigenaar|owner|oprichter|founder|manager|management|teamleider|leider|coördinator|coordinator|adviseur|consultant|specialist|medewerker|medewerkster|assistent|assistant|accountmanager|verkoper|verkoopster|inkoper|buyer|marketeer|planner|uitvoerder|monteur|ontwerper|designer|vormgever|architect|administrateur|boekhouder|controller|secretaresse|receptionist|voorzitter|penningmeester|secretaris|bestuurder|vennoot|franchisenemer|ondersteuning|support|engineer|technicus|calculator|werkvoorbereider)[\w-]*|\b(?:ceo|cfo|coo|cto|hoofd|head\s+of|sales|verkoop|inkoop|marketing|communicatie|partner|office\s+manager|hr|p&o|financieel|facilitair|projectmanager|projectleider)\b)/i
 const BEDRIJFSVORM = /\b(b\.?v\.?|n\.?v\.?|v\.?o\.?f\.?|c\.?v\.?|holding|group|groep|bedrijven|bouw|installatie|techniek|service|services|solutions|advies|makelaars?|notaris|advocaten|accountants|architecten|stichting|vereniging|gemeente|b\.?v\.?\s*i\.?o\.?|gmbh|ltd|inc|llc|sa|ag)\b/i
 const POSTCODE = /\b(\d{4})\s?([A-Z]{2})\b/
 const STRAAT = /^([A-Za-zÀ-ÿ'’.\- ]{3,}?)\s+(\d{1,5}\s?[a-zA-Z]?(?:[-/]\d+[a-zA-Z]?)?)\s*$/
-const TEL = /(?:\+31|0031|0)\s?[\s\-(]*(?:\d[\s\-)]*){8,9}\d/g
+const TEL = /(?:\+31|0031|0)\s?[\s\-–—(.]*(?:\d[\s\-–—).]*){8,9}\d/g
 const URL = /\b((?:https?:\/\/)?(?:www\.)?[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:nl|com|eu|be|de|org|net|shop|online|io|co\.uk))(?:\/\S*)?\b/i
 const KVK = /kvk[\s:.-]*(?:nr|nummer|no)?[\s:.]*(\d{8})/i
 const LABEL = /^(t|tel|telefoon|phone|m|mob|mobiel|mobile|gsm|e|email|e-mail|mail|w|web|website|www|a|adres|address|f|fax|i|kvk|btw|vat|iban)\s*[:.|]?\s*/i
@@ -41,6 +42,7 @@ function htmlNaarTekst(html: string): string {
 
 function normaliseerTel(raw: string): string {
   let t = raw.replace(/[^\d+]/g, '')
+  if (/^(088|085|0800|0900)/.test(t)) return t.replace(/^(088|085|0800|0900)(\d+)$/, '$1-$2')
   if (t.startsWith('0031')) t = `+31${t.slice(4)}`
   if (t.startsWith('+31')) t = `0${t.slice(3)}`
   if (t.length === 10 && /^0[1-9]\d{8}$/.test(t)) {
@@ -61,8 +63,8 @@ function knipHandtekening(tekst: string): string[] {
   for (let i = deel.length - 1; i >= 0; i--) {
     if (GROET.test(deel[i]) || /^--\s*$|^_{3,}$|^-{3,}$/.test(deel[i])) { start = i + 1; break }
   }
-  const blok = start >= 0 ? deel.slice(start) : deel.slice(Math.max(0, deel.length - 14))
-  return blok.filter(Boolean).slice(0, 18)
+  const blok = start >= 0 ? deel.slice(start) : deel.slice(Math.max(0, deel.length - 30))
+  return blok.filter(Boolean).slice(0, 30)
 }
 
 function kapitaliseerNaam(s: string): string { return s.replace(/\b([a-zà-ÿ])/g, c => c.toUpperCase()) }
@@ -111,8 +113,11 @@ export function parseHandtekening(inhoud: string, hint: { naam?: string; email?:
   })
 
   // Naam: hint uit het From-veld wint; anders de eerste korte regel zonder cijfers.
+  // Functionele postvakken ("Purchase", "Info", "Verkoop | Bedrijf") zeggen niets
+  // over de persoon; dan wint de naam in de handtekening.
   const hintNaam = (hint.naam || '').replace(/\s*[|–—-]\s*.+$/, '').trim()
-  if (hintNaam && !/@/.test(hintNaam)) uit.naam = hintNaam
+  const generiek = !hintNaam || /@/.test(hintNaam) || !/\s/.test(hintNaam) || GENERIEKE_NAAM.test(hintNaam)
+  if (!generiek) uit.naam = hintNaam
   const naamIndex = regels.findIndex(r => uit.naam && r.toLowerCase().includes(uit.naam.toLowerCase()))
   if (!uit.naam) {
     const kandidaat = regels.findIndex((r, i) => !gebruikt.has(i) && /^[A-ZÀ-Ý][a-zà-ÿ'’.-]+(\s+(van|de|der|den|het|te|ten|'t|v\.)?\s*[A-ZÀ-Ý]?[a-zà-ÿ'’.-]+){1,3}$/.test(r) && !FUNCTIEWOORDEN.test(r))
