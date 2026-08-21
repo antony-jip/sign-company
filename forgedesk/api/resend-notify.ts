@@ -7,6 +7,7 @@ interface NotifyParams {
   subject: string
   heading: string
   itemTitel?: string
+  klantNaam?: string
   projectNaam?: string
   quote?: string
   ctaUrl?: string
@@ -39,7 +40,7 @@ function escapeHtml(str: string): string {
 }
 
 function buildNotificationEmail(params: NotifyParams): string {
-  const { heading, itemTitel, projectNaam, quote, ctaUrl, ctaLabel = 'Bekijk in doen. →' } = params
+  const { heading, itemTitel, klantNaam, projectNaam, quote, ctaUrl, ctaLabel = 'Bekijk in doen. →' } = params
 
   const itemBlock = itemTitel ? `
     <tr><td style="padding: 0 0 16px 0;">
@@ -47,8 +48,8 @@ function buildNotificationEmail(params: NotifyParams): string {
         <tr><td style="padding: 16px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 15px; font-weight: 600; color: #1A1A1A;">
           ${escapeHtml(itemTitel)}
         </td></tr>
-        ${projectNaam ? `<tr><td style="padding: 0 20px 16px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; color: #6B6B66; line-height: 1.6;">
-          Project: ${escapeHtml(projectNaam)}
+        ${klantNaam || projectNaam ? `<tr><td style="padding: 0 20px 16px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; color: #6B6B66; line-height: 1.6;">
+          ${klantNaam ? `Klant: <strong style="color:#1A1A1A;">${escapeHtml(klantNaam)}</strong>` : ''}${klantNaam && projectNaam ? '<br>' : ''}${projectNaam ? `Project: ${escapeHtml(projectNaam)}` : ''}
         </td></tr>` : ''}
       </table>
     </td></tr>` : ''

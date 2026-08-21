@@ -21,15 +21,36 @@ import { extractSenderName, extractSenderEmail, getAvatarStyle } from './emailHe
 import { EmailProjectKoppelingPanel } from './EmailProjectKoppelingPanel'
 import { hapticLight } from '@/utils/haptic'
 
+// Status van de afzender t.o.v. de klantendatabase, voor de banner in de
+// reader en de knoppen in het popover.
+export function useAfzenderStatus(email: Email | null) {
+  const senderName = email ? extractSenderName(email.van) : ''
+  const senderEmail = email ? extractSenderEmail(email.van) : ''
+  const [klanten, setKlanten] = useState<Klant[]>([])
+  useEffect(() => { getKlanten().then(setKlanten).catch(() => {}) }, [])
+  const handtekening = useMemo(() => {
+    if (!email?.inhoud) return null
+    try { return parseHandtekening(email.inhoud, { naam: senderName, email: senderEmail }) } catch { return null }
+  }, [email?.inhoud, senderName, senderEmail])
+  const klant = useMemo(() => senderEmail ? zoekKlantVoorAfzender(klanten, senderEmail) : null, [klanten, senderEmail])
+  const bekend = useMemo(() => {
+    if (!klant) return false
+    const a = senderEmail.toLowerCase()
+    return klant.email?.toLowerCase() === a || !!klant.contactpersonen?.some(c => c.email?.toLowerCase() === a)
+  }, [klant, senderEmail])
+  return { senderName, senderEmail, handtekening, handtekeningBruikbaar: !!handtekening && heeftGegevens(handtekening), klant, bekend, geladen: klanten.length > 0 }
+}
+
 interface Props {
   email: Email | null
+  openKlantSignal?: number
   // Project flow blijft via bestaande Dialog · callback opent die centered modal
   onOpenProjectDialog: () => void
 }
 
 type View = 'menu' | 'klant' | 'taak' | 'koppel'
 
-export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
+export function EmailActionsPopover({ email, onOpenProjectDialog, openKlantSignal }: Props) {
   const { user } = useAuth()
   const [open, setOpen] = useState(false)
   const [view, setView] = useState<View>('menu')
@@ -109,6 +130,11 @@ export function EmailActionsPopover({ email, onOpenProjectDialog }: Props) {
   useEffect(() => {
     if (!open) setView('menu')
   }, [open])
+
+  // Van buiten (banner onder de afzender) het klant-venster openen.
+  useEffect(() => {
+    if (openKlantSignal) { setView('klant'); setOpen(true) }
+  }, [openKlantSignal])
 
   // Auto-fill bij wisselen naar form-view
   useEffect(() => {

@@ -4,7 +4,7 @@ import type { Klant } from '@/types'
 export const GENERIEKE_MAILDOMEINEN = [
   'gmail.com', 'hotmail.com', 'outlook.com', 'yahoo.com', 'live.nl', 'ziggo.nl',
   'kpnmail.nl', 'xs4all.nl', 'planet.nl', 'hetnet.nl', 'home.nl', 'upcmail.nl',
-  'casema.nl', 'quicknet.nl', 'tele2.nl', 'solcon.nl',
+  'casema.nl', 'quicknet.nl', 'tele2.nl', 'solcon.nl', 'wxs.nl', 'kpnplanet.nl', 'chello.nl', 'hotmail.nl', 'outlook.be', 'live.com', 'icloud.com', 'me.com', 'telfort.nl', 'online.nl', 'zeelandnet.nl', 'caiway.nl', 'kabelfoon.nl', 'freeler.nl', 'wanadoo.nl', 'versatel.nl', 'protonmail.com', 'proton.me', 'yahoo.nl', 'gmx.com', 'gmx.net', 'msn.com',
 ]
 
 /**

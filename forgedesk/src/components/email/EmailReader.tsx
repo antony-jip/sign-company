@@ -11,7 +11,8 @@ import {
   List, ListOrdered, Sparkles, ScrollText, Loader2, Download, FolderPlus,
   Undo2, Redo2, X, Clock, Tag, MoreHorizontal,
 } from 'lucide-react'
-import { EmailActionsPopover } from './EmailActionsPopover'
+import { EmailActionsPopover, useAfzenderStatus } from './EmailActionsPopover'
+import { UserPlus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Email, EmailAttachment } from '@/types'
 import { extractSenderName, extractSenderEmail, cleanEmailPreview, ontvangerLabel, formatShortDate, getAvatarColor, getAvatarRingColor, getAvatarStyle, lijktOpHtml, platteTekstNaarHtml, SNOOZE_OPTIONS, labelColors } from './emailHelpers'
@@ -186,6 +187,8 @@ export function EmailReader({
 }: EmailReaderProps) {
   const { emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, handtekeningAfbeeldingLink, bedrijfsnaam } = useAppSettings()
   const { user } = useAuth()
+
+  const [klantSignal, setKlantSignal] = useState(0)
 
   const [replyMode, setReplyMode] = useState<'reply' | 'reply-all' | 'forward' | null>(null)
   const [replyTo, setReplyTo] = useState('')
@@ -2057,10 +2060,12 @@ export function EmailReader({
                       <EmailActionsPopover
                         email={email}
                         onOpenProjectDialog={() => onOpenContextPanel('project')}
+                        openKlantSignal={klantSignal}
                       />
                     </div>
                   )}
                 </div>
+                {onOpenContextPanel && <AfzenderBanner email={email} onOpenKlant={() => setKlantSignal(n => n + 1)} />}
               </div>
             )}
 
@@ -2600,3 +2605,29 @@ export function EmailReader({
   )
 }
 
+
+
+// Zichtbare regel onder de afzender: staat deze persoon al in doen.? Zo niet,
+// één klik naar "Klant toevoegen" of "Toevoegen als contactpersoon bij <firma>".
+function AfzenderBanner({ email, onOpenKlant }: { email: Email; onOpenKlant: () => void }) {
+  const st = useAfzenderStatus(email)
+  if (!st.senderEmail || !st.geladen || st.bekend) return null
+  if (/noreply|no-reply|notification|mailer-daemon/i.test(st.senderEmail)) return null
+  const naam = st.handtekening?.naam || st.senderName || st.senderEmail
+  const firma = st.klant ? (st.klant.bedrijfsnaam || st.klant.contactpersoon) : null
+  return (
+    <button
+      type="button"
+      onClick={onOpenKlant}
+      className="hidden md:flex mt-2.5 w-full items-center gap-2.5 rounded-[10px] border border-dashed border-petrol/30 bg-petrol/[0.04] px-3 py-2 text-left text-[12px] text-foreground hover:border-petrol/60 hover:bg-petrol/[0.08] transition-colors"
+    >
+      <UserPlus className="h-3.5 w-3.5 flex-shrink-0 text-petrol" />
+      <span className="min-w-0 flex-1 truncate">
+        {firma
+          ? <><span className="font-semibold">{naam}</span> staat nog niet als contactpersoon bij <span className="font-semibold">{firma}</span>.</>
+          : <><span className="font-semibold">{naam}</span> staat nog niet in doen.{st.handtekeningBruikbaar && st.handtekening ? ` Handtekening: ${[st.handtekening.bedrijfsnaam, st.handtekening.functie, st.handtekening.mobiel || st.handtekening.telefoon].filter(Boolean).join(' · ')}` : ''}</>}
+      </span>
+      <span className="flex-shrink-0 font-semibold text-petrol">{firma ? 'Toevoegen als contactpersoon?' : 'Klant toevoegen'}</span>
+    </button>
+  )
+}

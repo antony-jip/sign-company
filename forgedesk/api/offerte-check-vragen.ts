@@ -134,6 +134,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: 'Kon de check niet vastleggen' })
     }
 
+    // Klant en project erbij: de collega weet dan meteen om wie het gaat
+    // zonder de offerte te hoeven openen.
+    const [{ data: klant }, { data: project }] = await Promise.all([
+      offerte.klant_id
+        ? supabaseAdmin.from('klanten').select('bedrijfsnaam, contactpersoon').eq('id', offerte.klant_id).maybeSingle()
+        : Promise.resolve({ data: null }),
+      offerte.project_id
+        ? supabaseAdmin.from('projecten').select('naam, project_nummer').eq('id', offerte.project_id).maybeSingle()
+        : Promise.resolve({ data: null }),
+    ])
+    const klantNaam = (klant?.bedrijfsnaam as string | null) || (klant?.contactpersoon as string | null) || ''
+    const projectNaam = project?.naam ? `${project.project_nummer ? `${project.project_nummer} · ` : ''}${project.naam}` : ''
+    const contextRegel = [klantNaam && `Klant: ${klantNaam}`, projectNaam && `Project: ${projectNaam}`].filter(Boolean).join(' · ')
+
     const offerteLabel = `${offerte.nummer} · ${offerte.titel}`
     const link = `/offertes/${offerte.id}/bewerken`
 
@@ -143,7 +157,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         user_id: aan_user_id,
         type: 'offerte_check_gevraagd',
         titel: `${aanvragerNaam} vraagt je een offerte te checken`,
-        bericht: schoneNotitie ? `${offerteLabel} · "${schoneNotitie}"` : offerteLabel,
+        bericht: [offerteLabel, contextRegel, schoneNotitie && `"${schoneNotitie}"`].filter(Boolean).join(' · '),
         link,
         offerte_id: offerte.id,
         klant_id: offerte.klant_id || null,
@@ -155,7 +169,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       await stuurPush(
         aan_user_id,
         'Offerte checken',
-        `${aanvragerNaam} vraagt je ${offerte.nummer} te checken`,
+        `${aanvragerNaam} vraagt je ${offerte.nummer} te checken${klantNaam ? ` (${klantNaam})` : ''}`,
         link
       )
 
@@ -179,6 +193,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           subject: `${aanvragerNaam} vraagt je een offerte te checken`,
           heading: `${aanvragerNaam} vraagt je een offerte te checken`,
           itemTitel: offerteLabel,
+          klantNaam: klantNaam || undefined,
+          projectNaam: projectNaam || undefined,
           quote: schoneNotitie || undefined,
           ctaUrl: `${appUrl()}${link}`,
           ctaLabel: 'Bekijk de offerte →',
