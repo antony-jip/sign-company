@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import { parseHandtekening, heeftGegevens } from './handtekeningParser'
 import {
   UserPlus, FolderPlus, ListPlus, Bell, BellOff, Clock,
   Building2, Phone, Mail, ChevronRight, Loader2, X,
@@ -121,6 +122,13 @@ export function EmailContextSidebar({
   const contactName = mode === 'reading' ? (propSenderName || '') : ''
   const personName = (contactName || '').replace(/\s[|–—-]\s+.+$/, '').trim()
   const companyGuess = useMemo(() => contactEmail ? extractCompanyName(contactName, contactEmail) : '', [contactName, contactEmail])
+  // Gegevens uit de handtekening onder de mail: voorinvulling voor klant- en
+  // contactpersoonformulier. Alleen in leesmodus; bij opstellen is er geen body.
+  const handtekening = useMemo(() => {
+    if (mode !== 'reading' || !email?.inhoud) return null
+    try { return parseHandtekening(email.inhoud, { naam: personName, email: contactEmail }) } catch { return null }
+  }, [mode, email?.inhoud, personName, contactEmail])
+  const handtekeningBruikbaar = !!handtekening && heeftGegevens(handtekening)
 
   // ── Klant lookup ──
   const [linkedKlant, setLinkedKlant] = useState<Klant | null>(null)
@@ -140,7 +148,7 @@ export function EmailContextSidebar({
   // ── Forms ──
   const [allKlanten, setAllKlanten] = useState<Klant[]>([])
   const [klantSearchMode, setKlantSearchMode] = useState(true)
-  const [klantForm, setKlantForm] = useState({ bedrijfsnaam: '', contactpersoon: '', email: '', telefoon: '' })
+  const [klantForm, setKlantForm] = useState({ bedrijfsnaam: '', contactpersoon: '', functie: '', email: '', telefoon: '', mobiel: '', adres: '', postcode: '', stad: '', website: '', kvk: '' })
   const [projectForm, setProjectForm] = useState({
     naam: '',
     beschrijving: '',
@@ -240,7 +248,20 @@ export function EmailContextSidebar({
   // ── Panel openers ──
   function openPanel(panel: 'klant' | 'project' | 'taak') {
     if (panel === 'klant') {
-      setKlantForm({ bedrijfsnaam: companyGuess, contactpersoon: personName, email: contactEmail, telefoon: '' })
+      const h = handtekening
+      setKlantForm({
+        bedrijfsnaam: h?.bedrijfsnaam || companyGuess,
+        contactpersoon: personName || h?.naam || '',
+        functie: h?.functie || '',
+        email: contactEmail,
+        telefoon: h?.telefoon || '',
+        mobiel: h?.mobiel || '',
+        adres: h?.adres || '',
+        postcode: h?.postcode || '',
+        stad: h?.stad || '',
+        website: h?.website || '',
+        kvk: h?.kvk || '',
+      })
       setKlantSearchMode(true)
     } else if (panel === 'project') {
       setProjectForm({
@@ -290,11 +311,11 @@ export function EmailContextSidebar({
       const domain = klantForm.email.match(/@(.+)/)?.[1]?.toLowerCase()
       const newKlant = await createKlant({
         bedrijfsnaam: klantForm.bedrijfsnaam, contactpersoon: klantForm.contactpersoon,
-        email: klantForm.email, telefoon: klantForm.telefoon,
-        adres: '', postcode: '', stad: '', land: 'Nederland',
-        website: domain ? `www.${domain}` : '',
-        debiteurennummer: '', kvk_nummer: '', btw_nummer: '', status: 'actief', tags: [], notities: '',
-        contactpersonen: [{ id: crypto.randomUUID(), naam: klantForm.contactpersoon, functie: '', email: klantForm.email, telefoon: klantForm.telefoon, is_primair: true }],
+        email: klantForm.email, telefoon: klantForm.telefoon || klantForm.mobiel,
+        adres: klantForm.adres, postcode: klantForm.postcode, stad: klantForm.stad, land: 'Nederland',
+        website: klantForm.website || (domain ? `www.${domain}` : ''),
+        debiteurennummer: '', kvk_nummer: klantForm.kvk, btw_nummer: '', status: 'actief', tags: [], notities: '',
+        contactpersonen: [{ id: crypto.randomUUID(), naam: klantForm.contactpersoon, functie: klantForm.functie, email: klantForm.email, telefoon: klantForm.mobiel || klantForm.telefoon, is_primair: true }],
       })
       setLinkedKlant(newKlant)
       setActivePanel('none')
@@ -366,8 +387,8 @@ export function EmailContextSidebar({
   // alleen in beeld gezet; pas de opslaan-knop schrijft naar de database.
   function openContactPanel(klant: Klant) {
     if (linkedKlant?.id !== klant.id) setLinkedKlant(klant)
-    const { voornaam, achternaam } = splitAfzenderNaam(personName || contactName)
-    setContactForm({ voornaam, achternaam, email: contactEmail, telefoon: '', functie: '' })
+    const { voornaam, achternaam } = splitAfzenderNaam(personName || contactName || handtekening?.naam || '')
+    setContactForm({ voornaam, achternaam, email: contactEmail, telefoon: handtekening?.mobiel || handtekening?.telefoon || '', functie: handtekening?.functie || '' })
     setActivePanel('contact')
   }
 
@@ -711,15 +732,31 @@ export function EmailContextSidebar({
                 <ArrowLeft className="h-3 w-3" />
                 Terug naar zoeken
               </button>
+              {handtekeningBruikbaar && (
+                <p className="flex items-center gap-1.5 rounded-lg bg-[hsl(var(--status-green-bg))] px-2.5 py-1.5 text-[11px] text-[#3A7D52]">
+                  <Check className="h-3 w-3" /> Voorgevuld uit de handtekening. Kijk even na.
+                </p>
+              )}
               {([
                 { key: 'bedrijfsnaam' as const, placeholder: 'Bedrijfsnaam' },
                 { key: 'contactpersoon' as const, placeholder: 'Contactpersoon *' },
+                { key: 'functie' as const, placeholder: 'Functie' },
                 { key: 'email' as const, placeholder: 'Email *' },
                 { key: 'telefoon' as const, placeholder: 'Telefoon' },
+                { key: 'mobiel' as const, placeholder: 'Mobiel' },
+                { key: 'adres' as const, placeholder: 'Adres' },
               ] as const).map(({ key, placeholder }) => (
                 <input key={key} value={klantForm[key]} onChange={e => setKlantForm(f => ({ ...f, [key]: e.target.value }))}
                   className={inputCls} placeholder={placeholder} />
               ))}
+              <div className="grid grid-cols-[110px_1fr] gap-2">
+                <input value={klantForm.postcode} onChange={e => setKlantForm(f => ({ ...f, postcode: e.target.value }))} className={inputCls} placeholder="Postcode" />
+                <input value={klantForm.stad} onChange={e => setKlantForm(f => ({ ...f, stad: e.target.value }))} className={inputCls} placeholder="Plaats" />
+              </div>
+              <div className="grid grid-cols-[1fr_110px] gap-2">
+                <input value={klantForm.website} onChange={e => setKlantForm(f => ({ ...f, website: e.target.value }))} className={inputCls} placeholder="Website" />
+                <input value={klantForm.kvk} onChange={e => setKlantForm(f => ({ ...f, kvk: e.target.value }))} className={inputCls} placeholder="KvK" />
+              </div>
             </>
           ),
         },
@@ -902,7 +939,7 @@ export function EmailContextSidebar({
                     className="w-full flex items-center justify-center gap-2 py-2 rounded-lg border border-dashed border-border text-[12px] text-petrol font-medium hover:border-petrol/30 hover:bg-petrol/[0.03] transition-colors duration-150"
                   >
                     <UserPlus className="h-3.5 w-3.5" />
-                    Toevoegen als contactpersoon
+                    <span className="truncate">Toevoegen als contactpersoon bij {linkedKlant.bedrijfsnaam || linkedKlant.contactpersoon}?</span>
                   </button>
                 )}
               </div>
@@ -938,13 +975,31 @@ export function EmailContextSidebar({
                 <p className="text-[12px] text-muted-foreground truncate">{contactEmail}</p>
               </div>
             </div>
-            <button
-              onClick={() => openPanel('klant')}
-              className="mt-3 w-full flex items-center justify-center gap-2 py-2 rounded-lg border border-dashed border-border text-[12px] text-petrol font-medium hover:border-petrol/30 hover:bg-petrol/[0.03] transition-colors duration-150"
-            >
-              <UserPlus className="h-3.5 w-3.5" />
-              Koppelen aan klant
-            </button>
+            {handtekeningBruikbaar && handtekening && (
+              <div className="mt-3 space-y-1 border-t border-border pt-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Uit de handtekening</p>
+                {[handtekening.functie && [handtekening.bedrijfsnaam, handtekening.functie].filter(Boolean).join(' · '), !handtekening.functie && handtekening.bedrijfsnaam,
+                  handtekening.mobiel || handtekening.telefoon, [handtekening.adres, handtekening.postcode, handtekening.stad].filter(Boolean).join(', '), handtekening.website]
+                  .filter(Boolean).slice(0, 4).map((r, i) => (
+                    <p key={i} className="truncate text-[11px] text-foreground/70">{r}</p>
+                  ))}
+              </div>
+            )}
+            <div className="mt-3 space-y-1.5">
+              <button
+                onClick={() => { openPanel('klant'); setKlantSearchMode(false) }}
+                className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-petrol text-[12px] text-white font-semibold hover:bg-[#143F46] transition-colors duration-150"
+              >
+                <UserPlus className="h-3.5 w-3.5" />
+                Klant toevoegen{handtekeningBruikbaar ? ' met gegevens uit handtekening' : ''}
+              </button>
+              <button
+                onClick={() => openPanel('klant')}
+                className="w-full flex items-center justify-center gap-2 py-1.5 rounded-lg text-[12px] text-petrol font-medium hover:bg-petrol/[0.04] transition-colors duration-150"
+              >
+                Koppelen aan bestaande klant
+              </button>
+            </div>
           </div>
         ) : !hasContact ? (
           <div className="text-center py-4">
