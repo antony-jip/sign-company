@@ -7,7 +7,7 @@ import { toast } from 'sonner'
 import { cn, formatDateTime } from '@/lib/utils'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import {
-  updateConcept, verstuurNieuwsbrief, verstuurTest, genereerMetDaan, genereerBlokkenMetDaan, stelOnderwerpenVoor, uploadAfbeelding, syncContactenVolledig,
+  updateConcept, verstuurNieuwsbrief, verstuurTest, genereerMetDaan, genereerBlokkenMetDaan, stelOnderwerpenVoor, uploadAfbeelding, syncContactenVolledig, herstelVastgelopenConcept,
   type Nieuwsbrief, type OntvangerSelectie, STANDAARD_SELECTIE,
 } from '@/services/nieuwsbriefService'
 import { BlokBouwer } from './BlokBouwer'
@@ -324,7 +324,13 @@ export function NieuwsbriefEditor({ nieuwsbrief, onTerug, onGewijzigd, startMetD
       {vergrendeld && (
         <div className="flex items-center gap-2 border-b border-border/60 bg-petrol/[0.05] px-4 py-2 text-[13px] text-foreground md:px-6">
           <Lock className="h-4 w-4 text-petrol" />
-          {nieuwsbrief.status === 'gepland'
+          {nieuwsbrief.status === 'gepland' && !nieuwsbrief.resend_broadcast_id && nieuwsbrief.aantal_ontvangers == null
+            ? <>Deze verzending is niet afgerond (waarschijnlijk een time-out). Wie al een mail kreeg, krijgt hem bij een nieuwe poging niet nog eens.
+                <button type="button" onClick={async () => {
+                  try { const n = await herstelVastgelopenConcept(nieuwsbrief.id); if (n) { onGewijzigd(n); toast.success('Terug als concept') } else toast.error('Kon niet herstellen') }
+                  catch (err) { toast.error(err instanceof Error ? err.message : 'Herstellen mislukt') }
+                }} className="ml-2 font-semibold text-petrol underline dark:text-foreground">Zet terug naar concept</button></>
+            : nieuwsbrief.status === 'gepland'
             ? <>Ingepland voor <strong>{nieuwsbrief.gepland_op ? formatDateTime(nieuwsbrief.gepland_op) : 'later'}</strong>. Wijzigen kan niet meer; dupliceer ’m in de lijst als je iets wilt aanpassen.</>
             : <>Deze nieuwsbrief is verzonden en kan niet meer worden aangepast.</>}
         </div>

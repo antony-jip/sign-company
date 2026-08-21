@@ -123,6 +123,22 @@ export async function updateConcept(
   return data as Nieuwsbrief
 }
 
+// Een verzending die halverwege stierf (time-out) laat de rij op 'gepland'
+// staan zonder broadcast of aantal. Alleen die situatie mag terug naar concept.
+export async function herstelVastgelopenConcept(id: string): Promise<Nieuwsbrief | null> {
+  const { data, error } = await db()
+    .from('nieuwsbrieven')
+    .update({ status: 'concept', gepland_op: null, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('status', 'gepland')
+    .is('resend_broadcast_id', null)
+    .is('aantal_ontvangers', null)
+    .select('*')
+    .maybeSingle()
+  if (error) throw error
+  return (data as Nieuwsbrief | null) ?? null
+}
+
 export async function verwijderNieuwsbrief(id: string): Promise<void> {
   const { error } = await db().from('nieuwsbrieven').delete().eq('id', id)
   if (error) throw error

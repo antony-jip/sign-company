@@ -327,7 +327,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const orgId = (profile?.organisatie_id as string | null) ?? null
       if (!orgId) return geefVrij('Geen organisatie gevonden voor de eigenaar', 400)
 
-      const lijst = await verzamelOntvangers(orgId, selectie)
+      let lijst = await verzamelOntvangers(orgId, selectie)
+      // Na een afgebroken eerdere poging niet opnieuw mailen naar wie al had.
+      const { data: alVerstuurd } = await supabase
+        .from('nieuwsbrief_events').select('email').eq('nieuwsbrief_id', nieuwsbriefId).eq('type', 'sent')
+      const klaar = new Set((alVerstuurd ?? []).map(r => String((r as { email: string }).email).toLowerCase()))
+      if (klaar.size > 0) lijst = lijst.filter(o => !klaar.has(o.email))
+      if (lijst.length === 0 && klaar.size > 0) return geefVrij('Iedereen in deze selectie heeft deze nieuwsbrief al ontvangen', 400)
       if (lijst.length === 0) return geefVrij('Je selectie bevat geen ontvangers met een e-mailadres', 400)
       if (gepland && lijst.length > MAX_GEPLAND_PER_RUN) {
         return geefVrij(`Inplannen voor een selectie kan tot ${MAX_GEPLAND_PER_RUN} ontvangers. Kies "Iedereen" of verstuur nu.`, 400)
