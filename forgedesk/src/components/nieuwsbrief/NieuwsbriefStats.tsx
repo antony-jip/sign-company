@@ -92,7 +92,7 @@ export function NieuwsbriefStats({ nieuwsbrief, onTerug }: Props) {
             <div className="doen-slate-surface flex items-start gap-3 rounded-xl p-4 text-[13px] text-muted-foreground">
               <Users className="mt-0.5 h-4 w-4 flex-shrink-0 text-petrol" />
               <span>
-                Nog geen gegevens. Statistieken verschijnen zodra Resend events terugstuurt — zorg dat open- en click-tracking aanstaan en de webhook is ingesteld.
+                Nog geen gegevens. Statistieken verschijnen zodra Resend events terugstuurt. Zorg dat open- en click-tracking aanstaan en de webhook is ingesteld.
               </span>
             </div>
           )}

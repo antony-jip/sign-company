@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { Navigate } from 'react-router-dom'
-import { Newspaper, Plus, Trash2, Send, Clock, FileText, Search, Layers } from 'lucide-react'
+import { Newspaper, Plus, Trash2, Send, Clock, FileText, Search, Layers, Copy } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn, formatDate, formatDateTime } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
@@ -10,12 +10,15 @@ import { StatusBadge, statusColor } from '@/components/shared/StatusBadge'
 import {
   getNieuwsbrieven,
   maakConcept,
+  dupliceerNieuwsbrief,
   verwijderNieuwsbrief,
   type Nieuwsbrief,
 } from '@/services/nieuwsbriefService'
 import { NieuwsbriefEditor } from './NieuwsbriefEditor'
 import { NieuwsbriefStats } from './NieuwsbriefStats'
 import { NIEUWSBRIEF_BASIS_TEMPLATE } from './nieuwsbriefTemplate'
+import { TemplateKiezer, type TemplateKeuze } from './TemplateKiezer'
+import { renderDocument, leegDocument } from './nieuwsbriefBlokken'
 
 type Filter = 'alle' | 'concept' | 'gepland' | 'verzonden'
 
@@ -47,6 +50,8 @@ export function NieuwsbriefLayout() {
   const [actief, setActief] = useState<Nieuwsbrief | null>(null)
   const [filter, setFilter] = useState<Filter>('alle')
   const [zoek, setZoek] = useState('')
+  const [kiezerOpen, setKiezerOpen] = useState(false)
+  const [startMetDaan, setStartMetDaan] = useState(false)
 
   const laad = useCallback(async () => {
     try {
@@ -77,17 +82,48 @@ export function NieuwsbriefLayout() {
       .filter(n => !q || (n.onderwerp || '').toLowerCase().includes(q))
   }, [nieuwsbrieven, filter, zoek])
 
-  const handleNieuw = useCallback(async () => {
+  const handleNieuw = useCallback(() => setKiezerOpen(true), [])
+
+  const handleKeuze = useCallback(async (keuze: TemplateKeuze) => {
     setBezig(true)
     try {
-      const concept = await maakConcept('', NIEUWSBRIEF_BASIS_TEMPLATE)
+      let concept: Nieuwsbrief
+      if (keuze.soort === 'html') {
+        concept = await maakConcept({ onderwerp: '', html: NIEUWSBRIEF_BASIS_TEMPLATE, editor_modus: 'html', template_key: 'html' })
+      } else if (keuze.soort === 'daan') {
+        concept = await maakConcept({ onderwerp: '', html: '', blokken: leegDocument(), editor_modus: 'blokken', template_key: 'daan' })
+      } else {
+        const doc = keuze.template.maak()
+        concept = await maakConcept({
+          onderwerp: keuze.template.voorOnderwerp,
+          preheader: keuze.template.voorPreheader,
+          html: renderDocument(doc),
+          blokken: doc,
+          editor_modus: 'blokken',
+          template_key: keuze.template.key,
+        })
+      }
+      setStartMetDaan(keuze.soort === 'daan')
       setNieuwsbrieven(prev => [concept, ...prev])
+      setKiezerOpen(false)
       setActief(concept)
     } catch (err) {
       toast.error('Kon concept niet aanmaken')
       console.error('[nieuwsbrief] concept aanmaken mislukt:', err)
     } finally {
       setBezig(false)
+    }
+  }, [])
+
+  const handleDupliceer = useCallback(async (e: React.MouseEvent, bron: Nieuwsbrief) => {
+    e.stopPropagation()
+    try {
+      const kopie = await dupliceerNieuwsbrief(bron)
+      setNieuwsbrieven(prev => [kopie, ...prev])
+      toast.success('Kopie gemaakt als concept')
+    } catch (err) {
+      toast.error('Kon niet dupliceren')
+      console.error('[nieuwsbrief] dupliceren mislukt:', err)
     }
   }, [])
 
@@ -98,6 +134,7 @@ export function NieuwsbriefLayout() {
 
   const handleTerug = useCallback(() => {
     setActief(null)
+    setStartMetDaan(false)
     laad()
   }, [laad])
 
@@ -119,7 +156,7 @@ export function NieuwsbriefLayout() {
   if (actief) {
     return actief.status === 'verzonden'
       ? <NieuwsbriefStats nieuwsbrief={actief} onTerug={handleTerug} />
-      : <NieuwsbriefEditor nieuwsbrief={actief} onTerug={handleTerug} onGewijzigd={handleGewijzigd} />
+      : <NieuwsbriefEditor nieuwsbrief={actief} onTerug={handleTerug} onGewijzigd={handleGewijzigd} startMetDaan={startMetDaan} />
   }
 
   const heeftFilter = filter !== 'alle' || zoek.trim().length > 0
@@ -251,7 +288,7 @@ export function NieuwsbriefLayout() {
                     <th className="w-40 py-3.5 pr-5 text-right">
                       <span className="text-[11px] font-semibold uppercase tracking-widest text-petrol/55 dark:text-muted-foreground">Datum</span>
                     </th>
-                    <th className="w-12" />
+                    <th className="w-20" />
                   </tr>
                 </thead>
                 <tbody>
@@ -297,14 +334,25 @@ export function NieuwsbriefLayout() {
                           </span>
                         </td>
                         <td className="pr-3 text-right">
+                          <div className="flex items-center justify-end gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                          <button
+                            type="button"
+                            onClick={e => handleDupliceer(e, n)}
+                            aria-label="Dupliceren"
+                            title="Dupliceren als nieuw concept"
+                            className="rounded-lg p-1.5 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </button>
                           <button
                             type="button"
                             onClick={e => handleVerwijder(e, n.id)}
                             aria-label="Verwijderen"
-                            className="rounded-lg p-1.5 text-muted-foreground opacity-0 transition-all hover:bg-muted hover:text-[#C0451A] group-hover:opacity-100 dark:hover:text-[#FF8866]"
+                            className="rounded-lg p-1.5 text-muted-foreground transition-all hover:bg-muted hover:text-[#C0451A] dark:hover:text-[#FF8866]"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
+                          </div>
                         </td>
                       </tr>
                     )
@@ -315,6 +363,7 @@ export function NieuwsbriefLayout() {
           )}
         </div>
       </div>
+      <TemplateKiezer open={kiezerOpen} bezig={bezig} onKies={handleKeuze} onSluit={() => setKiezerOpen(false)} />
     </div>
   )
 }

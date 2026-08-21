@@ -15,6 +15,7 @@ const supabase = createClient(
 const isEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)
 
 const EVENT_TYPE: Record<string, string> = {
+  'email.sent': 'sent',
   'email.delivered': 'delivered',
   'email.opened': 'opened',
   'email.clicked': 'clicked',
@@ -55,14 +56,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ ok: true })
     }
 
-    // E-mail-events per nieuwsbrief (gekoppeld via broadcast_id).
+    // E-mail-events per nieuwsbrief: broadcasts via broadcast_id, gerichte
+    // verzendingen via de tag nieuwsbrief_id die nieuwsbrief-verzend meegeeft.
     const eventType = EVENT_TYPE[type]
     if (eventType) {
       const broadcastId = typeof data.broadcast_id === 'string' ? data.broadcast_id : ''
+      const tags = data.tags as Record<string, string> | Array<{ name: string; value: string }> | undefined
+      const tagId = Array.isArray(tags)
+        ? tags.find(t => t?.name === 'nieuwsbrief_id')?.value
+        : (tags && typeof tags === 'object' ? tags.nieuwsbrief_id : undefined)
       const email = eersteOntvanger(data).trim().toLowerCase()
-      if (broadcastId && isEmail(email)) {
-        const { data: nb } = await supabase
-          .from('nieuwsbrieven').select('id').eq('resend_broadcast_id', broadcastId).maybeSingle()
+      if ((broadcastId || tagId) && isEmail(email)) {
+        let nbId: string | null = null
+        if (tagId && /^[0-9a-f-]{36}$/i.test(tagId)) nbId = tagId
+        else if (broadcastId) {
+          const { data: nb } = await supabase
+            .from('nieuwsbrieven').select('id').eq('resend_broadcast_id', broadcastId).maybeSingle()
+          nbId = (nb?.id as string | undefined) ?? null
+        }
+        const nb = nbId ? { id: nbId } : null
         if (nb?.id) {
           const link = eventType === 'clicked' && typeof (data.click as Record<string, unknown>)?.link === 'string'
             ? (data.click as Record<string, string>).link

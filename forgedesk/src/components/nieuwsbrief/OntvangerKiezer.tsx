@@ -1,0 +1,253 @@
+import { useEffect, useMemo, useState } from 'react'
+import { Users, Filter, ListChecks, Search, Check, RefreshCw, UserMinus, Building2 } from 'lucide-react'
+import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
+import {
+  getKlantKeuzes, verzamelOntvangers, klantVoldoet, syncContacten,
+  type OntvangerSelectie, type KlantKeuze, type Ontvanger,
+} from '@/services/nieuwsbriefService'
+
+interface Props {
+  selectie: OntvangerSelectie
+  onChange: (s: OntvangerSelectie) => void
+  onTelling: (aantal: number | null) => void
+  disabled?: boolean
+}
+
+const STATUS_LABEL: Record<string, string> = { actief: 'Actieve klanten', prospect: 'Prospects', inactief: 'Inactieve klanten' }
+
+export function OntvangerKiezer({ selectie, onChange, onTelling, disabled }: Props) {
+  const [klanten, setKlanten] = useState<KlantKeuze[]>([])
+  const [laden, setLaden] = useState(true)
+  const [ontvangers, setOntvangers] = useState<Ontvanger[]>([])
+  const [afgemeld, setAfgemeld] = useState(0)
+  const [tellen, setTellen] = useState(false)
+  const [zoek, setZoek] = useState('')
+  const [lijstZoek, setLijstZoek] = useState('')
+  const [syncing, setSyncing] = useState(false)
+  const [syncInfo, setSyncInfo] = useState<string | null>(null)
+
+  useEffect(() => {
+    getKlantKeuzes()
+      .then(setKlanten)
+      .catch(err => { toast.error('Kon klanten niet laden'); console.error('[nieuwsbrief] klanten laden mislukt:', err) })
+      .finally(() => setLaden(false))
+  }, [])
+
+  useEffect(() => {
+    let actueel = true
+    setTellen(true)
+    verzamelOntvangers(selectie)
+      .then(r => { if (!actueel) return; setOntvangers(r.ontvangers); setAfgemeld(r.afgemeld); onTelling(r.ontvangers.length) })
+      .catch(err => { if (actueel) { console.error('[nieuwsbrief] tellen mislukt:', err); onTelling(null) } })
+      .finally(() => { if (actueel) setTellen(false) })
+    return () => { actueel = false }
+  }, [selectie, onTelling])
+
+  const alleLabels = useMemo(() => Array.from(new Set(klanten.flatMap(k => k.labels))).sort(), [klanten])
+  const statusTelling = useMemo(() => {
+    const t: Record<string, number> = { actief: 0, prospect: 0, inactief: 0 }
+    for (const k of klanten) t[k.status] = (t[k.status] ?? 0) + 1
+    return t
+  }, [klanten])
+
+  const set = (v: Partial<OntvangerSelectie>) => onChange({ ...selectie, ...v })
+  const toggleIn = (lijst: string[] | undefined, waarde: string) => {
+    const huidig = lijst ?? []
+    return huidig.includes(waarde) ? huidig.filter(x => x !== waarde) : [...huidig, waarde]
+  }
+
+  const gefilterdeKlanten = useMemo(() => {
+    const q = zoek.trim().toLowerCase()
+    return klanten.filter(k => !q || k.bedrijfsnaam.toLowerCase().includes(q) || k.contactpersoon.toLowerCase().includes(q) || k.email.toLowerCase().includes(q))
+  }, [klanten, zoek])
+
+  const gefilterdeOntvangers = useMemo(() => {
+    const q = lijstZoek.trim().toLowerCase()
+    return ontvangers.filter(o => !q || o.email.includes(q) || o.naam.toLowerCase().includes(q) || o.bedrijfsnaam.toLowerCase().includes(q))
+  }, [ontvangers, lijstZoek])
+
+  const klantenInFilter = useMemo(() => klanten.filter(k => klantVoldoet(k, selectie)).length, [klanten, selectie])
+
+  const handleSync = async () => {
+    setSyncing(true)
+    try {
+      const r = await syncContacten()
+      const extra = r.resterend > 0 ? `, nog ${r.resterend} volgen bij de volgende keer` : ''
+      setSyncInfo(`${r.aantalContacten} adressen bij Resend${extra}`)
+      toast.success(`Lijst bijgewerkt: ${r.nieuwToegevoegd} nieuw toegevoegd`)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Bijwerken mislukt')
+    } finally {
+      setSyncing(false)
+    }
+  }
+
+  const soortKaart = (soort: OntvangerSelectie['type'], Icon: typeof Users, titel: string, uitleg: string) => {
+    const actief = selectie.type === soort
+    return (
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => set({ type: soort })}
+        className={cn(
+          'flex items-start gap-3 rounded-2xl border-2 p-4 text-left transition-all',
+          actief ? 'border-flame bg-flame/[0.04] shadow-[0_0_0_3px_rgba(241,80,37,0.12)]' : 'border-border bg-card hover:border-petrol/40',
+          disabled && 'opacity-60',
+        )}
+      >
+        <span className={cn('flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl', actief ? 'bg-flame text-white' : 'bg-petrol/[0.08] text-petrol dark:bg-white/[0.06] dark:text-foreground')}>
+          <Icon className="h-5 w-5" strokeWidth={1.9} />
+        </span>
+        <span className="min-w-0">
+          <span className="block text-[14px] font-bold text-foreground">{titel}</span>
+          <span className="block text-[12px] leading-relaxed text-muted-foreground">{uitleg}</span>
+        </span>
+      </button>
+    )
+  }
+
+  return (
+    <div className="mx-auto w-full max-w-5xl space-y-6 px-4 py-6 md:px-8">
+      <div>
+        <h2 className="text-[20px] font-extrabold tracking-[-0.3px] text-foreground">Wie krijgt deze nieuwsbrief<span className="text-flame">?</span></h2>
+        <p className="mt-1 text-[13px] text-muted-foreground">Alle adressen komen uit je klanten en contactpersonen in doen. Wie zich heeft afgemeld, wordt automatisch overgeslagen.</p>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-3">
+        {soortKaart('alle', Users, 'Iedereen', 'Alle klanten en hun contactpersonen met een e-mailadres.')}
+        {soortKaart('filter', Filter, 'Op status of label', 'Bijvoorbeeld alleen actieve klanten, of alleen het label "Retail".')}
+        {soortKaart('handmatig', ListChecks, 'Zelf kiezen', 'Vink precies de klanten aan die je wilt bereiken.')}
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="space-y-5">
+          {selectie.type === 'filter' && (
+            <div className="doen-slate-surface space-y-5 rounded-2xl p-5">
+              <div>
+                <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-petrol/55 dark:text-muted-foreground">Klantstatus</div>
+                <div className="flex flex-wrap gap-2">
+                  {(['actief', 'prospect', 'inactief'] as const).map(s => {
+                    const aan = (selectie.statussen ?? []).includes(s)
+                    return (
+                      <button key={s} type="button" disabled={disabled} onClick={() => set({ statussen: toggleIn(selectie.statussen, s) })} className={cn('inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-[13px] font-medium transition-colors', aan ? 'border-petrol bg-petrol text-white dark:border-white/40' : 'border-border bg-card text-foreground hover:border-petrol/50')}>
+                        {aan && <Check className="h-3.5 w-3.5" />}
+                        {STATUS_LABEL[s]}
+                        <span className={cn('font-mono text-[11px] tabular-nums', aan ? 'text-white/70' : 'text-muted-foreground')}>{statusTelling[s] ?? 0}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+                <p className="mt-1.5 text-[12px] text-muted-foreground">Niets aangevinkt betekent: alle statussen.</p>
+              </div>
+              <div>
+                <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-petrol/55 dark:text-muted-foreground">Labels</div>
+                {alleLabels.length === 0 ? (
+                  <p className="text-[13px] text-muted-foreground">Je klanten hebben nog geen labels. Geef ze labels in de Klanten-module om hier op te filteren.</p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {alleLabels.map(l => {
+                      const aan = (selectie.labels ?? []).includes(l)
+                      return (
+                        <button key={l} type="button" disabled={disabled} onClick={() => set({ labels: toggleIn(selectie.labels, l) })} className={cn('inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[13px] transition-colors', aan ? 'border-petrol bg-petrol/10 font-semibold text-petrol dark:border-white/40 dark:bg-white/10 dark:text-foreground' : 'border-border bg-card text-foreground hover:border-petrol/50')}>
+                          {aan && <Check className="h-3 w-3" />}{l}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+                <p className="mt-1.5 text-[12px] text-muted-foreground">Met meerdere labels geldt: minstens één ervan.</p>
+              </div>
+              <p className="text-[13px] text-foreground"><span className="font-mono font-semibold tabular-nums">{klantenInFilter}</span> van {klanten.length} klanten vallen binnen dit filter.</p>
+            </div>
+          )}
+
+          {selectie.type === 'handmatig' && (
+            <div className="doen-slate-surface overflow-hidden rounded-2xl">
+              <div className="flex items-center gap-3 border-b border-border/60 px-4 py-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <input value={zoek} onChange={e => setZoek(e.target.value)} placeholder="Zoek klant..." className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm text-foreground outline-none focus:border-petrol dark:focus:border-white/25" />
+                </div>
+                <span className="font-mono text-[12px] tabular-nums text-muted-foreground">{(selectie.klantIds ?? []).length} gekozen</span>
+                <button type="button" disabled={disabled} onClick={() => set({ klantIds: gefilterdeKlanten.map(k => k.id) })} className="text-[12px] font-medium text-petrol hover:underline dark:text-foreground">Alles</button>
+                <button type="button" disabled={disabled} onClick={() => set({ klantIds: [] })} className="text-[12px] font-medium text-muted-foreground hover:underline">Niets</button>
+              </div>
+              <div className="max-h-[420px] overflow-y-auto">
+                {laden ? (
+                  <div className="p-6 text-center text-[13px] text-muted-foreground">Klanten laden...</div>
+                ) : gefilterdeKlanten.length === 0 ? (
+                  <div className="p-6 text-center text-[13px] text-muted-foreground">Geen klanten gevonden</div>
+                ) : gefilterdeKlanten.map(k => {
+                  const aan = (selectie.klantIds ?? []).includes(k.id)
+                  const adressen = (k.email ? 1 : 0) + (selectie.inclusiefContactpersonen !== false ? k.aantalContactpersonen : 0)
+                  return (
+                    <label key={k.id} className={cn('flex cursor-pointer items-center gap-3 border-b border-border/60 px-4 py-2.5 last:border-0 hover:bg-petrol/[0.04] dark:hover:bg-white/[0.03]', disabled && 'cursor-default')}>
+                      <input type="checkbox" checked={aan} disabled={disabled} onChange={() => set({ klantIds: toggleIn(selectie.klantIds, k.id) })} className="h-4 w-4 rounded border-border accent-[#1A535C]" />
+                      <Building2 className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[14px] font-medium text-foreground">{k.bedrijfsnaam || k.contactpersoon || k.email}</span>
+                        <span className="block truncate text-[12px] text-muted-foreground">{[k.contactpersoon, k.email].filter(Boolean).join(' · ')}</span>
+                      </span>
+                      <span className={cn('rounded-md px-1.5 py-0.5 font-mono text-[11px] tabular-nums', adressen === 0 ? 'bg-muted text-muted-foreground' : 'bg-petrol/10 text-petrol dark:bg-white/10 dark:text-foreground')}>{adressen} {adressen === 1 ? 'adres' : 'adressen'}</span>
+                    </label>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          <label className="doen-slate-surface flex cursor-pointer items-center gap-3 rounded-2xl p-4">
+            <input type="checkbox" checked={selectie.inclusiefContactpersonen !== false} disabled={disabled} onChange={e => set({ inclusiefContactpersonen: e.target.checked })} className="h-4 w-4 rounded border-border accent-[#1A535C]" />
+            <span>
+              <span className="block text-[14px] font-semibold text-foreground">Ook de contactpersonen van elke klant</span>
+              <span className="block text-[12px] text-muted-foreground">Uit: alleen het hoofdadres van de klant.</span>
+            </span>
+          </label>
+
+          {selectie.type === 'alle' && (
+            <div className="doen-slate-surface flex flex-wrap items-center gap-3 rounded-2xl p-4">
+              <div className="min-w-0 flex-1">
+                <div className="text-[14px] font-semibold text-foreground">Verzendlijst bij Resend</div>
+                <div className="text-[12px] text-muted-foreground">{syncInfo ?? 'Bij "Iedereen" gaat de mail via je Resend-lijst. Die wordt bij het versturen automatisch bijgewerkt; hier kun je dat alvast doen.'}</div>
+              </div>
+              <button type="button" onClick={handleSync} disabled={syncing || disabled} className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2 text-[13px] font-medium text-foreground transition-all hover:border-petrol/50 disabled:opacity-60">
+                <RefreshCw className={cn('h-4 w-4 text-petrol', syncing && 'animate-spin')} />
+                {syncing ? 'Bijwerken...' : 'Lijst bijwerken'}
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="doen-slate-surface flex max-h-[640px] flex-col overflow-hidden rounded-2xl">
+          <div className="border-b border-border/60 px-4 py-3">
+            <div className="flex items-baseline gap-2">
+              <span className="font-cijfer text-[28px] font-bold leading-none tabular-nums text-foreground">{tellen ? '…' : ontvangers.length}</span>
+              <span className="text-[13px] text-muted-foreground">ontvangers<span className="text-flame">.</span></span>
+            </div>
+            {afgemeld > 0 && (
+              <div className="mt-1 flex items-center gap-1.5 text-[12px] text-muted-foreground"><UserMinus className="h-3.5 w-3.5" /> {afgemeld} afgemeld, overgeslagen</div>
+            )}
+          </div>
+          <div className="border-b border-border/60 px-3 py-2">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <input value={lijstZoek} onChange={e => setLijstZoek(e.target.value)} placeholder="Zoek in de lijst..." className="w-full rounded-md border border-border bg-background py-1.5 pl-8 pr-2 text-[12px] text-foreground outline-none focus:border-petrol dark:focus:border-white/25" />
+            </div>
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            {gefilterdeOntvangers.length === 0 ? (
+              <div className="p-6 text-center text-[13px] text-muted-foreground">{tellen ? 'Tellen...' : 'Nog niemand in de lijst'}</div>
+            ) : gefilterdeOntvangers.slice(0, 500).map(o => (
+              <div key={o.email} className="border-b border-border/40 px-4 py-2 last:border-0">
+                <div className="truncate text-[13px] font-medium text-foreground">{o.naam || o.bedrijfsnaam || o.email}</div>
+                <div className="truncate font-mono text-[11px] text-muted-foreground">{o.email}{o.bedrijfsnaam && o.naam ? ` · ${o.bedrijfsnaam}` : ''}</div>
+              </div>
+            ))}
+            {gefilterdeOntvangers.length > 500 && <div className="p-3 text-center text-[12px] text-muted-foreground">en nog {gefilterdeOntvangers.length - 500} meer</div>}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

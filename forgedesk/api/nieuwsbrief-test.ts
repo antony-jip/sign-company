@@ -30,28 +30,50 @@ function escapeHtml(str: string): string {
 // ze niet, want dit gaat via emails.send i.p.v. een broadcast).
 function resolveMergeTags(html: string, naar: string): string {
   return html
-    .replace(/\{\{\{contact\.first_name(?:\|([^}]*))?\}\}\}/g, (_m, fb) => fb || 'daar')
-    .replace(/\{\{\{contact\.last_name(?:\|([^}]*))?\}\}\}/g, (_m, fb) => fb || '')
+    .replace(/\{\{\{contact\.first_name(?:\|([^}]*))?\}\}\}/g, () => 'Jan')
+    .replace(/\{\{\{contact\.last_name(?:\|([^}]*))?\}\}\}/g, () => 'Jansen')
     .replace(/\{\{\{contact\.email\}\}\}/g, naar)
     .replace(/\{\{\{RESEND_UNSUBSCRIBE_URL\}\}\}/g, '#')
 }
 
-function buildNieuwsbriefHtml(bodyHtml: string, onderwerp: string, preheader?: string): string {
+interface MailStijl { font?: string; achtergrond?: string; kaart?: string; tekst?: string }
+
+// Zelfde whitelist als nieuwsbrief-verzend.ts (api-bestanden delen geen code).
+const WEBFONTS: Record<string, string> = {
+  'Hanken Grotesk': 'Hanken+Grotesk:wght@400;600;700;800',
+  'Bricolage Grotesque': 'Bricolage+Grotesque:wght@400;600;700;800',
+  'Inter': 'Inter:wght@400;600;700;800',
+  'Source Serif 4': 'Source+Serif+4:wght@400;600;700',
+}
+const STANDAARD_FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
+const RESPONSIVE_CSS = '@media only screen and (max-width:600px){ .stack{display:block!important;width:100%!important;padding-bottom:16px!important;} .stack-gap{display:none!important;} }'
+const isKleur = (v: unknown): v is string => typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v)
+const isFont = (v: unknown): v is string => typeof v === 'string' && v.length < 200 && /^[\w\s,'"\-]+$/.test(v)
+function webfontImport(font: string): string {
+  const naam = Object.keys(WEBFONTS).find(n => font.includes(n))
+  return naam ? `@import url('https://fonts.googleapis.com/css2?family=${WEBFONTS[naam]}&display=swap');` : ''
+}
+
+function buildNieuwsbriefHtml(bodyHtml: string, onderwerp: string, preheader?: string, stijlIn?: MailStijl): string {
+  const font = isFont(stijlIn?.font) ? stijlIn!.font! : STANDAARD_FONT
+  const achtergrond = isKleur(stijlIn?.achtergrond) ? stijlIn!.achtergrond! : '#F5F4F1'
+  const kaart = isKleur(stijlIn?.kaart) ? stijlIn!.kaart! : '#FFFFFF'
+  const tekst = isKleur(stijlIn?.tekst) ? stijlIn!.tekst! : '#1A1A1A'
   const preheaderBlok = preheader?.trim()
     ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">${escapeHtml(preheader.trim())}</div>`
     : ''
   return `<!DOCTYPE html>
 <html lang="nl">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${escapeHtml(onderwerp)}</title></head>
-<body style="margin:0;padding:0;background-color:#F5F4F1;-webkit-font-smoothing:antialiased;">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${escapeHtml(onderwerp)}</title><style>${webfontImport(font)}${RESPONSIVE_CSS}</style></head>
+<body style="margin:0;padding:0;background-color:${achtergrond};-webkit-font-smoothing:antialiased;">
   ${preheaderBlok}
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#F5F4F1;padding:32px 16px;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:${achtergrond};padding:32px 16px;">
     <tr><td align="center">
       <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;">
-        <tr><td style="background-color:#ffffff;border-radius:12px;padding:36px 36px 28px 36px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:15px;line-height:1.65;color:#1A1A1A;">
+        <tr><td style="background-color:${kaart};border-radius:12px;padding:36px 36px 28px 36px;font-family:${font};font-size:15px;line-height:1.65;color:${tekst};">
           ${bodyHtml}
         </td></tr>
-        <tr><td style="padding:20px 36px 0 36px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:12px;color:#9B9B95;text-align:center;line-height:1.6;">
+        <tr><td style="padding:20px 36px 0 36px;font-family:${font};font-size:12px;color:#9B9B95;text-align:center;line-height:1.6;">
           Je ontvangt deze mail omdat je contact bent van Sign Company.<br>
           <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:#9B9B95;text-decoration:underline;">Uitschrijven</a>
         </td></tr>
@@ -99,15 +121,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!ok) return res.status(403).json({ error: 'Geen toegang' })
     if (!(await enforceRateLimit(OWNER_USER_ID, res))) return
 
-    const { onderwerp, html, preheader, naar } = (req.body ?? {}) as {
-      onderwerp?: string; html?: string; preheader?: string; naar?: string
+    const { onderwerp, html, preheader, naar, stijl } = (req.body ?? {}) as {
+      onderwerp?: string; html?: string; preheader?: string; naar?: string; stijl?: MailStijl
     }
     if (!html?.trim()) return res.status(400).json({ error: 'De nieuwsbrief is nog leeg' })
 
     const ontvanger = (naar?.trim() || email).toLowerCase()
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ontvanger)) return res.status(400).json({ error: 'Geen geldig testadres' })
 
-    const volledig = resolveMergeTags(buildNieuwsbriefHtml(html, onderwerp?.trim() || '(geen onderwerp)', preheader), ontvanger)
+    const volledig = resolveMergeTags(buildNieuwsbriefHtml(html, onderwerp?.trim() || '(geen onderwerp)', preheader, stijl), ontvanger)
 
     const { error } = await resend.emails.send({
       from: FROM,

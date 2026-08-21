@@ -48,26 +48,34 @@ function splitNaam(naam: string): { voornaam: string; achternaam: string } {
   return { voornaam: delen[0], achternaam: delen.slice(1).join(' ') }
 }
 
+// PostgREST geeft maximaal 1000 rijen per aanroep, dus in pagina's ophalen.
+async function allesVanOrg(tabel: string, kolommen: string, orgId: string): Promise<Record<string, unknown>[]> {
+  const uit: Record<string, unknown>[] = []
+  for (let van = 0; ; van += 1000) {
+    const { data, error } = await supabase.from(tabel).select(kolommen).eq('organisatie_id', orgId).order('id').range(van, van + 999)
+    if (error) throw error
+    const rijen = (data ?? []) as unknown as Record<string, unknown>[]
+    uit.push(...rijen)
+    if (rijen.length < 1000) break
+  }
+  return uit
+}
+
 async function verzamelOntvangers(orgId: string): Promise<Ontvanger[]> {
   const map = new Map<string, Ontvanger>()
 
-  const { data: klanten } = await supabase
-    .from('klanten')
-    .select('email, bedrijfsnaam, contactpersoon')
-    .eq('organisatie_id', orgId)
-  for (const k of klanten ?? []) {
+  const klanten = await allesVanOrg('klanten', 'id, email, bedrijfsnaam, contactpersoon, is_demo_data', orgId)
+  for (const k of klanten) {
     const rij = k as Record<string, unknown>
+    if (rij.is_demo_data) continue
     const email = String(rij.email || '').trim().toLowerCase()
     if (!isEmail(email) || map.has(email)) continue
     const naam = String(rij.contactpersoon || rij.bedrijfsnaam || '')
     map.set(email, { email, ...splitNaam(naam) })
   }
 
-  const { data: cps } = await supabase
-    .from('contactpersonen')
-    .select('email, naam')
-    .eq('organisatie_id', orgId)
-  for (const c of cps ?? []) {
+  const cps = await allesVanOrg('contactpersonen', 'id, email, naam', orgId)
+  for (const c of cps) {
     const rij = c as Record<string, unknown>
     const email = String(rij.email || '').trim().toLowerCase()
     if (!isEmail(email) || map.has(email)) continue
