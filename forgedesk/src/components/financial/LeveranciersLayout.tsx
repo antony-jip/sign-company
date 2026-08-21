@@ -20,7 +20,7 @@ import type { Leverancier, Uitgave, KvkResultaat, ContactpersoonRecord } from '@
 import { KvkZoekVeld } from '@/components/shared/KvkZoekVeld'
 import {
   getLeveranciers, createLeverancier, updateLeverancier, deleteLeverancier,
-  getUitgavenByLeverancier,
+  getUitgaven, getBestelbonnenByLeverancier,
   getContactpersonenByLeverancier, createContactpersoonDB, updateContactpersoonDB,
   deleteContactpersoonDB,
 } from '@/services/supabaseService'
@@ -98,21 +98,21 @@ export function LeveranciersLayout() {
         if (cancelled) return
         setLeveranciers(levs)
 
-        // Fetch uitgaven counts per leverancier
+        // Eén query voor alle uitgaven, dan per leverancier optellen; per
+        // leverancier apart ophalen werd bij tientallen leveranciers traag.
         const counts: Record<string, { count: number; totaal: number }> = {}
-        for (const lev of levs) {
-          try {
-            const uitgaven = await getUitgavenByLeverancier(lev.id)
-            if (cancelled) return
-            counts[lev.id] = {
-              count: uitgaven.length,
-              // Uitgaven ex btw, gelijk aan de rest van de app.
-              totaal: round2(uitgaven.reduce((s, u) => s + (u.bedrag_excl_btw ?? u.bedrag_incl_btw), 0)),
-            }
-          } catch (err) {
-            logger.error('Fout bij laden uitgaven voor leverancier:', err)
-            counts[lev.id] = { count: 0, totaal: 0 }
+        try {
+          const uitgaven = await getUitgaven()
+          if (cancelled) return
+          for (const u of uitgaven) {
+            if (!u.leverancier_id) continue
+            const c = counts[u.leverancier_id] ?? (counts[u.leverancier_id] = { count: 0, totaal: 0 })
+            c.count++
+            // Uitgaven ex btw, gelijk aan de rest van de app.
+            c.totaal = round2(c.totaal + (u.bedrag_excl_btw ?? u.bedrag_incl_btw))
           }
+        } catch (err) {
+          logger.error('Fout bij laden uitgaven voor leveranciers:', err)
         }
         setUitgavenCounts(counts)
         setCached('leverancierUitgavenCounts', counts)
@@ -190,18 +190,20 @@ export function LeveranciersLayout() {
       const data = {
         user_id: userId,
         bedrijfsnaam: formData.bedrijfsnaam.trim(),
-        contactpersoon: formData.contactpersoon || undefined,
-        email: formData.email || undefined,
-        telefoon: formData.telefoon || undefined,
-        adres: formData.adres || undefined,
-        postcode: formData.postcode || undefined,
-        stad: formData.stad || undefined,
-        website: formData.website || undefined,
-        kvk_nummer: formData.kvk_nummer || undefined,
-        btw_nummer: formData.btw_nummer || undefined,
-        iban: formData.iban || undefined,
-        categorie: formData.categorie || undefined,
-        notitie: formData.notitie || undefined,
+        // Lege strings, geen undefined: Supabase negeert undefined en dan
+        // blijft een gewist telefoonnummer of adres gewoon staan.
+        contactpersoon: formData.contactpersoon.trim(),
+        email: formData.email.trim(),
+        telefoon: formData.telefoon.trim(),
+        adres: formData.adres.trim(),
+        postcode: formData.postcode.trim(),
+        stad: formData.stad.trim(),
+        website: formData.website.trim(),
+        kvk_nummer: formData.kvk_nummer.trim(),
+        btw_nummer: formData.btw_nummer.trim(),
+        iban: formData.iban.trim(),
+        categorie: formData.categorie.trim(),
+        notitie: formData.notitie.trim(),
         actief: formData.actief,
       }
       if (editingId) {
@@ -276,6 +278,13 @@ export function LeveranciersLayout() {
   const handleDelete = useCallback(async () => {
     if (!deleteTarget) return
     try {
+      // De database wist bestelbonnen mee (ON DELETE CASCADE). Dat mag nooit
+      // stil gebeuren; zet de leverancier dan op inactief.
+      const bestelbonnen = await getBestelbonnenByLeverancier(deleteTarget.id)
+      if (bestelbonnen.length > 0) {
+        toast.error(`${deleteTarget.bedrijfsnaam} heeft ${bestelbonnen.length} bestelbon${bestelbonnen.length === 1 ? '' : 'nen'}. Verwijderen zou die wissen; zet de leverancier op inactief.`)
+        return
+      }
       await deleteLeverancier(deleteTarget.id)
       setLeveranciers((prev) => prev.filter((l) => l.id !== deleteTarget.id))
       toast.success('Leverancier verwijderd')
@@ -519,7 +528,7 @@ export function LeveranciersLayout() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Leverancier verwijderen</DialogTitle>
-            <DialogDescription>Weet je zeker dat je {deleteTarget?.bedrijfsnaam} wilt verwijderen?</DialogDescription>
+            <DialogDescription>Weet je zeker dat je {deleteTarget?.bedrijfsnaam} wilt verwijderen? Contactpersonen van deze leverancier gaan mee; uitgaven en inkoopfacturen blijven bestaan zonder leverancier.</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Annuleren</Button>
