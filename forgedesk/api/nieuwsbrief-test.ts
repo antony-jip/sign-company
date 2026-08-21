@@ -132,6 +132,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       onderwerp?: string; html?: string; preheader?: string; naar?: string; stijl?: MailStijl
     }
     if (!html?.trim()) return res.status(400).json({ error: 'De nieuwsbrief is nog leeg' })
+    if (html.length > 500_000) return res.status(400).json({ error: 'De nieuwsbrief is te groot (max 500 kB HTML)' })
 
     const ontvanger = (naar?.trim() || email).toLowerCase()
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ontvanger)) return res.status(400).json({ error: 'Geen geldig testadres' })

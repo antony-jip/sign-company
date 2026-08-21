@@ -252,8 +252,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!rij || (rij as Record<string, unknown>).user_id !== OWNER_USER_ID) {
       return res.status(404).json({ error: 'Nieuwsbrief niet gevonden' })
     }
-    if ((rij as Record<string, unknown>).status === 'verzonden') {
-      return res.status(400).json({ error: 'Deze nieuwsbrief is al verzonden' })
+    const huidigeStatus = (rij as Record<string, unknown>).status
+    if (huidigeStatus === 'verzonden') return res.status(400).json({ error: 'Deze nieuwsbrief is al verzonden' })
+    if (huidigeStatus === 'gepland') return res.status(400).json({ error: 'Deze nieuwsbrief staat al ingepland' })
+    if (html.length > 500_000) return res.status(400).json({ error: 'De nieuwsbrief is te groot (max 500 kB HTML)' })
+    if (onderwerp.trim().length > 200) return res.status(400).json({ error: 'Het onderwerp is te lang' })
+
+    // Claim de rij vóór het verzenden: twee snelle klikken of twee tabbladen
+    // mogen nooit twee broadcasts opleveren. Alleen wie van 'concept' naar
+    // 'bezig' komt, mag door; bij een fout zetten we hem terug.
+    const { data: geclaimd } = await supabase
+      .from('nieuwsbrieven')
+      .update({ status: 'gepland', gepland_op: scheduledAt || null, updated_at: new Date().toISOString() })
+      .eq('id', nieuwsbriefId)
+      .eq('status', 'concept')
+      .select('id')
+    if (!geclaimd || geclaimd.length === 0) return res.status(409).json({ error: 'Deze nieuwsbrief wordt al verstuurd' })
+    const geefVrij = async (fout: string, code = 502) => {
+      await supabase.from('nieuwsbrieven').update({ status: 'concept', gepland_op: null }).eq('id', nieuwsbriefId)
+      return res.status(code).json({ error: fout })
     }
 
     const volledigeHtml = buildNieuwsbriefHtml(html, onderwerp.trim(), preheader, stijl)
@@ -266,11 +283,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Iedereen: via de Resend-lijst als broadcast. Resend regelt dan zelf de
       // afmeldlink per ontvanger en het inplannen op schaal.
       const audienceId = await vindAudienceId(resend)
-      if (!audienceId) return res.status(400).json({ error: 'Werk eerst je verzendlijst bij (stap Ontvangers)' })
+      if (!audienceId) return geefVrij('Werk eerst je verzendlijst bij (stap Ontvangers)', 400)
 
       const { data: contacten } = await resend.contacts.list({ audienceId })
       const actief = (contacten?.data ?? []).filter(c => !c.unsubscribed)
-      if (actief.length === 0) return res.status(400).json({ error: 'Geen actieve contacten in de lijst. Werk eerst je verzendlijst bij.' })
+      if (actief.length === 0) return geefVrij('Geen actieve contacten in de lijst. Werk eerst je verzendlijst bij.', 400)
 
       const { data: broadcast, error: bcErr } = await resend.broadcasts.create({
         audienceId,
@@ -280,27 +297,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         previewText: preheader?.trim() || undefined,
         html: volledigeHtml,
       })
-      if (bcErr || !broadcast) {
-        return res.status(502).json({ error: `Kon de nieuwsbrief niet aanmaken bij Resend: ${bcErr?.message ?? 'onbekend'}` })
-      }
+      if (bcErr || !broadcast) return geefVrij(`Kon de nieuwsbrief niet aanmaken bij Resend: ${bcErr?.message ?? 'onbekend'}`)
       const { error: sendErr } = scheduledAt
         ? await resend.broadcasts.send(broadcast.id, { scheduledAt })
         : await resend.broadcasts.send(broadcast.id)
-      if (sendErr) return res.status(502).json({ error: `Verzenden mislukt bij Resend: ${sendErr.message}` })
+      if (sendErr) return geefVrij(`Verzenden mislukt bij Resend: ${sendErr.message}`)
       aantal = actief.length
       broadcastId = broadcast.id
     } else {
       // Selectie: per ontvanger gepersonaliseerd, met eigen afmeldlink.
-      if (!AFMELD_GEHEIM) return res.status(500).json({ error: 'NIEUWSBRIEF_WEBHOOK_TOKEN ontbreekt; de afmeldlink kan niet worden gemaakt' })
+      if (!AFMELD_GEHEIM) return geefVrij('NIEUWSBRIEF_WEBHOOK_TOKEN ontbreekt; de afmeldlink kan niet worden gemaakt', 500)
       const { data: profile } = await supabase
         .from('profiles').select('organisatie_id').eq('id', OWNER_USER_ID).maybeSingle()
       const orgId = (profile?.organisatie_id as string | null) ?? null
-      if (!orgId) return res.status(400).json({ error: 'Geen organisatie gevonden voor de eigenaar' })
+      if (!orgId) return geefVrij('Geen organisatie gevonden voor de eigenaar', 400)
 
       const lijst = await verzamelOntvangers(orgId, selectie)
-      if (lijst.length === 0) return res.status(400).json({ error: 'Je selectie bevat geen ontvangers met een e-mailadres' })
+      if (lijst.length === 0) return geefVrij('Je selectie bevat geen ontvangers met een e-mailadres', 400)
       if (gepland && lijst.length > MAX_GEPLAND_PER_RUN) {
-        return res.status(400).json({ error: `Inplannen voor een selectie kan tot ${MAX_GEPLAND_PER_RUN} ontvangers. Kies "Iedereen" of verstuur nu.` })
+        return geefVrij(`Inplannen voor een selectie kan tot ${MAX_GEPLAND_PER_RUN} ontvangers. Kies "Iedereen" of verstuur nu.`, 400)
       }
 
       const tags = [{ name: 'nieuwsbrief_id', value: nieuwsbriefId }]
@@ -340,7 +355,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           if (i + BATCH_GROOTTE < lijst.length) await sleep(THROTTLE_MS)
         }
       }
-      if (aantal === 0) return res.status(502).json({ error: 'Geen enkele mail kon worden verstuurd. Controleer de Resend-instellingen.' })
+      if (aantal === 0) return geefVrij('Geen enkele mail kon worden verstuurd. Controleer de Resend-instellingen.')
       if (mislukt.length > 0) console.warn(`[nieuwsbrief-verzend] ${mislukt.length} mails mislukt:`, mislukt.slice(0, 10))
     }
 
@@ -375,6 +390,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })
   } catch (err) {
     console.error('[nieuwsbrief-verzend] fout:', err)
+    const id = (req.body as { nieuwsbriefId?: string } | undefined)?.nieuwsbriefId
+    if (id) await supabase.from('nieuwsbrieven').update({ status: 'concept', gepland_op: null }).eq('id', id).eq('status', 'gepland').is('resend_broadcast_id', null).is('verzonden_op', null).is('aantal_ontvangers', null)
     return res.status(500).json({ error: (err as Error).message || 'Verzenden mislukt' })
   }
 }
