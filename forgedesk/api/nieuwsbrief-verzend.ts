@@ -42,7 +42,7 @@ const WEBFONTS: Record<string, string> = {
   'Source Serif 4': 'Source+Serif+4:wght@400;600;700',
 }
 const STANDAARD_FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
-const RESPONSIVE_CSS = '@media only screen and (max-width:600px){ .stack{display:block!important;width:100%!important;padding-bottom:16px!important;} .stack-gap{display:none!important;} }'
+const RESPONSIVE_CSS = '@media only screen and (max-width:600px){ .stack{display:block!important;width:100%!important;padding-bottom:16px!important;} .stack-gap{display:none!important;} .mobiel-verbergen{display:none!important;max-height:0!important;overflow:hidden!important;} }'
 
 const isKleur = (v: unknown): v is string => typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v)
 const isFont = (v: unknown): v is string => typeof v === 'string' && v.length < 200 && /^[\w\s,'"\-]+$/.test(v)
@@ -165,17 +165,23 @@ function buildNieuwsbriefHtml(bodyHtml: string, onderwerp: string, preheader?: s
   const achtergrond = isKleur(stijlIn?.achtergrond) ? stijlIn!.achtergrond! : '#F5F4F1'
   const kaart = isKleur(stijlIn?.kaart) ? stijlIn!.kaart! : '#FFFFFF'
   const tekst = isKleur(stijlIn?.tekst) ? stijlIn!.tekst! : '#1A1A1A'
+  const webfont = webfontImport(font)
   const preheaderBlok = preheader?.trim()
-    ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">${escapeHtml(preheader.trim())}</div>`
+    ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;font-size:1px;line-height:1px;color:${achtergrond};">${escapeHtml(preheader.trim())}${'&zwnj;&nbsp;'.repeat(40)}</div>`
     : ''
+  // Spiegelt src/components/nieuwsbrief/nieuwsbriefShell.ts (preview).
   return `<!DOCTYPE html>
-<html lang="nl">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${escapeHtml(onderwerp)}</title><style>${webfontImport(font)}${RESPONSIVE_CSS}</style></head>
-<body style="margin:0;padding:0;background-color:${achtergrond};-webkit-font-smoothing:antialiased;">
+<html lang="nl" dir="ltr" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark"><meta name="x-apple-disable-message-reformatting"><title>${escapeHtml(onderwerp)}</title>
+<!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
+${webfont ? `<!--[if !mso]><!--><style>${webfont}</style><!--<![endif]-->` : ''}
+<style>:root{color-scheme:light dark;supported-color-schemes:light dark;} body{margin:0;padding:0;} table{border-collapse:collapse;} img{-ms-interpolation-mode:bicubic;} ${RESPONSIVE_CSS}</style></head>
+<body style="margin:0;padding:0;background-color:${achtergrond};-webkit-font-smoothing:antialiased;word-spacing:normal;">
   ${preheaderBlok}
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:${achtergrond};padding:32px 16px;">
+  <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background-color:${achtergrond};padding:32px 16px;">
     <tr><td align="center">
-      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;">
+      <!--[if mso]><table role="presentation" width="600" cellpadding="0" cellspacing="0"><tr><td><![endif]-->
+      <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="max-width:600px;">
         <tr><td style="background-color:${kaart};border-radius:12px;padding:36px 36px 28px 36px;font-family:${font};font-size:15px;line-height:1.65;color:${tekst};">
           ${bodyHtml}
         </td></tr>
@@ -184,6 +190,7 @@ function buildNieuwsbriefHtml(bodyHtml: string, onderwerp: string, preheader?: s
           <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:#9B9B95;text-decoration:underline;">Uitschrijven</a>
         </td></tr>
       </table>
+      <!--[if mso]></td></tr></table><![endif]-->
     </td></tr>
   </table>
 </body>

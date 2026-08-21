@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowLeft, Send, Clock, Code2, Eye, Sparkles, ImagePlus, FlaskConical, RefreshCw, LayoutGrid, Users, ClipboardCheck,
-  Check, AlertTriangle, AlertCircle, CheckCircle2, ExternalLink, ChevronRight, Wand2, Lock,
+  Check, AlertTriangle, AlertCircle, CheckCircle2, ExternalLink, ChevronRight, Wand2, Lock, Image as ImagesIcon,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn, formatDateTime } from '@/lib/utils'
@@ -13,6 +13,7 @@ import {
 import { BlokBouwer } from './BlokBouwer'
 import { OntvangerKiezer } from './OntvangerKiezer'
 import { NieuwsbriefPreview } from './NieuwsbriefPreview'
+import { FotoBank } from './FotoBank'
 import { buildPreviewHtml } from './nieuwsbriefShell'
 import { beoordeelNieuwsbrief, telFouten, verzamelLinks, type Bevinding } from './nieuwsbriefKwaliteit'
 import {
@@ -71,6 +72,7 @@ export function NieuwsbriefEditor({ nieuwsbrief, onTerug, onGewijzigd, startMetD
   const [aiAfbeeldingen, setAiAfbeeldingen] = useState('')
   const [aiBezig, setAiBezig] = useState(false)
   const [uploadBezig, setUploadBezig] = useState(false)
+  const [bankOpen, setBankOpen] = useState(false)
   const [onderwerpBezig, setOnderwerpBezig] = useState(false)
   const [onderwerpSuggesties, setOnderwerpSuggesties] = useState<{ onderwerp: string; preheader: string }[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -536,6 +538,9 @@ export function NieuwsbriefEditor({ nieuwsbrief, onTerug, onGewijzigd, startMetD
                   {uploadBezig ? <RefreshCw className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4 text-petrol" />}
                   {uploadBezig ? 'Uploaden...' : "Foto's uploaden"}
                 </button>
+                <button type="button" onClick={() => setBankOpen(true)} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-[13px] font-medium text-foreground transition-all hover:border-petrol/50">
+                  <ImagesIcon className="h-4 w-4 text-petrol" /> Fotobank
+                </button>
                 <button type="button" onClick={() => setAiOpen(false)} disabled={aiBezig} className="ml-auto rounded-lg px-3 py-2 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground disabled:opacity-60">Sluiten</button>
               </div>
               {(modus === 'blokken' ? doc.blokken.length > 0 : html.trim().length > 0) && (
@@ -545,6 +550,8 @@ export function NieuwsbriefEditor({ nieuwsbrief, onTerug, onGewijzigd, startMetD
           </div>
         </div>
       )}
+
+      <FotoBank open={bankOpen} meerdere onSluit={() => setBankOpen(false)} onKies={urls => { setAiAfbeeldingen(prev => [prev.trim(), ...urls].filter(Boolean).join('\n')); setBankOpen(false) }} />
 
       {bevestigOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
