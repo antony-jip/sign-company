@@ -342,7 +342,10 @@ export function QuoteCreation() {
 
   // ── Interne check door collega ──
   const { medewerkers } = useMedewerkers()
-  const [checkInfo, setCheckInfoState] = useState<{ status: 'open' | 'akkoord' | 'verstuurd' | null; aan?: string; door?: string; notitie?: string }>({ status: null })
+  const [checkInfo, setCheckInfoState] = useState<{ status: 'open' | 'akkoord' | 'verstuurd' | 'wijzigingen' | null; aan?: string; door?: string; notitie?: string; reactie?: string }>({ status: null })
+  const [wijzigingenOpen, setWijzigingenOpen] = useState(false)
+  const [wijzigingenTekst, setWijzigingenTekst] = useState('')
+  const [isWijzigingenBezig, setIsWijzigingenBezig] = useState(false)
   // Ref-spiegel zodat de async verzendhandlers de actuele stand zien.
   const checkInfoRef = useRef(checkInfo)
   const updateCheckInfo = (c: typeof checkInfo) => { checkInfoRef.current = c; setCheckInfoState(c) }
@@ -726,6 +729,7 @@ export function QuoteCreation() {
           aan: offerte.check_gevraagd_aan || undefined,
           door: offerte.check_gevraagd_door || undefined,
           notitie: offerte.check_notitie || undefined,
+          reactie: offerte.check_reactie || undefined,
         })
         setGeldigTot(offerte.geldig_tot?.split('T')[0] || '')
         setNotities(offerte.notities || '')
@@ -1988,6 +1992,25 @@ export function QuoteCreation() {
     }
   }
 
+  const handleCheckWijzigingen = async () => {
+    if (!editOfferteId) return
+    if (!wijzigingenTekst.trim()) { toast.error('Schrijf kort welke wijzigingen je wilt'); return }
+    setIsWijzigingenBezig(true)
+    try {
+      const r = await rondOfferteCheckAf(editOfferteId, 'wijzigingen', wijzigingenTekst.trim())
+      if (r.offerte?.updated_at) lastKnownUpdatedAtRef.current = r.offerte.updated_at
+      updateCheckInfo({ ...checkInfoRef.current, status: 'wijzigingen', reactie: wijzigingenTekst.trim() })
+      setWijzigingenOpen(false)
+      setWijzigingenTekst('')
+      toast.success(<>Wijzigingen gevraagd<span style={{ color: '#F15025' }}>.</span></>)
+    } catch (err) {
+      logger.error('Wijzigingen aanvragen mislukt:', err)
+      toast.error(err instanceof Error && err.message ? err.message : 'Kon geen wijzigingen aanvragen')
+    } finally {
+      setIsWijzigingenBezig(false)
+    }
+  }
+
   // ── Helper: markup color for sidebar (≥90% green, 60-89% orange, <60% red) ──
   const getMargeColorSidebar = (pct: number) => {
     if (pct >= 90) return { text: 'text-green-600 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-900/20', bar: 'bg-green-500' }
@@ -2117,15 +2140,70 @@ export function QuoteCreation() {
               <span className="block text-muted-foreground italic mt-0.5">&ldquo;{checkInfo.notitie}&rdquo;</span>
             )}
           </div>
-          <button
-            type="button"
-            onClick={handleCheckAkkoord}
-            disabled={isCheckAkkoordBezig}
-            className="inline-flex items-center gap-1.5 h-8 px-3.5 text-[13px] font-semibold rounded-lg bg-petrol text-white hover:bg-[#0F3D44] transition-colors disabled:opacity-50"
-          >
-            <Check className="h-3.5 w-3.5" strokeWidth={2} />
-            {isCheckAkkoordBezig ? 'Bezig…' : 'Akkoord geven'}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setWijzigingenOpen(v => !v)}
+              disabled={isCheckAkkoordBezig || isWijzigingenBezig}
+              className="inline-flex items-center gap-1.5 h-8 px-3.5 text-[13px] font-semibold rounded-lg border border-border bg-card text-foreground hover:border-petrol/50 transition-colors disabled:opacity-50"
+            >
+              Wijzigingen aanvragen
+            </button>
+            <button
+              type="button"
+              onClick={handleCheckAkkoord}
+              disabled={isCheckAkkoordBezig || isWijzigingenBezig}
+              className="inline-flex items-center gap-1.5 h-8 px-3.5 text-[13px] font-semibold rounded-lg bg-petrol text-white hover:bg-[#0F3D44] transition-colors disabled:opacity-50"
+            >
+              <Check className="h-3.5 w-3.5" strokeWidth={2} />
+              {isCheckAkkoordBezig ? 'Bezig…' : 'Akkoord geven'}
+            </button>
+          </div>
+          {wijzigingenOpen && (
+            <div className="basis-full flex flex-wrap items-start gap-2 pt-1">
+              <textarea
+                value={wijzigingenTekst}
+                onChange={e => setWijzigingenTekst(e.target.value)}
+                rows={2}
+                autoFocus
+                maxLength={1000}
+                placeholder={`Wat moet er anders? Bijv. "Prijs regel 3 klopt niet, en de montagekosten ontbreken."`}
+                className="min-w-[260px] flex-1 resize-none rounded-lg border border-border bg-background px-3 py-2 text-[13px] text-foreground outline-none focus:border-petrol"
+              />
+              <button
+                type="button"
+                onClick={handleCheckWijzigingen}
+                disabled={isWijzigingenBezig || !wijzigingenTekst.trim()}
+                className="inline-flex items-center gap-1.5 h-9 px-3.5 text-[13px] font-semibold rounded-lg bg-flame text-white hover:bg-[#E04520] transition-colors disabled:opacity-50"
+              >
+                {isWijzigingenBezig ? 'Bezig…' : `Stuur naar ${naamVoorUser(checkInfo.door) || 'aanvrager'}`}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ──── TERUGKOPPELING: COLLEGA VRAAGT WIJZIGINGEN ──── */}
+      {checkInfo.status === 'wijzigingen' && (
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-flame/25 bg-flame/[0.05] px-4 py-3">
+          <UserCheck className="h-4 w-4 text-flame shrink-0" strokeWidth={1.75} />
+          <div className="min-w-0 flex-1 text-[13px]">
+            <span className="font-semibold text-foreground">{naamVoorUser(checkInfo.aan) || 'Je collega'}</span>
+            <span className="text-foreground/80"> vraagt wijzigingen aan deze offerte.</span>
+            {checkInfo.reactie && (
+              <span className="block text-foreground mt-0.5">&ldquo;{checkInfo.reactie}&rdquo;</span>
+            )}
+            <span className="block text-muted-foreground mt-0.5">Pas de offerte aan en vraag daarna opnieuw een check via het menu.</span>
+          </div>
+          {editOfferteId && (
+            <button
+              type="button"
+              onClick={() => setShowCheckDialog(true)}
+              className="inline-flex items-center gap-1.5 h-8 px-3.5 text-[13px] font-semibold rounded-lg bg-petrol text-white hover:bg-[#0F3D44] transition-colors"
+            >
+              Check opnieuw vragen
+            </button>
+          )}
         </div>
       )}
 

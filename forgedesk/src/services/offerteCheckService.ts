@@ -4,7 +4,7 @@ interface CheckApiAntwoord {
   offerte?: {
     id: string
     updated_at: string
-    check_status?: 'open' | 'akkoord' | 'verstuurd' | null
+    check_status?: 'open' | 'akkoord' | 'verstuurd' | 'wijzigingen' | null
     check_afgehandeld_op?: string | null
   }
   already?: boolean
@@ -33,6 +33,6 @@ export async function vraagOfferteCheck(offerteId: string, aanUserId: string, no
   })
 }
 
-export async function rondOfferteCheckAf(offerteId: string, actie: 'akkoord' | 'verstuurd'): Promise<CheckApiAntwoord> {
-  return roepCheckApi('/api/offerte-check-reactie', { offerte_id: offerteId, actie })
+export async function rondOfferteCheckAf(offerteId: string, actie: 'akkoord' | 'verstuurd' | 'wijzigingen', reactie?: string): Promise<CheckApiAntwoord> {
+  return roepCheckApi('/api/offerte-check-reactie', { offerte_id: offerteId, actie, reactie: reactie || undefined })
 }

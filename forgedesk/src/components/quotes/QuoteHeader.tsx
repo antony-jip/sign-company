@@ -61,7 +61,7 @@ export interface QuoteHeaderProps {
   onOpdrachtbevestiging?: () => void
   // Interne check door collega
   onLatenChecken?: () => void
-  checkStatus?: 'open' | 'akkoord' | 'verstuurd' | null
+  checkStatus?: 'open' | 'akkoord' | 'verstuurd' | 'wijzigingen' | null
   checkAanNaam?: string
   // Kopieer naar andere klant
   showKopieerNaarKlant?: boolean
@@ -185,6 +185,12 @@ export function QuoteHeader({
               <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#8A6A2A] bg-[hsl(var(--status-amber-bg))] border border-[#8A6A2A]/15 px-2 py-0.5 rounded-md">
                 <UserCheck className="h-3 w-3" strokeWidth={1.75} />
                 Ter controle{checkAanNaam ? ` · ${checkAanNaam}` : ''}
+              </span>
+            )}
+            {checkStatus === 'wijzigingen' && (
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#8A4A1A] bg-flame/10 border border-flame/20 px-2 py-0.5 rounded-md">
+                <UserCheck className="h-3 w-3" strokeWidth={1.75} />
+                Wijzigingen gevraagd{checkAanNaam ? ` · ${checkAanNaam}` : ''}
               </span>
             )}
             {checkStatus === 'akkoord' && (
@@ -378,7 +384,7 @@ export function QuoteHeader({
                         className="w-full text-left px-3 py-2 text-[13px] hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] flex items-center gap-2 transition-colors"
                       >
                         <UserCheck className="h-3.5 w-3.5 text-muted-foreground" />
-                        {checkStatus === 'open' ? 'Check opnieuw vragen' : 'Laten checken'}
+                        {checkStatus === 'open' || checkStatus === 'wijzigingen' ? 'Check opnieuw vragen' : 'Laten checken'}
                       </button>
                     )}
                     {onWerkbon && (

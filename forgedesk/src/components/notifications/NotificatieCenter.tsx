@@ -56,6 +56,11 @@ const typeConfig: Record<
     colorClass: "text-petrol",
     bgClass: "bg-[hsl(var(--status-green-bg))]",
   },
+  offerte_check_wijzigingen: {
+    icon: UserCheck,
+    colorClass: "text-[#8A6A2A]",
+    bgClass: "bg-[hsl(var(--status-amber-bg))]",
+  },
   website_chat: {
     icon: MessageSquare,
     colorClass: "text-petrol",

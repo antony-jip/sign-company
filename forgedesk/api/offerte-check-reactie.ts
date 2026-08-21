@@ -66,9 +66,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(429).json({ error: 'Te veel verzoeken. Probeer het later opnieuw.' })
     }
 
-    const { offerte_id, actie } = req.body as { offerte_id?: string; actie?: string }
-    if (!offerte_id || (actie !== 'akkoord' && actie !== 'verstuurd')) {
+    const { offerte_id, actie, reactie } = req.body as { offerte_id?: string; actie?: string; reactie?: string }
+    if (!offerte_id || (actie !== 'akkoord' && actie !== 'verstuurd' && actie !== 'wijzigingen')) {
       return res.status(400).json({ error: 'offerte_id en een geldige actie zijn verplicht' })
+    }
+    const schoneReactie = typeof reactie === 'string' ? reactie.trim().slice(0, 1000) : ''
+    if (actie === 'wijzigingen' && !schoneReactie) {
+      return res.status(400).json({ error: 'Schrijf kort welke wijzigingen je wilt' })
     }
 
     const [{ data: offerte }, { data: actor }] = await Promise.all([
@@ -103,12 +107,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .update({
         check_status: actie,
         check_afgehandeld_op: nu,
+        check_reactie: actie === 'wijzigingen' ? schoneReactie : null,
         activiteiten: [...activiteiten, {
           datum: nu,
           type: 'check_afgehandeld',
           beschrijving: actie === 'akkoord'
             ? `Check akkoord door ${actorNaam}`
-            : `Check afgerond · verstuurd door ${actorNaam}`,
+            : actie === 'wijzigingen'
+              ? `Wijzigingen gevraagd door ${actorNaam}: ${schoneReactie}`
+              : `Check afgerond · verstuurd door ${actorNaam}`,
           medewerker: actorNaam,
         }],
         updated_at: nu,
@@ -130,13 +137,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const link = `/offertes/${offerte.id}/bewerken`
         const titel = actie === 'akkoord'
           ? `${actorNaam} heeft je offerte gecheckt en akkoord gegeven`
-          : `${actorNaam} heeft je offerte gecheckt en verstuurd`
+          : actie === 'wijzigingen'
+            ? `${actorNaam} vraagt wijzigingen aan je offerte`
+            : `${actorNaam} heeft je offerte gecheckt en verstuurd`
 
         await supabaseAdmin.from('notificaties').insert({
           user_id: aanvragerId,
-          type: 'offerte_check_afgehandeld',
+          type: actie === 'wijzigingen' ? 'offerte_check_wijzigingen' : 'offerte_check_afgehandeld',
           titel,
-          bericht: offerteLabel,
+          bericht: actie === 'wijzigingen' ? `${offerteLabel} · "${schoneReactie}"` : offerteLabel,
           link,
           offerte_id: offerte.id,
           klant_id: offerte.klant_id || null,
@@ -147,8 +156,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         await stuurPush(
           aanvragerId,
-          actie === 'akkoord' ? 'Offerte gecheckt: akkoord' : 'Offerte gecheckt en verstuurd',
-          `${actorNaam} · ${offerte.nummer}`,
+          actie === 'akkoord' ? 'Offerte gecheckt: akkoord' : actie === 'wijzigingen' ? 'Offerte: wijzigingen gevraagd' : 'Offerte gecheckt en verstuurd',
+          actie === 'wijzigingen' ? `${actorNaam} · ${offerte.nummer}: ${schoneReactie.slice(0, 80)}` : `${actorNaam} · ${offerte.nummer}`,
           link
         )
 
@@ -177,8 +186,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             subject: titel,
             heading: titel,
             itemTitel: offerteLabel,
+            quote: actie === 'wijzigingen' ? schoneReactie : undefined,
             ctaUrl: `${appUrl()}${link}`,
-            ctaLabel: 'Bekijk de offerte →',
+            ctaLabel: actie === 'wijzigingen' ? 'Pas de offerte aan →' : 'Bekijk de offerte →',
           })
         }
       } catch (notifErr) {
