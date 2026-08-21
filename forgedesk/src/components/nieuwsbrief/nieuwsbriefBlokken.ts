@@ -167,9 +167,43 @@ export function normaliseerDocument(input: unknown): NieuwsbriefDocument {
   if (Array.isArray(raw.blokken)) {
     doc.blokken = raw.blokken
       .filter((b): b is Blok => !!b && typeof b === 'object' && typeof (b as Blok).type === 'string' && (b as Blok).type in BLOK_LABEL)
-      .map(b => ({ ...maakBlok(b.type), ...b, id: b.id || nieuwId() }) as Blok)
+      .map(b => repareerBlok({ ...maakBlok(b.type), ...b, id: b.id || nieuwId() } as Blok))
   }
   return doc
+}
+
+// Velden die de renderer als index gebruikt moeten een geldige waarde hebben;
+// Daan of een oude opslag kan er iets anders in zetten.
+const UITLIJNINGEN: Uitlijning[] = ['links', 'midden', 'rechts']
+function kies<T extends string | number>(waarde: unknown, opties: readonly T[], standaard: T): T {
+  return (opties as readonly unknown[]).includes(waarde) ? (waarde as T) : standaard
+}
+function tekstOf(v: unknown, standaard = ''): string { return typeof v === 'string' ? v : standaard }
+function repareerBlok(b: Blok): Blok {
+  const std = maakBlok(b.type)
+  switch (b.type) {
+    case 'kop': return { ...b, tekst: tekstOf(b.tekst), niveau: kies(b.niveau, [1, 2, 3] as const, 1), uitlijning: kies(b.uitlijning, UITLIJNINGEN, 'links') }
+    case 'tekst': return { ...b, html: tekstOf(b.html), grootte: kies(b.grootte, ['klein', 'normaal', 'groot'] as const, 'normaal'), uitlijning: kies(b.uitlijning, UITLIJNINGEN, 'links') }
+    case 'afbeelding': return { ...b, url: tekstOf(b.url), alt: tekstOf(b.alt), link: tekstOf(b.link), bijschrift: tekstOf(b.bijschrift), breedte: kies(b.breedte, ['vol', 'smal'] as const, 'vol'), uitlijning: b.uitlijning ? kies(b.uitlijning, UITLIJNINGEN, 'midden') : undefined }
+    case 'knop': return { ...b, tekst: tekstOf(b.tekst), url: tekstOf(b.url), stijl: kies(b.stijl, ['vol', 'omlijnd'] as const, 'vol'), breedte: kies(b.breedte, ['auto', 'vol'] as const, 'auto'), uitlijning: kies(b.uitlijning, UITLIJNINGEN, 'links'), grootte: b.grootte ? kies(b.grootte, ['klein', 'normaal', 'groot'] as const, 'normaal') : undefined }
+    case 'afbeelding_tekst': return { ...b, url: tekstOf(b.url), alt: tekstOf(b.alt), kop: tekstOf(b.kop), html: tekstOf(b.html), knopTekst: tekstOf(b.knopTekst), knopUrl: tekstOf(b.knopUrl), positie: kies(b.positie, ['links', 'rechts'] as const, 'links') }
+    case 'kolommen': {
+      const stdK = (std as KolommenBlok).kolommen
+      const ruw = Array.isArray(b.kolommen) ? b.kolommen : []
+      const kol = (i: 0 | 1): Kolom => {
+        const k = (ruw[i] && typeof ruw[i] === 'object' ? ruw[i] : {}) as Partial<Kolom>
+        return { kop: tekstOf(k.kop), html: tekstOf(k.html), url: tekstOf(k.url), knopTekst: tekstOf(k.knopTekst), knopUrl: tekstOf(k.knopUrl) }
+      }
+      return { ...b, kolommen: [ruw[0] ? kol(0) : stdK[0], ruw[1] ? kol(1) : stdK[1]], verhouding: b.verhouding ? kies(b.verhouding, ['1:1', '1:2', '2:1'] as const, '1:1') : undefined }
+    }
+    case 'quote': return { ...b, tekst: tekstOf(b.tekst), bron: tekstOf(b.bron) }
+    case 'highlight': return { ...b, kop: tekstOf(b.kop), html: tekstOf(b.html), knopTekst: tekstOf(b.knopTekst), knopUrl: tekstOf(b.knopUrl), variant: kies(b.variant, ['accent', 'zacht', 'donker'] as const, 'zacht') }
+    case 'ruimte': return { ...b, hoogte: typeof b.hoogte === 'number' && isFinite(b.hoogte) ? b.hoogte : 24 }
+    case 'header': return { ...b, naam: tekstOf(b.naam, 'Sign Company'), logoUrl: tekstOf(b.logoUrl), tagline: tekstOf(b.tagline), uitlijning: kies(b.uitlijning, UITLIJNINGEN, 'links') }
+    case 'footer': return { ...b, bedrijfsnaam: tekstOf(b.bedrijfsnaam), adres: tekstOf(b.adres), telefoon: tekstOf(b.telefoon), website: tekstOf(b.website), linkedin: tekstOf(b.linkedin), instagram: tekstOf(b.instagram), facebook: tekstOf(b.facebook) }
+    case 'html': return { ...b, html: tekstOf(b.html) }
+    default: return b
+  }
 }
 
 // ── Rendering ──────────────────────────────────────────────────────────────

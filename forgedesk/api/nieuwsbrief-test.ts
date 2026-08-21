@@ -30,8 +30,8 @@ function escapeHtml(str: string): string {
 // ze niet, want dit gaat via emails.send i.p.v. een broadcast).
 function resolveMergeTags(html: string, naar: string): string {
   return html
-    .replace(/\{\{\{contact\.first_name(?:\|([^}]*))?\}\}\}/g, () => 'Jan')
-    .replace(/\{\{\{contact\.last_name(?:\|([^}]*))?\}\}\}/g, () => 'Jansen')
+    .replace(/\{\{\{contact\.first_name(?:\|([^}]*))?\}\}\}/g, (_m, fb) => fb || 'Jan')
+    .replace(/\{\{\{contact\.last_name(?:\|([^}]*))?\}\}\}/g, (_m, fb) => fb || 'Jansen')
     .replace(/\{\{\{contact\.email\}\}\}/g, naar)
     .replace(/\{\{\{RESEND_UNSUBSCRIBE_URL\}\}\}/g, '#')
 }

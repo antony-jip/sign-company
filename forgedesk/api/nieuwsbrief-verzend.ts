@@ -16,7 +16,7 @@ const APP_URL = (process.env.VITE_APP_URL || process.env.APP_URL || 'https://app
 // met scheduledAt, want de batch-API kent geen scheduledAt. Throttle voor de
 // 10 req/s-limiet van Resend en de 60s-limiet van deze functie.
 const BATCH_GROOTTE = 100
-const MAX_GEPLAND_PER_RUN = 400
+const MAX_GEPLAND_PER_RUN = 120
 const THROTTLE_MS = 110
 
 // Afmeldlink-sleutel: webhook-token als dat er is, anders afgeleid van de
@@ -377,7 +377,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       }
       if (aantal === 0) return geefVrij('Geen enkele mail kon worden verstuurd. Controleer de Resend-instellingen.')
-      if (mislukt.length > 0) console.warn(`[nieuwsbrief-verzend] ${mislukt.length} mails mislukt:`, mislukt.slice(0, 10))
+      if (mislukt.length > 0) {
+        // Gedeeltelijk gelukt: terug naar concept zodat een nieuwe poging alleen
+        // de mislukte adressen pakt (wie 'sent' heeft wordt overgeslagen).
+        console.warn(`[nieuwsbrief-verzend] ${mislukt.length} mails mislukt:`, mislukt.slice(0, 10))
+        return geefVrij(`${aantal} van ${aantal + mislukt.length} mails verstuurd, ${mislukt.length} mislukt. Klik nog eens op Verstuur: wie de mail al kreeg, wordt overgeslagen.`)
+      }
     }
 
     const { data: bijgewerkt, error: updErr } = await supabase

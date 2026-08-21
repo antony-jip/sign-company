@@ -197,13 +197,13 @@ export function OntvangerKiezer({ selectie, onChange, onTelling, disabled }: Pro
             </div>
           )}
 
-          <label className="doen-slate-surface flex cursor-pointer items-center gap-3 rounded-2xl p-4">
+          {selectie.type !== 'alle' && <label className="doen-slate-surface flex cursor-pointer items-center gap-3 rounded-2xl p-4">
             <input type="checkbox" checked={selectie.inclusiefContactpersonen !== false} disabled={disabled} onChange={e => set({ inclusiefContactpersonen: e.target.checked })} className="h-4 w-4 rounded border-border accent-[#1A535C]" />
             <span>
               <span className="block text-[14px] font-semibold text-foreground">Ook de contactpersonen van elke klant</span>
               <span className="block text-[12px] text-muted-foreground">Uit: alleen het hoofdadres van de klant.</span>
             </span>
-          </label>
+          </label>}
 
           {selectie.type === 'alle' && (
             <div className="doen-slate-surface flex flex-wrap items-center gap-3 rounded-2xl p-4">

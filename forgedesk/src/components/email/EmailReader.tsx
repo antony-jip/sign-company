@@ -2611,7 +2611,7 @@ export function EmailReader({
 // één klik naar "Klant toevoegen" of "Toevoegen als contactpersoon bij <firma>".
 function AfzenderBanner({ email, onOpenKlant }: { email: Email; onOpenKlant: () => void }) {
   const st = useAfzenderStatus(email)
-  if (!st.senderEmail || !st.geladen || st.bekend) return null
+  if (email.map === 'verzonden' || !st.senderEmail || !st.geladen || st.bekend) return null
   if (/noreply|no-reply|notification|mailer-daemon/i.test(st.senderEmail)) return null
   const naam = st.handtekening?.naam || st.senderName || st.senderEmail
   const firma = st.klant ? (st.klant.bedrijfsnaam || st.klant.contactpersoon) : null

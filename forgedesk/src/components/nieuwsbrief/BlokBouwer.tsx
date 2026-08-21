@@ -4,6 +4,7 @@ import {
   Minus, MoveVertical, PanelTop, PanelBottom, Code2, GripVertical, ChevronUp, ChevronDown, Copy, Trash2, Plus, Undo2, Redo2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import DOMPurify from 'dompurify'
 import { BlokInspector } from './BlokInspector'
 import { resolveMergeTags } from './nieuwsbriefShell'
 import { RijkeTekstVeld } from './RijkeTekstVeld'
@@ -110,6 +111,7 @@ export function BlokBouwer({ document: doc, onChange, disabled }: Props) {
     setGeselecteerd(blok.id)
     setInspectorOpen(true)
     setPaletOpen(false)
+    setInvoegIndex(null)
     requestAnimationFrame(() => canvasRef.current?.querySelector<HTMLElement>(`[data-blok-id="${blok.id}"]`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }))
   }, [blokken, geselecteerd, vervangBlokken])
 
@@ -360,10 +362,10 @@ export function BlokBouwer({ document: doc, onChange, disabled }: Props) {
                   <div
                     className={cn('nb-blok pointer-events-none select-none [&_a]:pointer-events-none', inlineBewerk === blok.id && 'invisible', blok.opmaak?.verbergMobiel && 'outline-dashed outline-1 outline-[#C9C7C0]')}
                     style={{ fontSize: 15, lineHeight: 1.65 }}
-                    dangerouslySetInnerHTML={{ __html: resolveMergeTags(renderBlokWrapper(
+                    dangerouslySetInnerHTML={{ __html: veiligVoorCanvas(resolveMergeTags(renderBlokWrapper(
                       blok.type === 'afbeelding' && resize?.id === blok.id ? { ...blok, breedtePct: resize.pct } : blok,
                       doc.stijl, true,
-                    )) }}
+                    ))) }}
                   />
                   {blok.opmaak?.verbergMobiel && <span className="absolute right-2 bottom-1 rounded bg-[#C9C7C0] px-1 text-[9px] font-bold uppercase text-white">niet op mobiel</span>}
                   {bewerkbaar && isActief && blok.type === 'afbeelding' && blok.url && (
@@ -454,6 +456,12 @@ export function BlokBouwer({ document: doc, onChange, disabled }: Props) {
   )
 }
 
+
+// Het canvas rendert e-mail-HTML in het app-document; eigen HTML-blokken en
+// Daan-output mogen daar nooit script of event-handlers in meenemen.
+function veiligVoorCanvas(html: string): string {
+  return DOMPurify.sanitize(html, { FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'input', 'link', 'meta', 'base'], FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'srcdoc'], ALLOW_UNKNOWN_PROTOCOLS: false })
+}
 
 const SNAP = [25, 33, 50, 66, 75, 100]
 

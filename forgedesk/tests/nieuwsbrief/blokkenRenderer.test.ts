@@ -61,3 +61,19 @@ describe('blokken-renderer', () => {
     }
   })
 })
+
+describe('normaliseerDocument repareert kapotte blokken', () => {
+  it('rendert zonder te crashen bij ontbrekende kolom en onbekende variant', () => {
+    const doc = normaliseerDocument({ versie: 1, blokken: [
+      { type: 'kolommen', kolommen: [{ kop: 'Een' }] },
+      { type: 'highlight', variant: 'primair', html: 42 },
+      { type: 'kop', niveau: 9, uitlijning: 'center' },
+      { type: 'onzin' },
+    ] })
+    expect(doc.blokken.length).toBe(3)
+    expect(() => renderDocument(doc)).not.toThrow()
+    const html = renderDocument(doc)
+    expect(html).toContain('Een')
+    expect(html).not.toContain('undefined')
+  })
+})

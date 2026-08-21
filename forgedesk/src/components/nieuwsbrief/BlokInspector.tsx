@@ -65,7 +65,7 @@ function UitlijnKeuze({ value, onChange }: { value: Uitlijning; onChange: (v: Ui
   )
 }
 
-function AfbeeldingVeld({ label, url, onChange, onAlt }: { label: string; url: string; onChange: (url: string) => void; onAlt?: (alt: string) => void }) {
+function AfbeeldingVeld({ label, url, onChange, onKiesMetAlt }: { label: string; url: string; onChange: (url: string) => void; onKiesMetAlt?: (url: string, alt: string) => void }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [bezig, setBezig] = useState(false)
   const [bankOpen, setBankOpen] = useState(false)
@@ -112,7 +112,7 @@ function AfbeeldingVeld({ label, url, onChange, onAlt }: { label: string; url: s
         </button>
         <input value={url} onChange={e => onChange(e.target.value)} placeholder="of plak een URL" spellCheck={false} className={cn(INPUT, 'min-w-0 font-mono text-[11px]')} />
       </div>
-      <FotoBank open={bankOpen} onSluit={() => setBankOpen(false)} onKies={(urls, items) => { onChange(urls[0]); if (onAlt && items[0]) onAlt(items[0].titel); setBankOpen(false) }} />
+      <FotoBank open={bankOpen} onSluit={() => setBankOpen(false)} onKies={(urls, items) => { if (onKiesMetAlt) onKiesMetAlt(urls[0], items[0]?.titel ?? ''); else onChange(urls[0]); setBankOpen(false) }} />
     </Veld>
   )
 }
@@ -192,7 +192,7 @@ export function BlokInspector({ blok, stijl, onChange, onStijlChange, onDuplicee
       break
     case 'afbeelding':
       velden = <>
-        <AfbeeldingVeld label="Afbeelding" url={blok.url} onChange={v => set({ url: v })} onAlt={alt => { if (!blok.alt) set({ alt }) }} />
+        <AfbeeldingVeld label="Afbeelding" url={blok.url} onChange={v => set({ url: v })} onKiesMetAlt={(url, alt) => set({ url, alt: blok.alt || alt })} />
         <Tekst label="Alt-tekst (voor als de foto niet laadt)" value={blok.alt} onChange={v => set({ alt: v })} />
         <Tekst label="Bijschrift" value={blok.bijschrift} onChange={v => set({ bijschrift: v })} />
         <Url label="Link bij klikken (optioneel)" value={blok.link} onChange={v => set({ link: v })} />
@@ -216,7 +216,7 @@ export function BlokInspector({ blok, stijl, onChange, onStijlChange, onDuplicee
       break
     case 'afbeelding_tekst':
       velden = <>
-        <AfbeeldingVeld label="Afbeelding" url={blok.url} onChange={v => set({ url: v })} onAlt={alt => { if (!blok.alt) set({ alt }) }} />
+        <AfbeeldingVeld label="Afbeelding" url={blok.url} onChange={v => set({ url: v })} onKiesMetAlt={(url, alt) => set({ url, alt: blok.alt || alt })} />
         <Tekst label="Alt-tekst" value={blok.alt} onChange={v => set({ alt: v })} />
         <Keuze label="Foto staat" value={blok.positie} opties={[{ value: 'links', label: 'Links' }, { value: 'rechts', label: 'Rechts' }]} onChange={v => set({ positie: v })} />
         <Tekst label="Kop" value={blok.kop} onChange={v => set({ kop: v })} />

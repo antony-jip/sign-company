@@ -34,11 +34,21 @@ export function netteNaam(naam: string): string {
   return m ? `${m[2].trim()} ${m[1].trim()}` : naam
 }
 
+// Eén klantenfetch per minuut voor banner én popover samen (de tabel is groot).
+let klantenCache: { op: number; belofte: Promise<Klant[]> } | null = null
+export function getKlantenGedeeld(): Promise<Klant[]> {
+  if (!klantenCache || Date.now() - klantenCache.op > 60_000) {
+    klantenCache = { op: Date.now(), belofte: getKlanten().catch(() => { klantenCache = null; return [] as Klant[] }) }
+  }
+  return klantenCache.belofte
+}
+
 export function useAfzenderStatus(email: Email | null) {
   const senderName = email ? extractSenderName(email.van) : ''
   const senderEmail = email ? extractSenderEmail(email.van) : ''
   const [klanten, setKlanten] = useState<Klant[]>([])
-  useEffect(() => { getKlanten().then(setKlanten).catch(() => {}) }, [])
+  const [klantenGeladen, setKlantenGeladen] = useState(false)
+  useEffect(() => { getKlantenGedeeld().then(k => { setKlanten(k); setKlantenGeladen(true) }) }, [])
   const handtekening = useMemo(() => {
     if (!email?.inhoud) return null
     try { return parseHandtekening(email.inhoud, { naam: senderName, email: senderEmail }) } catch { return null }
@@ -69,7 +79,7 @@ export function useAfzenderStatus(email: Email | null) {
     const a = senderEmail.toLowerCase()
     return klant.email?.toLowerCase() === a || !!klant.contactpersonen?.some(c => c.email?.toLowerCase() === a)
   }, [klant, senderEmail, losKlantId])
-  return { senderName: netteNaam(senderName), senderEmail, handtekening, handtekeningBruikbaar: !!handtekening && heeftGegevens(handtekening), klant, bekend, geladen: klanten.length > 0 && losKlantId !== undefined }
+  return { senderName: netteNaam(senderName), senderEmail, handtekening, handtekeningBruikbaar: !!handtekening && heeftGegevens(handtekening), klant, bekend, geladen: klantenGeladen && losKlantId !== undefined }
 }
 
 interface Props {
@@ -133,7 +143,7 @@ export function EmailActionsPopover({ email, onOpenProjectDialog, openKlantSigna
 
   useEffect(() => {
     getMedewerkers().then(m => setMedewerkers(m.filter(mw => mw.status === 'actief'))).catch(() => {})
-    getKlanten().then(setAllKlanten).catch(() => {})
+    getKlantenGedeeld().then(setAllKlanten)
   }, [])
 
   // Klant-suggestions: filtered list, max 5, default top-5 wanneer query leeg.

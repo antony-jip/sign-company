@@ -276,7 +276,15 @@ async function alles<T>(tabel: string, kolommen: string, sorteer: string): Promi
   return uit
 }
 
+let klantenCache: { op: number; belofte: Promise<{ klanten: KlantRij[]; contacten: ContactRij[]; afgemeld: Set<string> }> } | null = null
+// Drie grote tabellen; één keer per minuut ophalen is genoeg voor tellen en filteren.
 async function laadKlantenEnContacten(): Promise<{ klanten: KlantRij[]; contacten: ContactRij[]; afgemeld: Set<string> }> {
+  if (klantenCache && Date.now() - klantenCache.op < 60_000) return klantenCache.belofte
+  const belofte = laadKlantenEnContactenVers().catch(e => { klantenCache = null; throw e })
+  klantenCache = { op: Date.now(), belofte }
+  return belofte
+}
+async function laadKlantenEnContactenVers(): Promise<{ klanten: KlantRij[]; contacten: ContactRij[]; afgemeld: Set<string> }> {
   const [klanten, contacten, afm] = await Promise.all([
     alles<KlantRij>('klanten', 'id, bedrijfsnaam, contactpersoon, email, status, labels, is_demo_data', 'bedrijfsnaam'),
     alles<ContactRij>('contactpersonen', 'id, klant_id, naam, email', 'klant_id'),
@@ -327,7 +335,8 @@ export async function verzamelOntvangers(sel: OntvangerSelectie): Promise<{ ontv
   for (const k of gekozen) {
     voeg({ email: String(k.email || '').trim().toLowerCase(), naam: k.contactpersoon || '', bedrijfsnaam: k.bedrijfsnaam || '', klantId: k.id, bron: 'klant' })
   }
-  if (sel.inclusiefContactpersonen !== false) {
+  // 'Iedereen' gaat als broadcast naar de hele Resend-lijst; daar telt de vinkje niet.
+  if (sel.type === 'alle' || sel.inclusiefContactpersonen !== false) {
     const naamVanKlant = new Map(gekozen.map(k => [k.id, k.bedrijfsnaam || '']))
     for (const c of contacten) {
       if (!gekozenIds.has(c.klant_id)) continue
