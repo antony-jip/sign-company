@@ -115,6 +115,49 @@ STRICTE OUTPUT-REGELS:
   return p
 }
 
+// Chat-modus: Daan bewerkt het bestaande document in kleine stappen. Hij
+// krijgt de blokken met id's en geeft acties terug; de client past ze één
+// voor één toe, zodat je de nieuwsbrief ziet veranderen terwijl je praat.
+function buildChatPrompt(bedrijfscontext: string, schrijfstijl: string): string {
+  let p = `Je bent Daan, de assistent van signbedrijf Sign Company. Je zit naast Antony in de nieuwsbrief-bouwer en past de nieuwsbrief aan op basis van wat hij in de chat zegt.
+
+Je krijgt het HUIDIGE DOCUMENT als JSON-lijst van blokken, elk met een "id". Gebruik die id's in je acties.
+
+STRICTE OUTPUT-REGELS:
+- Antwoord UITSLUITEND met één JSON-object: {"antwoord":"...","acties":[...]}. Geen uitleg buiten de JSON, geen markdown, geen \`\`\`-blokken.
+- "antwoord": één of twee korte zinnen in gewoon Nederlands, alsof je het hardop zegt ("Ik heb de intro korter gemaakt en een knop naar de projectenpagina gezet."). Stel hooguit één wedervraag als iets echt onduidelijk is. Geen opsommingen.
+- "acties": lijst met wijzigingen, in de volgorde waarin ze moeten gebeuren. Leeg als er niets te wijzigen is (bv. bij een vraag). Beschikbaar:
+  {"actie":"vervang","id":"<bestaand id>","blok":{<volledig blok, zelfde type en id, met alle velden>}}
+  {"actie":"voeg_toe","na":"<id van het blok waarna het komt, of null voor bovenaan>","blok":{<nieuw blok zonder id>}}
+  {"actie":"verwijder","id":"<id>"}
+  {"actie":"verplaats","id":"<id>","na":"<id of null voor bovenaan>"}
+  {"actie":"onderwerp","onderwerp":"...","preheader":"..."}
+  {"actie":"alles","blokken":[<volledige nieuwe lijst blokken>]}  (alleen als Antony expliciet om een heel nieuwe nieuwsbrief vraagt)
+- Wijzig alleen wat gevraagd is. Raak andere blokken niet aan. Bij "vervang" kopieer je de velden die niet veranderen letterlijk over.
+- Bloktypes en velden:
+  {"type":"header","naam":"Sign Company","tagline":"","uitlijning":"links"}
+  {"type":"kop","tekst":"...","niveau":1|2|3,"uitlijning":"links"|"midden"}
+  {"type":"tekst","html":"<p>...</p>","grootte":"normaal"|"klein"|"groot","uitlijning":"links"}
+  {"type":"afbeelding","url":"https://...","alt":"...","bijschrift":"","link":"","breedte":"vol"}
+  {"type":"knop","tekst":"...","url":"https://...","uitlijning":"links"|"midden","stijl":"vol"|"omlijnd","breedte":"auto"|"vol"}
+  {"type":"afbeelding_tekst","url":"https://...","alt":"...","kop":"...","html":"<p>...</p>","positie":"links"|"rechts","knopTekst":"","knopUrl":""}
+  {"type":"kolommen","kolommen":[{"kop":"...","html":"<p>...</p>","url":"","knopTekst":"","knopUrl":""},{"kop":"...","html":"<p>...</p>","url":"","knopTekst":"","knopUrl":""}]}
+  {"type":"quote","tekst":"...","bron":"naam, bedrijf"}
+  {"type":"highlight","kop":"...","html":"<p>...</p>","variant":"zacht"|"accent"|"donker","knopTekst":"","knopUrl":""}
+  {"type":"lijn"}
+  {"type":"ruimte","hoogte":24}
+  {"type":"footer","bedrijfsnaam":"Antony · Sign Company","adres":"","telefoon":"","website":"https://signcompany.nl","linkedin":"","instagram":"","facebook":""}
+- In "html"-velden alleen <p>, <strong>, <em>, <a href>, <ul>, <ol>, <li>, <br>. Geen inline styles.
+- Foto's: alleen URL's die Antony geeft of die al in het document staan. Verzin geen URL's.
+- Links alleen naar https://signcompany.nl (of een pagina daarvan) of mailto:antony@signcompany.nl, tenzij Antony een andere link geeft.
+- Nederlands, actief en concreet. Geen em-dashes (—); gebruik komma's, punten of een middelpunt (·). Geen emoji's.`
+  if (bedrijfscontext) p += `\n\nOver het bedrijf:\n${bedrijfscontext}`
+  if (schrijfstijl) p += `\n\nSchrijfstijl / tone of voice om aan te houden:\n${schrijfstijl}`
+  return p
+}
+
+const ACTIE_TYPES = new Set(['vervang', 'voeg_toe', 'verwijder', 'verplaats', 'onderwerp', 'alles'])
+
 const ONDERWERP_PROMPT = `Je bent Daan, de assistent van signbedrijf Sign Company. Je bedenkt onderwerpregels voor een e-mailnieuwsbrief.
 
 Antwoord UITSLUITEND met JSON: {"suggesties":[{"onderwerp":"...","preheader":"..."},...]} met precies 4 suggesties.
@@ -138,7 +181,7 @@ function stripHtml(html: string): string {
   return html.replace(/<style[\s\S]*?<\/style>/gi, '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
 }
 
-async function vraagClaude(system: string, content: Array<Record<string, unknown>>, maxTokens: number): Promise<{ ok: true; tekst: string } | { ok: false; status: number; fout: string }> {
+async function vraagClaude(system: string, content: Array<Record<string, unknown>>, maxTokens: number, berichten?: Array<{ role: 'user' | 'assistant'; content: unknown }>): Promise<{ ok: true; tekst: string } | { ok: false; status: number; fout: string }> {
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'x-api-key': ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
@@ -147,7 +190,7 @@ async function vraagClaude(system: string, content: Array<Record<string, unknown
       thinking: { type: 'disabled' },
       max_tokens: maxTokens,
       system,
-      messages: [{ role: 'user', content }],
+      messages: berichten ?? [{ role: 'user', content }],
     }),
     signal: AbortSignal.timeout(50_000),
   })
@@ -196,8 +239,51 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!(await verifyOwner(req))) return res.status(403).json({ error: 'Geen toegang' })
     if (!(await enforceRateLimit(OWNER_USER_ID, res))) return
 
-    const { brief, afbeeldingen, modus, html: bestaandeHtml, huidig } = (req.body ?? {}) as {
-      brief?: string; afbeeldingen?: string[]; modus?: 'html' | 'blokken' | 'onderwerp'; html?: string; huidig?: string
+    const { brief, afbeeldingen, modus, html: bestaandeHtml, huidig, berichten, blokken: huidigeBlokken, onderwerp, preheader } = (req.body ?? {}) as {
+      brief?: string; afbeeldingen?: string[]; modus?: 'html' | 'blokken' | 'onderwerp' | 'chat'; html?: string; huidig?: string
+      berichten?: Array<{ rol?: string; tekst?: string }>; blokken?: unknown[]; onderwerp?: string; preheader?: string
+    }
+
+    if (modus === 'chat') {
+      const gesprek = (Array.isArray(berichten) ? berichten : [])
+        .filter(b => b && typeof b.tekst === 'string' && b.tekst.trim())
+        .slice(-12)
+        .map(b => ({ role: (b.rol === 'daan' ? 'assistant' : 'user') as 'user' | 'assistant', tekst: String(b.tekst).trim().slice(0, 4000) }))
+      if (gesprek.length === 0 || gesprek[gesprek.length - 1].role !== 'user') return res.status(400).json({ error: 'Zeg eerst wat Daan moet doen' })
+      const lijst = Array.isArray(huidigeBlokken) ? huidigeBlokken.filter(b => !!b && typeof b === 'object' && BLOK_TYPES.has(String((b as { type?: unknown }).type))).slice(0, 60) : []
+      const urls = Array.isArray(afbeeldingen) ? afbeeldingen.map(u => String(u).trim()).filter(isHttpUrl).slice(0, MAX_AFBEELDINGEN) : []
+
+      const { bedrijfscontext, schrijfstijl } = await loadDaanContext(supabase, OWNER_USER_ID)
+      const kop = `HUIDIG DOCUMENT\nOnderwerp: ${String(onderwerp || '').slice(0, 200) || '(leeg)'}\nPreheader: ${String(preheader || '').slice(0, 300) || '(leeg)'}\nBlokken:\n${JSON.stringify(lijst)}${urls.length ? `\n\nFoto's die Antony aanbiedt:\n${urls.map(u => `- ${u}`).join('\n')}` : ''}`
+      // Het document gaat mee in het laatste user-bericht; eerdere beurten
+      // alleen als tekst, anders groeit elke beurt met het hele document.
+      const messages: Array<{ role: 'user' | 'assistant'; content: unknown }> = gesprek.map((b, i) => {
+        if (i < gesprek.length - 1) return { role: b.role, content: b.tekst }
+        const content: Array<Record<string, unknown>> = [{ type: 'text', text: `${kop}\n\nANTONY ZEGT:\n${b.tekst}` }]
+        for (const url of urls) content.push({ type: 'image', source: { type: 'url', url } })
+        return { role: 'user', content }
+      })
+      // Anthropic eist afwisselende rollen; plak opeenvolgende gelijke rollen aan elkaar.
+      const samengevoegd: typeof messages = []
+      for (const m of messages) {
+        const vorige = samengevoegd[samengevoegd.length - 1]
+        if (vorige && vorige.role === m.role && typeof vorige.content === 'string' && typeof m.content === 'string') vorige.content = `${vorige.content}\n\n${m.content}`
+        else samengevoegd.push(m)
+      }
+      const r = await vraagClaude(buildChatPrompt(bedrijfscontext, schrijfstijl), [], 6000, samengevoegd)
+      if (!r.ok) return res.status(r.status === 429 ? 429 : 502).json({ error: r.status === 429 ? 'Te veel verzoeken. Probeer het later opnieuw.' : r.fout })
+      const parsed = parseJson<{ antwoord?: unknown; acties?: unknown }>(r.tekst)
+      if (!parsed || typeof parsed !== 'object') return res.status(502).json({ error: 'Daan gaf geen bruikbaar antwoord. Probeer het nog eens.' })
+      const antwoord = typeof parsed.antwoord === 'string' ? parsed.antwoord.trim().slice(0, 1200) : ''
+      const acties = (Array.isArray(parsed.acties) ? parsed.acties : [])
+        .filter((a): a is Record<string, unknown> => !!a && typeof a === 'object' && ACTIE_TYPES.has(String((a as { actie?: unknown }).actie)))
+        .slice(0, 40)
+      const { data: profiel } = await supabase.from('profiles').select('organisatie_id').eq('id', OWNER_USER_ID).maybeSingle()
+      await schrijfSpoor((profiel?.organisatie_id as string | null) ?? null, OWNER_USER_ID, 'nieuwsbrief-ai', {
+        opdracht: gesprek[gesprek.length - 1].tekst.slice(0, 600),
+        resultaat: `${antwoord} · ${acties.length} acties`.slice(0, 600),
+      })
+      return res.status(200).json({ antwoord: antwoord || (acties.length ? 'Aangepast.' : 'Ik heb niets gewijzigd.'), acties })
     }
 
     if (modus === 'onderwerp') {

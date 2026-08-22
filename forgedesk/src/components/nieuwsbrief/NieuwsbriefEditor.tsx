@@ -11,6 +11,7 @@ import {
   type Nieuwsbrief, type OntvangerSelectie, STANDAARD_SELECTIE,
 } from '@/services/nieuwsbriefService'
 import { BlokBouwer } from './BlokBouwer'
+import { DaanChat } from './DaanChat'
 import { OntvangerKiezer } from './OntvangerKiezer'
 import { NieuwsbriefPreview } from './NieuwsbriefPreview'
 import { FotoBank } from './FotoBank'
@@ -397,9 +398,20 @@ export function NieuwsbriefEditor({ nieuwsbrief, onTerug, onGewijzigd, startMetD
           </div>
 
           {modus === 'blokken' ? (
-            ontwerpWeergave === 'bouwen'
-              ? <BlokBouwer document={doc} onChange={setDoc} disabled={vergrendeld} />
-              : <NieuwsbriefPreview html={previewHtml} afzender={AFZENDER} onderwerp={onderwerp} preheader={preheader} className="min-h-0 flex-1" />
+            <div className="flex min-h-0 flex-1 flex-col">
+              {ontwerpWeergave === 'bouwen'
+                ? <BlokBouwer document={doc} onChange={setDoc} disabled={vergrendeld} />
+                : <NieuwsbriefPreview html={previewHtml} afzender={AFZENDER} onderwerp={onderwerp} preheader={preheader} className="min-h-0 flex-1" />}
+              {!vergrendeld && (
+                <DaanChat
+                  doc={doc}
+                  onderwerp={onderwerp}
+                  preheader={preheader}
+                  onDoc={setDoc}
+                  onOnderwerp={(o, p) => { setOnderwerp(o); setPreheader(p) }}
+                />
+              )}
+            </div>
           ) : (
             <div className="grid min-h-0 flex-1 md:grid-cols-2">
               <div className="flex min-h-0 flex-col border-border md:border-r">

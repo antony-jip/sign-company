@@ -234,6 +234,20 @@ export async function genereerBlokkenMetDaan(brief: string, afbeeldingen: string
   return (body as { blokken: unknown[] }).blokken
 }
 
+export interface DaanChatBericht { rol: 'user' | 'daan'; tekst: string }
+export interface DaanActie { actie: 'vervang' | 'voeg_toe' | 'verwijder' | 'verplaats' | 'onderwerp' | 'alles'; id?: string; na?: string | null; blok?: unknown; blokken?: unknown[]; onderwerp?: string; preheader?: string }
+
+export async function chatMetDaan(berichten: DaanChatBericht[], blokken: unknown[], onderwerp: string, preheader: string, afbeeldingen: string[] = []): Promise<{ antwoord: string; acties: DaanActie[] }> {
+  const res = await fetch('/api/nieuwsbrief-ai', {
+    method: 'POST',
+    headers: await authHeader(),
+    body: JSON.stringify({ modus: 'chat', berichten, blokken, onderwerp, preheader, afbeeldingen }),
+  })
+  const body = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(body.error || 'Daan reageert niet')
+  return { antwoord: String(body.antwoord || ''), acties: Array.isArray(body.acties) ? body.acties : [] }
+}
+
 // ── Ontvangers uit doen. ───────────────────────────────────────────────────
 // Spiegelt de server-logica in api/nieuwsbrief-verzend.ts (api mag niet uit
 // src importeren). De klant-tabel is org-breed via RLS, dus geen user-filter.
