@@ -128,7 +128,7 @@ const BOEKHOUD_PAKKET_NAAM: Record<BoekhoudPakket, string> = {
   eboekhouden: 'e-Boekhouden',
 }
 import { round2 } from '@/utils/budgetUtils'
-import { getActievePrijsRegel } from '@/utils/offerteTotalen'
+import { getMeetellendeVarianten } from '@/utils/offerteTotalen'
 import { generateFactuurPDF, generateOffertePDF } from '@/services/pdfService'
 import { getFactuurClipboard } from '@/utils/factuurClipboard'
 import { genereerEnUploadFactuurPdf, downloadFactuurPdfFromStorage } from '@/services/factuurPdfService'
@@ -286,18 +286,36 @@ function offerteItemsNaarFactuurRegels(offerteItems: OfferteItem[], offerte: Off
   const regels: LineItem[] = offerteItems
     .filter((oi) => (oi.soort || 'prijs') === 'prijs' && !oi.is_optioneel)
     .sort((a, b) => a.volgorde - b.volgorde)
-    .map((oi) => {
-      const r = getActievePrijsRegel(oi)
-      return {
-        id: crypto.randomUUID(),
-        beschrijving: oi.beschrijving,
-        aantal: r.aantal,
-        eenheidsprijs: r.eenheidsprijs,
-        btw_percentage: r.btw_percentage,
-        korting_percentage: r.korting_percentage,
+    // Tellen er meerdere prijsopties mee onder één post, dan krijgt elke optie
+    // zijn eigen factuurregel: één regel kan geen twee stuksprijzen dragen.
+    .flatMap((oi) => {
+      const meetellend = getMeetellendeVarianten(oi.prijs_varianten, oi.actieve_variant_id)
+      const basis = {
         grootboek_code: oi.grootboek_code || '',
         detail_regels: oi.detail_regels || [],
       }
+      if (meetellend.length === 0) {
+        return [{
+          id: crypto.randomUUID(),
+          beschrijving: oi.beschrijving,
+          aantal: oi.aantal,
+          eenheidsprijs: oi.eenheidsprijs,
+          btw_percentage: oi.btw_percentage,
+          korting_percentage: oi.korting_percentage,
+          ...basis,
+        }]
+      }
+      return meetellend.map((v, i) => ({
+        id: crypto.randomUUID(),
+        beschrijving: meetellend.length > 1 && v.label ? `${oi.beschrijving} — ${v.label}` : oi.beschrijving,
+        aantal: v.aantal,
+        eenheidsprijs: v.eenheidsprijs,
+        btw_percentage: v.btw_percentage,
+        korting_percentage: v.korting_percentage,
+        ...basis,
+        // De specs horen bij de post, niet bij elke optie apart.
+        detail_regels: i === 0 ? basis.detail_regels : [],
+      }))
     })
 
   const regelsNetto = round2(regels.reduce((sum, r) => sum + calcLineTotal(r), 0))

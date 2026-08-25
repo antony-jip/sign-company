@@ -13,42 +13,71 @@ export interface OfferteTotalen {
   totaal: number
 }
 
+interface PrijsVariantBron {
+  id: string
+  aantal: number
+  eenheidsprijs: number
+  korting_percentage: number
+  btw_percentage: number
+  telt_mee?: boolean
+}
+
 interface PrijsRegelBron {
   aantal: number
   eenheidsprijs: number
   korting_percentage: number
   btw_percentage: number
-  prijs_varianten?: Array<{
-    id: string
-    aantal: number
-    eenheidsprijs: number
-    korting_percentage: number
-    btw_percentage: number
-  }>
+  prijs_varianten?: PrijsVariantBron[]
   actieve_variant_id?: string
 }
 
 /**
- * Geeft de prijsregel van het actieve variant, of de basisvelden als het item
- * geen varianten heeft. Zo tellen totalen altijd met wat de gebruiker in de UI
- * ziet — in plaats van met de (mogelijk verouderde) basisprijs.
+ * De prijsopties die in het totaal meetellen. Er mogen er meerdere aanstaan —
+ * denk aan monteren én demonteren onder één post. Offertes van vóór die keuze
+ * kennen alleen actieve_variant_id; daar telt die ene optie mee, of anders de
+ * eerste, zodat een oude offerte hetzelfde bedrag houdt.
  */
-export function getActievePrijsRegel(item: PrijsRegelBron): OfferteTotaalRegel {
-  if (item.prijs_varianten && item.prijs_varianten.length > 0) {
-    const actief = item.prijs_varianten.find(v => v.id === item.actieve_variant_id) || item.prijs_varianten[0]
-    return {
-      aantal: actief.aantal,
-      eenheidsprijs: actief.eenheidsprijs,
-      korting_percentage: actief.korting_percentage,
-      btw_percentage: actief.btw_percentage,
-    }
+export function getMeetellendeVarianten<T extends { id: string; telt_mee?: boolean }>(
+  varianten: T[] | undefined,
+  actieveVariantId?: string,
+): T[] {
+  if (!varianten?.length) return []
+  const aangevinkt = varianten.filter((v) => v.telt_mee)
+  if (aangevinkt.length > 0) return aangevinkt
+  return [varianten.find((v) => v.id === actieveVariantId) ?? varianten[0]]
+}
+
+/**
+ * De prijsregels van een item: één regel per meetellende optie, of de basisvelden
+ * als het item geen opties heeft. Zo tellen totalen altijd met wat de gebruiker
+ * in de UI ziet — in plaats van met de (mogelijk verouderde) basisprijs.
+ */
+export function getPrijsRegels(item: PrijsRegelBron): OfferteTotaalRegel[] {
+  const meetellend = getMeetellendeVarianten(item.prijs_varianten, item.actieve_variant_id)
+  if (meetellend.length > 0) {
+    return meetellend.map((v) => ({
+      aantal: v.aantal,
+      eenheidsprijs: v.eenheidsprijs,
+      korting_percentage: v.korting_percentage,
+      btw_percentage: v.btw_percentage,
+    }))
   }
-  return {
+  return [{
     aantal: item.aantal,
     eenheidsprijs: item.eenheidsprijs,
     korting_percentage: item.korting_percentage,
     btw_percentage: item.btw_percentage,
-  }
+  }]
+}
+
+/** Het nettobedrag van een item: alle meetellende opties bij elkaar. */
+export function berekenItemTotaal(item: PrijsRegelBron): number {
+  return round2(
+    getPrijsRegels(item).reduce((sum, r) => {
+      const bruto = round2(r.aantal * r.eenheidsprijs)
+      return sum + round2(bruto - bruto * (r.korting_percentage / 100))
+    }, 0)
+  )
 }
 
 /**

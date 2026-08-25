@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { berekenOfferteTotalen, type OfferteTotaalRegel } from '../../src/utils/offerteTotalen'
+import { berekenOfferteTotalen, berekenItemTotaal, getMeetellendeVarianten, type OfferteTotaalRegel } from '../../src/utils/offerteTotalen'
 
 function round2(n: number): number {
   return Math.round((n + Number.EPSILON) * 100) / 100
@@ -68,5 +68,60 @@ describe('berekenOfferteTotalen', () => {
     for (const set of sets) {
       expect(berekenOfferteTotalen(set)).toEqual(referentie(set))
     }
+  })
+})
+
+describe('getMeetellendeVarianten', () => {
+  const v = (id: string, telt_mee?: boolean) => ({ id, telt_mee })
+
+  it('geen varianten -> lege lijst', () => {
+    expect(getMeetellendeVarianten(undefined)).toEqual([])
+    expect(getMeetellendeVarianten([])).toEqual([])
+  })
+
+  it('oude offerte zonder telt_mee -> de actieve variant', () => {
+    const varianten = [v('a'), v('b')]
+    expect(getMeetellendeVarianten(varianten, 'b')).toEqual([v('b')])
+  })
+
+  it('oude offerte zonder actieve variant -> de eerste', () => {
+    expect(getMeetellendeVarianten([v('a'), v('b')])).toEqual([v('a')])
+  })
+
+  it('meerdere aangevinkt -> allemaal, ongeacht de actieve variant', () => {
+    const varianten = [v('a', true), v('b'), v('c', true)]
+    expect(getMeetellendeVarianten(varianten, 'b')).toEqual([v('a', true), v('c', true)])
+  })
+})
+
+describe('berekenItemTotaal', () => {
+  const variant = (id: string, aantal: number, eenheidsprijs: number, telt_mee?: boolean) => ({
+    id, aantal, eenheidsprijs, korting_percentage: 0, btw_percentage: 21, telt_mee,
+  })
+  const basis = { aantal: 2, eenheidsprijs: 100, korting_percentage: 0, btw_percentage: 21 }
+
+  it('zonder varianten -> de basisregel', () => {
+    expect(berekenItemTotaal(basis)).toBe(200)
+  })
+
+  it('één meetellende optie -> alleen die optie', () => {
+    const item = { ...basis, prijs_varianten: [variant('a', 1, 4200, true), variant('b', 1, 85)] }
+    expect(berekenItemTotaal(item)).toBe(4200)
+  })
+
+  it('twee meetellende opties -> opgeteld', () => {
+    const item = { ...basis, prijs_varianten: [variant('a', 1, 4200, true), variant('b', 1, 85, true)] }
+    expect(berekenItemTotaal(item)).toBe(4285)
+  })
+
+  it('korting per optie telt per regel', () => {
+    const item = {
+      ...basis,
+      prijs_varianten: [
+        { ...variant('a', 2, 100, true), korting_percentage: 10 },
+        variant('b', 1, 50, true),
+      ],
+    }
+    expect(berekenItemTotaal(item)).toBe(230)
   })
 })

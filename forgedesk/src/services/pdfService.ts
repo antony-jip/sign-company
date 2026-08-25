@@ -1,8 +1,10 @@
 import jsPDF, { GState } from 'jspdf'
 import autoTable, { type RowInput } from 'jspdf-autotable'
-import type { Offerte, OfferteItem, Klant, Profile, DocumentStyle, WerkbonRegel, WerkbonFoto, SigningVisualisatie } from '@/types'
+import type { Offerte, OfferteItem, OfferteItemPrijsVariant, Klant, Profile, DocumentStyle, WerkbonRegel, WerkbonFoto, SigningVisualisatie } from '@/types'
 import { getJsPdfFontFamily } from '@/lib/documentTemplates'
 import { round2 } from '@/utils/budgetUtils'
+import { isLabelVoor } from '@/utils/offerteSpecs'
+import { getMeetellendeVarianten } from '@/utils/offerteTotalen'
 
 // jspdf-autotable adds lastAutoTable to jsPDF instances
 interface JsPDFWithAutoTable extends jsPDF {
@@ -116,6 +118,35 @@ function getMargins(docStyle?: DocumentStyle | null): { top: number; bottom: num
     left: Math.max(0, baseLeft + safeLeft),
     right: Math.max(0, baseRight + safeRight),
   }
+}
+
+/**
+ * Bedragen op de offerte: centen alleen als ze er zijn. € 4.200 leest rustiger dan
+ * € 4.200,00, terwijl een stuksprijs van € 0,03 zijn centen gewoon houdt.
+ */
+function formatBedrag(amount: number): string {
+  const heeftCenten = Math.round(amount * 100) % 100 !== 0
+  return new Intl.NumberFormat('nl-NL', {
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: heeftCenten ? 2 : 0,
+    maximumFractionDigits: 2,
+  }).format(amount)
+}
+
+/** Aantallen met een duizendscheiding, zodat 200000 als 200.000 leest. */
+function formatAantal(aantal: number): string {
+  return aantal.toLocaleString('nl-NL', { maximumFractionDigits: 2 })
+}
+
+/**
+ * Spec-labels komen uit vrije invoer, dus staan er varianten als "OPmerking" of
+ * "materiaal" tussen. Op de offerte zetten we ze op één schrijfwijze; afkortingen
+ * die helemaal in hoofdletters staan (RAL, PVC) blijven zoals ze zijn.
+ */
+function netjesLabel(label: string): string {
+  if (!/[a-z]/.test(label)) return label
+  return label.charAt(0).toUpperCase() + label.slice(1).toLowerCase()
 }
 
 function formatCurrency(amount: number): string {
@@ -657,27 +688,156 @@ export async function generateOffertePDF(
   const mutedColor: [number, number, number] = [140, 140, 135]
   const detailColor: [number, number, number] = [107, 107, 102]
 
+  // Itemtabel liep op 9pt, kleiner dan de lopende tekst eromheen. Nu volgt hij de
+  // basisgrootte van de huisstijl: specs op die grootte, de itemregel een halve
+  // punt groter zodat de naam nog boven zijn eigen specs uitkomt.
+  const DETAIL_FONTSIZE = baseFontSize
+  const ITEM_FONTSIZE = baseFontSize + 0.5
+  const KOP_FONTSIZE = 8.5
+
+  /**
+   * Kolombreedte naar de langste inhoud in plaats van een vast getal: bij een
+   * grotere letter paste "€ 2.015,00" niet meer in 26 mm en brak autoTable het
+   * bedrag af over twee regels. Een bedrag mag nooit afbreken.
+   */
+  const kolomBreedte = (teksten: string[], kop: string, minimum: number): number => {
+    doc.setFont(bodyFont, 'bold')
+    doc.setFontSize(ITEM_FONTSIZE)
+    const inhoud = Math.max(0, ...teksten.map((t) => doc.getTextWidth(t)))
+    doc.setFontSize(KOP_FONTSIZE)
+    const kopBreedte = doc.getTextWidth(kop)
+    // 8 mm cellpadding plus een millimeter speling.
+    return Math.min(Math.max(minimum, Math.max(inhoud, kopBreedte) + 9), 45)
+  }
+
+  const variantenVan = (item: OfferteItem) => item.prijs_varianten ?? []
+  const variantTotaalVan = (variant: OfferteItemPrijsVariant) =>
+    round2(variant.aantal * variant.eenheidsprijs * (1 - (variant.korting_percentage || 0) / 100))
+
+  const KOL_AANTAL = kolomBreedte(
+    items.flatMap((i) => [formatAantal(i.aantal), ...variantenVan(i).map((v) => formatAantal(v.aantal))]),
+    'AANTAL',
+    22
+  )
+  const KOL_PRIJS = kolomBreedte(
+    items.flatMap((i) => [
+      formatBedrag(i.eenheidsprijs),
+      ...variantenVan(i).map((v) => formatBedrag(v.eenheidsprijs)),
+    ]),
+    'PRIJS',
+    26
+  )
+  const KOL_TOTAAL = kolomBreedte(
+    items.flatMap((i) => [
+      formatBedrag(i.totaal),
+      ...variantenVan(i).map((v) => formatBedrag(variantTotaalVan(v))),
+    ]),
+    'TOTAAL',
+    28
+  )
+
+  // Shift table 4mm naar buiten zodat de natuurlijke 4mm cell-padding samenvalt met de pagina-marges
+  const tableMarginLeft = Math.max(0, margins.left - 4)
+  const tableMarginRight = Math.max(0, margins.right - 4)
+
+  // Vaste breedte voor de omschrijving-kolom in plaats van 'auto': alleen als we
+  // die breedte vooraf kennen kunnen we de detail-regels zelf afbreken op exact
+  // de breedte die autoTable straks meet.
+  const omschrijvingBreedte =
+    pageWidth - tableMarginLeft - tableMarginRight - (KOL_AANTAL + KOL_PRIJS + KOL_TOTAAL)
+
+  /**
+   * De specs van een item, in de volgorde waarin ze op de offerte staan.
+   * De afmeting uit de calculatie alleen tonen als er zelf geen formaat-regel
+   * bij staat; anders staat dezelfde maat er twee keer, één keer in mm en één
+   * keer in de woorden van de offerte.
+   */
+  const detailRegelsVoor = (item: OfferteItem): { label: string; waarde: string }[] => {
+    const eigenRegels = (item.detail_regels ?? []).filter((r) => r.label && r.waarde)
+    const regels: { label: string; waarde: string }[] = []
+
+    const heeftEigenFormaat = eigenRegels.some((r) => isLabelVoor('formaat', r.label))
+    if (item.breedte_mm && item.hoogte_mm && !heeftEigenFormaat) {
+      const m2 = item.oppervlakte_m2 || ((item.breedte_mm / 1000) * (item.hoogte_mm / 1000))
+      regels.push({
+        label: 'Afmeting',
+        waarde: `${item.breedte_mm} × ${item.hoogte_mm} mm (${m2.toFixed(2)} m²)`,
+      })
+    }
+    for (const regel of eigenRegels) {
+      // Labels die zelf al op een dubbele punt eindigen ("Plakken:") zouden
+      // anders "Plakken::" opleveren.
+      regels.push({
+        label: netjesLabel(regel.label.trim().replace(/:+$/, '')),
+        waarde: regel.waarde.trim(),
+      })
+    }
+    return regels
+  }
+
+  // Eén inspringing voor de hele offerte in plaats van per item: anders verspringt
+  // de waarde-kolom bij elk blok en oogt de opsomming rommelig. Nooit breder dan
+  // de helft van de cel, anders houdt een lang label geen ruimte voor zijn waarde.
+  const labelKolomBreedte = (() => {
+    doc.setFontSize(DETAIL_FONTSIZE)
+    doc.setFont(bodyFont, 'bold')
+    const breedtes = items.flatMap((item) =>
+      detailRegelsVoor(item).map((r) => doc.getTextWidth(`${r.label}:  `))
+    )
+    return Math.min(Math.max(...breedtes, 0), (omschrijvingBreedte - 8) / 2)
+  })()
+
+  interface DetailBlok {
+    labelKolom: number
+    regels: { label: string; waardeRegels: string[]; labelOpEigenRegel: boolean }[]
+  }
+
+  /**
+   * autoTable leidt de rijhoogte af uit de regels die het zelf afbreekt, maar de
+   * detail-cel tekenen we hieronder zelf met een ingesprongen waarde-kolom. Braken
+   * we daar opnieuw af, dan ontstonden er regels waar geen hoogte voor gereserveerd
+   * was en liep een lang specblok over het volgende item heen. Daarom hier één keer
+   * afbreken op de definitieve waarde-breedte: de tekst die autoTable meet is
+   * precies de tekst die getekend wordt.
+   */
+  const maakDetailBlok = (
+    regels: { label: string; waarde: string }[],
+    celBreedte: number
+  ): { blok: DetailBlok; tekst: string } => {
+    const binnenBreedte = celBreedte - 8 // cellpadding links + rechts
+    doc.setFontSize(DETAIL_FONTSIZE)
+    doc.setFont(bodyFont, 'bold')
+    const labelBreedtes = regels.map((r) => doc.getTextWidth(`${r.label}:  `))
+    const waardeBreedte = binnenBreedte - labelKolomBreedte
+
+    doc.setFont(bodyFont, 'normal')
+    const tekstRegels: string[] = []
+    const blokRegels = regels.map((regel, i) => {
+      const labelOpEigenRegel = labelBreedtes[i] > labelKolomBreedte
+      const waardeRegels = doc.splitTextToSize(regel.waarde, waardeBreedte) as string[]
+      if (labelOpEigenRegel) {
+        tekstRegels.push(`${regel.label}:`, ...waardeRegels)
+      } else {
+        tekstRegels.push(`${regel.label}: ${waardeRegels[0] ?? ''}`, ...waardeRegels.slice(1))
+      }
+      return { label: `${regel.label}:`, waardeRegels, labelOpEigenRegel }
+    })
+
+    return { blok: { labelKolom: labelKolomBreedte, regels: blokRegels }, tekst: tekstRegels.join('\n') }
+  }
+
+  // Een regel die in het pakket zit heeft geen eigen bedrag. Daar € 0,00 neerzetten
+  // leest als een fout of als een gratis post; de cel leeg laten leest als "hoort erbij".
+  const bedragCel = (eenheidsprijs: number, totaal: number, waarde: number): string =>
+    eenheidsprijs === 0 && totaal === 0 ? '' : formatBedrag(waarde)
+
   // Build table rows helper — splits item into bold name row + detail rows + optionele varianten
   const buildItemRows = (item: OfferteItem, isFirst: boolean) => {
     const rows: RowInput[] = []
 
     // Verzamel detail-regels eerst, zodat we weten of we rowSpan nodig hebben
-    const detailLines: string[] = []
-    if (item.breedte_mm && item.hoogte_mm) {
-      const m2 = item.oppervlakte_m2 || ((item.breedte_mm / 1000) * (item.hoogte_mm / 1000))
-      detailLines.push(`Afmeting: ${item.breedte_mm} × ${item.hoogte_mm} mm (${m2.toFixed(2)} m²)`)
-    }
-    if (item.detail_regels?.length) {
-      for (const regel of item.detail_regels) {
-        if (regel.label && regel.waarde) {
-          // Labels die zelf al op een dubbele punt eindigen ("Plakken:") zouden
-          // anders "Plakken::" opleveren.
-          const label = regel.label.trim().replace(/:+$/, '')
-          detailLines.push(`${label}: ${regel.waarde}`)
-        }
-      }
-    }
-    const hasDetails = detailLines.length > 0
+    const detailRegels = detailRegelsVoor(item)
+    const hasDetails = detailRegels.length > 0
     const varianten = item.prijs_varianten ?? []
     const hasVariants = varianten.length > 1
 
@@ -695,28 +855,44 @@ export async function generateOffertePDF(
       ])
     } else {
       // Standaard: naam + getallen op één rij, getallen rowSpan over de detail-rij
+      // valign 'top' op de getalkolommen: met rowSpan over de specs zweefden aantal
+      // en prijs anders halverwege het specblok, los van de regel waar ze bij horen.
+      const getalStijl = { ...separatorOverride, valign: 'top' as const }
       rows.push([
         { content: item.beschrijving, styles: { fontStyle: 'bold', ...separatorOverride } },
-        { content: item.aantal.toString(), rowSpan: hasDetails ? 2 : 1, styles: { ...separatorOverride } },
-        { content: formatCurrency(item.eenheidsprijs), rowSpan: hasDetails ? 2 : 1, styles: { ...separatorOverride } },
-        { content: formatCurrency(item.totaal), rowSpan: hasDetails ? 2 : 1, styles: { ...separatorOverride } },
+        { content: formatAantal(item.aantal), rowSpan: hasDetails ? 2 : 1, styles: getalStijl },
+        {
+          content: bedragCel(item.eenheidsprijs, item.totaal, item.eenheidsprijs),
+          rowSpan: hasDetails ? 2 : 1,
+          styles: getalStijl,
+        },
+        {
+          content: bedragCel(item.eenheidsprijs, item.totaal, item.totaal),
+          rowSpan: hasDetails ? 2 : 1,
+          styles: getalStijl,
+        },
       ])
     }
 
     if (hasDetails) {
       // Detail-regels in kolom 0. Bij standaard-items wordt kolom 1-3 bedekt door rowSpan.
       // Bij items met varianten loopt deze rij óók over alle 4 kolommen (geen rowSpan).
+      const celBreedte = hasVariants
+        ? pageWidth - tableMarginLeft - tableMarginRight
+        : omschrijvingBreedte
+      const { blok, tekst } = maakDetailBlok(detailRegels, celBreedte)
       rows.push([
         {
-          content: detailLines.join('\n'),
+          content: tekst,
           colSpan: hasVariants ? 4 : 1,
           // Herkenningspunt voor willDrawCell; autoTable geeft dit object
           // ongewijzigd door als cell.raw.
           detailCel: true,
+          detailBlok: blok,
           styles: {
             cellPadding: { top: 1, bottom: hasVariants ? 1.5 : 3.5, left: 4, right: 4 },
             textColor: detailColor,
-            fontSize: 9.5,
+            fontSize: DETAIL_FONTSIZE,
             // Deze cel wordt in willDrawCell zelf getekend, met het label vet.
             // Bovenlijnen maakt die positie voorspelbaar.
             valign: 'top',
@@ -729,11 +905,12 @@ export async function generateOffertePDF(
       // Eén rij per variant. Actieve variant wordt bold + brand kleur, andere muted.
       // De totaal-kolom van de actieve variant telt mee in de offerte-totaal (dat is
       // al verwerkt in item.totaal door de data-laag).
+      const meetellend = new Set(
+        getMeetellendeVarianten(varianten, item.actieve_variant_id).map((v) => v.id)
+      )
       varianten.forEach((variant, vi) => {
-        const isActief = variant.id === item.actieve_variant_id
-        const variantTotaal = round2(
-          variant.aantal * variant.eenheidsprijs * (1 - (variant.korting_percentage || 0) / 100)
-        )
+        const isActief = meetellend.has(variant.id)
+        const variantTotaal = variantTotaalVan(variant)
         // Geen Unicode prefix en geen "(standaard)" suffix — de klant kiest zelf.
         // Bold + brand kleur op de actieve variant geeft visueel aan welke nu
         // in het totaal staat zonder het expliciet te benoemen.
@@ -751,7 +928,7 @@ export async function generateOffertePDF(
             },
           },
           {
-            content: variant.aantal.toString(),
+            content: formatAantal(variant.aantal),
             styles: {
               fontStyle: isActief ? 'bold' : 'normal',
               cellPadding: { top: 1.5, bottom: isLast ? 3 : 1.5, left: 4, right: 4 },
@@ -759,7 +936,7 @@ export async function generateOffertePDF(
             },
           },
           {
-            content: formatCurrency(variant.eenheidsprijs),
+            content: bedragCel(variant.eenheidsprijs, variantTotaal, variant.eenheidsprijs),
             styles: {
               fontStyle: isActief ? 'bold' : 'normal',
               cellPadding: { top: 1.5, bottom: isLast ? 3 : 1.5, left: 4, right: 4 },
@@ -767,7 +944,7 @@ export async function generateOffertePDF(
             },
           },
           {
-            content: formatCurrency(variantTotaal),
+            content: bedragCel(variant.eenheidsprijs, variantTotaal, variantTotaal),
             styles: {
               fontStyle: isActief ? 'bold' : 'normal',
               cellPadding: { top: 1.5, bottom: isLast ? 3 : 1.5, left: 4, right: 4 },
@@ -792,16 +969,12 @@ export async function generateOffertePDF(
     ...tableStyles.headStyles,
     fillColor: false as unknown as [number, number, number], // transparant
     textColor: brand,
-    fontSize: 8,
+    fontSize: KOP_FONTSIZE,
     fontStyle: 'bold' as const,
     cellPadding: { top: 2, bottom: 4, left: 4, right: 4 },
     lineWidth: { top: 0, right: 0, bottom: 0.4, left: 0 },
     lineColor: brand,
   }
-
-  // Shift table 4mm naar buiten zodat de natuurlijke 4mm cell-padding samenvalt met de pagina-marges
-  const tableMarginLeft = Math.max(0, margins.left - 4)
-  const tableMarginRight = Math.max(0, margins.right - 4)
 
   // Itemtabel wordt verborgen op de opdrachtbevestiging.
   if (!isOpdrachtbevestiging) {
@@ -818,6 +991,7 @@ export async function generateOffertePDF(
     headStyles: cleanHeaderStyles,
     bodyStyles: {
       ...tableStyles.bodyStyles,
+      fontSize: ITEM_FONTSIZE,
       lineWidth: 0,
       cellPadding: { top: 3, bottom: 1.5, left: 4, right: 4 },
       valign: 'middle',
@@ -825,12 +999,15 @@ export async function generateOffertePDF(
     columnStyles: {
       // Omschrijving is de kolom die tekst moet dragen; de getalkolommen zijn
       // teruggebracht tot wat een bedrag nodig heeft zodat die ruimte overhoudt.
-      0: { cellWidth: 'auto', halign: 'left' },
+      // Vaste breedte, want de detail-regels zijn er al op afgebroken.
+      0: { cellWidth: omschrijvingBreedte, halign: 'left' },
       // AANTAL moet op één regel passen (8pt bold + padding), vandaar 22.
       // De extra ruimte voor de omschrijving komt uit PRIJS en TOTAAL.
-      1: { cellWidth: 22, halign: 'center' },
-      2: { cellWidth: 26, halign: 'right' },
-      3: { cellWidth: 28, halign: 'right' },
+      // overflow 'visible': een bedrag mag nooit over twee regels breken, ook niet
+      // als het buiten alle verwachting breder is dan de kolom die het kreeg.
+      1: { cellWidth: KOL_AANTAL, halign: 'center', overflow: 'visible' },
+      2: { cellWidth: KOL_PRIJS, halign: 'right', overflow: 'visible' },
+      3: { cellWidth: KOL_TOTAAL, halign: 'right', overflow: 'visible' },
     },
     margin: {
       left: tableMarginLeft,
@@ -844,59 +1021,30 @@ export async function generateOffertePDF(
     // en slaan we de standaard-tekening over door false terug te geven.
     willDrawCell: (data) => {
       if (data.section !== 'body' || data.column.index !== 0) return
-      if (!(data.cell.raw as { detailCel?: boolean } | null)?.detailCel) return
+      const raw = data.cell.raw as { detailCel?: boolean; detailBlok?: DetailBlok } | null
+      if (!raw?.detailCel || !raw.detailBlok) return
 
-      const regels = Array.isArray(data.cell.text) ? data.cell.text : [String(data.cell.text)]
-      if (!regels.length) return
-
-      const fontSize = data.cell.styles.fontSize
+      // De cel is in maakDetailBlok al op deze breedte afgebroken; hier alleen
+      // nog tekenen, zodat het aantal regels gelijk is aan de hoogte die
+      // autoTable heeft gereserveerd.
+      const { labelKolom, regels } = raw.detailBlok
       const links = data.cell.x + data.cell.padding('left')
-      const rechts = data.cell.x + data.cell.width - data.cell.padding('right')
+      const fontSize = data.cell.styles.fontSize
       const regelHoogte = fontSize * doc.getLineHeightFactor() * PT_NAAR_MM
       let regelY = data.cell.y + data.cell.padding('top') + fontSize * PT_NAAR_MM
 
       doc.setFontSize(fontSize)
       doc.setTextColor(detailColor[0], detailColor[1], detailColor[2])
 
-      // Alle waarden op dezelfde inspringing zetten leest als een blokje in
-      // plaats van als rafelige regels. Breedste label bepaalt de kolom, maar
-      // nooit meer dan de helft van de cel — anders houdt een lang label geen
-      // ruimte over voor zijn eigen waarde.
-      doc.setFont(bodyFont, 'bold')
-      const labels = regels
-        .map((r) => (r.indexOf(': ') === -1 ? null : r.slice(0, r.indexOf(': ') + 1)))
-        .filter((l): l is string => l !== null)
-      const labelKolom = labels.length
-        ? Math.min(Math.max(...labels.map((l) => doc.getTextWidth(l + ' '))), (rechts - links) / 2)
-        : 0
-
       for (const regel of regels) {
-        const scheiding = regel.indexOf(': ')
-        // Geen label? Dan is het een doorgelopen regel; die volgt de inspringing.
-        if (scheiding === -1) {
-          doc.setFont(bodyFont, 'normal')
-          doc.text(regel, links + labelKolom, regelY)
-          regelY += regelHoogte
-          continue
-        }
-        const label = regel.slice(0, scheiding + 1)
-        const waarde = regel.slice(scheiding + 2)
-
         doc.setFont(bodyFont, 'bold')
-        doc.text(label, links, regelY)
-
+        doc.text(regel.label, links, regelY)
         doc.setFont(bodyFont, 'normal')
-        const waardeLinks = links + labelKolom
-        let x = waardeLinks
-        for (const woord of waarde.split(' ')) {
-          const breedte = doc.getTextWidth(woord + ' ')
-          if (x + breedte > rechts && x > waardeLinks) {
-            regelY += regelHoogte
-            x = waardeLinks
-          }
-          doc.text(woord, x, regelY)
-          x += breedte
-        }
+        if (regel.labelOpEigenRegel) regelY += regelHoogte
+        regel.waardeRegels.forEach((waardeRegel, i) => {
+          if (i > 0) regelY += regelHoogte
+          doc.text(waardeRegel, links + labelKolom, regelY)
+        })
         regelY += regelHoogte
       }
 
@@ -914,6 +1062,14 @@ export async function generateOffertePDF(
   // dunne hairline boven het totaal, en het totaal zelf groter en in brand kleur.
   let totalsY = finalY + 8
 
+  // Het totalenblok mag niet half over de voettekst vallen als de items tot
+  // onderaan de pagina lopen: past het niet meer, dan begint het op een nieuwe pagina.
+  const totalenHoogte = offerte.afrondingskorting_excl_btw ? 32 : 26
+  if (totalsY + totalenHoogte > pageHeight - margins.bottom) {
+    doc.addPage()
+    totalsY = margins.top
+  }
+
   const totalsX = pageWidth - margins.right - 55
 
   doc.setFontSize(baseFontSize - 0.5)
@@ -922,20 +1078,20 @@ export async function generateOffertePDF(
   doc.setFont(bodyFont, 'normal')
   doc.text('Subtotaal', totalsX, totalsY)
   doc.setTextColor(...textColor)
-  doc.text(formatCurrency(offerte.subtotaal), pageWidth - margins.right, totalsY, { align: 'right' })
+  doc.text(formatBedrag(offerte.subtotaal), pageWidth - margins.right, totalsY, { align: 'right' })
   totalsY += 6
 
   doc.setTextColor(120, 120, 115)
   doc.text('BTW', totalsX, totalsY)
   doc.setTextColor(...textColor)
-  doc.text(formatCurrency(offerte.btw_bedrag), pageWidth - margins.right, totalsY, { align: 'right' })
+  doc.text(formatBedrag(offerte.btw_bedrag), pageWidth - margins.right, totalsY, { align: 'right' })
   totalsY += 6
 
   if (offerte.afrondingskorting_excl_btw && offerte.afrondingskorting_excl_btw !== 0) {
     doc.setTextColor(120, 120, 115)
     doc.text('Afrondingskorting', totalsX, totalsY)
     doc.setTextColor(...textColor)
-    doc.text(formatCurrency(offerte.afrondingskorting_excl_btw), pageWidth - margins.right, totalsY, { align: 'right' })
+    doc.text(formatBedrag(offerte.afrondingskorting_excl_btw), pageWidth - margins.right, totalsY, { align: 'right' })
     totalsY += 6
   }
 
@@ -951,7 +1107,7 @@ export async function generateOffertePDF(
   doc.setFontSize(baseFontSize + 3)
   doc.setTextColor(...brand)
   doc.text('Totaal', totalsX, totalsY)
-  doc.text(formatCurrency(offerte.totaal), pageWidth - margins.right, totalsY, { align: 'right' })
+  doc.text(formatBedrag(offerte.totaal), pageWidth - margins.right, totalsY, { align: 'right' })
   totalsY -= 5 // compenseer zodat onderstaande logica niet stuk gaat (delta wordt later +20)
 
   // FIX 13: Optionele items sectie — verborgen op de opdrachtbevestiging.
@@ -982,12 +1138,15 @@ export async function generateOffertePDF(
       body: optioneleTableBody,
       theme: 'plain',
       headStyles: cleanHeaderStyles,
-      bodyStyles: { ...tableStyles.bodyStyles, fontStyle: 'italic', lineWidth: 0 },
+      bodyStyles: { ...tableStyles.bodyStyles, fontSize: ITEM_FONTSIZE, fontStyle: 'italic', lineWidth: 0 },
+      // Zelfde kolombreedtes als de hoofdtabel: de detail-regels zijn op die
+      // omschrijving-breedte afgebroken, en twee verschillende rasters onder
+      // elkaar leest onrustig.
       columnStyles: {
-        0: { cellWidth: 'auto', halign: 'left' },
-        1: { cellWidth: 22, halign: 'center' },
-        2: { cellWidth: 32, halign: 'right' },
-        3: { cellWidth: 32, halign: 'right' },
+        0: { cellWidth: omschrijvingBreedte, halign: 'left' },
+        1: { cellWidth: KOL_AANTAL, halign: 'center', overflow: 'visible' },
+        2: { cellWidth: KOL_PRIJS, halign: 'right', overflow: 'visible' },
+        3: { cellWidth: KOL_TOTAAL, halign: 'right', overflow: 'visible' },
       },
       margin: {
         left: tableMarginLeft,
@@ -1008,12 +1167,12 @@ export async function generateOffertePDF(
     doc.setFont(bodyFont, 'normal')
     doc.setTextColor(...textColor)
     doc.text('Subtotaal optioneel:', totalsX - 15, optTotalsY)
-    doc.text(formatCurrency(optSubtotaal), pageWidth - margins.right, optTotalsY, { align: 'right' })
+    doc.text(formatBedrag(optSubtotaal), pageWidth - margins.right, optTotalsY, { align: 'right' })
     optTotalsY += 6
 
     doc.text('Totaal incl opties:', totalsX - 15, optTotalsY)
     doc.setFont(bodyFont, 'bold')
-    doc.text(formatCurrency(round2(offerte.totaal + optSubtotaal + optBtw)), pageWidth - margins.right, optTotalsY, { align: 'right' })
+    doc.text(formatBedrag(round2(offerte.totaal + optSubtotaal + optBtw)), pageWidth - margins.right, optTotalsY, { align: 'right' })
 
     totalsY = optTotalsY + 5
   }

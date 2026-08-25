@@ -13,6 +13,7 @@ import { downloadFile } from '@/services/storageService'
 import type { Offerte, OfferteItem, Klant } from '@/types'
 import type { PrijsVariant } from './QuoteItemsTable'
 import { round2 } from '@/utils/budgetUtils'
+import { getMeetellendeVarianten } from '@/utils/offerteTotalen'
 import { logger } from '../../utils/logger'
 import { useAuth } from '@/contexts/AuthContext'
 import { useMedewerkers } from '@/contexts/MedewerkersContext'
@@ -614,8 +615,12 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
                         </td>
                       </tr>
                       {/* Variant sub-rows */}
-                      {item.prijs_varianten!.map((variant) => {
-                        const isActive = variant.id === item.actieve_variant_id
+                      {(() => {
+                        const meetellend = new Set(
+                          getMeetellendeVarianten(item.prijs_varianten, item.actieve_variant_id).map((v) => v.id)
+                        )
+                        return item.prijs_varianten!.map((variant) => {
+                        const isActive = meetellend.has(variant.id)
                         const variantBruto = variant.aantal * variant.eenheidsprijs
                         const variantTotaal = variantBruto - variantBruto * (variant.korting_percentage / 100)
                         return (
@@ -634,11 +639,11 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
                                 <span className="text-xs font-medium">{variant.label}</span>
                                 {isActive ? (
                                   <span className="text-2xs font-medium text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-1 py-0.5 rounded">
-                                    standaard
+                                    telt mee
                                   </span>
                                 ) : (
                                   <span className="text-2xs font-medium text-muted-foreground bg-muted px-1 py-0.5 rounded">
-                                    alternatief
+                                    telt niet mee
                                   </span>
                                 )}
                               </span>
@@ -662,7 +667,8 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
                             </td>
                           </tr>
                         )
-                      })}
+                        })
+                      })()}
                     </React.Fragment>
                   )
                 }

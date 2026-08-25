@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { toast, Toaster } from 'sonner'
 import { logger } from '@/utils/logger'
+import { getMeetellendeVarianten } from '@/utils/offerteTotalen'
 
 // ============ TYPES ============
 
@@ -53,6 +54,7 @@ interface PubliekItemPrijsVariant {
   eenheidsprijs: number
   btw_percentage: number
   korting_percentage: number
+  telt_mee?: boolean
 }
 
 interface PubliekItem {
@@ -153,9 +155,39 @@ function getEffectiveItemValues(item: PubliekItem, selectedVariantId?: string): 
   }
 }
 
+/**
+ * De prijsregels van een item zoals ze nu meetellen. Heeft de verkoper meerdere
+ * prijsopties laten meetellen, dan staan die allemaal vast op de offerte en valt
+ * er voor de klant niets te kiezen; anders blijft het één regel, eventueel de
+ * optie die de klant zelf koos.
+ */
+function effectievePrijsRegels(
+  item: PubliekItem,
+  selectedVariantId?: string
+): { aantal: number; eenheidsprijs: number; btw_percentage: number; korting_percentage: number }[] {
+  const meetellend = meetellendeVariantenVan(item)
+  if (meetellend.length > 1) {
+    return meetellend.map((v) => ({
+      aantal: v.aantal,
+      eenheidsprijs: v.eenheidsprijs,
+      btw_percentage: v.btw_percentage,
+      korting_percentage: v.korting_percentage || 0,
+    }))
+  }
+  return [getEffectiveItemValues(item, selectedVariantId)]
+}
+
+function meetellendeVariantenVan(item: PubliekItem): PubliekItemPrijsVariant[] {
+  return getMeetellendeVarianten(item.prijs_varianten, item.actieve_variant_id)
+}
+
 function getEffectiveItemTotal(item: PubliekItem, selectedVariantId?: string): number {
-  const v = getEffectiveItemValues(item, selectedVariantId)
-  return round2(v.aantal * v.eenheidsprijs * (1 - v.korting_percentage / 100))
+  return round2(
+    effectievePrijsRegels(item, selectedVariantId).reduce(
+      (sum, v) => sum + round2(v.aantal * v.eenheidsprijs * (1 - v.korting_percentage / 100)),
+      0
+    )
+  )
 }
 
 // BTW groepering with selection awareness
@@ -170,14 +202,15 @@ function groepeerBtwMetSelectie(
     if (item.soort === 'tekst') continue
     // Skip unselected items (only filter if there are optional items)
     if (hasOptionalItems && !selectedItems.has(item.id)) continue
-    const v = getEffectiveItemValues(item, selectedVariants[item.id])
-    const korting = v.korting_percentage || 0
-    const regelExcl = round2(v.aantal * v.eenheidsprijs * (1 - korting / 100))
-    const regelBtw = round2(regelExcl * v.btw_percentage / 100)
-    const existing = map.get(v.btw_percentage) || { basis: 0, btw: 0 }
-    existing.basis += regelExcl
-    existing.btw += regelBtw
-    map.set(v.btw_percentage, existing)
+    for (const v of effectievePrijsRegels(item, selectedVariants[item.id])) {
+      const korting = v.korting_percentage || 0
+      const regelExcl = round2(v.aantal * v.eenheidsprijs * (1 - korting / 100))
+      const regelBtw = round2(regelExcl * v.btw_percentage / 100)
+      const existing = map.get(v.btw_percentage) || { basis: 0, btw: 0 }
+      existing.basis += regelExcl
+      existing.btw += regelBtw
+      map.set(v.btw_percentage, existing)
+    }
   }
   return Array.from(map.entries())
     .sort((a, b) => a[0] - b[0])
@@ -696,6 +729,10 @@ export function OffertePubliekPagina() {
                   <tbody>
                     {items.map((item: PubliekItem) => {
                       const isSelected = selectedItems.has(item.id)
+                      const meetellendeVarianten = item.soort !== 'tekst' ? meetellendeVariantenVan(item) : []
+                      // Meerdere meetellende opties krijgen elk een eigen regel: één rij
+                      // kan geen twee stuksprijzen tonen zonder te liegen over het bedrag.
+                      const toonOptieRegels = meetellendeVarianten.length > 1
                       const effectiveValues = item.soort !== 'tekst' ? getEffectiveItemValues(item, selectedVariants[item.id]) : null
                       const effectiveTotal = item.soort !== 'tekst' ? getEffectiveItemTotal(item, selectedVariants[item.id]) : 0
                       const isDeselected = hasOptionalItems && !isSelected && item.soort !== 'tekst'
@@ -736,17 +773,34 @@ export function OffertePubliekPagina() {
                               <td colSpan={5} />
                             ) : (
                               <>
-                                <td className="py-3 pr-4 text-right text-[#6B6B66] font-mono">{effectiveValues?.aantal ?? item.aantal}</td>
-                                <td className="py-3 pr-4 text-right text-[#9B9B95] hidden md:table-cell">stuk</td>
-                                <td className="py-3 pr-4 text-right text-[#6B6B66] font-mono">{formatCurrency(effectiveValues?.eenheidsprijs ?? item.eenheidsprijs)}</td>
-                                <td className="py-3 pr-4 text-right text-[#9B9B95] hidden md:table-cell">{effectiveValues?.btw_percentage ?? item.btw_percentage}%</td>
+                                <td className="py-3 pr-4 text-right text-[#6B6B66] font-mono">{toonOptieRegels ? '' : effectiveValues?.aantal ?? item.aantal}</td>
+                                <td className="py-3 pr-4 text-right text-[#9B9B95] hidden md:table-cell">{toonOptieRegels ? '' : 'stuk'}</td>
+                                <td className="py-3 pr-4 text-right text-[#6B6B66] font-mono">{toonOptieRegels ? '' : formatCurrency(effectiveValues?.eenheidsprijs ?? item.eenheidsprijs)}</td>
+                                <td className="py-3 pr-4 text-right text-[#9B9B95] hidden md:table-cell">{toonOptieRegels ? '' : `${effectiveValues?.btw_percentage ?? item.btw_percentage}%`}</td>
                                 <td className="py-3 pl-4 text-right font-semibold text-[#1A1A1A] font-mono">{formatCurrency(effectiveTotal)}</td>
                               </>
                             )}
                           </tr>
+                          {/* Regels per meetellende prijsoptie */}
+                          {toonOptieRegels && meetellendeVarianten.map((v) => (
+                            <tr key={v.id} className="border-b border-[#EBEBEB]">
+                              {hasOptionalItems && <td />}
+                              <td className="py-2 pr-4 pl-6 text-[#6B6B66]">{v.label}</td>
+                              <td className="py-2 pr-4 text-right text-[#6B6B66] font-mono">{v.aantal}</td>
+                              <td className="py-2 pr-4 text-right text-[#9B9B95] hidden md:table-cell">stuk</td>
+                              <td className="py-2 pr-4 text-right text-[#6B6B66] font-mono">{formatCurrency(v.eenheidsprijs)}</td>
+                              <td className="py-2 pr-4 text-right text-[#9B9B95] hidden md:table-cell">{v.btw_percentage}%</td>
+                              <td className="py-2 pl-4 text-right text-[#6B6B66] font-mono">
+                                {formatCurrency(round2(v.aantal * v.eenheidsprijs * (1 - (v.korting_percentage || 0) / 100)))}
+                              </td>
+                            </tr>
+                          ))}
                           {/* Variant selector row */}
                           {(() => {
                             const toonbareVarianten = item.prijs_varianten?.filter(v => v.eenheidsprijs > 0) || []
+                            // Staan er meerdere opties vast in het totaal, dan valt er niets
+                            // te kiezen: dan zijn het geen alternatieven maar vaste regels.
+                            if (toonOptieRegels) return null
                             if (toonbareVarianten.length === 0 || !kanActie || isDeselected) return null
                             const toonBasis = item.eenheidsprijs > 0
                             return (

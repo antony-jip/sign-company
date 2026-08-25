@@ -109,6 +109,39 @@ function variantWaarden(item: Record<string, unknown>, variantId?: string): Prij
   }
 }
 
+/**
+ * De prijsopties die meetellen. Meerdere mogen tegelijk aanstaan (telt_mee);
+ * offertes van vóór die keuze kennen alleen actieve_variant_id.
+ */
+function meetellendeVarianten(
+  vs: Array<Record<string, unknown>>,
+  actieveVariantId?: string
+): Array<Record<string, unknown>> {
+  if (vs.length === 0) return []
+  const aan = vs.filter((v) => v.telt_mee === true)
+  if (aan.length > 0) return aan
+  return [vs.find((v) => v.id === actieveVariantId) ?? vs[0]]
+}
+
+/**
+ * De prijsregels van een item zoals ze meetellen. Staan er meerdere opties vast,
+ * dan valt er voor de klant niets te kiezen en tellen ze allemaal mee — een
+ * eerder meegestuurde variantkeuze mag die post dan niet terugbrengen tot één optie.
+ */
+function prijsRegels(item: Record<string, unknown>, gekozenVariantId?: string): PrijsRegel[] {
+  const vs = Array.isArray(item.prijs_varianten) ? item.prijs_varianten as Array<Record<string, unknown>> : []
+  const meetellend = meetellendeVarianten(vs, item.actieve_variant_id as string | undefined)
+  if (meetellend.length > 1) {
+    return meetellend.map((v) => ({
+      aantal: Number(v.aantal) || 0,
+      eenheidsprijs: Number(v.eenheidsprijs) || 0,
+      btw_percentage: Number(v.btw_percentage) || 0,
+      korting_percentage: Number(v.korting_percentage) || 0,
+    }))
+  }
+  return [variantWaarden(item, gekozenVariantId || (item.actieve_variant_id as string | undefined))]
+}
+
 function regelNetto(r: PrijsRegel): number {
   const bruto = r.aantal * r.eenheidsprijs
   return r2(bruto - bruto * (r.korting_percentage / 100))
@@ -208,11 +241,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       for (const it of items) {
         const patch: Record<string, unknown> = {}
         const vs = Array.isArray(it.prijs_varianten) ? it.prijs_varianten as Array<Record<string, unknown>> : []
+        const meerdereTellenMee =
+          meetellendeVarianten(vs, it.actieve_variant_id as string | undefined).length > 1
         const vid = varianten[it.id as string]
-        if (vid && vs.some((x) => x.id === vid) && vid !== it.actieve_variant_id) patch.actieve_variant_id = vid
+        if (!meerdereTellenMee && vid && vs.some((x) => x.id === vid) && vid !== it.actieve_variant_id) {
+          patch.actieve_variant_id = vid
+        }
         if (it.is_optioneel && gekozenSet.has(it.id as string)) patch.is_optioneel = false
         const effVid = (patch.actieve_variant_id as string) || (it.actieve_variant_id as string | undefined)
-        const nt = regelNetto(variantWaarden(it, effVid))
+        const nt = r2(prijsRegels(it, effVid).reduce((sum, r) => sum + regelNetto(r), 0))
         if (nt !== Number(it.totaal)) patch.totaal = nt
         if (Object.keys(patch).length > 0) {
           await supabaseAdmin.from('offerte_items').update(patch).eq('id', it.id)
@@ -223,7 +260,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // optionele items, met de gekozen (of standaard) variant.
       const finalRegels = items
         .filter((it) => isPrijs(it) && !(it.is_optioneel && !gekozenSet.has(it.id as string)))
-        .map((it) => variantWaarden(it, (varianten[it.id as string] as string | undefined) || (it.actieve_variant_id as string | undefined)))
+        .flatMap((it) => prijsRegels(it, varianten[it.id as string] as string | undefined))
       const afrondingskorting = Number(offerte.afrondingskorting_excl_btw) || 0
       const totalen = berekenGeaccepteerdeTotalen(finalRegels, afrondingskorting)
       updateData.subtotaal = totalen.subtotaal

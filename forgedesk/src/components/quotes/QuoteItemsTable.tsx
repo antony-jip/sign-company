@@ -17,6 +17,7 @@ import { INKOOP_DRAG_TYPE, type InkoopDragData } from './InkoopOffertePaneel'
 import { labelToAutofillField } from '@/utils/autofillUtils'
 import type { CalculatieRegel } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
+import { berekenItemTotaal, getMeetellendeVarianten } from '@/utils/offerteTotalen'
 import { berekenMarkupPercentage } from '@/utils/margeBerekening'
 import { uploadFile, downloadFile, deleteFile } from '@/services/storageService'
 import { createDocument, getSigningVisualisatiesByOfferte, getSigningVisualisatiesByProject } from '@/services/supabaseService'
@@ -72,6 +73,11 @@ export interface PrijsVariant {
   eenheidsprijs: number
   btw_percentage: number
   korting_percentage: number
+  /**
+   * Telt deze optie mee in het offertetotaal? Meerdere opties mogen tegelijk
+   * meetellen; staat het bij geen enkele optie, dan telt actieve_variant_id.
+   */
+  telt_mee?: boolean
   calculatie_regels?: CalculatieRegel[]
   heeft_calculatie?: boolean
 }
@@ -152,20 +158,15 @@ interface QuoteItemsTableProps {
   templateLabels?: string[]
 }
 
-export function calculateLineTotaal(item: QuoteLineItem): number {
-  // If item has variants, use the active variant for the total
-  if (item.prijs_varianten && item.prijs_varianten.length > 0) {
-    const active = item.prijs_varianten.find(v => v.id === item.actieve_variant_id) || item.prijs_varianten[0]
-    const bruto = round2(active.aantal * active.eenheidsprijs)
-    return round2(bruto - bruto * (active.korting_percentage / 100))
-  }
-  const bruto = round2(item.aantal * item.eenheidsprijs)
-  return round2(bruto - bruto * (item.korting_percentage / 100))
-}
-
 function calculateVariantTotaal(variant: PrijsVariant): number {
   const bruto = round2(variant.aantal * variant.eenheidsprijs)
   return round2(bruto - bruto * (variant.korting_percentage / 100))
+}
+
+export function calculateLineTotaal(item: QuoteLineItem): number {
+  // Heeft het item prijsopties, dan telt alles wat aanstaat mee: dat mag ook
+  // meer dan één optie zijn, bijvoorbeeld monteren én demonteren.
+  return berekenItemTotaal(item)
 }
 
 function genId(): string {
@@ -780,8 +781,29 @@ export function QuoteItemsTable({
     onUpdateItem(itemId, 'prijs_varianten', updated)
   }
 
-  const setActieveVariant = (itemId: string, variantId: string) => {
-    onUpdateItem(itemId, 'actieve_variant_id', variantId)
+  /**
+   * Zet een prijsoptie aan of uit voor het offertetotaal. Meerdere opties mogen
+   * tegelijk aanstaan; de laatste kun je niet uitzetten, want dan zou de post
+   * stilzwijgend op nul uitkomen. actieve_variant_id blijft de eerste
+   * meetellende optie, zodat oudere schermen en documenten blijven werken.
+   */
+  const toggleVariantTeltMee = (itemId: string, variantId: string) => {
+    const item = items.find((i) => i.id === itemId)
+    if (!item?.prijs_varianten) return
+    const meetellend = getMeetellendeVarianten(item.prijs_varianten, item.actieve_variant_id)
+    const staatAan = meetellend.some((v) => v.id === variantId)
+    if (staatAan && meetellend.length === 1) return
+
+    const aan = new Set(meetellend.map((v) => v.id))
+    if (staatAan) aan.delete(variantId)
+    else aan.add(variantId)
+
+    const updated = item.prijs_varianten.map((v) => ({ ...v, telt_mee: aan.has(v.id) }))
+    onUpdateItem(itemId, 'prijs_varianten', updated)
+    const eerste = updated.find((v) => v.telt_mee)
+    if (eerste && eerste.id !== item.actieve_variant_id) {
+      onUpdateItem(itemId, 'actieve_variant_id', eerste.id)
+    }
   }
 
   // ── Inkoop drag-drop handlers ──
@@ -1501,16 +1523,20 @@ export function QuoteItemsTable({
                   )}
 
                   {/* Modus: meerdere prijsvarianten */}
-                  {item.prijs_varianten && item.prijs_varianten.length > 0 && (
+                  {item.prijs_varianten && item.prijs_varianten.length > 0 && (() => {
+                    const meetellendeVariantIds = new Set(
+                      getMeetellendeVarianten(item.prijs_varianten, item.actieve_variant_id).map((v) => v.id)
+                    )
+                    return (
                     <div className="space-y-2">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs font-bold text-text-tertiary uppercase tracking-label">
-                          Prijsopties · beide op offerte, kies welke in het totaal telt
+                          Prijsopties · alles staat op de offerte, vink aan wat meetelt
                         </span>
                       </div>
 
                       {item.prijs_varianten.map((variant) => {
-                        const isActive = variant.id === item.actieve_variant_id
+                        const isActive = meetellendeVariantIds.has(variant.id)
                         const variantTotaal = calculateVariantTotaal(variant)
 
                         return (
@@ -1526,14 +1552,18 @@ export function QuoteItemsTable({
                             {/* Variant header: label + active toggle + remove */}
                             <div className="flex items-center gap-2 mb-2">
                               <button
-                                onClick={() => setActieveVariant(item.id, variant.id)}
+                                onClick={() => toggleVariantTeltMee(item.id, variant.id)}
                                 className={cn(
-                                  'h-5 w-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors',
+                                  'h-5 w-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors',
                                   isActive
                                     ? 'border-primary bg-primary text-white'
                                     : 'border-border dark:border-border hover:border-primary/50'
                                 )}
-                                title={isActive ? 'Telt mee in offerte-totaal' : 'Laat deze optie meetellen in het totaal'}
+                                title={
+                                  isActive
+                                    ? 'Telt mee in het offertetotaal — klik om uit te zetten'
+                                    : 'Laat deze optie ook meetellen in het totaal'
+                                }
                               >
                                 {isActive && <Check className="h-3 w-3" />}
                               </button>
@@ -1689,7 +1719,8 @@ export function QuoteItemsTable({
                         Prijsvariant toevoegen
                       </button>
                     </div>
-                  )}
+                    )
+                  })()}
                 </div>
               </>
             )}

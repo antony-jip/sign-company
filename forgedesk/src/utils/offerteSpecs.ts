@@ -45,6 +45,15 @@ function hoortBij(offerteLabel: string, specLabel: string): boolean {
 }
 
 /**
+ * Herkent of een label over hetzelfde veld gaat als een van de vaste
+ * offerte-labels, bijvoorbeeld om te zien of een item al een eigen
+ * formaat-regel heeft ("Afmeting", "Maat", "Formaat").
+ */
+export function isLabelVoor(offerteLabel: string, label: string): boolean {
+  return hoortBij(offerteLabel, label)
+}
+
+/**
  * Vult de vaste labelrijen van de offerte met wat er in het document stond.
  * Wat nergens op past komt er als extra rij onder, want weggooien is erger dan
  * een rij te veel: dan mis je een spec die de klant wél heeft opgegeven.

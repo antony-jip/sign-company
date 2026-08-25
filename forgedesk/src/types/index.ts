@@ -496,6 +496,11 @@ export interface OfferteItemPrijsVariant {
   eenheidsprijs: number;
   btw_percentage: number;
   korting_percentage: number;
+  /**
+   * Telt deze optie mee in het offertetotaal? Meerdere opties mogen tegelijk
+   * meetellen; staat het bij geen enkele optie, dan telt actieve_variant_id.
+   */
+  telt_mee?: boolean;
   calculatie_regels?: CalculatieRegel[];
   heeft_calculatie?: boolean;
 }

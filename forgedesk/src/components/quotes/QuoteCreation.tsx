@@ -73,7 +73,7 @@ import type { Klant, Project, Contactpersoon, Factuur, OfferteItem } from '@/typ
 import { berekenRegelInkoop } from '@/utils/calculatieBerekening'
 import { round2 } from '@/utils/budgetUtils'
 import { berekenMarkupPercentage } from '@/utils/margeBerekening'
-import { berekenOfferteTotalen } from '@/utils/offerteTotalen'
+import { berekenOfferteTotalen, getMeetellendeVarianten } from '@/utils/offerteTotalen'
 import { generateOffertePDF, generateOpdrachtbevestigingPDF } from '@/services/pdfService'
 import { WerkbonAanmaakDialog } from '@/components/werkbonnen/WerkbonAanmaakDialog'
 const PdfPreviewDialog = React.lazy(() => import('@/components/shared/PdfPreviewDialog').then(m => ({ default: m.PdfPreviewDialog })))
@@ -467,25 +467,26 @@ export function QuoteCreation() {
     finally { setNbCreating(false) }
   }
 
-  // ── Helper: get active price data from item (supports variants) ──
-  const getActivePriceData = (item: QuoteLineItem) => {
-    if (item.prijs_varianten && item.prijs_varianten.length > 0) {
-      const active = item.prijs_varianten.find(v => v.id === item.actieve_variant_id) || item.prijs_varianten[0]
-      return {
-        aantal: active.aantal,
-        eenheidsprijs: active.eenheidsprijs,
-        btw_percentage: active.btw_percentage,
-        korting_percentage: active.korting_percentage,
-        calculatie_regels: active.calculatie_regels,
-      }
+  // ── Helper: de prijsregels van een item. Eén per meetellende prijsoptie, want
+  // er mogen er meerdere tegelijk in het totaal zitten. ──
+  const getPrijsDataRegels = (item: QuoteLineItem) => {
+    const meetellend = getMeetellendeVarianten(item.prijs_varianten, item.actieve_variant_id)
+    if (meetellend.length > 0) {
+      return meetellend.map((v) => ({
+        aantal: v.aantal,
+        eenheidsprijs: v.eenheidsprijs,
+        btw_percentage: v.btw_percentage,
+        korting_percentage: v.korting_percentage,
+        calculatie_regels: v.calculatie_regels,
+      }))
     }
-    return {
+    return [{
       aantal: item.aantal,
       eenheidsprijs: item.eenheidsprijs,
       btw_percentage: item.btw_percentage,
       korting_percentage: item.korting_percentage,
       calculatie_regels: item.calculatie_regels,
-    }
+    }]
   }
 
   // ── Calculations for sticky bar ──
@@ -493,28 +494,24 @@ export function QuoteCreation() {
   const verplichtePrijsItems = prijsItems.filter((i) => !i.is_optioneel)
   const optionelePrijsItems = prijsItems.filter((i) => i.is_optioneel)
 
-  const subtotaal = round2(verplichtePrijsItems.reduce((sum, item) => {
-    const data = getActivePriceData(item)
+  const subtotaal = round2(verplichtePrijsItems.flatMap(getPrijsDataRegels).reduce((sum, data) => {
     const bruto = data.aantal * data.eenheidsprijs
     return sum + round2(bruto - bruto * (data.korting_percentage / 100))
   }, 0))
 
-  const btwBedrag = round2(verplichtePrijsItems.reduce((sum, item) => {
-    const data = getActivePriceData(item)
+  const btwBedrag = round2(verplichtePrijsItems.flatMap(getPrijsDataRegels).reduce((sum, data) => {
     const bruto = data.aantal * data.eenheidsprijs
     const netto = round2(bruto - bruto * (data.korting_percentage / 100))
     return sum + round2(netto * (data.btw_percentage / 100))
   }, 0))
 
   // FIX 13: Optioneel subtotaal
-  const optionelSubtotaal = round2(optionelePrijsItems.reduce((sum, item) => {
-    const data = getActivePriceData(item)
+  const optionelSubtotaal = round2(optionelePrijsItems.flatMap(getPrijsDataRegels).reduce((sum, data) => {
     const bruto = data.aantal * data.eenheidsprijs
     return sum + round2(bruto - bruto * (data.korting_percentage / 100))
   }, 0))
 
-  const optionelBtw = round2(optionelePrijsItems.reduce((sum, item) => {
-    const data = getActivePriceData(item)
+  const optionelBtw = round2(optionelePrijsItems.flatMap(getPrijsDataRegels).reduce((sum, data) => {
     const bruto = data.aantal * data.eenheidsprijs
     const netto = round2(bruto - bruto * (data.korting_percentage / 100))
     return sum + round2(netto * (data.btw_percentage / 100))
@@ -526,11 +523,8 @@ export function QuoteCreation() {
     // de offerteregel. De verkoopkant rekent wél aantal × eenheidsprijs, dus
     // bij aantal 5 groeide de omzet mee en de kostprijs niet · het overzicht
     // liet dan een winst zien die er niet was.
-    return round2(verplichtePrijsItems.reduce(
-      (sum, item) => {
-        const data = getActivePriceData(item)
-        return sum + berekenRegelInkoop(data.calculatie_regels, data.aantal)
-      },
+    return round2(verplichtePrijsItems.flatMap(getPrijsDataRegels).reduce(
+      (sum, data) => sum + berekenRegelInkoop(data.calculatie_regels, data.aantal),
       0,
     ))
   }, [verplichtePrijsItems])
@@ -560,10 +554,11 @@ export function QuoteCreation() {
     })
 
     verplichtePrijsItems.forEach((item) => {
-      const data = getActivePriceData(item)
 
-      // Bron 1: Calculatieregels · match productnaam/categorie tegen uren-velden
-      if (data.calculatie_regels && data.calculatie_regels.length > 0) {
+      // Bron 1: Calculatieregels · match productnaam/categorie tegen uren-velden.
+      // Elke meetellende prijsoptie heeft zijn eigen calculatie.
+      getPrijsDataRegels(item).forEach((data) => {
+        if (!data.calculatie_regels || data.calculatie_regels.length === 0) return
         data.calculatie_regels.forEach((r) => {
           const categorieLower = (r.categorie || '').toLowerCase()
           const naamLower = (r.product_naam || '').toLowerCase()
@@ -585,7 +580,7 @@ export function QuoteCreation() {
             materiaal += round2(r.verkoop_prijs * r.aantal)
           }
         })
-      }
+      })
 
       // Bron 2: Detail velden (namefields) · bijv. label "Voorbereiding", waarde "4" of "4 uur"
       if (item.detail_regels && item.detail_regels.length > 0) {
@@ -639,7 +634,7 @@ export function QuoteCreation() {
   // Eén bron voor save, PDF, email, portaal en duplicatie; voorkomt dat de
   // klant per kanaal een ander bedrag ziet.
   const effectieveTotalen = berekenOfferteTotalen(
-    verplichtePrijsItems.map(getActivePriceData),
+    verplichtePrijsItems.flatMap(getPrijsDataRegels),
     { afrondingskorting, urenCorrectieBedrag },
   )
 
@@ -1177,7 +1172,7 @@ export function QuoteCreation() {
       const klant = klanten.find((k) => k.id === selectedKlantId)
       const verplichtePrijsItemsLocal = items.filter((i) => i.soort === 'prijs' && !i.is_optioneel)
       const _offTot = berekenOfferteTotalen(
-        verplichtePrijsItemsLocal.map(getActivePriceData),
+        verplichtePrijsItemsLocal.flatMap(getPrijsDataRegels),
         { afrondingskorting, urenCorrectieBedrag },
       )
       const effectiefSub = _offTot.subtotaal
@@ -2023,13 +2018,19 @@ export function QuoteCreation() {
   // ── Per-item marge for sidebar summary ──
   const itemMarges = useMemo(() => {
     return verplichtePrijsItems.map((item) => {
-      const data = getActivePriceData(item)
-      const inkoop = (data.calculatie_regels || []).reduce((s, r) => s + round2(r.inkoop_prijs * r.aantal), 0)
-      const bruto = data.aantal * data.eenheidsprijs
-      const verkoop = round2(bruto - bruto * (data.korting_percentage / 100))
+      const regels = getPrijsDataRegels(item)
+      const inkoop = round2(regels.reduce(
+        (s, data) => s + (data.calculatie_regels || []).reduce((r2s, r) => r2s + round2(r.inkoop_prijs * r.aantal), 0),
+        0,
+      ))
+      const verkoop = round2(regels.reduce((s, data) => {
+        const bruto = data.aantal * data.eenheidsprijs
+        return s + round2(bruto - bruto * (data.korting_percentage / 100))
+      }, 0))
       const marge = round2(verkoop - inkoop)
       const pct = Math.round(berekenMarkupPercentage(inkoop, verkoop) * 10) / 10
-      return { beschrijving: item.beschrijving, inkoop: round2(inkoop), verkoop, marge, pct, hasCalc: (data.calculatie_regels || []).length > 0 }
+      const hasCalc = regels.some((data) => (data.calculatie_regels || []).length > 0)
+      return { beschrijving: item.beschrijving, inkoop, verkoop, marge, pct, hasCalc }
     })
   }, [verplichtePrijsItems])
 
