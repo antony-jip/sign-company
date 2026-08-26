@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
@@ -140,7 +141,7 @@ import { confirm } from '@/components/shared/ConfirmDialog'
 
 type FactuurStatus = Factuur['status']
 type FactuurType = NonNullable<Factuur['factuur_type']>
-type FilterStatus = 'alle' | FactuurStatus | 'verlopen' | 'te_factureren' | 'credit' | 'te_verzenden' | 'exact_open'
+type FilterStatus = 'alle' | FactuurStatus | 'verlopen' | 'te_factureren' | 'credit' | 'te_verzenden' | 'exact_open' | 'te_herinneren'
 type SortField = 'datum' | 'bedrag' | 'klantnaam'
 type SortDir = 'asc' | 'desc'
 
@@ -187,6 +188,7 @@ const TYPE_CONFIG: Record<FactuurType, { label: string; prefix: string; color: s
 const FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [
   { value: 'alle', label: 'Alle' },
   { value: 'te_verzenden', label: 'Te verzenden' },
+  { value: 'te_herinneren', label: 'Te herinneren' },
   { value: 'concept', label: 'Concept' },
   { value: 'open', label: 'Open' },
   { value: 'verzonden', label: 'Verzonden' },
@@ -315,6 +317,50 @@ function laatsteStap(f: Factuur): { label: string; dagen: number; datum: string 
     }
   }
   return nieuwste
+}
+
+// De ladder als pure functie, zodat zowel de lijstfilter (die hoger in het
+// bestand draait) als de dialoog dezelfde beslissing nemen. Identiek aan wat
+// de cron doet: stap uit = overslaan, al verstuurd = overslaan, een hogere
+// stap verstuurd = niet terugvallen, en de eerste bruikbare kandidaat beslist.
+function dagenVerlopenVan(f: Factuur): number {
+  const verval = new Date(f.vervaldatum)
+  if (isNaN(verval.getTime())) return 0
+  return Math.max(0, Math.floor((Date.now() - verval.getTime()) / 86400000))
+}
+
+function volgendeHerinneringVoor(f: Factuur, stappen: FactuurOpvolgStap[]): HerinneringType | null {
+  const dagen = dagenVerlopenVan(f)
+  if (dagen <= 0) return null
+  if (inRustperiode(f)) return null
+  const vlaggen: Record<HerinneringType, string | null | undefined> = {
+    herinnering_1: f.herinnering_1_verstuurd,
+    herinnering_2: f.herinnering_2_verstuurd,
+    herinnering_3: f.herinnering_3_verstuurd,
+    aanmaning: f.aanmaning_verstuurd,
+  }
+  const ladder: HerinneringType[] = ['herinnering_1', 'herinnering_2', 'herinnering_3', 'aanmaning']
+  for (let i = 0; i < ladder.length; i++) {
+    const type = ladder[i]
+    const stap = stappen.find((st) => st.stap_type === type)
+    const actief = stap ? stap.actief : STANDAARD_HERINNERING_ACTIEF[type]
+    if (!actief) continue
+    if (vlaggen[type]) continue
+    if (ladder.slice(i + 1).some((hoger) => vlaggen[hoger])) continue
+    if (dagen >= (stap?.dagen_na_vervaldatum ?? STANDAARD_HERINNERING_DAGEN[type])) return type
+    break
+  }
+  return null
+}
+
+// Staat er vandaag een herinnering klaar voor deze factuur? Een factuur die
+// volgens de verse Exact-stand per bank voldaan is valt af, precies zoals de
+// verzendknop hem alsnog zou weigeren.
+function herinneringStaatKlaar(f: Factuur, stappen: FactuurOpvolgStap[]): boolean {
+  if (!['open', 'verzonden', 'vervallen'].includes(f.status)) return false
+  if (openstaandBedrag(f) <= 0) return false
+  if (exactMeldtBetaald(f)) return false
+  return volgendeHerinneringVoor(f, stappen) !== null
 }
 
 function dagenSindsLaatsteStap(f: Factuur): number | null {
@@ -565,6 +611,13 @@ export function FacturenLayout() {
   const [herinneringFactuur, setHerinneringFactuur] = useState<Factuur | null>(null)
   const [herinneringType, setHerinneringType] = useState<HerinneringType>('herinnering_1')
   const [herinneringPreview, setHerinneringPreview] = useState('')
+  const [herinneringOnderwerp, setHerinneringOnderwerp] = useState('')
+  // De tekst zoals doen. hem zelf opbouwde. Wijkt wat er straks verstuurd wordt
+  // hiervan af, dan heeft iemand hem met de hand aangepast en laten we hem met
+  // rust. Is hij ongewijzigd, dan mag hij vlak voor verzending opnieuw
+  // gerenderd worden op de verse factuurrij, zodat het bedrag klopt met wat er
+  // op dat moment openstaat.
+  const herinneringOrigineelRef = useRef<{ onderwerp: string; inhoud: string }>({ onderwerp: '', inhoud: '' })
   const [herinneringBezig, setHerinneringBezig] = useState(false)
   // Ontvanger volgens dezelfde volgorde als de cron (migratie 101)
   const [herinneringOntvanger, setHerinneringOntvanger] = useState<HerinneringOntvanger | null>(null)
@@ -789,6 +842,8 @@ export function FacturenLayout() {
       result = result.filter((f) => f.factuur_type === 'creditnota' || f.factuur_type === 'credit')
     } else if (filterStatus === 'exact_open') {
       result = result.filter(moetNaarExact)
+    } else if (filterStatus === 'te_herinneren') {
+      result = result.filter((f) => herinneringStaatKlaar(f, opvolgStappen))
     } else if (filterStatus !== 'alle') {
       result = result.filter((f) => f.status === filterStatus)
     }
@@ -818,7 +873,7 @@ export function FacturenLayout() {
     })
 
     return result
-  }, [eigenFacturen, searchQuery, filterStatus, dagenOpenFilter, sortField, sortDir])
+  }, [eigenFacturen, searchQuery, filterStatus, dagenOpenFilter, sortField, sortDir, opvolgStappen])
 
   // Reset page when filters change
   useEffect(() => { setCurrentPage(1) }, [searchQuery, filterStatus, dagenOpenFilter, sortField, sortDir])
@@ -845,12 +900,13 @@ export function FacturenLayout() {
     }
     counts['te_factureren'] = teFacturerenProjecten.length
     counts['te_verzenden'] = facturen.filter((f) => f.status === 'concept' || f.status === 'open').length
+    counts['te_herinneren'] = facturen.filter((f) => herinneringStaatKlaar(f, opvolgStappen)).length
     counts['credit'] = facturen.filter((f) => f.factuur_type === 'creditnota' || f.factuur_type === 'credit').length
     counts['exact_open'] = facturen.filter(moetNaarExact).length
     const vandaag = getTodayString()
     counts['verlopen'] = facturen.filter((f) => isAchterstallig(f, vandaag)).length
     return counts
-  }, [facturen, teFacturerenProjecten])
+  }, [facturen, teFacturerenProjecten, opvolgStappen])
 
   // ============ BULK SELECTION ============
 
@@ -1546,11 +1602,6 @@ export function FacturenLayout() {
     return Math.max(0, Math.floor((vandaag.getTime() - vervaldatum.getTime()) / (1000 * 60 * 60 * 24)))
   }, [])
 
-  const dagenDrempel = useCallback((type: HerinneringType): number => {
-    const stap = opvolgStappen.find((s) => s.stap_type === type)
-    return stap?.dagen_na_vervaldatum ?? STANDAARD_HERINNERING_DAGEN[type]
-  }, [opvolgStappen])
-
   // Teksten in dezelfde voorrang als de cron: eigen stap-rij, dan de
   // app_settings-teksten, dan de legacy-template, dan de standaardtekst die de
   // cron ook zou sturen. Die bodemplaat voorkomt dat handmatig strandt op
@@ -1574,40 +1625,10 @@ export function FacturenLayout() {
   // Een stap die in Instellingen uit staat slaat de cron over; handmatig bieden
   // we hem dan ook niet aan. De escalatie loopt er wel overheen door, en in de
   // dialoog blijft elke stap kiesbaar voor wie hem bewust wil sturen.
-  const stapActief = useCallback((type: HerinneringType): boolean => {
-    const stap = opvolgStappen.find((s) => s.stap_type === type)
-    return stap ? stap.actief : STANDAARD_HERINNERING_ACTIEF[type]
-  }, [opvolgStappen])
-
-  const getVolgendeHerinnering = useCallback((factuur: Factuur): HerinneringType | null => {
-    const dagen = getDagenVerlopen(factuur)
-    if (dagen <= 0) return null
-    // Minstens vijf dagen rust tussen twee stappen, net als de cron: anders
-    // stuurt een handmatige klik om 10:00 dezelfde klant een tweede mail.
-    if (inRustperiode(factuur)) return null
-    const vlaggen: Record<HerinneringType, string | null | undefined> = {
-      herinnering_1: factuur.herinnering_1_verstuurd,
-      herinnering_2: factuur.herinnering_2_verstuurd,
-      herinnering_3: factuur.herinnering_3_verstuurd,
-      aanmaning: factuur.aanmaning_verstuurd,
-    }
-    const ladder: HerinneringType[] = ['herinnering_1', 'herinnering_2', 'herinnering_3', 'aanmaning']
-    for (let i = 0; i < ladder.length; i++) {
-      const type = ladder[i]
-      if (!stapActief(type)) continue
-      if (vlaggen[type]) continue
-      // Zelfde rem als de cron: is er al een hogere stap verstuurd, dan stelt
-      // de dialoog geen lagere stap meer voor. Handmatig kiezen blijft kunnen.
-      if (ladder.slice(i + 1).some((hoger) => vlaggen[hoger])) continue
-      // Zelfde stop als de cron: de eerste bruikbare kandidaat beslist. Is
-      // zijn drempel nog niet bereikt, dan is er vandaag geen suggestie —
-      // doorlopen zou bij een niet-oplopend ingestelde ladder een stap
-      // voorstellen die de cron nooit kiest.
-      if (dagen >= dagenDrempel(type)) return type
-      break
-    }
-    return null
-  }, [getDagenVerlopen, dagenDrempel, stapActief])
+  const getVolgendeHerinnering = useCallback(
+    (factuur: Factuur): HerinneringType | null => volgendeHerinneringVoor(factuur, opvolgStappen),
+    [opvolgStappen]
+  )
 
   const replaceHerinneringVars = useCallback((text: string, factuur: Factuur, klant: Klant) => {
     return text
@@ -1624,7 +1645,11 @@ export function FacturenLayout() {
     const type = getVolgendeHerinnering(factuur) || 'herinnering_1'
     const tekst = herinneringTekst(type)
     const klant = klanten.find((k) => k.id === factuur.klant_id)
-    setHerinneringPreview(klant ? replaceHerinneringVars(tekst.inhoud, factuur, klant) : '')
+    const inhoud = klant ? replaceHerinneringVars(tekst.inhoud, factuur, klant) : ''
+    const onderwerp = klant ? replaceHerinneringVars(tekst.onderwerp, factuur, klant) : ''
+    setHerinneringPreview(inhoud)
+    setHerinneringOnderwerp(onderwerp)
+    herinneringOrigineelRef.current = { onderwerp, inhoud }
     setHerinneringFactuur(factuur)
     setHerinneringType(type)
     setHerinneringOntvanger(null)
@@ -1762,7 +1787,17 @@ export function FacturenLayout() {
       }
 
       const actueleFactuur = vers || herinneringFactuur
-      const onderwerp = replaceHerinneringVars(tekst.onderwerp, actueleFactuur, klant)
+      // Wat in de dialoog staat is leidend. Alleen als het nog letterlijk de
+      // door doen. opgebouwde tekst is, renderen we hem opnieuw op de verse
+      // rij: dan klopt het bedrag met wat er nu openstaat. Heeft iemand hem
+      // aangepast, dan blijft zijn tekst staan, want die overschrijven zou de
+      // hele bewerking weggooien.
+      const origineel = herinneringOrigineelRef.current
+      const onderwerpAangepast = herinneringOnderwerp !== origineel.onderwerp
+      const inhoudAangepast = herinneringPreview !== origineel.inhoud
+      const onderwerp = onderwerpAangepast
+        ? herinneringOnderwerp
+        : replaceHerinneringVars(tekst.onderwerp, actueleFactuur, klant)
       const vervalDate = new Date(herinneringFactuur.vervaldatum)
       const dagenVervallen = Math.max(0, Math.floor((Date.now() - vervalDate.getTime()) / (1000 * 60 * 60 * 24)))
 
@@ -1772,7 +1807,9 @@ export function FacturenLayout() {
       // De ingestelde stap-tekst draagt de mail; anders leest een aanmaning als
       // eerste herinnering. Opnieuw gerenderd op de verse rij, zodat het bedrag
       // klopt met wat er nu openstaat.
-      const inhoudTekst = replaceHerinneringVars(tekst.inhoud, actueleFactuur, klant)
+      const inhoudTekst = inhoudAangepast
+        ? herinneringPreview
+        : replaceHerinneringVars(tekst.inhoud, actueleFactuur, klant)
       try {
         const { html } = factuurHerinneringTemplate({
           klantNaam: klant.contactpersoon || klant.bedrijfsnaam,
@@ -1827,7 +1864,7 @@ export function FacturenLayout() {
     } finally {
       setHerinneringBezig(false)
     }
-  }, [herinneringFactuur, klanten, herinneringOntvanger, herinneringTekst, herinneringType, replaceHerinneringVars, bedrijfsnaam, primaireKleur, profile, isTrialBlocked, setShowTrialDialog, logHerinnering, magInternDoorlaten])
+  }, [herinneringFactuur, klanten, herinneringOntvanger, herinneringTekst, herinneringType, herinneringOnderwerp, herinneringPreview, replaceHerinneringVars, bedrijfsnaam, primaireKleur, profile, isTrialBlocked, setShowTrialDialog, logHerinnering, magInternDoorlaten])
 
   // ============ CREDITNOTA / VOORSCHOT LOGIC ============
 
@@ -2890,7 +2927,12 @@ export function FacturenLayout() {
                     <td className="py-3.5 pr-4 text-right hidden lg:table-cell">
                       {(() => {
                         const stap = laatsteStap(factuur)
-                        if (!isOverdue && !stap) return null
+                        // Staat er vandaag een stap klaar, dan is dát wat je
+                        // wil zien; de vorige stap is dan bijzaak.
+                        const klaarStaand = herinneringStaatKlaar(factuur, opvolgStappen)
+                          ? volgendeHerinneringVoor(factuur, opvolgStappen)
+                          : null
+                        if (!isOverdue && !stap && !klaarStaand) return null
                         return (
                           <div className="flex flex-col items-end gap-0.5">
                             <div className="flex items-center gap-1 justify-end">
@@ -2904,7 +2946,16 @@ export function FacturenLayout() {
                                 {factuur.aanmaning_verstuurd && <span className="w-1.5 h-1.5 rounded-full bg-[#8A1A0A] dark:bg-[#C0451A]" title="Aanmaning" />}
                               </div>
                             </div>
-                            {stap ? (
+                            {klaarStaand ? (
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); openHerinneringDialog(factuur) }}
+                                className="text-[10px] font-semibold text-flame hover:underline whitespace-nowrap"
+                                title="Bekijk de herinnering, pas de tekst aan en verstuur"
+                              >
+                                {STAP_LABEL[klaarStaand]} klaar
+                              </button>
+                            ) : stap ? (
                               <span
                                 className="text-[10px] text-muted-foreground whitespace-nowrap"
                                 title={`${stap.label} verstuurd op ${new Date(stap.datum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}`}
@@ -3882,11 +3933,15 @@ export function FacturenLayout() {
                       setHerinneringType(type)
                       const tekst = herinneringTekst(type)
                       const klant = klanten.find((k) => k.id === herinneringFactuur?.klant_id)
-                      setHerinneringPreview(
-                        klant && herinneringFactuur
-                          ? replaceHerinneringVars(tekst.inhoud, herinneringFactuur, klant)
-                          : ''
-                      )
+                      const inhoud = klant && herinneringFactuur
+                        ? replaceHerinneringVars(tekst.inhoud, herinneringFactuur, klant)
+                        : ''
+                      const onderwerp = klant && herinneringFactuur
+                        ? replaceHerinneringVars(tekst.onderwerp, herinneringFactuur, klant)
+                        : ''
+                      setHerinneringPreview(inhoud)
+                      setHerinneringOnderwerp(onderwerp)
+                      herinneringOrigineelRef.current = { onderwerp, inhoud }
                     }}
                   >
                     {type === 'herinnering_1' ? 'H1' : type === 'herinnering_2' ? 'H2' : type === 'herinnering_3' ? 'H3' : 'Aanm.'}
@@ -3900,10 +3955,29 @@ export function FacturenLayout() {
                 Verstuur je hem toch, dan gaat de tekst gewoon naar de klant.
               </div>
             )}
-            <div>
-              <Label className="text-sm font-medium">Preview</Label>
-              <div className="mt-1 p-3 rounded-lg bg-muted/50 dark:bg-muted/30 text-sm whitespace-pre-wrap max-h-60 overflow-y-auto">
-                {herinneringPreview || 'Geen template beschikbaar'}
+            <div className="space-y-3">
+              <div>
+                <Label htmlFor="herinnering-onderwerp" className="text-sm font-medium">Onderwerp</Label>
+                <Input
+                  id="herinnering-onderwerp"
+                  value={herinneringOnderwerp}
+                  onChange={(e) => setHerinneringOnderwerp(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="herinnering-tekst" className="text-sm font-medium">Bericht</Label>
+                <Textarea
+                  id="herinnering-tekst"
+                  value={herinneringPreview}
+                  onChange={(e) => setHerinneringPreview(e.target.value)}
+                  rows={10}
+                  className="mt-1 text-sm resize-y"
+                  placeholder="Geen template beschikbaar"
+                />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Wat hier staat gaat naar de klant. De opmaak eromheen (logo, bedrag, betaalknop) komt uit de huisstijl.
+                </p>
               </div>
             </div>
           </div>

@@ -6,7 +6,8 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Mail, Loader2, Save, Send } from 'lucide-react'
+import { Mail, Loader2, Save, Send, Eye } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { getProfile, getAppSettings, updateAppSettings } from '@/services/supabaseService'
 import { getFactuurOpvolgStappen, upsertFactuurOpvolgStappen, type FactuurOpvolgStap } from '@/services/factuurService'
@@ -199,25 +200,63 @@ export function FactuurOpvolgingSubTab() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-start justify-between gap-4 p-3 rounded-lg border border-border/50 bg-muted/20">
-            <div className="space-y-1">
-              <Label htmlFor="factuur-opvolging-automatisch" className="text-sm font-medium">
-                Automatisch versturen
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                Verstuurt de onderstaande ladder dagelijks (09:30) vanzelf voor facturen met
-                status verzonden of vervallen. Handmatig verstuurde herinneringen tellen mee,
-                dus dubbel mailen kan niet. Deelbetalingen worden verrekend, facturen die al
-                langer dan 180 dagen openstaan zonder eerdere herinnering worden overgeslagen,
-                en met een actieve Exact-koppeling pauzeert de opvolging als de betaalstand
-                verouderd is.
-              </p>
+          {/* Twee manieren van werken naast elkaar, in plaats van één schakelaar
+              die alleen zegt wat er niet gebeurt als hij uit staat. Onder water
+              is het nog steeds hetzelfde veld: uit betekent dat de nachtjob de
+              organisatie overslaat en de herinneringen blijven wachten in de
+              lijst Te herinneren. */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Hoe gaan de herinneringen de deur uit?</Label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setAutomatisch(false)}
+                aria-pressed={!automatisch}
+                className={cn(
+                  'text-left p-3 rounded-lg border transition-colors',
+                  !automatisch
+                    ? 'border-petrol bg-petrol/[0.06] dark:border-white/30 dark:bg-white/[0.06]'
+                    : 'border-border/50 bg-muted/20 hover:border-border'
+                )}
+              >
+                <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <Eye className="h-4 w-4" />
+                  Met supervisie
+                </span>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Niets gaat vanzelf de deur uit. Wat aan de beurt is verschijnt bij Facturen
+                  onder <strong>Te herinneren</strong>, met de mail al ingevuld volgens de ladder
+                  hieronder. Je opent hem, past de tekst aan waar het nodig is en verstuurt zelf.
+                </p>
+              </button>
+              <button
+                type="button"
+                onClick={() => setAutomatisch(true)}
+                aria-pressed={automatisch}
+                className={cn(
+                  'text-left p-3 rounded-lg border transition-colors',
+                  automatisch
+                    ? 'border-petrol bg-petrol/[0.06] dark:border-white/30 dark:bg-white/[0.06]'
+                    : 'border-border/50 bg-muted/20 hover:border-border'
+                )}
+              >
+                <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <Send className="h-4 w-4" />
+                  Automatisch
+                </span>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Verstuurt de ladder elke ochtend om 09:30 vanzelf voor facturen met status
+                  verzonden of vervallen. De lijst Te herinneren blijft bestaan, maar toont dan
+                  wat er komende nacht uitgaat, zodat je vooraf kunt ingrijpen.
+                </p>
+              </button>
             </div>
-            <Switch
-              id="factuur-opvolging-automatisch"
-              checked={automatisch}
-              onCheckedChange={setAutomatisch}
-            />
+            <p className="text-xs text-muted-foreground">
+              In beide gevallen tellen handmatig verstuurde herinneringen mee, dus dubbel mailen
+              kan niet. Deelbetalingen worden verrekend, facturen die al langer dan 180 dagen
+              openstaan zonder eerdere herinnering worden overgeslagen, en met een actieve
+              Exact-koppeling pauzeert de opvolging als de betaalstand verouderd is.
+            </p>
           </div>
           <div className="space-y-1.5 p-3 rounded-lg border border-border/50 bg-muted/20">
             <Label htmlFor="herinnering-bcc" className="text-sm font-medium">
