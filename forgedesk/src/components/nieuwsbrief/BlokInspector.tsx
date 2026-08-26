@@ -301,7 +301,10 @@ export function BlokInspector({ blok, stijl, onChange, onStijlChange, onDuplicee
         <div className="ml-auto flex items-center gap-0.5">
           <button type="button" title="Bewaar als eigen blok" onClick={() => {
             const naam = window.prompt('Naam voor dit blok (komt in het palet onder "Eigen blokken")', BLOK_LABEL[blok.type])
-            if (naam?.trim()) { bewaarBlok(naam.trim(), blok); toast.success('Blok bewaard in je palet') }
+            if (!naam?.trim()) return
+            bewaarBlok(naam.trim(), blok)
+              .then(() => toast.success('Blok bewaard in je palet'))
+              .catch(err => { toast.error('Kon het blok niet bewaren'); console.error('[nieuwsbrief] blok bewaren mislukt:', err) })
           }} className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"><Bookmark className="h-4 w-4" /></button>
           <button type="button" title="Dupliceren" onClick={onDupliceer} className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"><Copy className="h-4 w-4" /></button>
           <button type="button" title="Verwijderen" onClick={onVerwijder} className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-[#C0451A] dark:hover:text-[#FF8866]"><Trash2 className="h-4 w-4" /></button>

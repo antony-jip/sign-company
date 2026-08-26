@@ -234,6 +234,8 @@ describe('elke tabel houdt ALGEMENE leestoegang, niet alleen een uitzondering', 
   const KOPPELING_IS_CORRECT = new Set([
     'inkoopfactuur_regels',   // via inkoopfacturen.organisatie_id
     'nieuwsbrief_events',     // via nieuwsbrieven.user_id
+    'nieuwsbrief_ontvangers', // via nieuwsbrieven.user_id; kindtabel zonder eigen user_id
+    'nieuwsbrief_kliks',      // via nieuwsbrieven.user_id; kindtabel zonder eigen user_id
     'nieuwsbrief_afmeldingen',
     'offerte_opvolg_log',
     'offerte_opvolg_stappen',

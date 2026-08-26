@@ -8,7 +8,7 @@ import DOMPurify from 'dompurify'
 import { BlokInspector } from './BlokInspector'
 import { resolveMergeTags } from './nieuwsbriefShell'
 import { RijkeTekstVeld } from './RijkeTekstVeld'
-import { getEigenBlokken, verwijderEigenBlok, instantieer, type EigenBlok } from './blokBibliotheek'
+import { getEigenBlokken, laadEigenBlokken, verwijderEigenBlok, instantieer, type EigenBlok } from './blokBibliotheek'
 import {
   type Blok, type BlokType, type NieuwsbriefDocument, type NieuwsbriefStijl,
   BLOK_LABEL, BLOK_OMSCHRIJVING, BLOK_VOLGORDE, BLOK_AFSTAND, maakBlok, kloonBlok, renderBlokWrapper,
@@ -40,6 +40,7 @@ function useEigenBlokken(): EigenBlok[] {
   useEffect(() => {
     const h = () => setLijst(getEigenBlokken())
     window.addEventListener('doen-eigen-blokken', h)
+    laadEigenBlokken().then(setLijst)
     return () => window.removeEventListener('doen-eigen-blokken', h)
   }, [])
   return lijst
@@ -250,7 +251,7 @@ export function BlokBouwer({ document: doc, onChange, disabled }: Props) {
                   <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md bg-petrol text-white"><Bookmark className="h-3.5 w-3.5" /></span>
                   <span className="min-w-0"><span className="block truncate text-[13px] font-semibold text-foreground">{item.naam}</span><span className="block text-[11px] text-muted-foreground">{BLOK_LABEL[item.blok.type]}</span></span>
                 </button>
-                <button type="button" title="Verwijder uit palet" onClick={() => verwijderEigenBlok(item.id)} className="rounded-md p-1 text-muted-foreground opacity-0 transition-opacity hover:text-[#C0451A] group-hover:opacity-100"><Trash className="h-3.5 w-3.5" /></button>
+                <button type="button" title="Verwijder uit palet" onClick={() => { verwijderEigenBlok(item.id).catch(err => console.error('[nieuwsbrief] blok verwijderen mislukt:', err)) }} className="rounded-md p-1 text-muted-foreground opacity-0 transition-opacity hover:text-[#C0451A] group-hover:opacity-100"><Trash className="h-3.5 w-3.5" /></button>
               </div>
             ))}
           </div>

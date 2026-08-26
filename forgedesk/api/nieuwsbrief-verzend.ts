@@ -104,7 +104,7 @@ interface AbInstelling {
 // Vaste, herhaalbare verdeling over de twee varianten. Math.random zou bij een
 // tweede poging na een mislukte batch een andere splitsing geven, en dan zou
 // iemand beide onderwerpen kunnen krijgen.
-function variantVan(email: string): 'a' | 'b' {
+export function variantVan(email: string): 'a' | 'b' {
   let h = 0
   for (let i = 0; i < email.length; i++) h = (h * 31 + email.charCodeAt(i)) >>> 0
   return h % 2 === 0 ? 'a' : 'b'
@@ -112,7 +112,7 @@ function variantVan(email: string): 'a' | 'b' {
 
 // Zelfde hash bepaalt ook wie in de testgroep valt: stabiel, en onafhankelijk
 // van de volgorde waarin de database de klanten teruggaf.
-function testVolgorde(email: string): number {
+export function testVolgorde(email: string): number {
   let h = 2166136261
   for (let i = 0; i < email.length; i++) {
     h ^= email.charCodeAt(i)
@@ -194,7 +194,7 @@ interface Ontvanger {
 // markers omheen (src/components/nieuwsbrief/nieuwsbriefBlokken.ts); hier valt
 // eruit wat niet bij deze ontvanger hoort. Zonder klantlabels blijft er niets
 // gelabelds over: liever een blok te weinig dan een aanbieding bij de verkeerde.
-function knipLabels(html: string, labels: string[]): string {
+export function knipLabels(html: string, labels: string[]): string {
   const mijn = new Set(labels.map(l => l.trim().toLowerCase()).filter(Boolean))
   return html.replace(/<!--doen:label:([^>]*?)-->([\s\S]*?)<!--\/doen:label-->/g, (_heel, label: string, inhoud: string) =>
     mijn.has(String(label).trim().toLowerCase()) ? inhoud : '')
@@ -347,7 +347,7 @@ function escapeHtml(str: string): string {
 // verkeer, en weet je van geen enkele nieuwsbrief of hij iets opleverde.
 // Alleen http(s)-links krijgen ze: mailto, tel en de afmeld-placeholder niet,
 // en een link die zelf al een utm_source draagt blijft zoals hij is.
-function campagneNaam(onderwerp: string): string {
+export function campagneNaam(onderwerp: string): string {
   return onderwerp
     .toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -356,7 +356,7 @@ function campagneNaam(onderwerp: string): string {
     .slice(0, 60) || 'nieuwsbrief'
 }
 
-function voegUtmToe(html: string, campagne: string): string {
+export function voegUtmToe(html: string, campagne: string): string {
   return html.replace(/href="(https?:\/\/[^"]*)"/gi, (heel, url: string) => {
     if (url.includes('{{{') || /[?&]utm_source=/i.test(url)) return heel
     const [basis, fragment = ''] = url.split('#')
