@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   ArrowLeft, MailCheck, Eye, MousePointerClick, AlertTriangle, Users, UserMinus,
-  RefreshCw, Link2, Trophy, Loader2, Search,
+  RefreshCw, Link2, Trophy, Loader2, Search, ListPlus,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { formatDateTime } from '@/lib/utils'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { Button } from '@/components/ui/button'
+import { useAuth } from '@/contexts/AuthContext'
+import { createTaak } from '@/services/projectService'
 import { Input } from '@/components/ui/input'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
@@ -50,6 +52,8 @@ export function NieuwsbriefStats({ nieuwsbrief, onTerug, onHerzonden }: Props) {
   const [herzendOpen, setHerzendOpen] = useState(false)
   const [herzendOnderwerp, setHerzendOnderwerp] = useState('')
   const [herzendBezig, setHerzendBezig] = useState(false)
+  const [opvolgBezig, setOpvolgBezig] = useState<string | null>(null)
+  const { user } = useAuth()
 
   useEffect(() => {
     let actief = true
@@ -116,6 +120,34 @@ export function NieuwsbriefStats({ nieuwsbrief, onTerug, onHerzonden }: Props) {
       waarde: stats?.unsubscribed ?? 0, rate: pct(percentages?.afgemeld ?? null), sub: 'zegden op',
     },
   ]
+
+  // Een klik is een signaal, geen taak. Daarom maakt doen. de taak niet zelf
+  // aan maar zet hem hier klaar: pas als je erop drukt, gebeurt er iets.
+  async function volgOp(a: OntvangerActiviteit) {
+    if (!user?.id) { toast.error('Niet ingelogd'); return }
+    setOpvolgBezig(a.email)
+    try {
+      const wie = a.bedrijfsnaam || a.naam || a.email
+      const watKlikte = a.links.length > 0 ? `\n\nAangeklikt:\n${a.links.map(l => `- ${l}`).join('\n')}` : ''
+      await createTaak({
+        user_id: user.id,
+        klant_id: a.klantId || undefined,
+        titel: `Bel ${wie} over de nieuwsbrief`,
+        beschrijving: `${wie} (${a.email}) klikte in "${nieuwsbrief.onderwerp || 'de nieuwsbrief'}".${watKlikte}`,
+        status: 'todo',
+        prioriteit: 'medium',
+        toegewezen_aan: '',
+        geschatte_tijd: 0,
+        bestede_tijd: 0,
+      })
+      toast.success(`Taak aangemaakt voor ${wie}`)
+    } catch (err) {
+      toast.error('Kon de taak niet aanmaken')
+      console.error('[nieuwsbrief] taak aanmaken mislukt:', err)
+    } finally {
+      setOpvolgBezig(null)
+    }
+  }
 
   async function herzend() {
     if (!herzendOnderwerp.trim()) { toast.error('Geef een nieuw onderwerp op'); return }
@@ -324,6 +356,18 @@ export function NieuwsbriefStats({ nieuwsbrief, onTerug, onHerzonden }: Props) {
                             )}
                             {a.geklikt === 0 && a.geopend === 0 && !a.afgemeld && !a.gebouncet && (
                               <span className="font-mono text-[12px] text-muted-foreground/70">stil</span>
+                            )}
+                            {a.geklikt > 0 && !a.afgemeld && (
+                              <button
+                                type="button"
+                                onClick={() => volgOp(a)}
+                                disabled={opvolgBezig === a.email}
+                                title="Maak een taak om deze klant te bellen"
+                                className="ml-2 inline-flex items-center gap-1 rounded-md border border-border px-2 py-0.5 text-[12px] font-semibold text-muted-foreground transition-colors hover:border-flame/50 hover:text-flame disabled:opacity-50"
+                              >
+                                {opvolgBezig === a.email ? <Loader2 className="h-3 w-3 animate-spin" /> : <ListPlus className="h-3 w-3" />}
+                                Opvolgen
+                              </button>
                             )}
                           </td>
                         </tr>

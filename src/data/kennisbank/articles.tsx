@@ -912,12 +912,14 @@ export const articles: Article[] = [
         content: (
           <>
             <P>
-              Factuurgegevens <B>gaan rechtstreeks van doen. naar Exact Online</B>, one-way. Je boekhouder hoeft
+              Factuurgegevens <B>gaan rechtstreeks van doen. naar Exact Online</B>. Je boekhouder hoeft
               niks dubbel in te voeren. Dagboeken, grootboekrekeningen, btw-codes: allemaal automatisch.
             </P>
             <P>
-              Let op: <B>betaalstatus komt niet automatisch terug</B> vanuit Exact. Zodra jij het geld binnen ziet
-              komen, vink je de factuur in doen. zelf af als betaald.
+              En het loopt <B>ook terug</B>: elke ochtend haalt doen. uit Exact op welke facturen daar zijn
+              afgeletterd en zet die vanzelf op betaald. Een bankbetaling ken je in doen. alleen via deze sync,
+              dus dat is meteen de reden dat je hem aan laat staan. Wil je de betaalstand liever zelf of via je
+              boekhouder bijhouden, dan zet je de terugkoppeling uit bij Instellingen → Integraties.
             </P>
           </>
         ),
@@ -1560,9 +1562,10 @@ export const articles: Article[] = [
               <LI><B>Exact Online</B>: koppel via OAuth om facturen automatisch te synchroniseren. De koppeling wordt door één teamlid opgezet (de eigenaar), daarna kunnen collega's zelf ook synchroniseren</LI>
               <LI><B>Moneybird of e-Boekhouden</B>: verbind met een API-token en wijs de juiste grootboekrekeningen en btw-codes toe</LI>
             </UL>
-            <Callout tone="warning">
-              De koppeling met Exact Online is <B>one-way</B>: factuurgegevens gaan van doen. naar Exact, niet
-              andersom. De betaalstatus vink je dus zelf af in doen. zodra het geld binnen is.
+            <Callout tone="info">
+              De koppeling met Exact Online werkt <B>twee kanten op</B>: factuurgegevens gaan van doen. naar
+              Exact, en wat daar is afgeletterd komt elke ochtend terug zodat de factuur in doen. vanzelf op
+              betaald springt. Je kunt die terugkoppeling uitzetten als je de betaalstand liever zelf bijhoudt.
             </Callout>
             <P>
               Je zakelijke mailbox koppel je niet hier maar bij <B>Instellingen → E-mail</B>, waar je kiest tussen

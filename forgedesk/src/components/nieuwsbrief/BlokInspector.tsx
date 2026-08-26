@@ -1,8 +1,8 @@
-import { useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { AlignLeft, AlignCenter, AlignRight, ImagePlus, RefreshCw, Trash2, Copy, X, Palette, Image as Images, Bookmark } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
-import { uploadAfbeelding } from '@/services/nieuwsbriefService'
+import { uploadAfbeelding, getGebruikteLabels } from '@/services/nieuwsbriefService'
 import { RijkeTekstVeld } from './RijkeTekstVeld'
 import { FotoBank } from './FotoBank'
 import { bewaarBlok } from './blokBibliotheek'
@@ -318,7 +318,17 @@ export function BlokInspector({ blok, stijl, onChange, onStijlChange, onDuplicee
 
 function BlokOpmaakVelden({ opmaak, onChange }: { opmaak: BlokOpmaak | undefined; onChange: (o: BlokOpmaak | undefined) => void }) {
   const [open, setOpen] = useState(!!opmaak && Object.keys(opmaak).length > 0)
+  const [labels, setLabels] = useState<string[]>([])
   const o = opmaak ?? {}
+
+  useEffect(() => {
+    if (!open) return
+    let actief = true
+    getGebruikteLabels()
+      .then(l => { if (actief) setLabels(l) })
+      .catch(err => console.error('[nieuwsbrief] labels laden mislukt:', err))
+    return () => { actief = false }
+  }, [open])
   const set = (v: Partial<BlokOpmaak>) => {
     const volgende = { ...o, ...v }
     ;(Object.keys(volgende) as Array<keyof BlokOpmaak>).forEach(k => { if (volgende[k] === undefined || volgende[k] === false || volgende[k] === 0) delete volgende[k] })
@@ -328,7 +338,7 @@ function BlokOpmaakVelden({ opmaak, onChange }: { opmaak: BlokOpmaak | undefined
     <div className="rounded-xl border border-border/60">
       <button type="button" onClick={() => setOpen(v => !v)} className="flex w-full items-center justify-between px-3 py-2 text-left">
         <span className="text-[12px] font-bold text-foreground">Blok-opmaak</span>
-        <span className="text-[11px] text-muted-foreground">{open ? 'Verberg' : 'Achtergrond, ruimte, mobiel'}</span>
+        <span className="text-[11px] text-muted-foreground">{open ? 'Verberg' : 'Achtergrond, ruimte, mobiel, doelgroep'}</span>
       </button>
       {open && (
         <div className="space-y-3 border-t border-border/60 p-3">
@@ -339,6 +349,23 @@ function BlokOpmaakVelden({ opmaak, onChange }: { opmaak: BlokOpmaak | undefined
             <input type="checkbox" checked={!!o.verbergMobiel} onChange={e => set({ verbergMobiel: e.target.checked })} className="h-4 w-4 accent-[#1A535C]" />
             Verberg dit blok op telefoons
           </label>
+          <div className="space-y-1.5 border-t border-border/60 pt-3">
+            <div className="text-[12px] font-semibold text-foreground">Alleen voor klanten met label</div>
+            <input
+              list="doen-klantlabels"
+              value={o.alleenLabel ?? ''}
+              onChange={e => set({ alleenLabel: e.target.value.trim() || undefined })}
+              placeholder="Iedereen ziet dit blok"
+              className="w-full rounded-lg border border-border bg-card px-2.5 py-1.5 text-[13px] text-foreground outline-none placeholder:text-muted-foreground focus:border-petrol dark:focus:border-white/25"
+            />
+            <datalist id="doen-klantlabels">
+              {labels.map(l => <option key={l} value={l} />)}
+            </datalist>
+            <p className="text-[11px] leading-relaxed text-muted-foreground">
+              Andere ontvangers krijgen dit blok niet te zien. In de preview en de testmail staat het er wel, anders kun
+              je het niet controleren.
+            </p>
+          </div>
         </div>
       )}
     </div>

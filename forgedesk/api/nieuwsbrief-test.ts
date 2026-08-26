@@ -54,6 +54,12 @@ function webfontImport(font: string): string {
   return naam ? `@import url('https://fonts.googleapis.com/css2?family=${WEBFONTS[naam]}&display=swap');` : ''
 }
 
+// In een testmail wil je alles zien, ook de blokken die maar naar een deel van
+// de lijst gaan. De markers eromheen vallen weg, de inhoud blijft staan.
+function toonAlleLabels(html: string): string {
+  return html.replace(/<!--doen:label:[^>]*?-->/g, '').replace(/<!--\/doen:label-->/g, '')
+}
+
 function buildNieuwsbriefHtml(bodyHtml: string, onderwerp: string, preheader?: string, stijlIn?: MailStijl): string {
   const font = isFont(stijlIn?.font) ? stijlIn!.font! : STANDAARD_FONT
   const achtergrond = isKleur(stijlIn?.achtergrond) ? stijlIn!.achtergrond! : '#F5F4F1'
@@ -77,7 +83,7 @@ ${webfont ? `<!--[if !mso]><!--><style>${webfont}</style><!--<![endif]-->` : ''}
       <!--[if mso]><table role="presentation" width="600" cellpadding="0" cellspacing="0"><tr><td><![endif]-->
       <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="max-width:600px;">
         <tr><td style="background-color:${kaart};border-radius:12px;padding:36px 36px 28px 36px;font-family:${font};font-size:15px;line-height:1.65;color:${tekst};">
-          ${bodyHtml}
+          ${toonAlleLabels(bodyHtml)}
         </td></tr>
         <tr><td style="padding:20px 36px 0 36px;font-family:${font};font-size:12px;color:#9B9B95;text-align:center;line-height:1.6;">
           Je ontvangt deze mail omdat je contact bent van Sign Company.<br>

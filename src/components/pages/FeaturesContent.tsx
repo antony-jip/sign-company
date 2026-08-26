@@ -194,9 +194,9 @@ const details: ModuleDetail[] = [
     slug: 'facturen',
     name: 'Facturen',
     heading: 'Verzonden én ontvangen',
-    sub: 'Verkoopfactuur in één klik met Mollie-betaallink. Inkoopfacturen leest Daan uit, daarna door naar Exact Online.',
+    sub: 'Verkoopfactuur in één klik met Mollie-betaallink. Inkoopfacturen leest Daan uit. Exact Online koppelt heen en terug.',
     overview:
-      'Verkoopfactuur in één klik vanuit de offerte, met betaallink en automatische herinneringen. Inkoopfacturen leest Daan uit. Goedgekeurd? Door naar Exact Online.',
+      'Verkoopfactuur in één klik vanuit de offerte, met betaallink en automatische herinneringen. Inkoopfacturen leest Daan uit. Goedgekeurd? Door naar Exact Online, en de betaalstand komt daar vandaan weer terug.',
     pillars: [
       {
         title: 'Van offerte naar factuur in één klik',
@@ -213,11 +213,11 @@ const details: ModuleDetail[] = [
           'Je leverancier mailt zijn PDF naar de inkoop-inbox. Daan haalt leverancier, factuurnummer, datum en regels eruit. Jij controleert en keurt goed.',
       },
       {
-        title: 'Door naar Exact Online',
+        title: 'Exact Online, heen en terug',
         foto: { src: '/images/fotos/p-facturen-exact.webp', alt: 'Ondernemer en boekhouder aan één tafel met één laptop' },
         crop: { view: 'factuur', scale: 1.1, x: 720, y: 112 },
         description:
-          'Goedgekeurde facturen gaan automatisch door naar Exact voor je boekhouding. Geen dubbel invoerwerk, geen losse exports.',
+          'Goedgekeurde facturen gaan automatisch door naar Exact. En wat daar is afgeletterd komt terug: de volgende ochtend staat de factuur in doen. op betaald. Geen dubbel invoerwerk, geen losse exports, geen tweede scherm om te zien wat openstaat.',
       },
     ],
   },

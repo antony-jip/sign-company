@@ -49,7 +49,19 @@ export interface BlokOpmaak {
   ruimteBoven?: number
   ruimteOnder?: number
   verbergMobiel?: boolean
+  /**
+   * Toon dit blok alleen aan ontvangers met dit klantlabel. De verzender knipt
+   * het er per ontvanger uit; in de preview blijft alles staan, met een
+   * markering eromheen.
+   */
+  alleenLabel?: string
 }
+
+// Markers waar api/nieuwsbrief-verzend.ts op knipt. Bewust een HTML-comment:
+// blijft een blok tekst kwijtraken de markering, dan valt er hooguit een
+// comment door naar de ontvanger in plaats van kapotte opmaak.
+export const LABEL_START = (label: string) => `<!--doen:label:${label}-->`
+export const LABEL_EIND = '<!--/doen:label-->'
 
 interface BlokBasis { id: string; opmaak?: BlokOpmaak }
 
@@ -393,8 +405,10 @@ export function renderBlokWrapper(b: Blok, s: NieuwsbriefStijl, laatste: boolean
   const boven = (o.ruimteBoven ?? 0) + pad
   const onder = (o.ruimteOnder ?? 0) + pad
   const klasse = o.verbergMobiel ? ' class="mobiel-verbergen"' : ''
-  return `<!-- blok:${b.type} -->
+  const tabel = `<!-- blok:${b.type} -->
 <table width="100%" cellpadding="0" cellspacing="0" role="presentation"${klasse} style="margin:0 0 ${afstand}px;"><tr><td style="${bg}padding:${boven}px ${pad}px ${onder}px;${o.achtergrond ? 'border-radius:10px;' : ''}">${renderBlok(b, s)}</td></tr></table>`
+  const label = o.alleenLabel?.trim()
+  return label ? `${LABEL_START(label)}${tabel}${LABEL_EIND}` : tabel
 }
 
 export function renderDocument(doc: NieuwsbriefDocument): string {

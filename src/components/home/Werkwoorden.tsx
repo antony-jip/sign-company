@@ -56,8 +56,8 @@ export const WERKWOORDEN: Werkwoord[] = [
   {
     kop: 'Factureren',
     belofte:
-      'Van offerte naar factuur in één klik, met een betaallink erin. Inkoopfacturen leest Daan zelf uit, en wat klaar is gaat door naar Exact Online.',
-    regel: 'Facturen · Inkoop · Exact Online',
+      'Van offerte naar factuur in één klik, met een betaallink erin. Inkoopfacturen leest Daan zelf uit. En de koppeling met Exact Online loopt twee kanten op: jouw facturen gaan erheen, en wat daar afgeletterd is staat de volgende ochtend in doen. op betaald. Je hebt dus in doen. volledig zicht op je facturering, zonder twee schermen open.',
+    regel: 'Facturen · Inkoop · Exact Online, heen en terug',
     video: 'module-facturen',
     videoLabel: 'Een factuur wordt gemaakt vanuit de offerte en verstuurd',
     href: '/features/facturen',
@@ -71,7 +71,7 @@ export default function Werkwoorden() {
       <div className="container-site py-16 md:py-32">
         <div className="flex flex-wrap items-end justify-between gap-x-10 gap-y-4 mb-12 md:mb-20">
           <h2
-            className="font-heading font-bold text-petrol leading-[1.0]"
+            className="font-heading font-bold text-petrol leading-[1.0] max-w-[13ch]"
             style={{ fontSize: 'clamp(30px, 4vw, 52px)', letterSpacing: '-0.03em', textWrap: 'balance' }}
           >
             Van eerste mail tot betaalde factuur<span className="text-flame">.</span>

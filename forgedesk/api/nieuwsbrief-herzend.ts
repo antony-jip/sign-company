@@ -44,7 +44,19 @@ interface Ontvanger {
   naam: string
   bedrijfsnaam: string
   bron: 'klant' | 'contactpersoon'
+  labels: string[]
 }
+
+// Blokken die maar aan een deel van de lijst gericht zijn. De renderer zet er
+// markers omheen (src/components/nieuwsbrief/nieuwsbriefBlokken.ts); hier valt
+// eruit wat niet bij deze ontvanger hoort. Zonder klantlabels blijft er niets
+// gelabelds over: liever een blok te weinig dan een aanbieding bij de verkeerde.
+function knipLabels(html: string, labels: string[]): string {
+  const mijn = new Set(labels.map(l => l.trim().toLowerCase()).filter(Boolean))
+  return html.replace(/<!--doen:label:([^>]*?)-->([\s\S]*?)<!--\/doen:label-->/g, (_heel, label: string, inhoud: string) =>
+    mijn.has(String(label).trim().toLowerCase()) ? inhoud : '')
+}
+
 
 function splitNaam(naam: string): { voornaam: string; achternaam: string } {
   const delen = naam.trim().split(/\s+/).filter(Boolean)
@@ -59,7 +71,7 @@ function afmeldUrl(email: string, nieuwsbriefId: string): string {
 }
 
 function personaliseer(html: string, o: Ontvanger, nieuwsbriefId: string): string {
-  return html
+  return knipLabels(html, o.labels)
     .replace(/\{\{\{contact\.first_name(?:\|([^}]*))?\}\}\}/g, (_m, fb) => o.voornaam || fb || '')
     .replace(/\{\{\{contact\.last_name(?:\|([^}]*))?\}\}\}/g, (_m, fb) => o.achternaam || fb || '')
     .replace(/\{\{\{contact\.email\}\}\}/g, o.email)
@@ -136,6 +148,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const uitgesloten = new Set((afmeldingen ?? []).map(a => String((a as Record<string, unknown>).email).toLowerCase()))
     for (const p of problemen ?? []) uitgesloten.add(String((p as Record<string, unknown>).email).toLowerCase())
 
+    // Labels komen uit klanten en niet uit de snapshot: een blok dat alleen voor
+    // een label bedoeld is, hoort te gelden voor het label van vandaag.
+    const klantIds = Array.from(new Set(ontvangers.map(o => o.klant_id).filter((v): v is string => !!v)))
+    const labelsVan = new Map<string, string[]>()
+    for (let i = 0; i < klantIds.length; i += 200) {
+      const { data } = await supabase.from('klanten').select('id, labels').in('id', klantIds.slice(i, i + 200))
+      for (const rij of (data ?? []) as unknown as { id: string; labels: string[] | null }[]) {
+        labelsVan.set(rij.id, Array.isArray(rij.labels) ? rij.labels : [])
+      }
+    }
+
     const doelgroep: Ontvanger[] = ontvangers
       .filter(o => !geopend.has(o.email) && !gebouncet.has(o.email) && !uitgesloten.has(o.email))
       .map(o => ({
@@ -146,6 +169,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         klantId: o.klant_id,
         contactpersoonId: o.contactpersoon_id,
         bron: (o.bron === 'contactpersoon' ? 'contactpersoon' : 'klant') as 'klant' | 'contactpersoon',
+        labels: o.klant_id ? labelsVan.get(o.klant_id) ?? [] : [],
       }))
 
     if (alleenTellen) return res.status(200).json({ ok: true, aantalNietGeopend: doelgroep.length })

@@ -154,8 +154,8 @@ function afmeldUrl(email: string, nieuwsbriefId: string): string {
   return `${APP_URL}/api/nieuwsbrief-afmelden?e=${encodeURIComponent(adres)}&t=${token}${n}`
 }
 
-function personaliseer(html: string, o: { email: string; voornaam: string; achternaam: string }, nieuwsbriefId: string): string {
-  return html
+function personaliseer(html: string, o: Ontvanger, nieuwsbriefId: string): string {
+  return knipLabels(html, o.labels)
     .replace(/\{\{\{contact\.first_name(?:\|([^}]*))?\}\}\}/g, (_m, fb) => o.voornaam || fb || '')
     .replace(/\{\{\{contact\.last_name(?:\|([^}]*))?\}\}\}/g, (_m, fb) => o.achternaam || fb || '')
     .replace(/\{\{\{contact\.email\}\}\}/g, o.email)
@@ -187,7 +187,19 @@ interface Ontvanger {
   naam: string
   bedrijfsnaam: string
   bron: 'klant' | 'contactpersoon'
+  labels: string[]
 }
+
+// Blokken die maar aan een deel van de lijst gericht zijn. De renderer zet er
+// markers omheen (src/components/nieuwsbrief/nieuwsbriefBlokken.ts); hier valt
+// eruit wat niet bij deze ontvanger hoort. Zonder klantlabels blijft er niets
+// gelabelds over: liever een blok te weinig dan een aanbieding bij de verkeerde.
+function knipLabels(html: string, labels: string[]): string {
+  const mijn = new Set(labels.map(l => l.trim().toLowerCase()).filter(Boolean))
+  return html.replace(/<!--doen:label:([^>]*?)-->([\s\S]*?)<!--\/doen:label-->/g, (_heel, label: string, inhoud: string) =>
+    mijn.has(String(label).trim().toLowerCase()) ? inhoud : '')
+}
+
 
 function splitNaam(naam: string): { voornaam: string; achternaam: string } {
   const delen = naam.trim().split(/\s+/).filter(Boolean)
@@ -249,6 +261,7 @@ async function verzamelOntvangers(orgId: string, sel: OntvangerSelectie): Promis
       contactpersoonId: null,
       bedrijfsnaam: String(rij.bedrijfsnaam || ''),
       bron: 'klant',
+      labels: Array.isArray(rij.labels) ? (rij.labels as string[]) : [],
     })
   }
   if (sel.inclusiefContactpersonen !== false) {
@@ -256,6 +269,10 @@ async function verzamelOntvangers(orgId: string, sel: OntvangerSelectie): Promis
     const bedrijfVan = new Map(gekozen.map(k => {
       const rij = k as Record<string, unknown>
       return [String(rij.id), String(rij.bedrijfsnaam || '')]
+    }))
+    const labelsVan = new Map(gekozen.map(k => {
+      const rij = k as Record<string, unknown>
+      return [String(rij.id), Array.isArray(rij.labels) ? (rij.labels as string[]) : []]
     }))
     for (const c of cps) {
       const rij = c as Record<string, unknown>
@@ -266,6 +283,8 @@ async function verzamelOntvangers(orgId: string, sel: OntvangerSelectie): Promis
         contactpersoonId: String(rij.id),
         bedrijfsnaam: bedrijfVan.get(klantId) || '',
         bron: 'contactpersoon',
+        // Een contactpersoon erft de labels van zijn klant.
+        labels: labelsVan.get(klantId) ?? [],
       })
     }
   }
@@ -513,7 +532,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const herkomst = new Map((await verzamelOntvangers(orgId, { type: 'alle' })).map(o => [o.email, o]))
         await legOntvangersVast(nieuwsbriefId, actief.map(c => {
           const e = c.email.trim().toLowerCase()
-          return herkomst.get(e) ?? { email: e, voornaam: '', achternaam: '', klantId: null, contactpersoonId: null, naam: '', bedrijfsnaam: '', bron: 'klant' as const }
+          return herkomst.get(e) ?? { email: e, voornaam: '', achternaam: '', klantId: null, contactpersoonId: null, naam: '', bedrijfsnaam: '', bron: 'klant' as const, labels: [] }
         }))
       }
     } else {

@@ -13,7 +13,7 @@ export default function CTASection() {
           <div>
             <h2
               className="font-heading font-bold text-white leading-[1.0] mb-3"
-              style={{ fontSize: 'clamp(32px, 4.5vw, 56px)', letterSpacing: '-0.03em' }}
+              style={{ fontSize: 'clamp(32px, 4.5vw, 56px)', letterSpacing: '-0.03em', textWrap: 'balance' }}
             >
               Jij gaat maken<span className="text-white/70">.</span> Wij doen de rest<span className="text-white/70">.</span>
             </h2>

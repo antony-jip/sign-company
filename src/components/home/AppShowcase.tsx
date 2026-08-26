@@ -314,7 +314,7 @@ const viewMeta: Record<View, { titel: string; sub: string; bullets: string[] }> 
       'Eén klik vanuit een goedgekeurde offerte — alle regels overgenomen',
       'Mollie-betaallink automatisch in de mail (iDEAL, creditcard)',
       'Automatische herinneringen op dag 7, 14 en 30 — in jouw toon',
-      'Door naar Exact Online (one-way) zodat je boekhouder hem ook ziet',
+      'Door naar Exact Online, en de betaalstand komt daar vandaan terug',
       'Markeer handmatig &quot;Betaald&quot; zodra je geld binnen ziet',
       'PDF-export of mailen via doen.',
       'Btw-percentage en grootboek per regel instelbaar',

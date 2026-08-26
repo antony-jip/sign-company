@@ -81,7 +81,7 @@ export const faqs: { category: CategoryId; q: string; a: string }[] = [
   {
     category: 'product',
     q: 'Hoe werkt de inkoopfactuur-AI?',
-    a: 'Leverancier mailt een PDF naar je inkoop-inbox. **doen. haalt de mail elk kwartier op**, leest de factuur uit (leverancier, factuurnummer, datum, regels, btw) en zet hem klaar ter goedkeuring. Je controleert, keurt goed, klaar. **Boekhouding gaat one-way door naar Exact Online**.',
+    a: 'Leverancier mailt een PDF naar je inkoop-inbox. **doen. haalt de mail elk kwartier op**, leest de factuur uit (leverancier, factuurnummer, datum, regels, btw) en zet hem klaar ter goedkeuring. Je controleert, keurt goed, klaar. **Goedgekeurde facturen gaan door naar Exact Online**, en de betaalstand komt daar dagelijks vandaan terug.',
   },
   {
     category: 'product',
@@ -160,7 +160,7 @@ export const faqs: { category: CategoryId; q: string; a: string }[] = [
   {
     category: 'technisch',
     q: 'Kan ik doen. koppelen aan mijn boekhouding?',
-    a: 'Ja. Factuurgegevens **gaan rechtstreeks van doen. naar Exact Online** (one-way). Voor online betalingen is **Mollie** geïntegreerd.',
+    a: 'Ja. De koppeling met Exact Online werkt **twee kanten op**: factuurgegevens gaan rechtstreeks van doen. naar Exact, en wat daar is afgeletterd komt elke ochtend terug, zodat je factuur in doen. vanzelf op betaald springt. Voor online betalingen is **Mollie** geïntegreerd.',
   },
   {
     category: 'technisch',

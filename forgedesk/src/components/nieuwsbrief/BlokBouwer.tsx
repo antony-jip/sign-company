@@ -368,6 +368,7 @@ export function BlokBouwer({ document: doc, onChange, disabled }: Props) {
                     ))) }}
                   />
                   {blok.opmaak?.verbergMobiel && <span className="absolute right-2 bottom-1 rounded bg-[#C9C7C0] px-1 text-[9px] font-bold uppercase text-white">niet op mobiel</span>}
+                  {blok.opmaak?.alleenLabel && <span className="absolute left-2 bottom-1 rounded bg-petrol px-1 text-[9px] font-bold uppercase text-white">alleen {blok.opmaak.alleenLabel}</span>}
                   {bewerkbaar && isActief && blok.type === 'afbeelding' && blok.url && (
                     <ResizeHandle
                       pct={resize?.id === blok.id ? resize.pct : (blok.breedtePct ?? (blok.breedte === 'vol' ? 100 : 75))}

@@ -684,6 +684,8 @@ export interface OntvangerActiviteit {
   geklikt: number
   afgemeld: boolean
   gebouncet: boolean
+  /** Welke links deze persoon aanklikte. Zegt waar de belangstelling zit. */
+  links: string[]
 }
 
 // Wie deed wat. Dit is het scherm dat een nieuwsbrief van een cijfer in een
@@ -701,6 +703,26 @@ export async function getOntvangerActiviteit(nieuwsbriefId: string): Promise<Ont
     const deel = (data ?? []) as unknown as typeof ontvangers
     ontvangers.push(...deel)
     if (deel.length < PAGINA) break
+  }
+
+  const kliks: { email: string; link: string }[] = []
+  for (let van = 0; ; van += PAGINA) {
+    const { data, error } = await db()
+      .from('nieuwsbrief_kliks')
+      .select('email, link')
+      .eq('nieuwsbrief_id', nieuwsbriefId)
+      .order('created_at')
+      .range(van, van + PAGINA - 1)
+    if (error) throw error
+    const deel = (data ?? []) as unknown as typeof kliks
+    kliks.push(...deel)
+    if (deel.length < PAGINA) break
+  }
+  const linksPerEmail = new Map<string, Set<string>>()
+  for (const k of kliks) {
+    const set = linksPerEmail.get(k.email) ?? new Set<string>()
+    set.add(zonderUtm(k.link))
+    linksPerEmail.set(k.email, set)
   }
 
   const events = await alleEvents(nieuwsbriefId)
@@ -730,6 +752,7 @@ export async function getOntvangerActiviteit(nieuwsbriefId: string): Promise<Ont
         bedrijfsnaam: o.bedrijfsnaam || '',
         klantId: o.klant_id,
         ...a,
+        links: Array.from(linksPerEmail.get(o.email) ?? []),
       }
     })
     .sort((a, b) => (b.geklikt - a.geklikt) || (b.geopend - a.geopend) || a.email.localeCompare(b.email))
@@ -1019,4 +1042,20 @@ export function omschrijfSelectie(sel: OntvangerSelectie): string {
   if (sel.gedrag && sel.gedrag !== 'alle') delen.push(GEDRAG_LABEL[sel.gedrag].titel.toLowerCase())
   if (sel.inclusiefContactpersonen === false) delen.push('zonder contactpersonen')
   return delen.join(' · ')
+}
+
+// Labels die daadwerkelijk op klanten staan. Apart van getKlantKeuzes omdat de
+// blok-inspector alleen de namen nodig heeft en niet de hele klantenlijst.
+let labelCache: { op: number; belofte: Promise<string[]> } | null = null
+
+export async function getGebruikteLabels(): Promise<string[]> {
+  if (labelCache && Date.now() - labelCache.op < 300_000) return labelCache.belofte
+  const belofte = (async () => {
+    const rijen = await alles<{ labels: string[] | null }>('klanten', 'id, labels', 'id')
+    const uniek = new Set<string>()
+    for (const r of rijen) for (const l of r.labels ?? []) if (l?.trim()) uniek.add(l.trim())
+    return Array.from(uniek).sort((a, b) => a.localeCompare(b))
+  })().catch(e => { labelCache = null; throw e })
+  labelCache = { op: Date.now(), belofte }
+  return belofte
 }
