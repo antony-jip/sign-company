@@ -444,6 +444,35 @@ async function zoekFacturenOpNummer(orgId: string, refs: string[]): Promise<Map<
   return factuurPerRef
 }
 
+/**
+ * Exact tekent een OPENSTAANDE debiteurentermijn negatief: AmountDC is daar
+ * de nog te ontvangen post gezien vanuit het grootboek, en die staat aan de
+ * creditzijde. Een afgeletterde termijn komt op 0,00 uit.
+ *
+ * Geverifieerd op 26-08-2026 tegen administratie 374494: 31 openstaande
+ * facturen stonden tot op de cent als -totaal in de spiegel (29,04 werd
+ * -29,04; 5.063,85 werd -5.063,85). De eerste versie telde die bedragen
+ * ongewijzigd op, waardoor openstaand_exact negatief werd. Alles onder 0,05
+ * geldt elders als "per bank voldaan", dus die facturen vielen stil uit de
+ * herinneringen en kregen in de lijst een betaald-vinkje.
+ *
+ * De spiegel bewaart bewust de waarde zoals Exact hem levert; het teken
+ * draait pas hier, naar de doen.-conventie: positief = de klant moet nog
+ * betalen, negatief = er staat een credit open.
+ */
+export function berekenOpenstaand(rijen: Pick<SpiegelTermijn, 'bedrag' | 'status'>[]): number {
+  const som = rijen
+    .filter((r) => r.status !== 50)
+    .reduce((totaal, r) => totaal + (Number(r.bedrag) || 0), 0)
+  // + 0 haalt de -0 weg die uit een lege of nul-som komt.
+  return Math.round(-som * 100) / 100 + 0
+}
+
+/** Status 50 = afgeletterd. Pas als élke termijn dat is, is de factuur voldaan. */
+export function isVolledigAfgeletterd(rijen: Pick<SpiegelTermijn, 'status'>[]): boolean {
+  return rijen.length > 0 && rijen.every((r) => r.status === 50)
+}
+
 // Openstaand terugschrijven en volledig afgeletterde facturen betaald
 // markeren. Geen vaste settle-referentie: factuur_markeer_betaald berekent
 // het restant onder de rij-lock en genereert zelf een unieke referentie,
@@ -458,10 +487,8 @@ async function evalueerFactuur(
 ): Promise<boolean> {
   if (rijen.length === 0) return false
 
-  const openstaand = Math.round(rijen
-    .filter((r) => r.status !== 50)
-    .reduce((som, r) => som + (Number(r.bedrag) || 0), 0) * 100) / 100
-  const allesAfgeletterd = rijen.every((r) => r.status === 50)
+  const openstaand = berekenOpenstaand(rijen)
+  const allesAfgeletterd = isVolledigAfgeletterd(rijen)
 
   // De org-filter is defensief: de ids komen uit org-gefilterde bronnen, maar
   // een factuur die ooit van organisatie wisselde zou anders cross-org

@@ -284,6 +284,39 @@ function laatsteStapStempel(f: Factuur): string | null {
   return [...stempels].sort()[stempels.length - 1]
 }
 
+// Naam van de laatst verstuurde stap plus hoe lang geleden dat was. De lijst
+// toonde alleen vier bolletjes van anderhalve pixel, waarvan je moest hoveren
+// om te weten welke stap het was en waar de datum helemaal niet in zat. Wie er
+// al aangesproken is en wie nog niet, is precies wat je wil kunnen sturen.
+const STAP_LABEL: Record<HerinneringType, string> = {
+  herinnering_1: '1e herinnering',
+  herinnering_2: '2e herinnering',
+  herinnering_3: '3e herinnering',
+  aanmaning: 'Aanmaning',
+}
+
+function laatsteStap(f: Factuur): { label: string; dagen: number; datum: string } | null {
+  const stempels: Array<[HerinneringType, string | null | undefined]> = [
+    ['herinnering_1', f.herinnering_1_verstuurd],
+    ['herinnering_2', f.herinnering_2_verstuurd],
+    ['herinnering_3', f.herinnering_3_verstuurd],
+    ['aanmaning', f.aanmaning_verstuurd],
+  ]
+  let nieuwste: { label: string; dagen: number; datum: string } | null = null
+  for (const [type, stempel] of stempels) {
+    if (!stempel) continue
+    const d = new Date(stempel)
+    if (isNaN(d.getTime())) continue
+    if (nieuwste && stempel <= nieuwste.datum) continue
+    nieuwste = {
+      label: STAP_LABEL[type],
+      dagen: Math.floor((Date.now() - d.getTime()) / 86400000),
+      datum: stempel,
+    }
+  }
+  return nieuwste
+}
+
 function dagenSindsLaatsteStap(f: Factuur): number | null {
   const laatste = laatsteStapStempel(f)
   if (!laatste) return null
@@ -501,6 +534,7 @@ export function FacturenLayout() {
 
   // Bulkverwerking in de Te verzenden-tab: per factuur de fase + eventuele fout
   const [bulkBezig, setBulkBezig] = useState(false)
+  const [bulkBetaaldBezig, setBulkBetaaldBezig] = useState(false)
   const [bulkStatus, setBulkStatus] = useState<Record<string, { fase: 'wachten' | 'bezig' | 'klaar' | 'fout'; melding?: string }>>({})
   const bulkStopRef = useRef(false)
   const [bulkUitlegOpen, setBulkUitlegOpen] = useState(false)
@@ -634,6 +668,7 @@ export function FacturenLayout() {
   // Bankbetalingen kent doen. alleen via de Exact-betaalsync. Loopt die achter,
   // dan kan deze factuur al betaald zijn en manen we een klant voor niets. Niet
   // blokkerend: de gebruiker weet zelf of hij hem toch wil sturen.
+  const exactGekoppeld = settings.exact_online_connected === true
   useEffect(() => {
     if (!herinneringDialogOpen || !supabase || !organisatieId) {
       setExactStandWaarschuwing(null)
@@ -647,8 +682,22 @@ export function FacturenLayout() {
         .eq('organisatie_id', organisatieId)
         .maybeSingle()
       if (cancelled) return
-      if (error || !data) {
+      // Een fout betekent dat de tabel er niet is of niet gelezen mag worden;
+      // daar valt niets zinnigs over te zeggen. Géén rij is iets anders: dan
+      // heeft de betaalsync voor deze org nog nooit gedraaid, en dat is juist
+      // het geval waarin de bankbetalingen gegarandeerd ontbreken. De
+      // herinneringsmotor pauzeert daar ook op, dus hier zwijgen was precies
+      // verkeerd om.
+      if (error) {
         setExactStandWaarschuwing(null)
+        return
+      }
+      if (!data) {
+        setExactStandWaarschuwing(
+          exactGekoppeld
+            ? 'Er is nog geen Exact-betaalsync gedraaid, dus bankbetalingen staan hier nog niet in. Mogelijk is deze factuur al betaald.'
+            : null
+        )
         return
       }
       if (data.inhaalslag_bezig === true) {
@@ -667,7 +716,7 @@ export function FacturenLayout() {
     }
     controleer().catch(() => { if (!cancelled) setExactStandWaarschuwing(null) })
     return () => { cancelled = true }
-  }, [herinneringDialogOpen, organisatieId])
+  }, [herinneringDialogOpen, organisatieId, exactGekoppeld])
 
   // Stille verversing van de primaire lijsten zodat collega's elkaars
   // facturen en statuswijzigingen zien; nooit terwijl hier iets openstaat.
@@ -1011,6 +1060,56 @@ export function FacturenLayout() {
     },
     [facturen]
   )
+
+  // Facturen uit de selectie die daadwerkelijk op betaald gezet kunnen worden.
+  // Een concept of een al betaalde factuur mag mee in de selectie zonder dat de
+  // knop erover valt; die telt gewoon niet mee.
+  const selectieTeBoeken = useMemo(
+    () => filteredFacturen.filter(
+      (f) => selectedIds.has(f.id) && ['open', 'verzonden', 'vervallen'].includes(f.status)
+    ),
+    [filteredFacturen, selectedIds]
+  )
+
+  // "Markeer als betaald" zat alleen in het drie-puntjes-menu per rij, helemaal
+  // rechts en op een brede lijst dus buiten beeld. Wie een handvol facturen wil
+  // afvinken moest dat menu vijf keer opzoeken. Deze balk doet de hele selectie
+  // in één keer, via dezelfde RPC, dus het restant loopt netjes door het
+  // betalingsgrootboek in plaats van los in de factuurregel.
+  const handleBulkBetaald = useCallback(async () => {
+    if (bulkBetaaldBezig || selectieTeBoeken.length === 0) return
+    const aantal = selectieTeBoeken.length
+    const som = selectieTeBoeken.reduce((t, f) => t + (Number(f.totaal) || 0), 0)
+    const doorgaan = await confirm({
+      title: aantal === 1 ? 'Factuur op betaald zetten?' : `${aantal} facturen op betaald zetten?`,
+      message: `Samen ${formatCurrency(som)}. Het openstaande bedrag wordt geboekt met de datum van vandaag. Kloppen de bedragen niet, zet ze dan los om vanuit de factuur zelf.`,
+      confirmLabel: 'Markeer als betaald',
+    })
+    if (!doorgaan) return
+
+    setBulkBetaaldBezig(true)
+    let gelukt = 0
+    const mislukt: string[] = []
+    // Bewust één voor één: de RPC lockt de factuurrij en een reeks van tien
+    // parallelle calls levert alleen maar wachtrijen op de connectiepool op.
+    for (const factuur of selectieTeBoeken) {
+      try {
+        const updated = await markeerFactuurBetaald(factuur.id, factuur.totaal)
+        setFacturen((prev) => prev.map((f) => (f.id === factuur.id ? { ...f, ...updated } : f)))
+        gelukt++
+      } catch (err) {
+        logger.error('Bulk markeer als betaald:', err)
+        mislukt.push(factuur.nummer)
+      }
+    }
+    setBulkBetaaldBezig(false)
+    setSelectedIds(new Set())
+    if (mislukt.length === 0) {
+      toast.success(gelukt === 1 ? 'Factuur op betaald gezet' : `${gelukt} facturen op betaald gezet`)
+    } else {
+      toast.error(`${gelukt} gelukt, mislukt: ${mislukt.join(', ')}`)
+    }
+  }, [bulkBetaaldBezig, selectieTeBoeken])
 
   const handleDeleteFactuur = useCallback(
     async (factuur: Factuur) => {
@@ -2250,6 +2349,38 @@ export function FacturenLayout() {
         </div>
       </div>
 
+      {/* ── Selectiebalk: geselecteerde facturen in één keer afvinken ── */}
+      {filterStatus !== 'te_verzenden' && selectedIds.size > 0 && (
+        <div className="doen-slate-surface rounded-2xl px-5 py-3 flex flex-wrap items-center gap-3">
+          <p className="text-sm font-semibold text-foreground min-w-0 flex-1">
+            {selectedIds.size} {selectedIds.size === 1 ? 'factuur' : 'facturen'} geselecteerd
+            {selectieTeBoeken.length !== selectedIds.size && (
+              <span className="font-normal text-muted-foreground">
+                {' '}waarvan {selectieTeBoeken.length} nog open
+              </span>
+            )}
+          </p>
+          <button
+            type="button"
+            onClick={() => setSelectedIds(new Set())}
+            className="text-[13px] text-muted-foreground hover:text-petrol dark:hover:text-foreground transition-colors"
+          >
+            Selectie wissen
+          </button>
+          <Button
+            size="sm"
+            onClick={handleBulkBetaald}
+            disabled={bulkBetaaldBezig || selectieTeBoeken.length === 0}
+            className="gap-1.5"
+          >
+            {bulkBetaaldBezig ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
+            {bulkBetaaldBezig
+              ? 'Bezig...'
+              : `Markeer als betaald${selectieTeBoeken.length > 0 ? ` (${selectieTeBoeken.length})` : ''}`}
+          </Button>
+        </div>
+      )}
+
       {/* ── Bulkbalk Te verzenden: hele lijst (of selectie) in één keer verwerken, syncen en mailen ── */}
       {filterStatus === 'te_verzenden' && (filteredFacturen.length > 0 || bulkBezig) && (
         <div className="doen-slate-surface rounded-2xl px-5 py-4 flex flex-wrap items-center gap-3">
@@ -2757,17 +2888,35 @@ export function FacturenLayout() {
                       </div>
                     </td>
                     <td className="py-3.5 pr-4 text-right hidden lg:table-cell">
-                      {isOverdue && (
-                        <div className="flex items-center gap-1 justify-end">
-                          <span className="text-[11px] font-semibold font-mono text-[#C03A18]">{getDagenVerlopen(factuur)}d</span>
-                          <div className="flex gap-0.5">
-                            {factuur.herinnering_1_verstuurd && <span className="w-1.5 h-1.5 rounded-full bg-[#FEA060] dark:bg-[#FFB380]" title="Herinnering 1" />}
-                            {factuur.herinnering_2_verstuurd && <span className="w-1.5 h-1.5 rounded-full bg-flame" title="Herinnering 2" />}
-                            {factuur.herinnering_3_verstuurd && <span className="w-1.5 h-1.5 rounded-full bg-[#C03A18] dark:bg-[#DA7B70]" title="Herinnering 3" />}
-                            {factuur.aanmaning_verstuurd && <span className="w-1.5 h-1.5 rounded-full bg-[#8A1A0A] dark:bg-[#C0451A]" title="Aanmaning" />}
+                      {(() => {
+                        const stap = laatsteStap(factuur)
+                        if (!isOverdue && !stap) return null
+                        return (
+                          <div className="flex flex-col items-end gap-0.5">
+                            <div className="flex items-center gap-1 justify-end">
+                              {isOverdue && (
+                                <span className="text-[11px] font-semibold font-mono text-[#C03A18]">{getDagenVerlopen(factuur)}d</span>
+                              )}
+                              <div className="flex gap-0.5">
+                                {factuur.herinnering_1_verstuurd && <span className="w-1.5 h-1.5 rounded-full bg-[#FEA060] dark:bg-[#FFB380]" title="Herinnering 1" />}
+                                {factuur.herinnering_2_verstuurd && <span className="w-1.5 h-1.5 rounded-full bg-flame" title="Herinnering 2" />}
+                                {factuur.herinnering_3_verstuurd && <span className="w-1.5 h-1.5 rounded-full bg-[#C03A18] dark:bg-[#DA7B70]" title="Herinnering 3" />}
+                                {factuur.aanmaning_verstuurd && <span className="w-1.5 h-1.5 rounded-full bg-[#8A1A0A] dark:bg-[#C0451A]" title="Aanmaning" />}
+                              </div>
+                            </div>
+                            {stap ? (
+                              <span
+                                className="text-[10px] text-muted-foreground whitespace-nowrap"
+                                title={`${stap.label} verstuurd op ${new Date(stap.datum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}`}
+                              >
+                                {stap.label}, {stap.dagen === 0 ? 'vandaag' : `${stap.dagen}d geleden`}
+                              </span>
+                            ) : (
+                              <span className="text-[10px] text-muted-foreground/50 whitespace-nowrap">niet gemaand</span>
+                            )}
                           </div>
-                        </div>
-                      )}
+                        )
+                      })()}
                     </td>
                     <td className="py-3.5 pr-4 hidden lg:table-cell">
                       <div className="flex items-center gap-2">

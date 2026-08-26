@@ -1179,6 +1179,7 @@ export function FactuurEditor() {
   // Bankbetalingen kent doen. alleen via de Exact-betaalsync. Loopt die achter,
   // dan kan deze factuur al betaald zijn en manen we een klant voor niets. Niet
   // blokkerend: de gebruiker weet zelf of hij hem toch wil sturen.
+  const exactGekoppeld = settings.exact_online_connected === true
   useEffect(() => {
     if (!herinneringDialogOpen || !supabase || !organisatieId) {
       setExactStandWaarschuwing(null)
@@ -1192,8 +1193,22 @@ export function FactuurEditor() {
         .eq('organisatie_id', organisatieId)
         .maybeSingle()
       if (cancelled) return
-      if (error || !data) {
+      // Een fout betekent dat de tabel er niet is of niet gelezen mag worden;
+      // daar valt niets zinnigs over te zeggen. Géén rij is iets anders: dan
+      // heeft de betaalsync voor deze org nog nooit gedraaid, en dat is juist
+      // het geval waarin de bankbetalingen gegarandeerd ontbreken. De
+      // herinneringsmotor pauzeert daar ook op, dus hier zwijgen was precies
+      // verkeerd om.
+      if (error) {
         setExactStandWaarschuwing(null)
+        return
+      }
+      if (!data) {
+        setExactStandWaarschuwing(
+          exactGekoppeld
+            ? 'Er is nog geen Exact-betaalsync gedraaid, dus bankbetalingen staan hier nog niet in. Mogelijk is deze factuur al betaald.'
+            : null
+        )
         return
       }
       if (data.inhaalslag_bezig === true) {
@@ -1212,7 +1227,7 @@ export function FactuurEditor() {
     }
     controleer().catch(() => { if (!cancelled) setExactStandWaarschuwing(null) })
     return () => { cancelled = true }
-  }, [herinneringDialogOpen, organisatieId])
+  }, [herinneringDialogOpen, organisatieId, exactGekoppeld])
 
   // Voorvullen adresblok: in edit-mode wint een opgeslagen override, anders het
   // klantadres. Open het blok automatisch als er al een override staat.
