@@ -7,7 +7,7 @@ import { toast } from 'sonner'
 import { cn, formatDateTime } from '@/lib/utils'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import {
-  updateConcept, verstuurNieuwsbrief, verstuurTest, genereerMetDaan, genereerBlokkenMetDaan, stelOnderwerpenVoor, uploadAfbeelding, syncContactenVolledig, herstelVastgelopenConcept,
+  updateConcept, verstuurNieuwsbrief, verstuurTest, STANDAARD_AB, type AbInstelling, genereerMetDaan, genereerBlokkenMetDaan, stelOnderwerpenVoor, uploadAfbeelding, syncContactenVolledig, herstelVastgelopenConcept,
   type Nieuwsbrief, type OntvangerSelectie, STANDAARD_SELECTIE,
 } from '@/services/nieuwsbriefService'
 import { BlokBouwer } from './BlokBouwer'
@@ -67,6 +67,13 @@ export function NieuwsbriefEditor({ nieuwsbrief, onTerug, onGewijzigd, startMetD
   const [inplanOpen, setInplanOpen] = useState(false)
   const [inplanMoment, setInplanMoment] = useState('')
   const [bevestigOpen, setBevestigOpen] = useState<null | { scheduledAt?: string }>(null)
+  const [ab, setAb] = useState<AbInstelling>({
+    ...STANDAARD_AB,
+    actief: nieuwsbrief.ab_actief ?? false,
+    onderwerpB: nieuwsbrief.onderwerp_b ?? '',
+    testdeel: nieuwsbrief.ab_testdeel ?? STANDAARD_AB.testdeel,
+    wachttijdUren: nieuwsbrief.ab_wachttijd_uren ?? STANDAARD_AB.wachttijdUren,
+  })
   const [bevestigAantal, setBevestigAantal] = useState('')
   const grootPubliek = (aantalOntvangers ?? 0) >= 50
   const bevestigingKlopt = !grootPubliek || bevestigAantal.trim() === String(aantalOntvangers)
@@ -98,6 +105,8 @@ export function NieuwsbriefEditor({ nieuwsbrief, onTerug, onGewijzigd, startMetD
       const bijgewerkt = await updateConcept(nieuwsbrief.id, {
         onderwerp, preheader: preheader || null, html: gerenderd, blokken: modus === 'blokken' ? doc : null,
         editor_modus: modus, ontvangers: selectie, test_verstuurd_op: testVerstuurdOp,
+        onderwerp_b: ab.onderwerpB || null, ab_actief: ab.actief,
+        ab_testdeel: ab.testdeel, ab_wachttijd_uren: ab.wachttijdUren,
       })
       onGewijzigd(bijgewerkt)
       setOpslaanStatus('schoon')
@@ -106,7 +115,7 @@ export function NieuwsbriefEditor({ nieuwsbrief, onTerug, onGewijzigd, startMetD
       setOpslaanStatus('fout')
       console.error('[nieuwsbrief] autosave mislukt:', err)
     }
-  }, [vergrendeld, nieuwsbrief.id, onderwerp, preheader, gerenderd, modus, doc, selectie, testVerstuurdOp, onGewijzigd])
+  }, [vergrendeld, nieuwsbrief.id, onderwerp, preheader, gerenderd, modus, doc, selectie, testVerstuurdOp, ab, onGewijzigd])
 
   const slaOpRef = useRef(slaOp)
   useEffect(() => { slaOpRef.current = slaOp }, [slaOp])
@@ -118,7 +127,7 @@ export function NieuwsbriefEditor({ nieuwsbrief, onTerug, onGewijzigd, startMetD
     if (opslaanTimer.current) clearTimeout(opslaanTimer.current)
     opslaanTimer.current = setTimeout(() => slaOpRef.current(), 1200)
     return () => { if (opslaanTimer.current) clearTimeout(opslaanTimer.current) }
-  }, [onderwerp, preheader, gerenderd, modus, doc, selectie, testVerstuurdOp, vergrendeld])
+  }, [onderwerp, preheader, gerenderd, modus, doc, selectie, testVerstuurdOp, ab, vergrendeld])
 
   useEffect(() => () => {
     if (opslaanTimer.current) { clearTimeout(opslaanTimer.current); slaOpRef.current() }
@@ -231,9 +240,13 @@ export function NieuwsbriefEditor({ nieuwsbrief, onTerug, onGewijzigd, startMetD
           throw e
         }
       }
-      const r = await verstuurNieuwsbrief(nieuwsbrief.id, onderwerp.trim(), gerenderd, preheader.trim() || undefined, scheduledAt, selectie, stijl)
+      const r = await verstuurNieuwsbrief(nieuwsbrief.id, onderwerp.trim(), gerenderd, preheader.trim() || undefined, scheduledAt, selectie, stijl, ab.actief ? ab : undefined)
       if (r.nieuwsbrief) onGewijzigd(r.nieuwsbrief)
-      toast.success(r.status === 'gepland' ? `Ingepland voor ${r.aantalOntvangers} ontvangers` : `Verzonden naar ${r.aantalOntvangers} ontvangers`)
+      toast.success(
+        r.status === 'gepland' ? `Ingepland voor ${r.aantalOntvangers} ontvangers`
+          : r.wachtOpWinnaar ? `Test verstuurd naar ${r.aantalOntvangers}. Over ${ab.wachttijdUren} uur gaat het winnende onderwerp naar de andere ${r.wachtOpWinnaar}.`
+          : `Verzonden naar ${r.aantalOntvangers} ontvangers`,
+      )
       setBevestigOpen(null)
       onTerug()
     } catch (err) {
@@ -242,7 +255,7 @@ export function NieuwsbriefEditor({ nieuwsbrief, onTerug, onGewijzigd, startMetD
     } finally {
       setBezig(false)
     }
-  }, [forceerOpslaan, nieuwsbrief.id, onderwerp, gerenderd, preheader, selectie, stijl, onGewijzigd, onTerug])
+  }, [forceerOpslaan, nieuwsbrief.id, onderwerp, gerenderd, preheader, selectie, stijl, ab, onGewijzigd, onTerug])
 
   const bevindingen = useMemo<Bevinding[]>(() => beoordeelNieuwsbrief({ onderwerp, preheader, html: gerenderd, aantalOntvangers, testVerstuurd: !!testVerstuurdOp }), [onderwerp, preheader, gerenderd, aantalOntvangers, testVerstuurdOp])
   const fouten = telFouten(bevindingen)
@@ -250,10 +263,12 @@ export function NieuwsbriefEditor({ nieuwsbrief, onTerug, onGewijzigd, startMetD
 
   const vraagBevestiging = useCallback((scheduledAt?: string) => {
     if (fouten > 0) { toast.error('Los eerst de rode punten in de controle op'); setStap('controle'); return }
+    if (ab.actief && scheduledAt) { toast.error('Een onderwerptest kan niet ingepland worden. Verstuur hem op het moment dat je kiest.'); return }
+    if (ab.actief && !ab.onderwerpB.trim()) { toast.error('Vul het tweede onderwerp in of zet de test uit'); setStap('controle'); return }
     if (aantalOntvangers == null) { toast.error('Het aantal ontvangers is nog niet geteld. Open eerst de stap Ontvangers.'); setStap('ontvangers'); return }
     setBevestigAantal('')
     setBevestigOpen({ scheduledAt })
-  }, [fouten, aantalOntvangers])
+  }, [fouten, aantalOntvangers, ab])
 
   const handleInplan = useCallback(() => {
     if (!inplanMoment) { toast.error('Kies een datum en tijd'); return }
@@ -521,6 +536,76 @@ export function NieuwsbriefEditor({ nieuwsbrief, onTerug, onGewijzigd, startMetD
               {!vergrendeld && (
                 <div className="doen-slate-surface rounded-2xl p-4">
                   <div className="mb-3 flex items-center gap-2">
+                    <FlaskConical className="h-4 w-4 text-petrol" />
+                    <span className="text-[14px] font-bold text-foreground">Test je onderwerp<span className="text-flame">.</span></span>
+                    <label className="ml-auto inline-flex cursor-pointer items-center gap-2 text-[13px] text-muted-foreground">
+                      <input
+                        type="checkbox"
+                        checked={ab.actief}
+                        onChange={e => setAb(v => ({ ...v, actief: e.target.checked }))}
+                        className="h-4 w-4 accent-flame"
+                      />
+                      Aan
+                    </label>
+                  </div>
+                  {ab.actief ? (
+                    <div className="space-y-3">
+                      <div className="space-y-1.5">
+                        <div className="text-[12px] font-semibold text-muted-foreground">Onderwerp A (wat je nu hebt)</div>
+                        <div className="rounded-xl border border-border bg-card px-3 py-2 text-[13px] text-foreground">
+                          {onderwerp.trim() || <em className="text-muted-foreground">nog leeg</em>}
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <div className="text-[12px] font-semibold text-muted-foreground">Onderwerp B</div>
+                        <input
+                          value={ab.onderwerpB}
+                          onChange={e => setAb(v => ({ ...v, onderwerpB: e.target.value }))}
+                          maxLength={200}
+                          placeholder="Zeg hetzelfde anders"
+                          className={cn(INPUT, 'w-full')}
+                        />
+                      </div>
+                      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[13px] text-muted-foreground">
+                        <label className="inline-flex items-center gap-2">
+                          Testgroep
+                          <select
+                            value={ab.testdeel}
+                            onChange={e => setAb(v => ({ ...v, testdeel: Number(e.target.value) }))}
+                            className="rounded-lg border border-border bg-card px-2 py-1.5 text-[13px] text-foreground outline-none focus:border-petrol dark:focus:border-white/25"
+                          >
+                            {[10, 20, 30, 40, 50].map(n => <option key={n} value={n}>{n}%</option>)}
+                          </select>
+                        </label>
+                        <label className="inline-flex items-center gap-2">
+                          Winnaar na
+                          <select
+                            value={ab.wachttijdUren}
+                            onChange={e => setAb(v => ({ ...v, wachttijdUren: Number(e.target.value) }))}
+                            className="rounded-lg border border-border bg-card px-2 py-1.5 text-[13px] text-foreground outline-none focus:border-petrol dark:focus:border-white/25"
+                          >
+                            {[1, 2, 4, 8, 24, 48].map(n => <option key={n} value={n}>{n} uur</option>)}
+                          </select>
+                        </label>
+                      </div>
+                      <p className="text-[12px] leading-relaxed text-muted-foreground">
+                        {aantalOntvangers == null
+                          ? 'Tel eerst je ontvangers in de stap Ontvangers.'
+                          : `${Math.max(2, Math.round((aantalOntvangers * ab.testdeel) / 100))} mensen krijgen nu een van de twee onderwerpen. De andere ${Math.max(0, aantalOntvangers - Math.max(2, Math.round((aantalOntvangers * ab.testdeel) / 100)))} krijgen na ${ab.wachttijdUren} uur automatisch het onderwerp dat het vaakst geopend werd.`}
+                        {' '}Inplannen kan niet zolang de test aanstaat.
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-[12px] leading-relaxed text-muted-foreground">
+                      Stuur twee onderwerpen naar een deel van je lijst en laat doen. de rest het winnende onderwerp sturen. Zo weet je na een paar nieuwsbrieven wat bij jouw klanten werkt.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {!vergrendeld && (
+                <div className="doen-slate-surface rounded-2xl p-4">
+                  <div className="mb-3 flex items-center gap-2">
                     <Clock className="h-4 w-4 text-petrol" />
                     <span className="text-[14px] font-bold text-foreground">Versturen<span className="text-flame">.</span></span>
                     <span className="ml-auto text-[12px] text-muted-foreground">{aantalOntvangers == null ? 'Ontvangers nog niet geteld' : `${aantalOntvangers} ontvangers`}</span>
@@ -529,9 +614,11 @@ export function NieuwsbriefEditor({ nieuwsbrief, onTerug, onGewijzigd, startMetD
                     {inplanOpen && (
                       <input type="datetime-local" value={inplanMoment || toLocalInputWaarde(new Date(Date.now() + 3600_000))} min={toLocalInputWaarde(new Date())} onChange={e => setInplanMoment(e.target.value)} className="rounded-xl border border-border bg-card px-3 py-2 font-mono text-[13px] text-foreground outline-none focus:border-petrol dark:focus:border-white/25" />
                     )}
-                    <button type="button" onClick={() => (inplanOpen ? handleInplan() : (setInplanOpen(true), setInplanMoment(toLocalInputWaarde(new Date(Date.now() + 3600_000)))))} disabled={bezig} className={KNOP_SECUNDAIR}>
-                      <Clock className="h-4 w-4" /> {inplanOpen ? 'Bevestig inplannen' : 'Plan in'}
-                    </button>
+                    {!ab.actief && (
+                      <button type="button" onClick={() => (inplanOpen ? handleInplan() : (setInplanOpen(true), setInplanMoment(toLocalInputWaarde(new Date(Date.now() + 3600_000)))))} disabled={bezig} className={KNOP_SECUNDAIR}>
+                        <Clock className="h-4 w-4" /> {inplanOpen ? 'Bevestig inplannen' : 'Plan in'}
+                      </button>
+                    )}
                     <button type="button" onClick={() => vraagBevestiging()} disabled={bezig} className={cn(KNOP_PRIMAIR, 'ml-auto')}>
                       <Send className="h-4 w-4" /> Verstuur nu
                     </button>
@@ -599,6 +686,14 @@ export function NieuwsbriefEditor({ nieuwsbrief, onTerug, onGewijzigd, startMetD
                 <div className="flex gap-3"><dt className="w-24 flex-shrink-0 text-muted-foreground">Ontvangers</dt><dd className="font-mono font-semibold tabular-nums text-foreground">{aantalOntvangers ?? '?'}</dd></div>
                 <div className="flex gap-3"><dt className="w-24 flex-shrink-0 text-muted-foreground">Selectie</dt><dd className="text-foreground">{selectie.type === 'alle' ? 'Iedereen' : selectie.type === 'filter' ? 'Op status of label' : 'Zelf gekozen klanten'}</dd></div>
                 {bevestigOpen.scheduledAt && <div className="flex gap-3"><dt className="w-24 flex-shrink-0 text-muted-foreground">Moment</dt><dd className="font-semibold text-foreground">{formatDateTime(bevestigOpen.scheduledAt)}</dd></div>}
+                {ab.actief && (
+                  <div className="flex gap-3">
+                    <dt className="w-24 flex-shrink-0 text-muted-foreground">Test</dt>
+                    <dd className="font-semibold text-foreground">
+                      {ab.testdeel}% krijgt nu A of B, de rest na {ab.wachttijdUren} uur de winnaar
+                    </dd>
+                  </div>
+                )}
                 <div className="flex gap-3"><dt className="w-24 flex-shrink-0 text-muted-foreground">Afzender</dt><dd className="text-foreground">Sign Company &lt;antony@signcompany.nl&gt;</dd></div>
               </dl>
               {!testVerstuurdOp && <p className="mt-4 rounded-lg bg-[#B7791F]/10 px-3 py-2 text-[12px] text-[#8A5A12] dark:text-[#E3B25C]">Je hebt nog geen testmail gestuurd. Weet je zeker dat alles klopt?</p>}

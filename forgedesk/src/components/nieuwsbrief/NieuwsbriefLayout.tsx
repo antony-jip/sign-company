@@ -16,6 +16,7 @@ import {
 } from '@/services/nieuwsbriefService'
 import { NieuwsbriefEditor } from './NieuwsbriefEditor'
 import { NieuwsbriefStats } from './NieuwsbriefStats'
+import { NieuwsbriefPrestaties } from './NieuwsbriefPrestaties'
 import { NIEUWSBRIEF_BASIS_TEMPLATE } from './nieuwsbriefTemplate'
 import { TemplateKiezer, type TemplateKeuze } from './TemplateKiezer'
 import { renderDocument, leegDocument } from './nieuwsbriefBlokken'
@@ -155,7 +156,7 @@ export function NieuwsbriefLayout() {
 
   if (actief) {
     return actief.status === 'verzonden'
-      ? <NieuwsbriefStats nieuwsbrief={actief} onTerug={handleTerug} />
+      ? <NieuwsbriefStats nieuwsbrief={actief} onTerug={handleTerug} onHerzonden={() => { handleTerug(); laad() }} />
       : <NieuwsbriefEditor nieuwsbrief={actief} onTerug={handleTerug} onGewijzigd={handleGewijzigd} startMetDaan={startMetDaan} />
   }
 
@@ -227,6 +228,8 @@ export function NieuwsbriefLayout() {
               {tegel('verzonden', Send, 'Verzonden', 'de deur uit', statusColor('verzonden'))}
             </div>
           </div>
+
+          {tellingen.verzonden > 0 && <NieuwsbriefPrestaties />}
 
           <div className="doen-slate-surface rounded-2xl p-4">
             <div className="relative max-w-[280px]">

@@ -22,7 +22,7 @@ const OVERTUIGINGEN = [
 
 export default function Manifest() {
   return (
-    <section className="bg-white">
+    <section className="bg-bg">
       <div className="container-site py-16 md:py-32">
         <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-10 lg:gap-20 lg:items-center">
           <div>

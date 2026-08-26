@@ -2,10 +2,14 @@ import Link from 'next/link'
 import { modules, moduleAantalWoord } from '@/data/modules'
 
 /* Alle modules als strakke index: hairlines, geen icon-kaarten.
-   Geen entree-animatie: de lijst moet er staan, ook als er niets afspeelt. */
+   Geen entree-animatie: de lijst moet er staan, ook als er niets afspeelt.
+
+   Sinds de kit.com-ronde staat dit blok ná Werkwoorden, DaanSpotlight en de
+   demo. Het is dekkingsbewijs geworden, niet meer de pitch: die staat nu in
+   de vier werkwoorden erboven. */
 export default function Modules() {
   return (
-    <section className="bg-bg">
+    <section className="bg-white">
       <div className="container-site py-16 md:py-32">
         <div className="flex flex-wrap items-end justify-between gap-x-10 gap-y-4 mb-12 md:mb-16">
           <h2
@@ -17,8 +21,8 @@ export default function Modules() {
             Eén systeem<span className="text-flame">.</span>
           </h2>
           <p className="text-[15px] md:text-[16px] text-muted max-w-sm leading-[1.55]">
-            Gebouwd rond hoe een signklus echt loopt, van aanvraag tot
-            montage. Alles kent elkaar, alles werkt samen, voor één prijs.
+            De vier stappen hierboven draaien hierop. Alles kent elkaar,
+            alles zit in dezelfde prijs. Klik door naar wat je nu nodig hebt.
           </p>
         </div>
 

@@ -1,6 +1,7 @@
 import { ArrowRight } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { RONDLEIDING_HREF } from '@/data/cta'
 
 /* Entree via CSS-keyframes (globals.css: .hero-line / .hero-fade) zodat de
    eindstand ook zonder JS of in achtergrond-tabs bereikt wordt. */
@@ -18,31 +19,37 @@ export default function Hero() {
         sizes="100vw"
         className="object-cover object-[70%_center]"
       />
-      {/* Twee lagen doen hier verschillend werk. Een petrol-waas over het hele
-          beeld houdt de merkkleur vast, ook waar de foto doorschijnt; anders
-          leest de rechterhelft als een grijze foto zonder merk. */}
+      {/* Mobiel staat de kop over de volle breedte, dus daar moet het beeld
+          wel onder een scrim. Op desktop staat de tekst links en mag de gevel
+          rechts gewoon te zien zijn. */}
+      <div aria-hidden className="absolute inset-0 pointer-events-none bg-petrol-deep/70 md:hidden" />
+
+      {/* Een dunne petrol-waas houdt de merkkleur vast zonder de foto te doven.
+          Stond eerder op 0.3, samen met een verloop dat rechts nog op 0.22
+          eindigde: de rechterhelft las dan als vlak petrol en van de montage
+          zag je niets. */}
       <div
         aria-hidden
-        className="absolute inset-0 pointer-events-none bg-petrol"
-        style={{ opacity: 0.3, mixBlendMode: 'multiply' }}
+        className="absolute inset-0 pointer-events-none bg-petrol hidden md:block"
+        style={{ opacity: 0.15, mixBlendMode: 'multiply' }}
       />
-      {/* En een verloop dat links dicht genoeg is voor witte tekst en rechts
-          open genoeg om de gevel te laten zien. */}
+      {/* Het verloop is links dicht genoeg voor witte tekst en dooft rechts
+          bijna helemaal uit, zodat de gevel het beeld draagt. */}
       <div
         aria-hidden
-        className="absolute inset-0 pointer-events-none"
+        className="absolute inset-0 pointer-events-none hidden md:block"
         style={{
           background:
-            'linear-gradient(100deg, rgba(13,52,60,0.92) 0%, rgba(13,52,60,0.82) 38%, rgba(13,52,60,0.42) 68%, rgba(13,52,60,0.22) 100%)',
+            'linear-gradient(100deg, rgba(13,52,60,0.94) 0%, rgba(13,52,60,0.86) 30%, rgba(13,52,60,0.45) 55%, rgba(13,52,60,0.10) 78%, rgba(13,52,60,0.02) 100%)',
         }}
       />
-      {/* Eén diepe lichtval linksboven — verder niets */}
+      {/* Eén diepe lichtval linksboven, alleen over de tekstkolom */}
       <div
         aria-hidden
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            'radial-gradient(ellipse 85% 90% at 12% 0%, rgba(42,111,122,0.5) 0%, rgba(42,111,122,0) 62%)',
+            'radial-gradient(ellipse 55% 90% at 10% 0%, rgba(42,111,122,0.45) 0%, rgba(42,111,122,0) 62%)',
         }}
       />
 
@@ -81,12 +88,15 @@ export default function Hero() {
             <span>Start gratis</span>
             <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={2.5} />
           </a>
+          {/* Tweede spoor naast de proef. Een eigenaar die om drie uur op een
+              steiger staat begint niet aan een proefaccount; die wil dertig
+              minuten schermdelen. */}
           <Link
-            href="/hoe-het-werkt"
+            href={RONDLEIDING_HREF}
             className="group inline-flex items-center gap-2 text-[15px] font-semibold text-white"
           >
             <span className="relative">
-              Kijk hoe een klus loopt
+              Plan een rondleiding
               <span
                 className="absolute left-0 -bottom-1 h-px w-full origin-left transition-transform duration-300 group-hover:scale-x-0"
                 style={{ backgroundColor: 'rgba(255,255,255,0.4)' }}
@@ -97,7 +107,7 @@ export default function Hero() {
         </div>
 
         <p className="hero-fade text-[13px] mt-8" style={{ color: 'rgba(226,240,241,0.68)', animationDelay: '0.55s' }}>
-          30 dagen gratis · geen creditcard · maandelijks opzegbaar
+          30 dagen gratis · geen creditcard · wij zetten je gegevens erover
         </p>
       </div>
     </section>

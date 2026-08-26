@@ -120,7 +120,9 @@ export async function dupliceerNieuwsbrief(bron: Nieuwsbrief): Promise<Nieuwsbri
 
 export async function updateConcept(
   id: string,
-  velden: Partial<Pick<Nieuwsbrief, 'onderwerp' | 'html' | 'preheader' | 'blokken' | 'editor_modus' | 'template_key' | 'ontvangers' | 'test_verstuurd_op'>>,
+  velden: Partial<Pick<Nieuwsbrief,
+    'onderwerp' | 'html' | 'preheader' | 'blokken' | 'editor_modus' | 'template_key' | 'ontvangers' | 'test_verstuurd_op'
+    | 'onderwerp_b' | 'preheader_b' | 'ab_actief' | 'ab_testdeel' | 'ab_wachttijd_uren'>>,
 ): Promise<Nieuwsbrief> {
   const { data, error } = await db()
     .from('nieuwsbrieven')

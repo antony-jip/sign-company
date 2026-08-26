@@ -14,8 +14,15 @@ import type { ComponentType, SVGProps } from 'react'
 
 export type DoenIcon = ComponentType<SVGProps<SVGSVGElement>>
 
+/* De vijf groepen waarin het menu en de home de modules ordenen.
+   Vier werkwoorden in de volgorde waarin een signklus loopt, plus Daan.
+   Zie src/components/home/Werkwoorden.tsx en docs/verbeterplan-home-kit.md. */
+export const MODULE_GROEPEN = ['Binnenhalen', 'Plannen', 'Maken', 'Factureren', 'Daan AI'] as const
+export type ModuleGroep = (typeof MODULE_GROEPEN)[number]
+
 export type Module = {
   label: string
+  groep: ModuleGroep
   sub: string
   href: string
   color: string
@@ -26,17 +33,17 @@ export type Module = {
 }
 
 export const modules: Module[] = [
-  { label: 'Projecten', sub: 'Alles in één cockpit', href: '/features/projecten', color: '#1A535C', icon: IconProjecten, seoTitle: 'Projectbeheer voor signbedrijven | doen.', seoDescription: 'Alle projecten van je signbedrijf in één cockpit. Offerte, werkbon, planning en factuur gekoppeld per project.' },
-  { label: 'Offertes', sub: 'Professioneel in minuten', href: '/features/offertes', color: '#F15025', icon: IconOffertes, seoTitle: 'Offertesoftware voor signmakers | doen.', seoDescription: 'Calculeer en verstuur professionele offertes in minuten. Je klant keurt goed via het portaal, doen. volgt automatisch op.' },
-  { label: 'Klantportaal', sub: 'Deel, bespreek, accordeer', href: '/features/portaal', color: '#6A5A8A', icon: IconPortaal, seoTitle: 'Klantportaal voor je signbedrijf | doen.', seoDescription: 'Eén link, geen inlog. Je klant bekijkt tekeningen, keurt offertes goed en reageert op bestanden.' },
-  { label: 'Planning', sub: 'Sleep je week in elkaar', href: '/features/planning', color: '#9A5A48', icon: IconPlanning, seoTitle: 'Planningsoftware voor signbedrijven | doen.', seoDescription: 'Sleep je week in elkaar. Planning en werkbonnen gekoppeld, je monteur ziet alles op zijn telefoon.' },
-  { label: 'Werkbonnen', sub: 'Gemaakt in één klik', href: '/features/werkbonnen', color: '#1A535C', icon: IconWerkbonnen, seoTitle: 'Werkbon-app voor signbedrijven | doen.', seoDescription: 'Werkbon gemaakt in één klik vanuit offerte of planning, alle regels staan er al op. Je monteur vult aan met uren, foto\'s en een handtekening.' },
-  { label: 'Facturen', sub: 'Verkoop én inkoop, AI leest uit', href: '/features/facturen', color: '#2D6B48', icon: IconFacturen, seoTitle: 'Factuursoftware voor signbedrijven | doen.', seoDescription: 'Van offerte naar factuur in één klik, met Mollie-betaallink en koppeling naar Exact Online. AI leest inkoopfacturen uit.' },
-  { label: 'Email', sub: 'Jouw mailbox, slim gekoppeld', href: '/features/email', color: '#3A6B8C', icon: IconEmail, seoTitle: 'Zakelijke mailbox voor je signbedrijf | doen.', seoDescription: 'Jouw eigen mailbox (IMAP/SMTP), slim gekoppeld aan klanten en projecten. Daan AI vat samen en beantwoordt in jouw toon.' },
-  { label: 'Taken', sub: 'Alles naast de montage', href: '/features/taken', color: '#F15025', icon: IconTaken, seoTitle: 'Takenbeheer voor signbedrijven | doen.', seoDescription: 'Alles naast de montage: taken per project en per collega, met deadlines. Niks valt tussen wal en schip.' },
-  { label: 'Studio', sub: 'AI toont het eindresultaat', href: '/features/visualizer', color: '#9A5A48', icon: IconVisualizer, seoTitle: 'Studio: AI-visualisatie voor signbedrijven | doen.', seoDescription: 'Upload een foto van een bus, gevel of pand en Studio toont het eindresultaat voordat je produceert. Onderdeel van doen.' },
-  { label: 'AI-assistent', sub: 'Je slimste collega', href: '/features/ai', color: '#1A535C', icon: IconAIAssistent, seoTitle: 'AI-assistent voor signbedrijven | doen.', seoDescription: 'Daan kent je bedrijf: vat mails samen, leest inkoopfacturen uit en beantwoordt klantvragen in jouw toon.' },
-  { label: 'Geheugen', sub: 'Daan onthoudt je klanten', href: '/features/geheugen', color: '#1A535C', icon: IconAIAssistent, seoTitle: 'Geheugen: Daan onthoudt je klanten | doen.', seoDescription: 'Het PO-nummer van de aannemer, de hoogwerker bij dat ene pand. Daan onthoudt het en heel doen. handelt ernaar. Elke week een beetje slimmer.' },
+  { label: 'Projecten', groep: 'Plannen', sub: 'Alles in één cockpit', href: '/features/projecten', color: '#1A535C', icon: IconProjecten, seoTitle: 'Projectbeheer voor signbedrijven | doen.', seoDescription: 'Alle projecten van je signbedrijf in één cockpit. Offerte, werkbon, planning en factuur gekoppeld per project.' },
+  { label: 'Offertes', groep: 'Binnenhalen', sub: 'Professioneel in minuten', href: '/features/offertes', color: '#F15025', icon: IconOffertes, seoTitle: 'Offertesoftware voor signmakers | doen.', seoDescription: 'Calculeer en verstuur professionele offertes in minuten. Je klant keurt goed via het portaal, doen. volgt automatisch op.' },
+  { label: 'Klantportaal', groep: 'Binnenhalen', sub: 'Deel, bespreek, accordeer', href: '/features/portaal', color: '#6A5A8A', icon: IconPortaal, seoTitle: 'Klantportaal voor je signbedrijf | doen.', seoDescription: 'Eén link, geen inlog. Je klant bekijkt tekeningen, keurt offertes goed en reageert op bestanden.' },
+  { label: 'Planning', groep: 'Plannen', sub: 'Sleep je week in elkaar', href: '/features/planning', color: '#9A5A48', icon: IconPlanning, seoTitle: 'Planningsoftware voor signbedrijven | doen.', seoDescription: 'Sleep je week in elkaar. Planning en werkbonnen gekoppeld, je monteur ziet alles op zijn telefoon.' },
+  { label: 'Werkbonnen', groep: 'Maken', sub: 'Gemaakt in één klik', href: '/features/werkbonnen', color: '#1A535C', icon: IconWerkbonnen, seoTitle: 'Werkbon-app voor signbedrijven | doen.', seoDescription: 'Werkbon gemaakt in één klik vanuit offerte of planning, alle regels staan er al op. Je monteur vult aan met uren, foto\'s en een handtekening.' },
+  { label: 'Facturen', groep: 'Factureren', sub: 'Verkoop én inkoop, AI leest uit', href: '/features/facturen', color: '#2D6B48', icon: IconFacturen, seoTitle: 'Factuursoftware voor signbedrijven | doen.', seoDescription: 'Van offerte naar factuur in één klik, met Mollie-betaallink en koppeling naar Exact Online. AI leest inkoopfacturen uit.' },
+  { label: 'Email', groep: 'Binnenhalen', sub: 'Jouw mailbox, slim gekoppeld', href: '/features/email', color: '#3A6B8C', icon: IconEmail, seoTitle: 'Zakelijke mailbox voor je signbedrijf | doen.', seoDescription: 'Jouw eigen mailbox (IMAP/SMTP), slim gekoppeld aan klanten en projecten. Daan AI vat samen en beantwoordt in jouw toon.' },
+  { label: 'Taken', groep: 'Plannen', sub: 'Alles naast de montage', href: '/features/taken', color: '#F15025', icon: IconTaken, seoTitle: 'Takenbeheer voor signbedrijven | doen.', seoDescription: 'Alles naast de montage: taken per project en per collega, met deadlines. Niks valt tussen wal en schip.' },
+  { label: 'Studio', groep: 'Maken', sub: 'AI toont het eindresultaat', href: '/features/visualizer', color: '#9A5A48', icon: IconVisualizer, seoTitle: 'Studio: AI-visualisatie voor signbedrijven | doen.', seoDescription: 'Upload een foto van een bus, gevel of pand en Studio toont het eindresultaat voordat je produceert. Onderdeel van doen.' },
+  { label: 'AI-assistent', groep: 'Daan AI', sub: 'Je slimste collega', href: '/features/ai', color: '#1A535C', icon: IconAIAssistent, seoTitle: 'AI-assistent voor signbedrijven | doen.', seoDescription: 'Daan kent je bedrijf: vat mails samen, leest inkoopfacturen uit en beantwoordt klantvragen in jouw toon.' },
+  { label: 'Geheugen', groep: 'Daan AI', sub: 'Daan onthoudt je klanten', href: '/features/geheugen', color: '#1A535C', icon: IconAIAssistent, seoTitle: 'Geheugen: Daan onthoudt je klanten | doen.', seoDescription: 'Het PO-nummer van de aannemer, de hoogwerker bij dat ene pand. Daan onthoudt het en heel doen. handelt ernaar. Elke week een beetje slimmer.' },
 ]
 
 // De copy noemde jarenlang "tien modules" en bleef staan toen Geheugen erbij
@@ -45,3 +52,9 @@ const TELWOORDEN = ['nul', 'een', 'twee', 'drie', 'vier', 'vijf', 'zes', 'zeven'
 
 export const moduleAantal = modules.length
 export const moduleAantalWoord = TELWOORDEN[modules.length] ?? String(modules.length)
+
+/** Modules per groep, in de volgorde van MODULE_GROEPEN. */
+export const modulesPerGroep = MODULE_GROEPEN.map((groep) => ({
+  groep,
+  items: modules.filter((m) => m.groep === groep),
+})).filter((g) => g.items.length > 0)
