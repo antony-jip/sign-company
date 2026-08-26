@@ -67,26 +67,26 @@ async function paginaOverIds<T>(tabel: string, kolommen: string, ids: string[]):
 }
 
 async function laadGedrag(venster: number): Promise<GedragGegevens> {
-  const leeg: GedragGegevens = { openers: new Set(), ontving: new Set(), klikkers: new Set(), ooitOntvangen: new Set() }
+  const gegevens: GedragGegevens = { openers: new Set(), ontving: new Set(), klikkers: new Set(), ooitOntvangen: new Set() }
   const { data: verzonden } = await supabase
     .from('nieuwsbrieven').select('id, verzonden_op')
     .eq('user_id', OWNER_USER_ID).eq('status', 'verzonden').not('verzonden_op', 'is', null)
     .order('verzonden_op', { ascending: false })
   const alle = ((verzonden ?? []) as unknown as { id: string }[]).map(r => r.id)
-  if (alle.length === 0) return leeg
+  if (alle.length === 0) return gegevens
   const recent = new Set(alle.slice(0, Math.max(1, venster)))
 
   const ontvangersRijen = await paginaOverIds<{ email: string; nieuwsbrief_id: string }>('nieuwsbrief_ontvangers', 'email, nieuwsbrief_id', alle)
   const eventRijen = await paginaOverIds<{ email: string; nieuwsbrief_id: string; type: string }>('nieuwsbrief_events', 'email, nieuwsbrief_id, type', alle)
   for (const r of ontvangersRijen) {
-    leeg.ooitOntvangen.add(r.email)
-    if (recent.has(r.nieuwsbrief_id)) leeg.ontving.add(r.email)
+    gegevens.ooitOntvangen.add(r.email)
+    if (recent.has(r.nieuwsbrief_id)) gegevens.ontving.add(r.email)
   }
   for (const e of eventRijen) {
-    if (e.type === 'clicked') leeg.klikkers.add(e.email)
-    if (e.type === 'opened' && recent.has(e.nieuwsbrief_id)) leeg.openers.add(e.email)
+    if (e.type === 'clicked') gegevens.klikkers.add(e.email)
+    if (e.type === 'opened' && recent.has(e.nieuwsbrief_id)) gegevens.openers.add(e.email)
   }
-  return leeg
+  return gegevens
 }
 
 function voldoetAanGedrag(email: string, gedrag: Gedrag | undefined, g: GedragGegevens): boolean {
@@ -308,7 +308,9 @@ async function verwerkTest(rij: Record<string, unknown>, orgId: string): Promise
     ab_beslist_op: new Date().toISOString(),
     ab_rest_verstuurd: verstuurd,
     aantal_ontvangers: huidigAantal + verstuurd,
-    onderwerp: onderwerp,
+    // onderwerp blijft variant a. Zou de winnaar erin gezet worden, dan staat
+    // er in het uitslagscherm twee keer hetzelfde en is niet meer te zien
+    // waartegen getest is.
     updated_at: new Date().toISOString(),
   }).eq('id', id)
 
