@@ -299,12 +299,17 @@ async function laadKlantenEnContacten(): Promise<{ klanten: KlantRij[]; contacte
   return belofte
 }
 async function laadKlantenEnContactenVers(): Promise<{ klanten: KlantRij[]; contacten: ContactRij[]; afgemeld: Set<string> }> {
-  const [klanten, contacten, afm] = await Promise.all([
+  const [klanten, contacten, afm, problemen] = await Promise.all([
     alles<KlantRij>('klanten', 'id, bedrijfsnaam, contactpersoon, email, status, labels, is_demo_data', 'bedrijfsnaam'),
     alles<ContactRij>('contactpersonen', 'id, klant_id, naam, email', 'klant_id'),
     alles<{ email: string }>('nieuwsbrief_afmeldingen', 'id, email', 'email'),
+    alles<{ email: string; hard: boolean }>('nieuwsbrief_adres_problemen', 'id, email, hard', 'email'),
   ])
   const afgemeld = new Set(afm.map(a => String(a.email).toLowerCase()))
+  // Spiegelt api/nieuwsbrief-verzend.ts: harde bounces en klachten tellen niet
+  // mee als ontvanger, anders wijkt de telling in het scherm af van wat er
+  // daadwerkelijk de deur uit gaat.
+  for (const p of problemen) if (p.hard) afgemeld.add(String(p.email).toLowerCase())
   return { klanten: klanten.filter(k => !k.is_demo_data), contacten, afgemeld }
 }
 

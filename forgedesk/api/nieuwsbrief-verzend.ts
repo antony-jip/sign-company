@@ -55,17 +55,23 @@ function webfontImport(font: string): string {
 const sleep = (ms: number) => new Promise<void>(r => setTimeout(r, ms))
 const isEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)
 
-function afmeldUrl(email: string): string {
-  const token = createHmac('sha256', AFMELD_GEHEIM).update(email.toLowerCase()).digest('hex').slice(0, 32)
-  return `${APP_URL}/api/nieuwsbrief-afmelden?e=${encodeURIComponent(email.toLowerCase())}&t=${token}`
+// De nieuwsbrief-id gaat mee in de link én in de HMAC, zodat een afmelding aan
+// de verzending hangt die hem veroorzaakte. Zonder dat is er geen
+// afmeldpercentage per nieuwsbrief. Spiegelt api/nieuwsbrief-afmelden.ts.
+function afmeldUrl(email: string, nieuwsbriefId: string): string {
+  const adres = email.toLowerCase()
+  const basis = nieuwsbriefId ? `${adres}:${nieuwsbriefId}` : adres
+  const token = createHmac('sha256', AFMELD_GEHEIM).update(basis).digest('hex').slice(0, 32)
+  const n = nieuwsbriefId ? `&n=${encodeURIComponent(nieuwsbriefId)}` : ''
+  return `${APP_URL}/api/nieuwsbrief-afmelden?e=${encodeURIComponent(adres)}&t=${token}${n}`
 }
 
-function personaliseer(html: string, o: { email: string; voornaam: string; achternaam: string }): string {
+function personaliseer(html: string, o: { email: string; voornaam: string; achternaam: string }, nieuwsbriefId: string): string {
   return html
     .replace(/\{\{\{contact\.first_name(?:\|([^}]*))?\}\}\}/g, (_m, fb) => o.voornaam || fb || '')
     .replace(/\{\{\{contact\.last_name(?:\|([^}]*))?\}\}\}/g, (_m, fb) => o.achternaam || fb || '')
     .replace(/\{\{\{contact\.email\}\}\}/g, o.email)
-    .replace(/\{\{\{RESEND_UNSUBSCRIBE_URL\}\}\}/g, afmeldUrl(o.email))
+    .replace(/\{\{\{RESEND_UNSUBSCRIBE_URL\}\}\}/g, afmeldUrl(o.email, nieuwsbriefId))
 }
 
 // Resend geeft max 100 contacten per pagina (standaard 20): doorbladeren tot
@@ -84,7 +90,16 @@ async function alleContacten(client: Resend, audienceId: string): Promise<Array<
   return uit
 }
 
-interface Ontvanger { email: string; voornaam: string; achternaam: string }
+interface Ontvanger {
+  email: string
+  voornaam: string
+  achternaam: string
+  klantId: string | null
+  contactpersoonId: string | null
+  naam: string
+  bedrijfsnaam: string
+  bron: 'klant' | 'contactpersoon'
+}
 
 function splitNaam(naam: string): { voornaam: string; achternaam: string } {
   const delen = naam.trim().split(/\s+/).filter(Boolean)
@@ -124,29 +139,71 @@ async function verzamelOntvangers(orgId: string, sel: OntvangerSelectie): Promis
   })
   const gekozenIds = new Set(gekozen.map(k => String((k as Record<string, unknown>).id)))
 
-  const { data: afmeldingen } = await supabase
-    .from('nieuwsbrief_afmeldingen').select('email').eq('user_id', OWNER_USER_ID)
+  const [{ data: afmeldingen }, { data: problemen }] = await Promise.all([
+    supabase.from('nieuwsbrief_afmeldingen').select('email').eq('user_id', OWNER_USER_ID),
+    supabase.from('nieuwsbrief_adres_problemen').select('email').eq('user_id', OWNER_USER_ID).eq('hard', true),
+  ])
   const afgemeld = new Set((afmeldingen ?? []).map(a => String((a as Record<string, unknown>).email).toLowerCase()))
+  // Blijven mailen naar adressen die permanent bouncen of spam meldden kost je
+  // de bezorging van álle post. Die sluiten we net zo hard uit als afmeldingen.
+  for (const r of problemen ?? []) afgemeld.add(String((r as Record<string, unknown>).email).toLowerCase())
 
   const map = new Map<string, Ontvanger>()
-  const voeg = (email: string, naam: string) => {
+  const voeg = (email: string, naam: string, herkomst: Omit<Ontvanger, 'email' | 'voornaam' | 'achternaam' | 'naam'>) => {
     const e = email.trim().toLowerCase()
     if (!isEmail(e) || map.has(e) || afgemeld.has(e)) return
-    map.set(e, { email: e, ...splitNaam(naam) })
+    map.set(e, { email: e, ...splitNaam(naam), naam: naam.trim(), ...herkomst })
   }
   for (const k of gekozen) {
     const rij = k as Record<string, unknown>
-    voeg(String(rij.email || ''), String(rij.contactpersoon || rij.bedrijfsnaam || ''))
+    voeg(String(rij.email || ''), String(rij.contactpersoon || rij.bedrijfsnaam || ''), {
+      klantId: String(rij.id),
+      contactpersoonId: null,
+      bedrijfsnaam: String(rij.bedrijfsnaam || ''),
+      bron: 'klant',
+    })
   }
   if (sel.inclusiefContactpersonen !== false) {
     const cps = await allesVanOrg('contactpersonen', 'id, klant_id, email, naam', orgId)
+    const bedrijfVan = new Map(gekozen.map(k => {
+      const rij = k as Record<string, unknown>
+      return [String(rij.id), String(rij.bedrijfsnaam || '')]
+    }))
     for (const c of cps) {
       const rij = c as Record<string, unknown>
-      if (!gekozenIds.has(String(rij.klant_id))) continue
-      voeg(String(rij.email || ''), String(rij.naam || ''))
+      const klantId = String(rij.klant_id)
+      if (!gekozenIds.has(klantId)) continue
+      voeg(String(rij.email || ''), String(rij.naam || ''), {
+        klantId,
+        contactpersoonId: String(rij.id),
+        bedrijfsnaam: bedrijfVan.get(klantId) || '',
+        bron: 'contactpersoon',
+      })
     }
   }
   return Array.from(map.values())
+}
+
+// Elke ontvanger vastleggen zoals hij op dít moment in doen. stond. Een event
+// dat later binnenkomt draagt alleen een e-mailadres; via deze snapshot hangt
+// het aan een klant, ook als die klant er over een jaar anders uitziet.
+async function legOntvangersVast(nieuwsbriefId: string, lijst: Ontvanger[]): Promise<void> {
+  const rijen = lijst.map(o => ({
+    nieuwsbrief_id: nieuwsbriefId,
+    email: o.email,
+    klant_id: o.klantId,
+    contactpersoon_id: o.contactpersoonId,
+    naam: o.naam || null,
+    bedrijfsnaam: o.bedrijfsnaam || null,
+    bron: o.bron,
+  }))
+  for (let i = 0; i < rijen.length; i += 500) {
+    const { error } = await supabase
+      .from('nieuwsbrief_ontvangers')
+      .upsert(rijen.slice(i, i + 500), { onConflict: 'nieuwsbrief_id,email', ignoreDuplicates: true })
+    // Meten mag verzenden nooit tegenhouden.
+    if (error) console.error('[nieuwsbrief-verzend] ontvangers vastleggen mislukt:', error)
+  }
 }
 
 const supabase = createClient(
@@ -173,6 +230,29 @@ function escapeHtml(str: string): string {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 }
 
+// Zonder UTM's is klikverkeer op de site niet te onderscheiden van direct
+// verkeer, en weet je van geen enkele nieuwsbrief of hij iets opleverde.
+// Alleen http(s)-links krijgen ze: mailto, tel en de afmeld-placeholder niet,
+// en een link die zelf al een utm_source draagt blijft zoals hij is.
+function campagneNaam(onderwerp: string): string {
+  return onderwerp
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60) || 'nieuwsbrief'
+}
+
+function voegUtmToe(html: string, campagne: string): string {
+  return html.replace(/href="(https?:\/\/[^"]*)"/gi, (heel, url: string) => {
+    if (url.includes('{{{') || /[?&]utm_source=/i.test(url)) return heel
+    const [basis, fragment = ''] = url.split('#')
+    const scheiding = basis.includes('?') ? '&' : '?'
+    const params = `utm_source=nieuwsbrief&utm_medium=email&utm_campaign=${encodeURIComponent(campagne)}`
+    return `href="${basis}${scheiding}${params}${fragment ? `#${fragment}` : ''}"`
+  })
+}
+
 // Wikkelt de opgestelde body in een neutrale, responsieve mailshell met een
 // verplichte afmeldlink. {{{RESEND_UNSUBSCRIBE_URL}}} wordt door Resend per
 // ontvanger vervangen door een geldige uitschrijf-URL.
@@ -182,6 +262,7 @@ function buildNieuwsbriefHtml(bodyHtml: string, onderwerp: string, preheader?: s
   const kaart = isKleur(stijlIn?.kaart) ? stijlIn!.kaart! : '#FFFFFF'
   const tekst = isKleur(stijlIn?.tekst) ? stijlIn!.tekst! : '#1A1A1A'
   const webfont = webfontImport(font)
+  const body = voegUtmToe(bodyHtml, campagneNaam(onderwerp))
   const preheaderBlok = preheader?.trim()
     ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;font-size:1px;line-height:1px;color:${achtergrond};">${escapeHtml(preheader.trim())}${'&zwnj;&nbsp;'.repeat(40)}</div>`
     : ''
@@ -199,7 +280,7 @@ ${webfont ? `<!--[if !mso]><!--><style>${webfont}</style><!--<![endif]-->` : ''}
       <!--[if mso]><table role="presentation" width="600" cellpadding="0" cellspacing="0"><tr><td><![endif]-->
       <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="max-width:600px;">
         <tr><td style="background-color:${kaart};border-radius:12px;padding:36px 36px 28px 36px;font-family:${font};font-size:15px;line-height:1.65;color:${tekst};">
-          ${bodyHtml}
+          ${body}
         </td></tr>
         <tr><td style="padding:20px 36px 0 36px;font-family:${font};font-size:12px;color:#9B9B95;text-align:center;line-height:1.6;">
           Je ontvangt deze mail omdat je contact bent van Sign Company.<br>
@@ -291,6 +372,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const volledigeHtml = buildNieuwsbriefHtml(html, onderwerp.trim(), preheader, stijl)
     const gepland = Boolean(scheduledAt)
+    const { data: profile } = await supabase
+      .from('profiles').select('organisatie_id').eq('id', OWNER_USER_ID).maybeSingle()
+    const orgId = (profile?.organisatie_id as string | null) ?? null
     const nu = new Date().toISOString()
     let aantal = 0
     let broadcastId: string | null = null
@@ -319,12 +403,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (sendErr) return geefVrij(`Verzenden mislukt bij Resend: ${sendErr.message}`)
       aantal = actief.length
       broadcastId = broadcast.id
+      if (orgId) {
+        const herkomst = new Map((await verzamelOntvangers(orgId, { type: 'alle' })).map(o => [o.email, o]))
+        await legOntvangersVast(nieuwsbriefId, actief.map(c => {
+          const e = c.email.trim().toLowerCase()
+          return herkomst.get(e) ?? { email: e, voornaam: '', achternaam: '', klantId: null, contactpersoonId: null, naam: '', bedrijfsnaam: '', bron: 'klant' as const }
+        }))
+      }
     } else {
       // Selectie: per ontvanger gepersonaliseerd, met eigen afmeldlink.
       if (!AFMELD_GEHEIM) return geefVrij('NIEUWSBRIEF_WEBHOOK_TOKEN ontbreekt; de afmeldlink kan niet worden gemaakt', 500)
-      const { data: profile } = await supabase
-        .from('profiles').select('organisatie_id').eq('id', OWNER_USER_ID).maybeSingle()
-      const orgId = (profile?.organisatie_id as string | null) ?? null
       if (!orgId) return geefVrij('Geen organisatie gevonden voor de eigenaar', 400)
 
       let lijst = await verzamelOntvangers(orgId, selectie)
@@ -339,15 +427,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return geefVrij(`Inplannen voor een selectie kan tot ${MAX_GEPLAND_PER_RUN} ontvangers. Kies "Iedereen" of verstuur nu.`, 400)
       }
 
+      await legOntvangersVast(nieuwsbriefId, lijst)
+
       const tags = [{ name: 'nieuwsbrief_id', value: nieuwsbriefId }]
       const maak = (o: Ontvanger) => ({
         from: FROM,
         to: [o.email],
         replyTo: REPLY_TO,
-        subject: personaliseer(onderwerp.trim(), o),
-        html: personaliseer(volledigeHtml, o),
+        subject: personaliseer(onderwerp.trim(), o, nieuwsbriefId),
+        html: personaliseer(volledigeHtml, o, nieuwsbriefId),
         headers: {
-          'List-Unsubscribe': `<${afmeldUrl(o.email)}>`,
+          'List-Unsubscribe': `<${afmeldUrl(o.email, nieuwsbriefId)}>`,
           'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
         },
         tags,
