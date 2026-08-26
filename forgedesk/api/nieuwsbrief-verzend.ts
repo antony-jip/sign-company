@@ -33,6 +33,34 @@ interface OntvangerSelectie {
 
 interface MailStijl { font?: string; achtergrond?: string; kaart?: string; tekst?: string }
 
+interface AbInstelling {
+  actief?: boolean
+  onderwerpB?: string
+  preheaderB?: string
+  testdeel?: number
+  wachttijdUren?: number
+}
+
+// Vaste, herhaalbare verdeling over de twee varianten. Math.random zou bij een
+// tweede poging na een mislukte batch een andere splitsing geven, en dan zou
+// iemand beide onderwerpen kunnen krijgen.
+function variantVan(email: string): 'a' | 'b' {
+  let h = 0
+  for (let i = 0; i < email.length; i++) h = (h * 31 + email.charCodeAt(i)) >>> 0
+  return h % 2 === 0 ? 'a' : 'b'
+}
+
+// Zelfde hash bepaalt ook wie in de testgroep valt: stabiel, en onafhankelijk
+// van de volgorde waarin de database de klanten teruggaf.
+function testVolgorde(email: string): number {
+  let h = 2166136261
+  for (let i = 0; i < email.length; i++) {
+    h ^= email.charCodeAt(i)
+    h = Math.imul(h, 16777619) >>> 0
+  }
+  return h / 4294967295
+}
+
 // Webfonts die de bouwer aanbiedt; alles daarbuiten valt terug op de
 // systeemstack zodat niemand via de API een willekeurige @import injecteert.
 const WEBFONTS: Record<string, string> = {
@@ -187,7 +215,7 @@ async function verzamelOntvangers(orgId: string, sel: OntvangerSelectie): Promis
 // Elke ontvanger vastleggen zoals hij op dít moment in doen. stond. Een event
 // dat later binnenkomt draagt alleen een e-mailadres; via deze snapshot hangt
 // het aan een klant, ook als die klant er over een jaar anders uitziet.
-async function legOntvangersVast(nieuwsbriefId: string, lijst: Ontvanger[]): Promise<void> {
+async function legOntvangersVast(nieuwsbriefId: string, lijst: Ontvanger[], variant?: (o: Ontvanger) => 'a' | 'b'): Promise<void> {
   const rijen = lijst.map(o => ({
     nieuwsbrief_id: nieuwsbriefId,
     email: o.email,
@@ -196,6 +224,7 @@ async function legOntvangersVast(nieuwsbriefId: string, lijst: Ontvanger[]): Pro
     naam: o.naam || null,
     bedrijfsnaam: o.bedrijfsnaam || null,
     bron: o.bron,
+    variant: variant ? variant(o) : 'a',
   }))
   for (let i = 0; i < rijen.length; i += 500) {
     const { error } = await supabase
@@ -330,10 +359,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!(await verifyOwner(req))) return res.status(403).json({ error: 'Geen toegang' })
     if (!(await enforceRateLimit(OWNER_USER_ID, res))) return
 
-    const { nieuwsbriefId, onderwerp, html, preheader, scheduledAt, ontvangers, stijl } = (req.body ?? {}) as {
+    const { nieuwsbriefId, onderwerp, html, preheader, scheduledAt, ontvangers, stijl, ab } = (req.body ?? {}) as {
       nieuwsbriefId?: string; onderwerp?: string; html?: string; preheader?: string; scheduledAt?: string
-      ontvangers?: OntvangerSelectie; stijl?: MailStijl
+      ontvangers?: OntvangerSelectie; stijl?: MailStijl; ab?: AbInstelling
     }
+    const onderwerpB = (ab?.onderwerpB ?? '').trim()
+    const abActief = Boolean(ab?.actief && onderwerpB)
+    const abTestdeel = Math.min(50, Math.max(10, Math.round(Number(ab?.testdeel) || 30)))
+    const abWachttijd = Math.min(48, Math.max(1, Math.round(Number(ab?.wachttijdUren) || 4)))
+    if (ab?.actief && !onderwerpB) return res.status(400).json({ error: 'Geef een tweede onderwerp op voor de test' })
+    if (abActief && onderwerpB.length > 200) return res.status(400).json({ error: 'Het tweede onderwerp is te lang' })
+    if (abActief && scheduledAt) return res.status(400).json({ error: 'Een A/B-test kan niet ingepland worden; verstuur hem op het moment dat je kiest' })
     const selectie: OntvangerSelectie = ontvangers && typeof ontvangers === 'object' ? ontvangers : { type: 'alle' }
     if (scheduledAt) {
       const dt = new Date(scheduledAt)
@@ -377,9 +413,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const orgId = (profile?.organisatie_id as string | null) ?? null
     const nu = new Date().toISOString()
     let aantal = 0
+    let restAantal = 0
     let broadcastId: string | null = null
 
-    if (!selectie.type || selectie.type === 'alle') {
+    if ((!selectie.type || selectie.type === 'alle') && !abActief) {
       // Iedereen: via de Resend-lijst als broadcast. Resend regelt dan zelf de
       // afmeldlink per ontvanger en het inplannen op schaal.
       const audienceId = await vindAudienceId(resend)
@@ -415,26 +452,42 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (!AFMELD_GEHEIM) return geefVrij('NIEUWSBRIEF_WEBHOOK_TOKEN ontbreekt; de afmeldlink kan niet worden gemaakt', 500)
       if (!orgId) return geefVrij('Geen organisatie gevonden voor de eigenaar', 400)
 
-      let lijst = await verzamelOntvangers(orgId, selectie)
+      const volledigeLijst = await verzamelOntvangers(orgId, selectie)
+      if (volledigeLijst.length === 0) return geefVrij('Je selectie bevat geen ontvangers met een e-mailadres', 400)
+
+      // Bij een A/B-test gaat alleen de testgroep nu de deur uit; de rest krijgt
+      // het winnende onderwerp van api/cron-nieuwsbrief zodra de wachttijd om is.
+      // De testgroep wordt bepaald vóór het uitfilteren van wie al mail kreeg:
+      // anders zou een tweede poging na een half mislukte batch een andere groep
+      // aanwijzen en zouden er mensen buiten de test alsnog een variant krijgen.
+      let lijst = volledigeLijst
+      if (abActief) {
+        const gesorteerd = [...volledigeLijst].sort((a, b) => testVolgorde(a.email) - testVolgorde(b.email))
+        const testGrootte = Math.max(2, Math.round((gesorteerd.length * abTestdeel) / 100))
+        lijst = gesorteerd.slice(0, testGrootte)
+        if (lijst.length < 2) return geefVrij('Een A/B-test heeft minstens twee ontvangers nodig', 400)
+      }
+
       // Na een afgebroken eerdere poging niet opnieuw mailen naar wie al had.
       const { data: alVerstuurd } = await supabase
         .from('nieuwsbrief_events').select('email').eq('nieuwsbrief_id', nieuwsbriefId).eq('type', 'sent')
       const klaar = new Set((alVerstuurd ?? []).map(r => String((r as { email: string }).email).toLowerCase()))
+      const testGroep = lijst
       if (klaar.size > 0) lijst = lijst.filter(o => !klaar.has(o.email))
       if (lijst.length === 0 && klaar.size > 0) return geefVrij('Iedereen in deze selectie heeft deze nieuwsbrief al ontvangen', 400)
-      if (lijst.length === 0) return geefVrij('Je selectie bevat geen ontvangers met een e-mailadres', 400)
       if (gepland && lijst.length > MAX_GEPLAND_PER_RUN) {
         return geefVrij(`Inplannen voor een selectie kan tot ${MAX_GEPLAND_PER_RUN} ontvangers. Kies "Iedereen" of verstuur nu.`, 400)
       }
 
-      await legOntvangersVast(nieuwsbriefId, lijst)
+      await legOntvangersVast(nieuwsbriefId, lijst, abActief ? o => variantVan(o.email) : undefined)
 
+      const onderwerpVoor = (o: Ontvanger) => (abActief && variantVan(o.email) === 'b' ? onderwerpB : onderwerp.trim())
       const tags = [{ name: 'nieuwsbrief_id', value: nieuwsbriefId }]
       const maak = (o: Ontvanger) => ({
         from: FROM,
         to: [o.email],
         replyTo: REPLY_TO,
-        subject: personaliseer(onderwerp.trim(), o, nieuwsbriefId),
+        subject: personaliseer(onderwerpVoor(o), o, nieuwsbriefId),
         html: personaliseer(volledigeHtml, o, nieuwsbriefId),
         headers: {
           'List-Unsubscribe': `<${afmeldUrl(o.email, nieuwsbriefId)}>`,
@@ -466,6 +519,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           if (i + BATCH_GROOTTE < lijst.length) await sleep(THROTTLE_MS)
         }
       }
+      restAantal = abActief ? volledigeLijst.length - testGroep.length : 0
       if (aantal === 0) return geefVrij('Geen enkele mail kon worden verstuurd. Controleer de Resend-instellingen.')
       if (mislukt.length > 0) {
         // Gedeeltelijk gelukt: terug naar concept zodat een nieuwe poging alleen
@@ -482,6 +536,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         html,
         preheader: preheader?.trim() || null,
         ontvangers: selectie,
+        onderwerp_b: abActief ? onderwerpB : null,
+        preheader_b: abActief ? (ab?.preheaderB ?? '').trim() || null : null,
+        ab_actief: abActief,
+        ab_testdeel: abTestdeel,
+        ab_wachttijd_uren: abWachttijd,
+        ab_winnaar: null,
+        ab_beslist_op: null,
+        ab_rest_verstuurd: null,
+        // Altijd bewaren, niet alleen bij een A/B-test: een herzending naar wie
+        // niet opende moet dezelfde mail zijn, en achteraf wil je kunnen zien
+        // wat er precies verstuurd is.
+        verzend_html: volledigeHtml,
         status: gepland ? 'gepland' : 'verzonden',
         resend_broadcast_id: broadcastId,
         aantal_ontvangers: aantal,
@@ -501,6 +567,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ok: true,
       status: gepland ? 'gepland' : 'verzonden',
       aantalOntvangers: aantal,
+      wachtOpWinnaar: restAantal,
       broadcastId,
       nieuwsbrief: bijgewerkt ?? null,
     })

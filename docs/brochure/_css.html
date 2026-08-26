@@ -1,0 +1,154 @@
+<style>
+  @page { size: A4 landscape; margin: 0; }
+
+  :root{
+    --bg:#F4F7F7;
+    --petrol:#1A535C;
+    --petrol-deep:#0D343C;
+    --flame:#F15025;
+    --ink:#16262B;
+    --muted:#54666A;
+    --on-dark:rgba(226,240,241,0.82);
+    --on-dark-soft:rgba(226,240,241,0.58);
+    --hair:rgba(26,83,92,0.14);
+    --hair-dark:rgba(226,240,241,0.16);
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+
+  body{
+    font-family:'Hanken Grotesk', sans-serif;
+    color:var(--ink); background:#fff;
+    font-size:10.5pt; line-height:1.55;
+  }
+
+  h1,h2,h3,h4{ font-family:'Instrument Sans', sans-serif; font-weight:700; letter-spacing:-0.03em; }
+  .dot{ color:var(--flame); }
+
+  .page{
+    position:relative; width:297mm; height:210mm; overflow:hidden;
+    page-break-after:always; background:#fff;
+  }
+  .page:last-child{ page-break-after:auto; }
+  .page.dark{ background:var(--petrol-deep); color:#fff; }
+  .page.soft{ background:var(--bg); }
+
+  .pad{ position:relative; height:100%; padding:17mm 18mm 14mm; display:flex; flex-direction:column; }
+
+  .glow{
+    position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(ellipse 85% 90% at 12% 0%, rgba(42,111,122,0.55) 0%, rgba(42,111,122,0) 62%);
+  }
+  .glow.br{ background:radial-gradient(ellipse 70% 85% at 88% 100%, rgba(42,111,122,0.45) 0%, rgba(42,111,122,0) 60%); }
+
+  .logo{ height:11mm; width:auto; display:block; align-self:flex-start; margin-bottom:9mm; }
+  .logo.sm{ height:7.5mm; margin-bottom:7mm; }
+  .logo-foot{ height:5.5mm; width:auto; display:block; }
+
+  .head{ display:flex; align-items:flex-end; justify-content:space-between; gap:16mm; }
+  .head h2{ font-size:26pt; line-height:1.02; max-width:150mm; }
+  .head p{ font-size:10.5pt; color:var(--muted); max-width:78mm; line-height:1.5; }
+  .dark .head p{ color:var(--on-dark); }
+
+  .foot{
+    margin-top:auto; padding-top:6mm;
+    display:flex; align-items:center; justify-content:space-between;
+    font-size:8pt; color:var(--muted);
+  }
+  .dark .foot{ color:var(--on-dark-soft); }
+  .foot .mark{ font-family:'Instrument Sans',sans-serif; font-weight:600; color:var(--petrol); }
+  .dark .foot .mark{ color:rgba(226,240,241,0.75); }
+
+  /* ---------- 1 · cover met proces ---------- */
+  .cover-top{ max-width:200mm; }
+  .cover-top h1{
+    font-size:33pt; line-height:1.0; letter-spacing:-0.035em; color:#fff;
+    margin-bottom:5mm; text-wrap:balance;
+  }
+  .cover-top .lead{ font-size:12pt; line-height:1.5; color:var(--on-dark); max-width:200mm; }
+
+  .journey{ margin-top:auto; margin-bottom:auto; }
+  .journey svg{ width:100%; height:auto; display:block; }
+  .jn-line{ stroke:rgba(226,240,241,0.26); fill:none; }
+  .jn-ring{ fill:none; stroke:rgba(226,240,241,0.34); stroke-width:1.4; }
+  .jn-ic{ fill:none; stroke:rgba(226,240,241,0.92); stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+  .jn-lbl{
+    font-family:'Instrument Sans',sans-serif; font-weight:700; font-size:15px;
+    fill:#fff; letter-spacing:-0.02em;
+  }
+  .jn-sub{ font-family:'Hanken Grotesk',sans-serif; font-size:12px; fill:rgba(226,240,241,0.6); }
+
+  .chips{ display:flex; gap:0; border-top:1px solid var(--hair-dark); }
+  .chip{ flex:1; padding:4.5mm 8mm 0 0; }
+  .chip .k{
+    display:block; font-family:'Instrument Sans',sans-serif; font-weight:700; font-size:13pt;
+    color:#fff; letter-spacing:-0.02em; margin-bottom:0.8mm;
+  }
+  .chip .v{ font-size:9.5pt; color:var(--on-dark-soft); }
+
+  /* ---------- 2 · nu vs doen. ---------- */
+  .vs{ margin-top:11mm; }
+  .vs-head{ display:grid; grid-template-columns:1fr 1fr; column-gap:16mm; }
+  .vs-head h4{ font-size:12pt; letter-spacing:-0.02em; padding-bottom:3mm; }
+  .vs-head .nu{ color:var(--muted); }
+  .vs-head .dn{ color:var(--petrol); }
+  .row{
+    display:grid; grid-template-columns:1fr 1fr; column-gap:16mm;
+    border-top:1px solid var(--hair); padding:3.5mm 0;
+  }
+  .row .nu{ font-size:10.5pt; color:var(--muted); }
+  .row .dn{ font-size:10.5pt; color:var(--ink); font-weight:600; padding-left:7mm; position:relative; }
+  .row .dn svg{ position:absolute; left:0; top:1.1mm; }
+
+  .notes{ margin-top:auto; padding-top:7mm; border-top:1px solid var(--hair); display:grid; grid-template-columns:1fr 1fr; gap:16mm; }
+  .note h4{ font-size:12pt; color:var(--petrol); margin-bottom:1.5mm; letter-spacing:-0.02em; }
+  .note p{ font-size:9.5pt; color:var(--muted); line-height:1.5; }
+
+  /* ---------- 3 · modules + prijs ---------- */
+  .modules{ display:grid; grid-template-columns:repeat(3,1fr); gap:0 14mm; margin-top:9mm; }
+  .mod{ padding:4.2mm 0; border-top:1px solid var(--hair-dark); display:flex; align-items:center; gap:3.5mm; }
+  .mod .ico{ flex:none; display:block; }
+  .mod .name{
+    font-family:'Instrument Sans',sans-serif; font-weight:700; letter-spacing:-0.02em;
+    font-size:11.5pt; color:#fff; flex:none;
+  }
+  .mod .sub{ font-size:9.5pt; color:var(--on-dark-soft); }
+  .mod .tag{
+    font-size:7.5pt; font-weight:600; color:var(--flame);
+    border:1px solid rgba(241,80,37,0.55); border-radius:1mm; padding:0.4mm 1.4mm; flex:none;
+  }
+  .mod .tag.on-dark{ color:var(--on-dark); border-color:var(--hair-dark); }
+
+  .price-grid{
+    display:grid; grid-template-columns:1fr 1.15fr; gap:16mm;
+    margin-top:auto; padding-top:9mm; border-top:1px solid var(--hair-dark); align-items:start;
+  }
+  .amount{ display:flex; align-items:baseline; gap:3mm; margin-bottom:2.5mm; }
+  .amount .big{ font-family:'Instrument Sans',sans-serif; font-weight:700; font-size:44pt; line-height:0.9; letter-spacing:-0.03em; color:#fff; }
+  .amount .per{ font-size:10.5pt; color:var(--on-dark); }
+  .amount .vanaf{ font-family:'Instrument Sans',sans-serif; font-weight:600; font-size:14pt; color:var(--on-dark); align-self:flex-end; margin-bottom:1.5mm; }
+  .price .sub{ font-size:10pt; color:var(--on-dark); margin-bottom:2mm; }
+  .price .fine{ font-size:8.5pt; color:var(--on-dark-soft); line-height:1.5; max-width:96mm; }
+
+  .incl{ list-style:none; display:grid; grid-template-columns:1fr 1fr; gap:0 10mm; }
+  .incl li{
+    display:flex; gap:3mm; align-items:baseline;
+    font-size:10pt; color:#fff; padding:2.6mm 0; border-top:1px solid var(--hair-dark);
+  }
+  .incl li:nth-child(1),.incl li:nth-child(2){ border-top:0; }
+  .incl .chk{ flex:none; position:relative; top:0.4mm; }
+
+  .cta-band{
+    position:absolute; left:0; right:0; bottom:0; background:var(--flame); color:#fff;
+    padding:8mm 18mm; display:flex; align-items:center; justify-content:space-between; gap:12mm;
+  }
+  .cta-band h3{ font-size:20pt; line-height:1.0; color:#fff; margin-bottom:2mm; }
+  .cta-band p{ font-size:9.5pt; color:rgba(255,255,255,0.85); font-weight:500; }
+  .cta-band .links{ text-align:right; }
+  .cta-band .links .url{
+    font-family:'Instrument Sans',sans-serif; font-weight:700; font-size:13pt;
+    letter-spacing:-0.02em; color:#fff; display:block;
+  }
+  .cta-band .links .url + .url{ margin-top:1.5mm; font-weight:600; font-size:10.5pt; color:rgba(255,255,255,0.9); }
+</style>

@@ -5,41 +5,100 @@
   "outputDirectory": "dist",
   "installCommand": "npm install",
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" },
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    },
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
+    }
   ],
   "headers": [
     {
       "source": "/api/(.*)",
       "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "https://app.doen.team" },
-        { "key": "Access-Control-Allow-Methods", "value": "GET,POST,PATCH,DELETE,OPTIONS" },
-        { "key": "Access-Control-Allow-Headers", "value": "Content-Type,Authorization" }
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "https://app.doen.team"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET,POST,PATCH,DELETE,OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type,Authorization"
+        }
       ]
     },
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" },
-        { "key": "X-Frame-Options", "value": "DENY" },
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()" },
-        { "key": "Content-Security-Policy-Report-Only", "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' data: blob:; worker-src 'self' blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.open-meteo.com https://api.rss2json.com https://o4511257938427904.ingest.de.sentry.io; frame-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests; report-uri /api/csp-report" }
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=31536000; includeSubDomains"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+        },
+        {
+          "key": "Content-Security-Policy-Report-Only",
+          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' data: blob:; worker-src 'self' blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.open-meteo.com https://api.rss2json.com https://o4511257938427904.ingest.de.sentry.io; frame-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests; report-uri /api/csp-report"
+        }
       ]
     }
   ],
   "functions": {
-    "api/cron-email-sync.ts": { "maxDuration": 60 },
-    "api/cron-mailsync-werker.ts": { "maxDuration": 60 },
-    "api/inkoopfactuur-extract.ts": { "maxDuration": 300 },
-    "api/offerte-uitschrijven.ts": { "maxDuration": 300 },
-    "api/inkoopfactuur-sync.ts": { "maxDuration": 120 },
-    "api/billing-webhook.ts": { "maxDuration": 60 },
-    "api/exact-sync-factuur.ts": { "maxDuration": 300 },
-    "api/cron-exact-betaalsync.ts": { "maxDuration": 300 },
-    "api/generate-signing-mockup.ts": { "maxDuration": 300 },
-    "api/org-export.ts": { "maxDuration": 120 }
+    "api/cron-email-sync.ts": {
+      "maxDuration": 60
+    },
+    "api/cron-mailsync-werker.ts": {
+      "maxDuration": 60
+    },
+    "api/inkoopfactuur-extract.ts": {
+      "maxDuration": 300
+    },
+    "api/offerte-uitschrijven.ts": {
+      "maxDuration": 300
+    },
+    "api/inkoopfactuur-sync.ts": {
+      "maxDuration": 120
+    },
+    "api/billing-webhook.ts": {
+      "maxDuration": 60
+    },
+    "api/exact-sync-factuur.ts": {
+      "maxDuration": 300
+    },
+    "api/cron-exact-betaalsync.ts": {
+      "maxDuration": 300
+    },
+    "api/generate-signing-mockup.ts": {
+      "maxDuration": 300
+    },
+    "api/org-export.ts": {
+      "maxDuration": 120
+    },
+    "api/cron-nieuwsbrief.ts": {
+      "maxDuration": 60
+    },
+    "api/nieuwsbrief-herzend.ts": {
+      "maxDuration": 60
+    }
   },
   "crons": [
     {
@@ -65,6 +124,10 @@
     {
       "path": "/api/cron-tijd-sessies-opruimen",
       "schedule": "30 3 * * *"
+    },
+    {
+      "path": "/api/cron-nieuwsbrief",
+      "schedule": "*/15 * * * *"
     }
   ]
 }

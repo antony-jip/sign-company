@@ -31,6 +31,15 @@ export interface Nieuwsbrief {
   test_verstuurd_op: string | null
   status: NieuwsbriefStatus
   preheader: string | null
+  onderwerp_b: string | null
+  preheader_b: string | null
+  ab_actief: boolean
+  ab_testdeel: number
+  ab_wachttijd_uren: number
+  ab_winnaar: 'a' | 'b' | null
+  ab_beslist_op: string | null
+  ab_rest_verstuurd: number | null
+  herzending_van: string | null
   resend_broadcast_id: string | null
   aantal_ontvangers: number | null
   gepland_op: string | null
@@ -208,9 +217,22 @@ export interface VerzendResultaat {
   ok: boolean
   status: NieuwsbriefStatus
   aantalOntvangers: number
+  /** Bij een A/B-test: hoeveel mensen nog op het winnende onderwerp wachten. */
+  wachtOpWinnaar?: number
   broadcastId: string
   nieuwsbrief: Nieuwsbrief | null
 }
+
+export interface AbInstelling {
+  actief: boolean
+  onderwerpB: string
+  preheaderB?: string
+  /** Percentage van de selectie dat de test krijgt, in twee helften gesplitst. */
+  testdeel: number
+  wachttijdUren: number
+}
+
+export const STANDAARD_AB: AbInstelling = { actief: false, onderwerpB: '', preheaderB: '', testdeel: 30, wachttijdUren: 4 }
 
 export async function genereerMetDaan(brief: string, afbeeldingen: string[]): Promise<string> {
   const res = await fetch('/api/nieuwsbrief-ai', {
@@ -387,11 +409,12 @@ export async function verstuurNieuwsbrief(
   scheduledAt?: string,
   ontvangers: OntvangerSelectie = STANDAARD_SELECTIE,
   stijl?: MailStijl,
+  ab?: AbInstelling,
 ): Promise<VerzendResultaat> {
   const res = await fetch('/api/nieuwsbrief-verzend', {
     method: 'POST',
     headers: await authHeader(),
-    body: JSON.stringify({ nieuwsbriefId, onderwerp, html, preheader, scheduledAt, ontvangers, stijl }),
+    body: JSON.stringify({ nieuwsbriefId, onderwerp, html, preheader, scheduledAt, ontvangers, stijl, ab }),
   })
   const body = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(body.error || 'Verzenden mislukt')
@@ -416,23 +439,418 @@ export async function verstuurTest(
 }
 
 export interface NieuwsbriefStats {
+  verstuurd: number
   delivered: number
   opened: number
   clicked: number
   bounced: number
   complained: number
+  unsubscribed: number
+  /** Totaal aantal keer geopend, herhalingen meegeteld. */
+  openTotaal: number
+  /** Totaal aantal kliks, herhalingen meegeteld. */
+  klikTotaal: number
 }
 
-export async function getStats(nieuwsbriefId: string): Promise<NieuwsbriefStats> {
-  const { data, error } = await db()
-    .from('nieuwsbrief_events')
-    .select('type')
-    .eq('nieuwsbrief_id', nieuwsbriefId)
-  if (error) throw error
-  const stats: NieuwsbriefStats = { delivered: 0, opened: 0, clicked: 0, bounced: 0, complained: 0 }
-  for (const rij of data ?? []) {
-    const t = (rij as { type: string }).type as keyof NieuwsbriefStats
-    if (t in stats) stats[t]++
+const LEGE_STATS: NieuwsbriefStats = {
+  verstuurd: 0, delivered: 0, opened: 0, clicked: 0, bounced: 0,
+  complained: 0, unsubscribed: 0, openTotaal: 0, klikTotaal: 0,
+}
+
+// Percentages die er in B2B toe doen. De noemer is bewust "afgeleverd" en niet
+// "verstuurd": een adres dat bouncet heeft de mail nooit gezien en hoort niet
+// je openpercentage te drukken.
+export interface NieuwsbriefPercentages {
+  afgeleverd: number | null
+  geopend: number | null
+  geklikt: number | null
+  /** Klik-door-open: van wie hem opende, hoeveel deden er iets. Zegt of de inhoud werkt. */
+  ctor: number | null
+  afgemeld: number | null
+  gebouncet: number | null
+}
+
+export function berekenPercentages(s: NieuwsbriefStats): NieuwsbriefPercentages {
+  const deel = (a: number, b: number) => (b > 0 ? (a / b) * 100 : null)
+  const basis = s.delivered || s.verstuurd
+  return {
+    afgeleverd: deel(s.delivered, s.verstuurd),
+    geopend: deel(s.opened, basis),
+    geklikt: deel(s.clicked, basis),
+    ctor: deel(s.clicked, s.opened),
+    afgemeld: deel(s.unsubscribed, basis),
+    gebouncet: deel(s.bounced, s.verstuurd),
+  }
+}
+
+interface EventRij { email: string; type: string; aantal: number | null }
+
+// PostgREST geeft maximaal 1000 rijen; één verzending naar 2000 adressen
+// levert al meer events dan dat, dus in pagina's ophalen.
+async function alleEvents(nieuwsbriefId: string): Promise<EventRij[]> {
+  const uit: EventRij[] = []
+  for (let van = 0; ; van += PAGINA) {
+    const { data, error } = await db()
+      .from('nieuwsbrief_events')
+      .select('email, type, aantal')
+      .eq('nieuwsbrief_id', nieuwsbriefId)
+      .order('email')
+      .range(van, van + PAGINA - 1)
+    if (error) throw error
+    const rijen = (data ?? []) as unknown as EventRij[]
+    uit.push(...rijen)
+    if (rijen.length < PAGINA) break
+  }
+  return uit
+}
+
+function telEvents(rijen: EventRij[]): NieuwsbriefStats {
+  const stats: NieuwsbriefStats = { ...LEGE_STATS }
+  for (const rij of rijen) {
+    const herhaling = rij.aantal && rij.aantal > 0 ? rij.aantal : 1
+    switch (rij.type) {
+      case 'sent': stats.verstuurd++; break
+      case 'delivered': stats.delivered++; break
+      case 'opened': stats.opened++; stats.openTotaal += herhaling; break
+      case 'clicked': stats.clicked++; stats.klikTotaal += herhaling; break
+      case 'bounced': stats.bounced++; break
+      case 'complained': stats.complained++; break
+      case 'unsubscribed': stats.unsubscribed++; break
+    }
   }
   return stats
+}
+
+export async function getStats(nieuwsbriefId: string, aantalOntvangers?: number | null): Promise<NieuwsbriefStats> {
+  const stats = telEvents(await alleEvents(nieuwsbriefId))
+  // Een broadcast levert geen 'sent'-events per adres; dan is het opgeslagen
+  // aantal ontvangers de enige noemer die we hebben.
+  if (stats.verstuurd === 0 && aantalOntvangers) stats.verstuurd = aantalOntvangers
+  return stats
+}
+
+export interface LinkPrestatie {
+  link: string
+  kliks: number
+  klikkers: number
+}
+
+// Welke knop werkte. Zonder deze uitsplitsing weet je alleen dát er geklikt is.
+export async function getKliksPerLink(nieuwsbriefId: string): Promise<LinkPrestatie[]> {
+  const rijen: { email: string; link: string }[] = []
+  for (let van = 0; ; van += PAGINA) {
+    const { data, error } = await db()
+      .from('nieuwsbrief_kliks')
+      .select('email, link')
+      .eq('nieuwsbrief_id', nieuwsbriefId)
+      .order('created_at')
+      .range(van, van + PAGINA - 1)
+    if (error) throw error
+    const deel = (data ?? []) as unknown as { email: string; link: string }[]
+    rijen.push(...deel)
+    if (deel.length < PAGINA) break
+  }
+  const perLink = new Map<string, { kliks: number; klikkers: Set<string> }>()
+  for (const r of rijen) {
+    const schoon = zonderUtm(r.link)
+    const huidig = perLink.get(schoon) ?? { kliks: 0, klikkers: new Set<string>() }
+    huidig.kliks++
+    huidig.klikkers.add(r.email)
+    perLink.set(schoon, huidig)
+  }
+  return Array.from(perLink.entries())
+    .map(([link, v]) => ({ link, kliks: v.kliks, klikkers: v.klikkers.size }))
+    .sort((a, b) => b.kliks - a.kliks)
+}
+
+// De UTM's die de verzender toevoegt maken van één knop tien verschillende
+// links in het overzicht. Voor het tellen horen ze eraf.
+function zonderUtm(link: string): string {
+  try {
+    const url = new URL(link)
+    for (const sleutel of Array.from(url.searchParams.keys())) {
+      if (sleutel.toLowerCase().startsWith('utm_')) url.searchParams.delete(sleutel)
+    }
+    return url.toString().replace(/\?$/, '')
+  } catch {
+    return link
+  }
+}
+
+export interface OntvangerActiviteit {
+  email: string
+  naam: string
+  bedrijfsnaam: string
+  klantId: string | null
+  geopend: number
+  geklikt: number
+  afgemeld: boolean
+  gebouncet: boolean
+}
+
+// Wie deed wat. Dit is het scherm dat een nieuwsbrief van een cijfer in een
+// verkoopgesprek verandert: niet "12% klikte" maar "deze vijf klikten".
+export async function getOntvangerActiviteit(nieuwsbriefId: string): Promise<OntvangerActiviteit[]> {
+  const ontvangers: { email: string; naam: string | null; bedrijfsnaam: string | null; klant_id: string | null }[] = []
+  for (let van = 0; ; van += PAGINA) {
+    const { data, error } = await db()
+      .from('nieuwsbrief_ontvangers')
+      .select('email, naam, bedrijfsnaam, klant_id')
+      .eq('nieuwsbrief_id', nieuwsbriefId)
+      .order('email')
+      .range(van, van + PAGINA - 1)
+    if (error) throw error
+    const deel = (data ?? []) as unknown as typeof ontvangers
+    ontvangers.push(...deel)
+    if (deel.length < PAGINA) break
+  }
+
+  const events = await alleEvents(nieuwsbriefId)
+  const perEmail = new Map<string, { geopend: number; geklikt: number; afgemeld: boolean; gebouncet: boolean }>()
+  for (const e of events) {
+    const huidig = perEmail.get(e.email) ?? { geopend: 0, geklikt: 0, afgemeld: false, gebouncet: false }
+    const herhaling = e.aantal && e.aantal > 0 ? e.aantal : 1
+    if (e.type === 'opened') huidig.geopend = herhaling
+    if (e.type === 'clicked') huidig.geklikt = herhaling
+    if (e.type === 'unsubscribed') huidig.afgemeld = true
+    if (e.type === 'bounced') huidig.gebouncet = true
+    perEmail.set(e.email, huidig)
+  }
+
+  // Een verzending van vóór migratie 225 heeft geen snapshot. Dan is het
+  // e-mailadres uit de events het enige wat we hebben; beter dan een leeg scherm.
+  const basis = ontvangers.length > 0
+    ? ontvangers
+    : Array.from(perEmail.keys()).map(email => ({ email, naam: null, bedrijfsnaam: null, klant_id: null }))
+
+  return basis
+    .map(o => {
+      const a = perEmail.get(o.email) ?? { geopend: 0, geklikt: 0, afgemeld: false, gebouncet: false }
+      return {
+        email: o.email,
+        naam: o.naam || '',
+        bedrijfsnaam: o.bedrijfsnaam || '',
+        klantId: o.klant_id,
+        ...a,
+      }
+    })
+    .sort((a, b) => (b.geklikt - a.geklikt) || (b.geopend - a.geopend) || a.email.localeCompare(b.email))
+}
+
+export interface VerzendingSamenvatting {
+  id: string
+  onderwerp: string
+  verzondenOp: string | null
+  aantalOntvangers: number
+  stats: NieuwsbriefStats
+  percentages: NieuwsbriefPercentages
+}
+
+// Eén verzending zegt niets, de reeks zegt alles. Kit toont dit over de laatste
+// acht sends; hier hetzelfde, zodat een dalende lijn opvalt vóór hij een
+// probleem is.
+export async function getVerzendReeks(limiet = 8): Promise<VerzendingSamenvatting[]> {
+  const { data, error } = await db()
+    .from('nieuwsbrieven')
+    .select('id, onderwerp, verzonden_op, aantal_ontvangers')
+    .eq('status', 'verzonden')
+    .not('verzonden_op', 'is', null)
+    .order('verzonden_op', { ascending: false })
+    .limit(limiet)
+  if (error) throw error
+  const rijen = (data ?? []) as unknown as { id: string; onderwerp: string; verzonden_op: string | null; aantal_ontvangers: number | null }[]
+
+  const uit = await Promise.all(rijen.map(async r => {
+    const stats = await getStats(r.id, r.aantal_ontvangers)
+    return {
+      id: r.id,
+      onderwerp: r.onderwerp || 'Zonder onderwerp',
+      verzondenOp: r.verzonden_op,
+      aantalOntvangers: r.aantal_ontvangers ?? 0,
+      stats,
+      percentages: berekenPercentages(stats),
+    }
+  }))
+  return uit.reverse()
+}
+
+export interface AfmeldReden { reden: string; aantal: number }
+
+export async function getAfmeldRedenen(): Promise<AfmeldReden[]> {
+  const { data, error } = await db().from('nieuwsbrief_afmeldingen').select('reden')
+  if (error) throw error
+  const per = new Map<string, number>()
+  for (const r of (data ?? []) as unknown as { reden: string | null }[]) {
+    const sleutel = r.reden || 'uitgeschreven'
+    per.set(sleutel, (per.get(sleutel) ?? 0) + 1)
+  }
+  return Array.from(per.entries()).map(([reden, aantal]) => ({ reden, aantal })).sort((a, b) => b.aantal - a.aantal)
+}
+
+export const AFMELD_REDEN_LABEL: Record<string, string> = {
+  te_vaak: 'Kreeg te veel mail',
+  niet_relevant: 'Ging niet over hun werk',
+  niet_aangemeld: 'Zeggen zich nooit te hebben aangemeld',
+  anders: 'Andere reden',
+  uitgeschreven: 'Zonder opgaaf',
+  klacht: 'Gemarkeerd als spam',
+}
+
+export interface AdresProbleem {
+  id: string
+  email: string
+  soort: 'bounce' | 'klacht'
+  hard: boolean
+  reden: string | null
+  aantal: number
+  laatst_op: string
+}
+
+export async function getAdresProblemen(): Promise<AdresProbleem[]> {
+  const { data, error } = await db()
+    .from('nieuwsbrief_adres_problemen')
+    .select('id, email, soort, hard, reden, aantal, laatst_op')
+    .order('laatst_op', { ascending: false })
+  if (error) throw error
+  return (data ?? []) as unknown as AdresProbleem[]
+}
+
+export interface Betrokkenheid {
+  email: string
+  naam: string
+  bedrijfsnaam: string
+  klantId: string | null
+  ontvangen: number
+  geopend: number
+  geklikt: number
+  /** 0 tot 5. 0 = kreeg wel post, deed nooit iets. */
+  score: number
+  laatsteActie: string | null
+}
+
+// Kit geeft elke abonnee 1 tot 5 sterren op opens en kliks. Hier hetzelfde,
+// maar dan gekoppeld aan een klant in doen., want dat is waar het in B2B om
+// gaat: niet "wie is een fan" maar "bij wie is het warm".
+//
+// Een klik weegt zwaarder dan een open. Een open kan een preview-venster zijn
+// of een afbeeldingenproxy; een klik is een handeling.
+function scoreVan(ontvangen: number, geopend: number, geklikt: number): number {
+  if (ontvangen === 0) return 0
+  const openDeel = geopend / ontvangen
+  const klikDeel = geklikt / ontvangen
+  const gewogen = openDeel * 0.4 + klikDeel * 1.6
+  if (gewogen >= 0.8) return 5
+  if (gewogen >= 0.5) return 4
+  if (gewogen >= 0.3) return 3
+  if (gewogen >= 0.12) return 2
+  if (gewogen > 0) return 1
+  return 0
+}
+
+export async function getBetrokkenheid(): Promise<Betrokkenheid[]> {
+  const { data: verzonden, error: vErr } = await db()
+    .from('nieuwsbrieven')
+    .select('id')
+    .eq('status', 'verzonden')
+  if (vErr) throw vErr
+  const ids = ((verzonden ?? []) as unknown as { id: string }[]).map(r => r.id)
+  if (ids.length === 0) return []
+
+  const ontvangers: { email: string; naam: string | null; bedrijfsnaam: string | null; klant_id: string | null }[] = []
+  for (let van = 0; ; van += PAGINA) {
+    const { data, error } = await db()
+      .from('nieuwsbrief_ontvangers')
+      .select('email, naam, bedrijfsnaam, klant_id')
+      .in('nieuwsbrief_id', ids)
+      .order('email')
+      .range(van, van + PAGINA - 1)
+    if (error) throw error
+    const deel = (data ?? []) as unknown as typeof ontvangers
+    ontvangers.push(...deel)
+    if (deel.length < PAGINA) break
+  }
+
+  const events: { email: string; type: string; laatst_op: string | null; created_at: string }[] = []
+  for (let van = 0; ; van += PAGINA) {
+    const { data, error } = await db()
+      .from('nieuwsbrief_events')
+      .select('email, type, laatst_op, created_at')
+      .in('nieuwsbrief_id', ids)
+      .in('type', ['opened', 'clicked'])
+      .order('email')
+      .range(van, van + PAGINA - 1)
+    if (error) throw error
+    const deel = (data ?? []) as unknown as typeof events
+    events.push(...deel)
+    if (deel.length < PAGINA) break
+  }
+
+  const per = new Map<string, Betrokkenheid>()
+  for (const o of ontvangers) {
+    const huidig = per.get(o.email)
+    if (huidig) {
+      huidig.ontvangen++
+      // Latere verzendingen dragen de actuelere klantnaam.
+      if (o.bedrijfsnaam) huidig.bedrijfsnaam = o.bedrijfsnaam
+      if (o.naam) huidig.naam = o.naam
+      if (o.klant_id) huidig.klantId = o.klant_id
+      continue
+    }
+    per.set(o.email, {
+      email: o.email,
+      naam: o.naam || '',
+      bedrijfsnaam: o.bedrijfsnaam || '',
+      klantId: o.klant_id,
+      ontvangen: 1,
+      geopend: 0,
+      geklikt: 0,
+      score: 0,
+      laatsteActie: null,
+    })
+  }
+  for (const e of events) {
+    const rij = per.get(e.email)
+    if (!rij) continue
+    if (e.type === 'opened') rij.geopend++
+    if (e.type === 'clicked') rij.geklikt++
+    const moment = e.laatst_op || e.created_at
+    if (moment && (!rij.laatsteActie || moment > rij.laatsteActie)) rij.laatsteActie = moment
+  }
+  for (const rij of per.values()) rij.score = scoreVan(rij.ontvangen, rij.geopend, rij.geklikt)
+
+  return Array.from(per.values()).sort((a, b) => (b.score - a.score) || (b.geklikt - a.geklikt) || a.email.localeCompare(b.email))
+}
+
+// ── Herzenden naar wie niet opende ─────────────────────────────────────────
+
+export async function telNietGeopend(nieuwsbriefId: string): Promise<number> {
+  const res = await fetch('/api/nieuwsbrief-herzend', {
+    method: 'POST',
+    headers: await authHeader(),
+    body: JSON.stringify({ nieuwsbriefId, alleenTellen: true }),
+  })
+  const body = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(body.error || 'Tellen mislukt')
+  return Number((body as { aantalNietGeopend?: number }).aantalNietGeopend ?? 0)
+}
+
+export interface HerzendResultaat {
+  herzendingId: string
+  aantalOntvangers: number
+  overgeslagen: number
+}
+
+export async function herzendNaarNietOpeners(
+  nieuwsbriefId: string,
+  onderwerp: string,
+  preheader?: string,
+): Promise<HerzendResultaat> {
+  const res = await fetch('/api/nieuwsbrief-herzend', {
+    method: 'POST',
+    headers: await authHeader(),
+    body: JSON.stringify({ nieuwsbriefId, onderwerp, preheader }),
+  })
+  const body = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(body.error || 'Herzenden mislukt')
+  return body as HerzendResultaat
 }
