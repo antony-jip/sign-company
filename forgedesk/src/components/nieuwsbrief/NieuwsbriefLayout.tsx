@@ -229,7 +229,7 @@ export function NieuwsbriefLayout() {
             </div>
           </div>
 
-          {tellingen.verzonden > 0 && <NieuwsbriefPrestaties />}
+          <NieuwsbriefPrestaties />
 
           <div className="doen-slate-surface rounded-2xl p-4">
             <div className="relative max-w-[280px]">

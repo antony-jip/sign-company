@@ -1059,3 +1059,24 @@ export async function getGebruikteLabels(): Promise<string[]> {
   labelCache = { op: Date.now(), belofte }
   return belofte
 }
+
+// ── Bezorgbaarheid ─────────────────────────────────────────────────────────
+
+export interface DomeinStatus {
+  domein: string
+  gevonden: boolean
+  status?: string
+  spf?: string | null
+  dkim?: string | null
+  dmarc: { aanwezig: boolean; beleid: string | null; ruw: string | null }
+  openTracking?: boolean
+  klikTracking?: boolean
+  webhookIngesteld: boolean
+}
+
+export async function getDomeinStatus(): Promise<DomeinStatus> {
+  const res = await fetch('/api/nieuwsbrief-domein', { headers: await authHeader() })
+  const body = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(body.error || 'Kon het domein niet controleren')
+  return body as DomeinStatus
+}

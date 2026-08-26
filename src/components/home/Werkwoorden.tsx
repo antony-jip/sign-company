@@ -56,7 +56,7 @@ export const WERKWOORDEN: Werkwoord[] = [
   {
     kop: 'Factureren',
     belofte:
-      'Van offerte naar factuur in één klik, met een betaallink erin. Inkoopfacturen leest Daan zelf uit. En de koppeling met Exact Online loopt twee kanten op: jouw facturen gaan erheen, en wat daar afgeletterd is staat de volgende ochtend in doen. op betaald. Je hebt dus in doen. volledig zicht op je facturering, zonder twee schermen open.',
+      'Van offerte naar factuur in één klik, met een betaallink erin. Inkoopfacturen leest Daan zelf uit. En de koppeling met Exact Online loopt twee kanten op: jouw facturen gaan erheen, en wat daar is afgeletterd staat hier de volgende ochtend op betaald. Zo zie je op één plek wat openstaat en wat binnen is, zonder tweede scherm.',
     regel: 'Facturen · Inkoop · Exact Online, heen en terug',
     video: 'module-facturen',
     videoLabel: 'Een factuur wordt gemaakt vanuit de offerte en verstuurd',

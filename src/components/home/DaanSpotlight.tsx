@@ -43,8 +43,8 @@ export default function DaanSpotlight() {
             </h2>
             <p className="mt-5 text-[16px] md:text-[17px] leading-[1.65] max-w-xl" style={{ color: 'rgba(226,240,241,0.82)' }}>
               Daan leest mee met je mail, je offertes en je klussen, en houdt vast wat
-              blijvend is over een klant of een pand. Daarna handelt heel doen. ernaar,
-              ook als een collega de klus oppakt.
+              blijvend is over een klant of een pand. Daarna handelt de rest van het
+              systeem daarnaar, ook als een collega de klus oppakt.
             </p>
 
             <ul className="mt-7 border-t" style={{ borderColor: 'rgba(255,255,255,0.15)' }}>

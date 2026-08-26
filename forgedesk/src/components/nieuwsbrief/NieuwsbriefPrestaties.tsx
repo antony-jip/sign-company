@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts'
-import { TrendingUp, UserMinus, AlertTriangle, Flame } from 'lucide-react'
+import { TrendingUp, UserMinus, AlertTriangle, Flame, ShieldCheck, ShieldAlert } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import {
-  getVerzendReeks, getAfmeldRedenen, getAdresProblemen, getBetrokkenheid,
+  getVerzendReeks, getAfmeldRedenen, getAdresProblemen, getBetrokkenheid, getDomeinStatus,
   AFMELD_REDEN_LABEL,
-  type VerzendingSamenvatting, type AfmeldReden, type AdresProbleem, type Betrokkenheid,
+  type VerzendingSamenvatting, type AfmeldReden, type AdresProbleem, type Betrokkenheid, type DomeinStatus,
 } from '@/services/nieuwsbriefService'
 
 // Twee reeksen, beide een percentage, dus één as. De stappen zijn apart gekozen
@@ -44,6 +44,7 @@ export function NieuwsbriefPrestaties() {
   const [redenen, setRedenen] = useState<AfmeldReden[]>([])
   const [problemen, setProblemen] = useState<AdresProbleem[]>([])
   const [warm, setWarm] = useState<Betrokkenheid[]>([])
+  const [domein, setDomein] = useState<DomeinStatus | null>(null)
   const [laden, setLaden] = useState(true)
   const [donker, setDonker] = useState(gebruiktDonker)
 
@@ -68,7 +69,19 @@ export function NieuwsbriefPrestaties() {
     return () => { actief = false }
   }, [])
 
-  if (laden || reeks.length === 0) return null
+  useEffect(() => {
+    let actief = true
+    getDomeinStatus()
+      .then(d => { if (actief) setDomein(d) })
+      .catch(err => console.error('[nieuwsbrief] domeincheck mislukt:', err))
+    return () => { actief = false }
+  }, [])
+
+  // De bezorgbaarheidskaart is juist vóór de eerste verzending het nuttigst,
+  // dus die hangt niet aan het bestaan van een reeks.
+  if (laden && !domein) return null
+  if (reeks.length === 0 && !domein) return null
+  const heeftReeks = reeks.length > 0
 
   const kleurOpen = donker ? SERIE_OPEN_DONKER : SERIE_OPEN_LICHT
   const kleurKlik = donker ? SERIE_KLIK_DONKER : SERIE_KLIK_LICHT
@@ -91,7 +104,8 @@ export function NieuwsbriefPrestaties() {
         <TrendingUp className="h-3.5 w-3.5" /> Hoe je nieuwsbrief het doet
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-3">
+      <div className={heeftReeks ? 'grid gap-3 lg:grid-cols-3' : 'grid gap-3 lg:max-w-sm'}>
+        {heeftReeks && (
         <div className="doen-slate-surface rounded-2xl p-5 lg:col-span-2">
           <div className="mb-1 flex flex-wrap items-baseline justify-between gap-3">
             <span className="font-heading text-[15px] font-bold text-foreground">
@@ -172,6 +186,7 @@ export function NieuwsbriefPrestaties() {
             Van links naar rechts: oudste tot nieuwste verzending. Beweeg over een punt voor het onderwerp.
           </p>
         </div>
+        )}
 
         <div className="space-y-3">
           {warm.length > 0 && (
@@ -217,6 +232,8 @@ export function NieuwsbriefPrestaties() {
             </div>
           )}
 
+          {domein && <Bezorgbaarheid domein={domein} />}
+
           {hardeProblemen.length > 0 && (
             <div className="doen-slate-surface rounded-2xl p-5">
               <div className="mb-2.5 inline-flex items-center gap-2">
@@ -234,5 +251,54 @@ export function NieuwsbriefPrestaties() {
         </div>
       </div>
     </section>
+  )
+}
+
+// Vier dingen die stil kapot kunnen zijn: authenticatie van het domein, en of
+// Resend opens en kliks doorgeeft. Staat dat laatste uit, dan blijven alle
+// cijfers hierboven nul zonder dat iets dat vertelt.
+function Bezorgbaarheid({ domein }: { domein: DomeinStatus }) {
+  const rijen = [
+    { label: 'SPF', goed: domein.spf === 'verified', tekst: domein.spf ?? 'niet ingesteld' },
+    { label: 'DKIM', goed: domein.dkim === 'verified', tekst: domein.dkim ?? 'niet ingesteld' },
+    {
+      label: 'DMARC',
+      goed: domein.dmarc.aanwezig,
+      tekst: domein.dmarc.aanwezig ? `p=${domein.dmarc.beleid ?? 'none'}` : 'niet gevonden',
+    },
+    { label: 'Open-tracking', goed: !!domein.openTracking, tekst: domein.openTracking ? 'aan' : 'uit' },
+    { label: 'Klik-tracking', goed: !!domein.klikTracking, tekst: domein.klikTracking ? 'aan' : 'uit' },
+    { label: 'Webhook', goed: domein.webhookIngesteld, tekst: domein.webhookIngesteld ? 'ingesteld' : 'ontbreekt' },
+  ]
+  const alles = rijen.every(r => r.goed)
+  const Icon = alles ? ShieldCheck : ShieldAlert
+
+  return (
+    <div className="doen-slate-surface rounded-2xl p-5">
+      <div className="mb-2.5 inline-flex items-center gap-2">
+        <Icon className="h-[18px] w-[18px]" strokeWidth={1.75} style={{ color: alles ? '#3A7D52' : '#B7791F' }} />
+        <span className="font-heading text-[14px] font-bold text-foreground">
+          Komt het aan<span className="text-flame">?</span>
+        </span>
+      </div>
+      <ul className="space-y-1.5">
+        {rijen.map(r => (
+          <li key={r.label} className="flex items-baseline justify-between gap-3">
+            <span className="text-[13px] text-foreground">{r.label}</span>
+            <span
+              className="flex-shrink-0 font-mono text-[12px] tabular-nums"
+              style={{ color: r.goed ? '#3A7D52' : '#B7791F' }}
+            >
+              {r.tekst}
+            </span>
+          </li>
+        ))}
+      </ul>
+      {!alles && (
+        <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">
+          Wat hier oranje staat, kost je bezorging of cijfers. Tracking en webhook zet je aan bij Resend, DMARC in je DNS.
+        </p>
+      )}
+    </div>
   )
 }
