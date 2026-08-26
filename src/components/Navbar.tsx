@@ -9,38 +9,48 @@ import { modulesPerGroep } from '@/data/modules'
 import { verticals } from '@/data/verticals'
 import { RONDLEIDING_HREF, RONDLEIDING_LABEL } from '@/data/cta'
 
-/* Zes items, net als eerst, maar met een andere verdeling.
+/* Vier items in de balk, net als kit.com. Het waren er zes en met het tweede
+   CTA-spoor erbij werd de header te vol.
 
-   Wat veranderde na de kit.com-analyse (docs/verbeterplan-home-kit.md):
-   - "Voor wie" stond alleen in de footer terwijl er vier landingspagina's
-     liggen met echte zoekintentie. Nu een eigen menu.
-   - "Kennisbank" idem: twintig artikelen zonder crawlpad vanuit de nav.
-   - Het productmenu was één lijst van elf. Nu gegroepeerd op de vier
-     werkwoorden waarin een signklus loopt, plus Daan.
-   - Demo en Contact zijn uit de balk: Demo hangt onderaan het productmenu,
-     Contact bereik je via "Plan een rondleiding" en de footer.
-   - Rechts staat nu een tweede spoor naast de proef. */
+   Alles wat eruit ging staat nog steeds één klik weg, alleen in een menu:
+   - Demo en Hoe het werkt hangen onderaan het productmenu.
+   - Verhaal, Veelgestelde vragen en Contact zitten onder Kennis.
+   - Contact bereik je bovendien via "Rondleiding" rechts.
+
+   Het productmenu is gegroepeerd op de vier werkwoorden waarin een signklus
+   loopt, plus Daan, in plaats van één lijst van elf. Zie
+   docs/verbeterplan-home-kit.md. */
+
+type MenuNaam = 'product' | 'voorwie' | 'kennis'
 
 type NavLink = {
   href: string
   label: string
-  menu?: 'product' | 'voorwie'
+  menu?: MenuNaam
 }
 
 const navLinks: NavLink[] = [
   { href: '/features', label: 'Product', menu: 'product' },
   { href: '/voor/signmakers', label: 'Voor wie', menu: 'voorwie' },
-  { href: '/hoe-het-werkt', label: 'Hoe het werkt' },
   { href: '/prijzen', label: 'Prijzen' },
-  { href: '/kennisbank', label: 'Kennisbank' },
-  { href: '/over', label: 'Verhaal' },
+  { href: '/kennisbank', label: 'Kennis', menu: 'kennis' },
+]
+
+const KENNIS_LINKS = [
+  { href: '/kennisbank', label: 'Kennisbank', sub: 'Artikelen over het vak en het werk' },
+  { href: '/hoe-het-werkt', label: 'Hoe het werkt', sub: 'Van aanvraag tot betaalde factuur' },
+  { href: '/veelgestelde-vragen', label: 'Veelgestelde vragen', sub: 'Alles wat we vaak horen' },
+  { href: '/over', label: 'Verhaal', sub: 'Waarom we doen. gebouwd hebben' },
+  { href: '/contact', label: 'Contact', sub: 'We reageren binnen een werkdag' },
 ]
 
 function isLinkActief(link: NavLink, pathname: string) {
   if (pathname === link.href) return true
-  if (link.menu === 'product') return pathname.startsWith('/features')
+  if (link.menu === 'product') return pathname.startsWith('/features') || pathname === '/demo'
   if (link.menu === 'voorwie') return pathname.startsWith('/voor/')
-  if (link.href === '/kennisbank') return pathname.startsWith('/kennisbank')
+  if (link.menu === 'kennis') {
+    return KENNIS_LINKS.some((k) => pathname === k.href || pathname.startsWith(`${k.href}/`))
+  }
   return false
 }
 
@@ -49,7 +59,7 @@ function isLinkActief(link: NavLink, pathname: string) {
 export default function Navbar({ theme = 'light' }: { theme?: 'light' | 'dark' }) {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
-  const [openMenu, setOpenMenu] = useState<'product' | 'voorwie' | null>(null)
+  const [openMenu, setOpenMenu] = useState<MenuNaam | null>(null)
   const { handlePuntClick, showToast, closeToast } = useEasterEgg()
   const pathname = usePathname()
 
@@ -178,6 +188,9 @@ export default function Navbar({ theme = 'light' }: { theme?: 'light' | 'dark' }
                     {isOpen && link.menu === 'voorwie' && (
                       <VoorWieMenu pathname={pathname} sluit={() => setOpenMenu(null)} />
                     )}
+                    {isOpen && link.menu === 'kennis' && (
+                      <KennisMenu pathname={pathname} sluit={() => setOpenMenu(null)} />
+                    )}
                   </div>
                 )
               })}
@@ -198,7 +211,7 @@ export default function Navbar({ theme = 'light' }: { theme?: 'light' | 'dark' }
                 className="text-[14px] font-semibold px-3 py-2 transition-opacity hover:opacity-70 whitespace-nowrap"
                 style={{ color: onDark ? '#FFFFFF' : '#1A535C' }}
               >
-                {RONDLEIDING_LABEL}
+                Rondleiding
               </Link>
               <a
                 href="https://app.doen.team/register"
@@ -312,16 +325,35 @@ export default function Navbar({ theme = 'light' }: { theme?: 'light' | 'dark' }
                       )}
 
                       {link.menu === 'voorwie' && (
-                        <ul className="grid grid-cols-2 gap-x-4 mb-3 pl-0.5">
-                          {verticals.map((v) => (
-                            <li key={v.slug}>
+                        <div className="mb-3 pl-0.5">
+                          <ul className="grid grid-cols-2 gap-x-4">
+                            {verticals.map((v) => (
+                              <li key={v.slug}>
+                                <Link
+                                  href={`/voor/${v.slug}`}
+                                  onClick={() => setIsMobileOpen(false)}
+                                  className="block py-1 text-[15px] font-medium"
+                                  style={{ color: pathname === `/voor/${v.slug}` ? '#1A535C' : '#54666A' }}
+                                >
+                                  {v.naam}
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {link.menu === 'kennis' && (
+                        <ul className="mb-3 pl-0.5">
+                          {KENNIS_LINKS.filter((k) => k.href !== '/kennisbank').map((k) => (
+                            <li key={k.href}>
                               <Link
-                                href={`/voor/${v.slug}`}
+                                href={k.href}
                                 onClick={() => setIsMobileOpen(false)}
                                 className="block py-1 text-[15px] font-medium"
-                                style={{ color: pathname === `/voor/${v.slug}` ? '#1A535C' : '#54666A' }}
+                                style={{ color: pathname === k.href ? '#1A535C' : '#54666A' }}
                               >
-                                {v.naam}
+                                {k.label}
                               </Link>
                             </li>
                           ))}
@@ -440,7 +472,7 @@ function ProductMenu({ pathname, sluit }: { pathname: string; sluit: () => void 
 /* Voor wie: de vier verticals stonden alleen in de footer. */
 function VoorWieMenu({ pathname, sluit }: { pathname: string; sluit: () => void }) {
   return (
-    <div className="absolute left-0 top-full pt-3 w-[300px]" role="group" aria-label="Voor wie">
+    <div className="absolute left-0 top-full pt-3 w-[320px]" role="group" aria-label="Voor wie">
       <div
         className="rounded-[10px] border border-petrol/10 bg-white p-2.5"
         style={{ boxShadow: '0 1px 2px rgba(20,40,40,0.04), 0 18px 44px -20px rgba(19,62,69,0.35)' }}
@@ -462,6 +494,41 @@ function VoorWieMenu({ pathname, sluit }: { pathname: string; sluit: () => void 
                     {v.naam}
                   </span>
                   <span className="text-[11.5px] leading-tight text-muted">{v.h1Accent}</span>
+                </Link>
+              </li>
+            )
+          })}
+        </ul>
+      </div>
+    </div>
+  )
+}
+
+/* Kennis: alles wat niet over het product of de prijs gaat. Was zes losse
+   items in de balk, nu één menu. */
+function KennisMenu({ pathname, sluit }: { pathname: string; sluit: () => void }) {
+  return (
+    <div className="absolute left-0 top-full pt-3 w-[320px]" role="group" aria-label="Kennis">
+      <div
+        className="rounded-[10px] border border-petrol/10 bg-white p-2.5"
+        style={{ boxShadow: '0 1px 2px rgba(20,40,40,0.04), 0 18px 44px -20px rgba(19,62,69,0.35)' }}
+      >
+        <ul>
+          {KENNIS_LINKS.map((k) => {
+            const actief = pathname === k.href
+            return (
+              <li key={k.href}>
+                <Link
+                  href={k.href}
+                  onClick={sluit}
+                  className={`group flex flex-col gap-0.5 rounded-[7px] px-3 py-2 transition-colors duration-150 ${
+                    actief ? 'bg-petrol/[0.07]' : 'hover:bg-petrol/[0.05]'
+                  }`}
+                >
+                  <span className="text-[13.5px] font-semibold text-ink group-hover:text-petrol transition-colors">
+                    {k.label}
+                  </span>
+                  <span className="text-[11.5px] leading-tight text-muted">{k.sub}</span>
                 </Link>
               </li>
             )

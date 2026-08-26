@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { ArrowRight } from 'lucide-react'
 import { ONBOARDING_OP_LOCATIE_PRIJS } from '@/data/onboarding'
+import { RONDLEIDING_BERICHT } from '@/data/cta'
 
 const easing: [number, number, number, number] = [0.16, 1, 0.3, 1]
 
@@ -13,6 +14,19 @@ export default function ContactContent() {
   const [formState, setFormState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [formData, setFormData] = useState({ naam: '', email: '', bericht: '' })
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+
+  /* "Plan een rondleiding" in de header, de hero en de afsluiter komt hier
+     binnen met ?over=rondleiding. Dan staat de vraag al in het bericht, zodat
+     iemand alleen nog naam en mailadres invult.
+
+     Bewust via window.location en niet via useSearchParams: die hook dwingt
+     een Suspense-grens af bij het statisch renderen van deze pagina, en dat
+     is te veel machinerie voor één voorinvulling. */
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('over') !== 'rondleiding') return
+    setFormData((d) => (d.bericht ? d : { ...d, bericht: RONDLEIDING_BERICHT }))
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

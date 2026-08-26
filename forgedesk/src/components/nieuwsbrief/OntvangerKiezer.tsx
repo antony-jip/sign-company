@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Users, Filter, ListChecks, Search, Check, RefreshCw, UserMinus, Building2 } from 'lucide-react'
+import { Users, Filter, ListChecks, Search, Check, RefreshCw, UserMinus, Building2, Bookmark, BookmarkPlus, Trash2, Activity } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import {
   getKlantKeuzes, verzamelOntvangers, klantVoldoet, syncContactenVolledig,
-  type OntvangerSelectie, type KlantKeuze, type Ontvanger,
+  getSegmenten, bewaarSegment, verwijderSegment, markeerSegmentGebruikt, omschrijfSelectie,
+  GEDRAG_LABEL,
+  type OntvangerSelectie, type KlantKeuze, type Ontvanger, type Segment, type Gedrag,
 } from '@/services/nieuwsbriefService'
 
 interface Props {
@@ -26,6 +28,15 @@ export function OntvangerKiezer({ selectie, onChange, onTelling, disabled }: Pro
   const [lijstZoek, setLijstZoek] = useState('')
   const [syncing, setSyncing] = useState(false)
   const [syncInfo, setSyncInfo] = useState<string | null>(null)
+  const [segmenten, setSegmenten] = useState<Segment[]>([])
+  const [segmentNaam, setSegmentNaam] = useState('')
+  const [segmentBezig, setSegmentBezig] = useState(false)
+
+  useEffect(() => {
+    getSegmenten()
+      .then(setSegmenten)
+      .catch(err => console.error('[nieuwsbrief] segmenten laden mislukt:', err))
+  }, [])
 
   useEffect(() => {
     getKlantKeuzes()
@@ -83,6 +94,36 @@ export function OntvangerKiezer({ selectie, onChange, onTelling, disabled }: Pro
     }
   }
 
+  const handleBewaarSegment = async () => {
+    if (!segmentNaam.trim()) { toast.error('Geef het segment een naam'); return }
+    setSegmentBezig(true)
+    try {
+      const s = await bewaarSegment(segmentNaam.trim(), selectie)
+      setSegmenten(vorig => [...vorig.filter(x => x.id !== s.id && x.naam !== s.naam), s].sort((a, b) => a.naam.localeCompare(b.naam)))
+      setSegmentNaam('')
+      toast.success(`Segment "${s.naam}" bewaard`)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Bewaren mislukt')
+    } finally {
+      setSegmentBezig(false)
+    }
+  }
+
+  const handleGebruikSegment = (s: Segment) => {
+    onChange(s.selectie)
+    markeerSegmentGebruikt(s.id)
+    toast.success(`Segment "${s.naam}" toegepast`)
+  }
+
+  const handleVerwijderSegment = async (s: Segment) => {
+    try {
+      await verwijderSegment(s.id)
+      setSegmenten(vorig => vorig.filter(x => x.id !== s.id))
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Verwijderen mislukt')
+    }
+  }
+
   const soortKaart = (soort: OntvangerSelectie['type'], Icon: typeof Users, titel: string, uitleg: string) => {
     const actief = selectie.type === soort
     return (
@@ -118,6 +159,111 @@ export function OntvangerKiezer({ selectie, onChange, onTelling, disabled }: Pro
         {soortKaart('alle', Users, 'Iedereen', 'Alle klanten en hun contactpersonen met een e-mailadres.')}
         {soortKaart('filter', Filter, 'Op status of label', 'Bijvoorbeeld alleen actieve klanten, of alleen het label "Retail".')}
         {soortKaart('handmatig', ListChecks, 'Zelf kiezen', 'Vink precies de klanten aan die je wilt bereiken.')}
+      </div>
+
+      <div className="doen-slate-surface rounded-2xl p-5">
+        <div className="mb-2 flex items-center gap-2">
+          <Activity className="h-4 w-4 text-petrol" />
+          <span className="text-[14px] font-bold text-foreground">Zeef op gedrag<span className="text-flame">.</span></span>
+        </div>
+        <p className="mb-3 text-[12px] leading-relaxed text-muted-foreground">
+          Kijkt naar wat mensen met je vorige nieuwsbrieven deden. Vult de keuze hierboven aan, hij vervangt hem niet.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {(Object.keys(GEDRAG_LABEL) as Gedrag[]).map(g => {
+            const aan = (selectie.gedrag ?? 'alle') === g
+            return (
+              <button
+                key={g}
+                type="button"
+                disabled={disabled}
+                onClick={() => set({ gedrag: g })}
+                title={GEDRAG_LABEL[g].uitleg}
+                className={cn(
+                  'inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-[13px] font-medium transition-colors',
+                  aan ? 'border-petrol bg-petrol text-white dark:border-white/40' : 'border-border bg-card text-foreground hover:border-petrol/50',
+                )}
+              >
+                {aan && <Check className="h-3.5 w-3.5" />}
+                {GEDRAG_LABEL[g].titel}
+              </button>
+            )
+          })}
+        </div>
+        {(selectie.gedrag ?? 'alle') !== 'alle' && (
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-[13px] text-muted-foreground">
+            <span>{GEDRAG_LABEL[selectie.gedrag ?? 'alle'].uitleg}</span>
+            {(selectie.gedrag === 'betrokken' || selectie.gedrag === 'sluimerend') && (
+              <label className="inline-flex items-center gap-2">
+                over de laatste
+                <select
+                  value={selectie.gedragVenster ?? 3}
+                  disabled={disabled}
+                  onChange={e => set({ gedragVenster: Number(e.target.value) })}
+                  className="rounded-lg border border-border bg-card px-2 py-1 text-[13px] text-foreground outline-none focus:border-petrol dark:focus:border-white/25"
+                >
+                  {[1, 2, 3, 5, 8].map(n => <option key={n} value={n}>{n}</option>)}
+                </select>
+                verzendingen
+              </label>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="doen-slate-surface rounded-2xl p-5">
+        <div className="mb-3 flex items-center gap-2">
+          <Bookmark className="h-4 w-4 text-petrol" />
+          <span className="text-[14px] font-bold text-foreground">Segmenten<span className="text-flame">.</span></span>
+          <span className="ml-auto text-[12px] text-muted-foreground">bewaar deze groep om hem vaker te mailen</span>
+        </div>
+        {segmenten.length > 0 && (
+          <ul className="mb-3 divide-y divide-border/50">
+            {segmenten.map(sg => (
+              <li key={sg.id} className="flex items-center gap-3 py-2">
+                <button
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => handleGebruikSegment(sg)}
+                  className="min-w-0 flex-1 text-left"
+                >
+                  <span className="block truncate text-[14px] font-semibold text-foreground hover:text-flame">{sg.naam}</span>
+                  <span className="block truncate text-[12px] text-muted-foreground">{omschrijfSelectie(sg.selectie)}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleVerwijderSegment(sg)}
+                  aria-label={`Verwijder segment ${sg.naam}`}
+                  className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-[#C0451A]"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="flex flex-wrap gap-2">
+          <input
+            value={segmentNaam}
+            onChange={e => setSegmentNaam(e.target.value)}
+            placeholder="Naam voor deze groep"
+            disabled={disabled}
+            maxLength={80}
+            className="min-w-[200px] flex-1 rounded-xl border border-border bg-card px-3 py-2 text-[13px] text-foreground outline-none placeholder:text-muted-foreground focus:border-petrol dark:focus:border-white/25"
+          />
+          <button
+            type="button"
+            onClick={handleBewaarSegment}
+            disabled={disabled || segmentBezig || !segmentNaam.trim()}
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2 text-[13px] font-semibold text-foreground transition-colors hover:border-petrol/50 disabled:opacity-50"
+          >
+            {segmentBezig ? <RefreshCw className="h-4 w-4 animate-spin" /> : <BookmarkPlus className="h-4 w-4 text-petrol" />}
+            Bewaar
+          </button>
+        </div>
+        <p className="mt-2 text-[12px] text-muted-foreground">
+          Een segment bewaart de keuze, niet de mensen. Nieuwe klanten die eraan voldoen vallen er vanzelf in.
+        </p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">

@@ -9,12 +9,27 @@ export type NieuwsbriefStatus = 'concept' | 'gepland' | 'verzonden'
 
 export type EditorModus = 'blokken' | 'html'
 
+// Gedrag uit eerdere verzendingen als extra zeef op de selectie. Het venster
+// is het aantal recentste verzendingen waar 'betrokken' en 'sluimerend' naar
+// kijken; 'klikkers' kijkt naar alles, 'nieuw' naar of iemand ooit iets kreeg.
+export type Gedrag = 'alle' | 'betrokken' | 'sluimerend' | 'klikkers' | 'nieuw'
+
+export const GEDRAG_LABEL: Record<Gedrag, { titel: string; uitleg: string }> = {
+  alle: { titel: 'Iedereen', uitleg: 'geen zeef op gedrag' },
+  betrokken: { titel: 'Betrokken', uitleg: 'openden er minstens een van de laatste paar' },
+  sluimerend: { titel: 'Sluimerend', uitleg: 'kregen post maar openden niets' },
+  klikkers: { titel: 'Klikten ooit', uitleg: 'drukten wel eens op een link' },
+  nieuw: { titel: 'Nog nooit gemaild', uitleg: 'stonden nog in geen enkele verzending' },
+}
+
 export interface OntvangerSelectie {
   type: 'alle' | 'filter' | 'handmatig'
   statussen?: string[]
   labels?: string[]
   klantIds?: string[]
   inclusiefContactpersonen?: boolean
+  gedrag?: Gedrag
+  gedragVenster?: number
 }
 
 export const STANDAARD_SELECTIE: OntvangerSelectie = { type: 'alle', inclusiefContactpersonen: true }
@@ -364,6 +379,82 @@ export function klantVoldoet(k: { id: string; status: string; labels: string[] }
   return true
 }
 
+export interface GedragGegevens {
+  /** Adressen die in het venster minstens een verzending openden. */
+  openers: Set<string>
+  /** Adressen die in het venster minstens een verzending kregen. */
+  ontving: Set<string>
+  /** Adressen die ooit ergens op klikten. */
+  klikkers: Set<string>
+  /** Adressen die ooit een verzending kregen. */
+  ooitOntvangen: Set<string>
+}
+
+const LEEG_GEDRAG: GedragGegevens = { openers: new Set(), ontving: new Set(), klikkers: new Set(), ooitOntvangen: new Set() }
+
+let gedragCache: { op: number; venster: number; belofte: Promise<GedragGegevens> } | null = null
+
+export async function laadGedrag(venster = 3): Promise<GedragGegevens> {
+  if (gedragCache && gedragCache.venster === venster && Date.now() - gedragCache.op < 60_000) return gedragCache.belofte
+  const belofte = laadGedragVers(venster).catch(e => { gedragCache = null; throw e })
+  gedragCache = { op: Date.now(), venster, belofte }
+  return belofte
+}
+
+async function laadGedragVers(venster: number): Promise<GedragGegevens> {
+  const { data: verzonden, error } = await db()
+    .from('nieuwsbrieven')
+    .select('id, verzonden_op')
+    .eq('status', 'verzonden')
+    .not('verzonden_op', 'is', null)
+    .order('verzonden_op', { ascending: false })
+  if (error) throw error
+  const alle = ((verzonden ?? []) as unknown as { id: string }[]).map(r => r.id)
+  if (alle.length === 0) return LEEG_GEDRAG
+  const recent = alle.slice(0, Math.max(1, venster))
+
+  const ontvangersRijen = await paginaOverIds<{ email: string; nieuwsbrief_id: string }>(
+    'nieuwsbrief_ontvangers', 'email, nieuwsbrief_id', alle)
+  const eventRijen = await paginaOverIds<{ email: string; nieuwsbrief_id: string; type: string }>(
+    'nieuwsbrief_events', 'email, nieuwsbrief_id, type', alle)
+
+  const recentSet = new Set(recent)
+  const gegevens: GedragGegevens = { openers: new Set(), ontving: new Set(), klikkers: new Set(), ooitOntvangen: new Set() }
+  for (const r of ontvangersRijen) {
+    gegevens.ooitOntvangen.add(r.email)
+    if (recentSet.has(r.nieuwsbrief_id)) gegevens.ontving.add(r.email)
+  }
+  for (const e of eventRijen) {
+    if (e.type === 'clicked') gegevens.klikkers.add(e.email)
+    if (e.type === 'opened' && recentSet.has(e.nieuwsbrief_id)) gegevens.openers.add(e.email)
+  }
+  return gegevens
+}
+
+// PostgREST kapt af op 1000 rijen; met alle verzendingen samen loopt dat hard op.
+async function paginaOverIds<T>(tabel: string, kolommen: string, ids: string[]): Promise<T[]> {
+  const uit: T[] = []
+  for (let van = 0; ; van += PAGINA) {
+    const { data, error } = await db()
+      .from(tabel).select(kolommen).in('nieuwsbrief_id', ids).order('email').range(van, van + PAGINA - 1)
+    if (error) throw error
+    const deel = (data ?? []) as unknown as T[]
+    uit.push(...deel)
+    if (deel.length < PAGINA) break
+  }
+  return uit
+}
+
+export function voldoetAanGedrag(email: string, gedrag: Gedrag | undefined, g: GedragGegevens): boolean {
+  switch (gedrag) {
+    case 'betrokken': return g.openers.has(email)
+    case 'sluimerend': return g.ontving.has(email) && !g.openers.has(email)
+    case 'klikkers': return g.klikkers.has(email)
+    case 'nieuw': return !g.ooitOntvangen.has(email)
+    default: return true
+  }
+}
+
 export async function verzamelOntvangers(sel: OntvangerSelectie): Promise<{ ontvangers: Ontvanger[]; afgemeld: number }> {
   const { klanten, contacten, afgemeld } = await laadKlantenEnContacten()
   const map = new Map<string, Ontvanger>()
@@ -386,7 +477,12 @@ export async function verzamelOntvangers(sel: OntvangerSelectie): Promise<{ ontv
       voeg({ email: String(c.email || '').trim().toLowerCase(), naam: c.naam || '', bedrijfsnaam: naamVanKlant.get(c.klant_id) || '', klantId: c.klant_id, bron: 'contactpersoon' })
     }
   }
-  return { ontvangers: Array.from(map.values()), afgemeld: afgemeldGeteld }
+  let uit = Array.from(map.values())
+  if (sel.gedrag && sel.gedrag !== 'alle') {
+    const g = await laadGedrag(sel.gedragVenster ?? 3)
+    uit = uit.filter(o => voldoetAanGedrag(o.email, sel.gedrag, g))
+  }
+  return { ontvangers: uit, afgemeld: afgemeldGeteld }
 }
 
 // Subset van de bouwer-stijl die de server nodig heeft voor de mailshell.
@@ -855,4 +951,72 @@ export async function herzendNaarNietOpeners(
   const body = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(body.error || 'Herzenden mislukt')
   return body as HerzendResultaat
+}
+
+// ── Segmenten ──────────────────────────────────────────────────────────────
+
+export interface Segment {
+  id: string
+  user_id: string
+  naam: string
+  omschrijving: string | null
+  selectie: OntvangerSelectie
+  laatst_gebruikt_op: string | null
+  created_at: string
+  updated_at: string
+}
+
+export async function getSegmenten(): Promise<Segment[]> {
+  const { data, error } = await db()
+    .from('nieuwsbrief_segmenten')
+    .select('*')
+    .order('naam')
+  if (error) throw error
+  return (data ?? []) as unknown as Segment[]
+}
+
+export async function bewaarSegment(naam: string, selectie: OntvangerSelectie, omschrijving?: string): Promise<Segment> {
+  const { data: { user } } = await db().auth.getUser()
+  if (!user) throw new Error('Niet ingelogd')
+  // Zelfde naam betekent bijwerken, niet een tweede segment met dezelfde naam.
+  const { data, error } = await db()
+    .from('nieuwsbrief_segmenten')
+    .upsert(
+      { user_id: user.id, naam: naam.trim(), omschrijving: omschrijving?.trim() || null, selectie, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id,naam' },
+    )
+    .select('*')
+    .single()
+  if (error) throw error
+  return data as unknown as Segment
+}
+
+export async function verwijderSegment(id: string): Promise<void> {
+  const { error } = await db().from('nieuwsbrief_segmenten').delete().eq('id', id)
+  if (error) throw error
+}
+
+export async function markeerSegmentGebruikt(id: string): Promise<void> {
+  const { error } = await db()
+    .from('nieuwsbrief_segmenten')
+    .update({ laatst_gebruikt_op: new Date().toISOString() })
+    .eq('id', id)
+  if (error) console.warn('[nieuwsbrief] segment-gebruik bijwerken mislukt:', error.message)
+}
+
+// Korte omschrijving van een selectie, voor in de lijst met segmenten.
+export function omschrijfSelectie(sel: OntvangerSelectie): string {
+  const delen: string[] = []
+  if (sel.type === 'alle') delen.push('iedereen')
+  else if (sel.type === 'handmatig') delen.push(`${(sel.klantIds ?? []).length} gekozen klanten`)
+  else {
+    const st = sel.statussen ?? []
+    const lb = sel.labels ?? []
+    if (st.length > 0) delen.push(st.join(', '))
+    if (lb.length > 0) delen.push(`label ${lb.join(', ')}`)
+    if (delen.length === 0) delen.push('alle klanten')
+  }
+  if (sel.gedrag && sel.gedrag !== 'alle') delen.push(GEDRAG_LABEL[sel.gedrag].titel.toLowerCase())
+  if (sel.inclusiefContactpersonen === false) delen.push('zonder contactpersonen')
+  return delen.join(' · ')
 }

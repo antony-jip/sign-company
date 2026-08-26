@@ -29,7 +29,67 @@ interface OntvangerSelectie {
   labels?: string[]
   klantIds?: string[]
   inclusiefContactpersonen?: boolean
+  gedrag?: Gedrag
+  gedragVenster?: number
 }
+
+// Gedrag uit eerdere verzendingen als extra zeef. Spiegelt
+// src/services/nieuwsbriefService.ts :: laadGedrag / voldoetAanGedrag; loopt die
+// uit de pas, dan wijkt het getal in het scherm af van wat er verstuurd wordt.
+type Gedrag = 'alle' | 'betrokken' | 'sluimerend' | 'klikkers' | 'nieuw'
+
+interface GedragGegevens {
+  openers: Set<string>
+  ontving: Set<string>
+  klikkers: Set<string>
+  ooitOntvangen: Set<string>
+}
+
+async function paginaOverIds<T>(tabel: string, kolommen: string, ids: string[]): Promise<T[]> {
+  const uit: T[] = []
+  for (let van = 0; ; van += 1000) {
+    const { data, error } = await supabase.from(tabel).select(kolommen).in('nieuwsbrief_id', ids).order('email').range(van, van + 999)
+    if (error) throw error
+    const deel = (data ?? []) as unknown as T[]
+    uit.push(...deel)
+    if (deel.length < 1000) break
+  }
+  return uit
+}
+
+async function laadGedrag(venster: number): Promise<GedragGegevens> {
+  const leeg: GedragGegevens = { openers: new Set(), ontving: new Set(), klikkers: new Set(), ooitOntvangen: new Set() }
+  const { data: verzonden } = await supabase
+    .from('nieuwsbrieven').select('id, verzonden_op')
+    .eq('user_id', OWNER_USER_ID).eq('status', 'verzonden').not('verzonden_op', 'is', null)
+    .order('verzonden_op', { ascending: false })
+  const alle = ((verzonden ?? []) as unknown as { id: string }[]).map(r => r.id)
+  if (alle.length === 0) return leeg
+  const recent = new Set(alle.slice(0, Math.max(1, venster)))
+
+  const ontvangersRijen = await paginaOverIds<{ email: string; nieuwsbrief_id: string }>('nieuwsbrief_ontvangers', 'email, nieuwsbrief_id', alle)
+  const eventRijen = await paginaOverIds<{ email: string; nieuwsbrief_id: string; type: string }>('nieuwsbrief_events', 'email, nieuwsbrief_id, type', alle)
+  for (const r of ontvangersRijen) {
+    leeg.ooitOntvangen.add(r.email)
+    if (recent.has(r.nieuwsbrief_id)) leeg.ontving.add(r.email)
+  }
+  for (const e of eventRijen) {
+    if (e.type === 'clicked') leeg.klikkers.add(e.email)
+    if (e.type === 'opened' && recent.has(e.nieuwsbrief_id)) leeg.openers.add(e.email)
+  }
+  return leeg
+}
+
+function voldoetAanGedrag(email: string, gedrag: Gedrag | undefined, g: GedragGegevens): boolean {
+  switch (gedrag) {
+    case 'betrokken': return g.openers.has(email)
+    case 'sluimerend': return g.ontving.has(email) && !g.openers.has(email)
+    case 'klikkers': return g.klikkers.has(email)
+    case 'nieuw': return !g.ooitOntvangen.has(email)
+    default: return true
+  }
+}
+
 
 interface MailStijl { font?: string; achtergrond?: string; kaart?: string; tekst?: string }
 
@@ -209,7 +269,12 @@ async function verzamelOntvangers(orgId: string, sel: OntvangerSelectie): Promis
       })
     }
   }
-  return Array.from(map.values())
+  let uit = Array.from(map.values())
+  if (sel.gedrag && sel.gedrag !== 'alle') {
+    const g = await laadGedrag(sel.gedragVenster ?? 3)
+    uit = uit.filter(o => voldoetAanGedrag(o.email, sel.gedrag, g))
+  }
+  return uit
 }
 
 // Elke ontvanger vastleggen zoals hij op dít moment in doen. stond. Een event
@@ -416,7 +481,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let restAantal = 0
     let broadcastId: string | null = null
 
-    if ((!selectie.type || selectie.type === 'alle') && !abActief) {
+    // Een broadcast gaat ongefilterd naar de hele Resend-lijst. Zodra er een
+    // gedragszeef of een A/B-test op zit, moet het per mail, anders krijgt
+    // iedereen hem alsnog.
+    const gedragsZeef = Boolean(selectie.gedrag && selectie.gedrag !== 'alle')
+    if ((!selectie.type || selectie.type === 'alle') && !abActief && !gedragsZeef) {
       // Iedereen: via de Resend-lijst als broadcast. Resend regelt dan zelf de
       // afmeldlink per ontvanger en het inplannen op schaal.
       const audienceId = await vindAudienceId(resend)
