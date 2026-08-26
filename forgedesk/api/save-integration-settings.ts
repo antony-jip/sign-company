@@ -77,6 +77,9 @@ const ALLOWED_FIELDS = [
   'eboekhouden_api_token',
   'eboekhouden_debiteuren_ledger_id',
   'eboekhouden_omzet_ledger_id',
+  'drive_actief',
+  'drive_hoofdmap_id',
+  'drive_map_aanmaken',
 ] as const
 
 const SECRET_FIELDS = [
@@ -166,6 +169,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       'moneybird_api_token',
       'moneybird_administration_id',
       'eboekhouden_api_token',
+      'drive_hoofdmap_id',
     ])
 
     const updates: Record<string, unknown> = {}
@@ -236,6 +240,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (updateError) {
+      // Migratie 218 legt één hoofdmap op één organisatie vast. Zonder deze
+      // vertaling krijgt iemand die per ongeluk de map van een ander bedrijf
+      // invult een nietszeggende "kon niet opslaan" te zien.
+      if (updateError.code === '23505' && 'drive_hoofdmap_id' in updates) {
+        return res.status(409).json({
+          error: 'Deze Google Drive-map is al gekoppeld aan een andere organisatie. Controleer of je de juiste map-id hebt.',
+        })
+      }
       console.error('[save-integration-settings] update error:', updateError.message)
       return res.status(500).json({ error: 'Kon instellingen niet opslaan' })
     }
