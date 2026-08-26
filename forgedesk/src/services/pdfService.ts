@@ -666,17 +666,27 @@ export async function generateOffertePDF(
     y += introLines.length * 5 + 8
   }
 
-  // Levertijd-regel — alleen op de opdrachtbevestiging, direct onder de intro.
-  if (isOpdrachtbevestiging) {
-    doc.setFontSize(baseFontSize)
-    doc.setTextColor(...textColor)
-    doc.setFont(bodyFont, 'bold')
-    doc.text('Levertijd:', margins.left, y)
-    const levertijdLabelWidth = doc.getTextWidth('Levertijd:')
-    doc.setFont(bodyFont, 'normal')
-    doc.text('in overleg', margins.left + levertijdLabelWidth + 1.5, y)
-    y += 13
-  }
+  // Levertijd — staat op de offerte én de opdrachtbevestiging, direct onder de
+  // intro. Hij verschilt per offerte, dus komt hij uit de offerte zelf; pas als
+  // daar niets is ingevuld valt hij terug op 'In overleg'. De betalingsconditie
+  // staat onderaan, bij de totalen waar hij over gaat.
+  const levertijdTekst = offerte.levertijd?.trim() || 'In overleg'
+  const betalingsconditieTekst = offerte.betalingsconditie?.trim() || ''
+  doc.setFontSize(baseFontSize)
+  doc.setTextColor(...textColor)
+  doc.setFont(bodyFont, 'bold')
+  doc.text('Levertijd:', margins.left, y)
+  const levertijdLabelBreedte = doc.getTextWidth('Levertijd:')
+  doc.setFont(bodyFont, 'normal')
+  // De levertijd kan een hele zin zijn ("3 tot 4 weken na akkoord"), dus breken
+  // we hem af op de resterende breedte in plaats van buiten de marge te lopen.
+  const levertijdX = margins.left + levertijdLabelBreedte + 2
+  const levertijdRegels = doc.splitTextToSize(
+    levertijdTekst,
+    pageWidth - margins.right - levertijdX
+  ) as string[]
+  doc.text(levertijdRegels, levertijdX, y)
+  y += levertijdRegels.length * 5 + 8
 
   // FIX 13: Split verplichte en optionele items
   const verplichteItems = items.filter(i => !i.is_optioneel)
@@ -976,8 +986,6 @@ export async function generateOffertePDF(
     lineColor: brand,
   }
 
-  // Itemtabel wordt verborgen op de opdrachtbevestiging.
-  if (!isOpdrachtbevestiging) {
   autoTable(doc, {
     startY: y,
     head: [[
@@ -1054,7 +1062,6 @@ export async function generateOffertePDF(
     // Briefpapier op vervolgpagina's wordt automatisch getekend door de
     // doc.addPage wrapper bovenaan generateOffertePDF.
   })
-  }
 
   // Totals
   const finalY = (doc as JsPDFWithAutoTable).lastAutoTable?.finalY || y + 20
@@ -1110,8 +1117,8 @@ export async function generateOffertePDF(
   doc.text(formatBedrag(offerte.totaal), pageWidth - margins.right, totalsY, { align: 'right' })
   totalsY -= 5 // compenseer zodat onderstaande logica niet stuk gaat (delta wordt later +20)
 
-  // FIX 13: Optionele items sectie — verborgen op de opdrachtbevestiging.
-  if (!isOpdrachtbevestiging && optioneleItems.length > 0) {
+  // FIX 13: Optionele items sectie
+  if (optioneleItems.length > 0) {
     totalsY += 20
     // Check page space
     if (totalsY > doc.internal.pageSize.getHeight() - 60) {
@@ -1203,6 +1210,18 @@ export async function generateOffertePDF(
   }
 
   const contentWidth = pageWidth - margins.left - margins.right
+
+  // Betalingsconditie — onderaan, direct onder de totalen: daar staat het bedrag
+  // waar hij over gaat. Staat op de offerte én de opdrachtbevestiging.
+  if (betalingsconditieTekst) {
+    advanceY(15)
+    drawSectionHeader('Betaling:')
+    doc.setFont(bodyFont, 'normal')
+    doc.setTextColor(...textColor)
+    doc.setFontSize(baseFontSize)
+    const betaalRegels = doc.splitTextToSize(betalingsconditieTekst, contentWidth) as string[]
+    totalsY = flowText(betaalRegels, margins.left, totalsY, 5)
+  }
 
   // Outro tekst (optioneel) — staat na de totalen, voor notities/voorwaarden.
   // Verborgen op de opdrachtbevestiging.

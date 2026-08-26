@@ -5,7 +5,7 @@ import {
 } from './supabaseHelpers'
 import { safeSetItem } from '@/utils/localStorageUtils'
 import { normaliseerNaam } from '@/utils/naamNormalisatie'
-import { DEFAULT_OFFERTE_VOORWAARDEN } from '@/utils/defaults'
+import { DEFAULT_OFFERTE_VOORWAARDEN, DEFAULT_OFFERTE_LEVERTIJD, DEFAULT_OFFERTE_BETALINGSCONDITIE } from '@/utils/defaults'
 import { getOffertesByProject } from './offerteService'
 import { getWerkbonnenByProject } from './werkbonService'
 import { getFacturenByProject } from './factuurService'
@@ -222,6 +222,8 @@ export function getDefaultAppSettings(userId: string): AppSettings {
     offerte_intro_tekst: '',
     offerte_outro_tekst: '',
     offerte_voorwaarden: DEFAULT_OFFERTE_VOORWAARDEN,
+    offerte_levertijd: DEFAULT_OFFERTE_LEVERTIJD,
+    offerte_betalingsconditie: DEFAULT_OFFERTE_BETALINGSCONDITIE,
     afzender_naam: '',
     email_fetch_limit: 200,
     onboarding_dag_offsets: [3, 7],

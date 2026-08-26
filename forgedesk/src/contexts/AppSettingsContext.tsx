@@ -5,6 +5,7 @@ import type { AppSettings, Profile, PipelineStap } from '@/types'
 import { getDefaultAppSettings } from '@/services/supabaseService'
 import { logger } from '../utils/logger'
 import { HANDTEKENING_BREEDTE_STANDAARD } from '@/utils/handtekening'
+import { DEFAULT_OFFERTE_LEVERTIJD, DEFAULT_OFFERTE_BETALINGSCONDITIE } from '@/utils/defaults'
 
 interface AppSettingsContextType {
   settings: AppSettings
@@ -51,6 +52,8 @@ interface AppSettingsContextType {
   // Offerte teksten
   offerteIntroTekst: string
   offerteOutroTekst: string
+  offerteLevertijd: string
+  offerteBetalingsconditie: string
   // Offerte layout
   offerteToonM2: boolean
   // Werkbon instellingen
@@ -253,6 +256,8 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     // Offerte teksten
     offerteIntroTekst: settings.offerte_intro_tekst || '',
     offerteOutroTekst: settings.offerte_outro_tekst || '',
+    offerteLevertijd: settings.offerte_levertijd || DEFAULT_OFFERTE_LEVERTIJD,
+    offerteBetalingsconditie: settings.offerte_betalingsconditie || DEFAULT_OFFERTE_BETALINGSCONDITIE,
     // Offerte layout
     offerteToonM2: settings.offerte_toon_m2 ?? true,
     // Werkbon instellingen

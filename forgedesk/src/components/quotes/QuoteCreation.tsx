@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { LEVERTIJD_SUGGESTIES, BETALINGSCONDITIE_SUGGESTIES } from '@/utils/defaults'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
@@ -279,7 +280,7 @@ export function QuoteCreation() {
   const { id: routeId } = useParams<{ id: string }>()
   const { user } = useAuth()
   const { isBlocked: isTrialBlocked, showDialog: showTrialDialog, setShowDialog: setShowTrialDialog } = useTrialGuard()
-  const { settings, updateSettings, offertePrefix, offerteStartNummer, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, logoUrl, profile, offerteToonM2, offerteIntroTekst, offerteOutroTekst, emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, handtekeningAfbeeldingLink } = useAppSettings()
+  const { settings, updateSettings, offertePrefix, offerteStartNummer, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, bedrijfsAdres, kvkNummer, btwNummer, primaireKleur, logoUrl, profile, offerteToonM2, offerteIntroTekst, offerteOutroTekst, offerteLevertijd, offerteBetalingsconditie, emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, handtekeningAfbeeldingLink } = useAppSettings()
   const sanitizedRegelVelden = sanitizeDetailLabels(settings.offerte_regel_velden || [])
   const regelTemplateLabels = sanitizedRegelVelden.length > 0
     ? sanitizedRegelVelden
@@ -383,6 +384,9 @@ export function QuoteCreation() {
   const [voorwaarden, setVoorwaarden] = useState(settings.offerte_voorwaarden)
   const [introTekst, setIntroTekst] = useState('')
   const [outroTekst, setOutroTekst] = useState('')
+  // Levering & betaling — per offerte, voorgevuld met de organisatie-standaard.
+  const [levertijd, setLevertijd] = useState(offerteLevertijd)
+  const [betalingsconditie, setBetalingsconditie] = useState(offerteBetalingsconditie)
 
   // ── Suggesties voor item omschrijvingen ──
   const [omschrijvingSuggesties, setOmschrijvingSuggesties] = useState<OmschrijvingSuggestie[]>([])
@@ -395,7 +399,7 @@ export function QuoteCreation() {
     userId: user?.id,
     quoteId: editOfferteId || autoSaveIdRef.current,
     performAutoSave: () => performAutoSaveRef.current(),
-    snapshotData: { offerteTitel, items, notities, voorwaarden, introTekst, outroTekst, geldigTot },
+    snapshotData: { offerteTitel, items, notities, voorwaarden, introTekst, outroTekst, levertijd, betalingsconditie, geldigTot },
     restoreSnapshot: (snapshot) => {
       setOfferteTitel(snapshot.offerteTitel)
       setItems(snapshot.items)
@@ -403,6 +407,10 @@ export function QuoteCreation() {
       setVoorwaarden(snapshot.voorwaarden)
       setIntroTekst(snapshot.introTekst)
       setOutroTekst(snapshot.outroTekst)
+      // Snapshot van vóór migratie 224 kent deze velden niet; dan laten staan
+      // wat er nu ingevuld is in plaats van het leeg te trekken.
+      if (snapshot.levertijd !== undefined) setLevertijd(snapshot.levertijd)
+      if (snapshot.betalingsconditie !== undefined) setBetalingsconditie(snapshot.betalingsconditie)
       setGeldigTot(snapshot.geldigTot)
     },
   })
@@ -731,6 +739,8 @@ export function QuoteCreation() {
         setVoorwaarden(offerte.voorwaarden || settings.offerte_voorwaarden)
         setIntroTekst(offerte.intro_tekst || '')
         setOutroTekst(offerte.outro_tekst || '')
+        setLevertijd(offerte.levertijd || offerteLevertijd)
+        setBetalingsconditie(offerte.betalingsconditie || offerteBetalingsconditie)
 
         // Map OfferteItem[] → QuoteLineItem[]
         const mappedItems: QuoteLineItem[] = offerteItems
@@ -1196,6 +1206,8 @@ export function QuoteCreation() {
           voorwaarden,
           intro_tekst: introTekst,
           outro_tekst: outroTekst,
+          levertijd,
+          betalingsconditie,
           // Altijd meesturen: conditioneel weglaten betekende dat terugzetten
           // naar 0 nooit werd opgeslagen en de oude waarde bleef staan.
           afrondingskorting_excl_btw: afrondingskorting,
@@ -1224,6 +1236,8 @@ export function QuoteCreation() {
           voorwaarden,
           intro_tekst: introTekst,
           outro_tekst: outroTekst,
+          levertijd,
+          betalingsconditie,
           afrondingskorting_excl_btw: afrondingskorting,
           uren_correctie: urenCorrectie,
           versie: versioning.versieNummer,
@@ -1259,7 +1273,7 @@ export function QuoteCreation() {
     } finally {
       saveLockRef.current = false
     }
-  }, [user?.id, selectedKlantId, selectedProjectId, selectedContactId, offerteTitel, items, geldigTot, notities, voorwaarden, introTekst, outroTekst, editOfferteId, offerteNummer, isSaving, klanten, afrondingskorting, urenCorrectie, urenCorrectieBedrag, isTrialBlocked, versioning.versieNummer])
+  }, [user?.id, selectedKlantId, selectedProjectId, selectedContactId, offerteTitel, items, geldigTot, notities, voorwaarden, introTekst, outroTekst, levertijd, betalingsconditie, editOfferteId, offerteNummer, isSaving, klanten, afrondingskorting, urenCorrectie, urenCorrectieBedrag, isTrialBlocked, versioning.versieNummer])
 
   // Keep ref in sync so unmount handler can call latest version
   useEffect(() => {
@@ -1289,7 +1303,7 @@ export function QuoteCreation() {
     return () => {
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
     }
-  }, [items, offerteTitel, notities, voorwaarden, introTekst, outroTekst, geldigTot, selectedKlantId, selectedProjectId, selectedContactId, showKlantSelector, afrondingskorting, urenCorrectie])
+  }, [items, offerteTitel, notities, voorwaarden, introTekst, outroTekst, levertijd, betalingsconditie, geldigTot, selectedKlantId, selectedProjectId, selectedContactId, showKlantSelector, afrondingskorting, urenCorrectie])
 
   // Save on unmount (navigating away) · fire-and-forget
   useEffect(() => {
@@ -1359,6 +1373,8 @@ export function QuoteCreation() {
         voorwaarden,
         intro_tekst: introTekst,
         outro_tekst: outroTekst,
+        levertijd,
+        betalingsconditie,
         ...(afrondingskorting !== 0 ? { afrondingskorting_excl_btw: afrondingskorting } : {}),
         ...(dupHeeftUrenCorrectie ? { uren_correctie: urenCorrectie } : {}),
       })
@@ -1441,6 +1457,8 @@ export function QuoteCreation() {
           voorwaarden,
           intro_tekst: introTekst,
           outro_tekst: outroTekst,
+          levertijd,
+          betalingsconditie,
           // Altijd meesturen zodat terugzetten naar 0 ook opgeslagen wordt
           afrondingskorting_excl_btw: afrondingskorting,
           uren_correctie: urenCorrectie,
@@ -1471,6 +1489,8 @@ export function QuoteCreation() {
           voorwaarden,
           intro_tekst: introTekst,
           outro_tekst: outroTekst,
+          levertijd,
+          betalingsconditie,
           afrondingskorting_excl_btw: afrondingskorting,
           uren_correctie: urenCorrectie,
           versie: versioning.versieNummer,
@@ -1618,6 +1638,8 @@ export function QuoteCreation() {
         voorwaarden,
         intro_tekst: introTekst,
         outro_tekst: outroTekst,
+        levertijd,
+        betalingsconditie,
         versie: versioning.versieNummer,
         ...(afrondingskorting !== 0 ? { afrondingskorting_excl_btw: afrondingskorting } : {}),
         created_at: new Date().toISOString(),
@@ -1867,6 +1889,8 @@ export function QuoteCreation() {
             voorwaarden,
             intro_tekst: introTekst,
             outro_tekst: outroTekst,
+            levertijd,
+            betalingsconditie,
             ...(afrondingskorting !== 0 ? { afrondingskorting_excl_btw: afrondingskorting } : {}),
           } as Parameters<typeof generateOffertePDF>[0]
           const pdfItems = items.map(toPdfItem)
@@ -2419,6 +2443,38 @@ export function QuoteCreation() {
             </div>
           </div>
 
+          {/* ── Notities & Voorwaarden ── */}
+          <div className="doen-slate-surface rounded-2xl p-5">
+            <div className="flex items-baseline justify-between mb-3">
+              <h3 className="font-heading text-[15px] font-bold text-foreground">
+                Notities &amp; voorwaarden<span className="text-flame">.</span>
+              </h3>
+            </div>
+            <div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70">Notities</label>
+                  <Textarea
+                    value={notities}
+                    onChange={(e) => setNotities(e.target.value)}
+                    placeholder="Interne notities of opmerkingen voor de klant..."
+                    rows={4}
+                    className="text-sm bg-white dark:bg-white/[0.05] border border-[rgba(26,83,92,0.12)] dark:border-white/10 focus:bg-white dark:focus:bg-white/[0.07] focus-visible:border-petrol dark:focus-visible:border-white/30 focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] dark:focus-visible:ring-white/10 rounded-lg transition-colors"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70">Voorwaarden</label>
+                  <Textarea
+                    value={voorwaarden}
+                    onChange={(e) => setVoorwaarden(e.target.value)}
+                    rows={4}
+                    className="text-sm bg-white dark:bg-white/[0.05] border border-[rgba(26,83,92,0.12)] dark:border-white/10 focus:bg-white dark:focus:bg-white/[0.07] focus-visible:border-petrol dark:focus-visible:border-white/30 focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] dark:focus-visible:ring-white/10 rounded-lg transition-colors"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* ── Afsluittekst ── */}
           <div className="doen-slate-surface rounded-2xl p-5">
             <div className="flex items-baseline justify-between mb-3">
@@ -2455,34 +2511,67 @@ export function QuoteCreation() {
             />
           </div>
 
-          {/* ── Notities & Voorwaarden ── */}
-          <div className="doen-slate-surface rounded-2xl p-5">
+          {/* ── Levering & betaling ── */}
+          {/* Levertijd en betaalconditie verschillen per offerte en stonden tot nu
+              toe verstopt in de voorwaardentekst. Eigen blok, met snelkeuzes zodat
+              je er niet omheen kunt bij het afronden. */}
+          <div className="doen-slate-surface rounded-2xl p-5 border border-[rgba(192,58,24,0.14)] dark:border-white/10">
             <div className="flex items-baseline justify-between mb-3">
               <h3 className="font-heading text-[15px] font-bold text-foreground">
-                Notities &amp; voorwaarden<span className="text-flame">.</span>
+                Levering &amp; betaling<span className="text-flame">.</span>
               </h3>
+              <span className="text-[12px] text-muted-foreground">Staat op de offerte en de opdrachtbevestiging</span>
             </div>
-            <div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70">Notities</label>
-                  <Textarea
-                    value={notities}
-                    onChange={(e) => setNotities(e.target.value)}
-                    placeholder="Interne notities of opmerkingen voor de klant..."
-                    rows={4}
-                    className="text-sm bg-white dark:bg-white/[0.05] border border-[rgba(26,83,92,0.12)] dark:border-white/10 focus:bg-white dark:focus:bg-white/[0.07] focus-visible:border-petrol dark:focus-visible:border-white/30 focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] dark:focus-visible:ring-white/10 rounded-lg transition-colors"
-                  />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70">Levertijd</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {LEVERTIJD_SUGGESTIES.map((suggestie) => (
+                    <button
+                      key={suggestie}
+                      type="button"
+                      onClick={() => setLevertijd(suggestie)}
+                      className={`text-[12px] font-medium px-2.5 py-1 rounded-full border transition-colors ${
+                        levertijd === suggestie
+                          ? 'border-petrol bg-petrol/10 text-petrol dark:border-white/30 dark:bg-white/10 dark:text-foreground'
+                          : 'border-[rgba(26,83,92,0.12)] dark:border-white/10 bg-white dark:bg-white/[0.05] text-foreground/70 hover:bg-[rgba(26,83,92,0.05)] dark:hover:bg-white/[0.08] hover:border-[rgba(26,83,92,0.22)] dark:hover:border-white/20 hover:text-petrol dark:hover:text-foreground'
+                      }`}
+                    >
+                      {suggestie}
+                    </button>
+                  ))}
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70">Voorwaarden</label>
-                  <Textarea
-                    value={voorwaarden}
-                    onChange={(e) => setVoorwaarden(e.target.value)}
-                    rows={4}
-                    className="text-sm bg-white dark:bg-white/[0.05] border border-[rgba(26,83,92,0.12)] dark:border-white/10 focus:bg-white dark:focus:bg-white/[0.07] focus-visible:border-petrol dark:focus-visible:border-white/30 focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] dark:focus-visible:ring-white/10 rounded-lg transition-colors"
-                  />
+                <Input
+                  value={levertijd}
+                  onChange={(e) => setLevertijd(e.target.value)}
+                  placeholder="In overleg"
+                  className="text-sm bg-white dark:bg-white/[0.05] border border-[rgba(26,83,92,0.12)] dark:border-white/10 focus-visible:border-petrol dark:focus-visible:border-white/30 focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] dark:focus-visible:ring-white/10 rounded-lg transition-colors"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70">Betalingsconditie</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {BETALINGSCONDITIE_SUGGESTIES.map((suggestie) => (
+                    <button
+                      key={suggestie}
+                      type="button"
+                      onClick={() => setBetalingsconditie(suggestie)}
+                      className={`text-[12px] font-medium px-2.5 py-1 rounded-full border transition-colors ${
+                        betalingsconditie === suggestie
+                          ? 'border-petrol bg-petrol/10 text-petrol dark:border-white/30 dark:bg-white/10 dark:text-foreground'
+                          : 'border-[rgba(26,83,92,0.12)] dark:border-white/10 bg-white dark:bg-white/[0.05] text-foreground/70 hover:bg-[rgba(26,83,92,0.05)] dark:hover:bg-white/[0.08] hover:border-[rgba(26,83,92,0.22)] dark:hover:border-white/20 hover:text-petrol dark:hover:text-foreground'
+                      }`}
+                    >
+                      {suggestie}
+                    </button>
+                  ))}
                 </div>
+                <Input
+                  value={betalingsconditie}
+                  onChange={(e) => setBetalingsconditie(e.target.value)}
+                  placeholder="Betaling binnen 30 dagen na factuurdatum."
+                  className="text-sm bg-white dark:bg-white/[0.05] border border-[rgba(26,83,92,0.12)] dark:border-white/10 focus-visible:border-petrol dark:focus-visible:border-white/30 focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] dark:focus-visible:ring-white/10 rounded-lg transition-colors"
+                />
               </div>
             </div>
           </div>

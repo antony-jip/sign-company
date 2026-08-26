@@ -15,8 +15,12 @@ interface VersioningDeps {
     voorwaarden: string
     introTekst: string
     outroTekst: string
+    levertijd: string
+    betalingsconditie: string
     geldigTot: string
   }
+  // Levertijd en betalingsconditie kwamen er later bij (migratie 224): een
+  // snapshot van vóór die tijd heeft ze niet, vandaar optioneel.
   restoreSnapshot: (snapshot: {
     offerteTitel: string
     items: QuoteLineItem[]
@@ -24,6 +28,8 @@ interface VersioningDeps {
     voorwaarden: string
     introTekst: string
     outroTekst: string
+    levertijd?: string
+    betalingsconditie?: string
     geldigTot: string
   }) => void
 }
@@ -84,6 +90,8 @@ export function useQuoteVersioning(deps: VersioningDeps) {
         voorwaarden: string
         introTekst: string
         outroTekst: string
+        levertijd?: string
+        betalingsconditie?: string
         geldigTot: string
       }
       deps.restoreSnapshot(snapshot)

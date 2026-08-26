@@ -44,7 +44,7 @@ import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { logger } from '../../utils/logger'
-import { DEFAULT_OFFERTE_VOORWAARDEN } from '@/utils/defaults'
+import { DEFAULT_OFFERTE_VOORWAARDEN, DEFAULT_OFFERTE_LEVERTIJD, DEFAULT_OFFERTE_BETALINGSCONDITIE } from '@/utils/defaults'
 
 // Already-extracted tab components
 import { HuisstijlTab } from './HuisstijlTab'
@@ -548,6 +548,8 @@ function DocumentenTab() {
   const [offerteIntroTekst, setOfferteIntroTekst] = useState('')
   const [offerteOutroTekst, setOfferteOutroTekst] = useState('')
   const [offerteVoorwaarden, setOfferteVoorwaarden] = useState('')
+  const [offerteLevertijd, setOfferteLevertijd] = useState('')
+  const [offerteBetalingsconditie, setOfferteBetalingsconditie] = useState('')
 
   const [werkbonMonteurUren, setWerkbonMonteurUren] = useState(true)
   const [werkbonMonteurOpmerkingen, setWerkbonMonteurOpmerkingen] = useState(true)
@@ -579,6 +581,8 @@ function DocumentenTab() {
       setOfferteIntroTekst(data.offerte_intro_tekst || '')
       setOfferteOutroTekst(data.offerte_outro_tekst || '')
       setOfferteVoorwaarden(data.offerte_voorwaarden || DEFAULT_OFFERTE_VOORWAARDEN)
+      setOfferteLevertijd(data.offerte_levertijd || DEFAULT_OFFERTE_LEVERTIJD)
+      setOfferteBetalingsconditie(data.offerte_betalingsconditie || DEFAULT_OFFERTE_BETALINGSCONDITIE)
       setWerkbonMonteurUren(data.werkbon_monteur_uren ?? true)
       setWerkbonMonteurOpmerkingen(data.werkbon_monteur_opmerkingen ?? true)
       // Zelfde default als AppSettingsContext: stond hier op false, waardoor de
@@ -622,6 +626,8 @@ function DocumentenTab() {
         offerte_intro_tekst: offerteIntroTekst,
         offerte_outro_tekst: offerteOutroTekst,
         offerte_voorwaarden: offerteVoorwaarden,
+        offerte_levertijd: offerteLevertijd,
+        offerte_betalingsconditie: offerteBetalingsconditie,
         werkbon_monteur_uren: werkbonMonteurUren,
         werkbon_monteur_opmerkingen: werkbonMonteurOpmerkingen,
         werkbon_monteur_fotos: werkbonMonteurFotos,
@@ -719,6 +725,18 @@ function DocumentenTab() {
                   <Label htmlFor="offerte-outro">Standaard afsluittekst</Label>
                   <Textarea id="offerte-outro" value={offerteOutroTekst} onChange={(e) => setOfferteOutroTekst(e.target.value)} placeholder="Bijv. Wij vertrouwen erop u een passend aanbod te hebben gedaan." rows={2} />
                   <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Wordt onderaan de offerte weergegeven</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="offerte-levertijd">Standaard levertijd</Label>
+                    <Input id="offerte-levertijd" value={offerteLevertijd} onChange={(e) => setOfferteLevertijd(e.target.value)} placeholder="In overleg" />
+                    <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Voorstel bij een nieuwe offerte; per offerte aan te passen</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="offerte-betalingsconditie">Standaard betalingsconditie</Label>
+                    <Input id="offerte-betalingsconditie" value={offerteBetalingsconditie} onChange={(e) => setOfferteBetalingsconditie(e.target.value)} placeholder="Betaling binnen 30 dagen na factuurdatum." />
+                    <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">Voorstel bij een nieuwe offerte; per offerte aan te passen</p>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">

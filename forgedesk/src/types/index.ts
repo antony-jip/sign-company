@@ -375,6 +375,9 @@ export interface Offerte {
   // Teksten
   intro_tekst?: string;
   outro_tekst?: string;
+  // Levering & betaling (migratie 224) — per offerte, valt terug op app_settings
+  levertijd?: string;
+  betalingsconditie?: string;
   // Contactpersoon koppeling
   contactpersoon_id?: string;
   // Klant acceptatie
@@ -824,6 +827,8 @@ export interface AppSettings {
   offerte_intro_tekst: string;
   offerte_outro_tekst: string;
   offerte_voorwaarden: string;
+  offerte_levertijd: string;
+  offerte_betalingsconditie: string;
   // Email
   /** @deprecated Verhuisd naar profiles (migratie 091). */
   afzender_naam: string;
