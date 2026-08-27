@@ -82,6 +82,12 @@ const ALLOWED_FIELDS = [
   'drive_map_aanmaken',
 ] as const
 
+// Een Mollie API key is 'live_'/'test_' + 30 alfanumerieke tekens. Zonder deze
+// controle slikt het opslaan alles: een half geplakte sleutel of een door de
+// browser ingevulde wachtwoord-autofill landt dan versleuteld in app_settings,
+// en de klant ziet pas bij het afrekenen dat er niets werkt.
+const MOLLIE_KEY_PATROON = /^(live|test)_[A-Za-z0-9]{30}$/
+
 const SECRET_FIELDS = [
   'mollie_api_key',
   'exact_online_client_secret',
@@ -179,6 +185,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const schoon = typeof value === 'string' && TRIM_FIELDS.has(field) ? value.trim() : value
         if (SECRET_FIELDS.includes(field)) {
           if (typeof schoon === 'string' && schoon.length > 0) {
+            if (field === 'mollie_api_key' && !MOLLIE_KEY_PATROON.test(schoon)) {
+              return res.status(400).json({
+                error: 'Dit lijkt geen Mollie API key. Een key begint met live_ of test_ en is 35 tekens lang. Kopieer hem opnieuw uit het Mollie Dashboard.',
+              })
+            }
             updates[field] = encryptSecret(schoon)
           }
           // Skip empty strings for secrets — don't overwrite encrypted value

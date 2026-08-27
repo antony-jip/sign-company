@@ -79,6 +79,7 @@ export function IntegratiesTab() {
   const [mollieApiKey, setMollieApiKey] = useState('')
   const [mollieSaving, setMollieSaving] = useState(false)
   const [mollieLoaded, setMollieLoaded] = useState(false)
+  const [mollieKeyOpgeslagen, setMollieKeyOpgeslagen] = useState(false)
 
   // Exact Online state
   const [exactClientId, setExactClientId] = useState('')
@@ -183,6 +184,7 @@ export function IntegratiesTab() {
       setDriveMapAanmaken(s.drive_map_aanmaken ?? true)
       setMollieEnabled(s.mollie_enabled ?? false)
       setMollieApiKey(isEncrypted(s.mollie_api_key ?? '') ? '' : (s.mollie_api_key ?? ''))
+      setMollieKeyOpgeslagen(!!s.mollie_api_key)
       setMollieLoaded(true)
       setExactClientId(s.exact_online_client_id ?? '')
       setExactClientSecret(isEncrypted(s.exact_online_client_secret ?? '') ? '' : (s.exact_online_client_secret ?? ''))
@@ -895,13 +897,21 @@ export function IntegratiesTab() {
 
   const handleMollieSave = async () => {
     if (!user?.id) return
+    // Leeg veld = key ongemoeid laten. Staat er wel iets, dan moet het ook echt
+    // een Mollie-key zijn: een half geplakte waarde of browser-autofill schrijft
+    // anders onzin over een werkende key heen en breekt elke betaallink.
+    if (mollieApiKey && !/^(live|test)_[A-Za-z0-9]{30}$/.test(mollieApiKey.trim())) {
+      toast.error('Dit lijkt geen Mollie API key. Een key begint met live_ of test_ en is 35 tekens lang.')
+      return
+    }
     setMollieSaving(true)
     try {
-      await saveIntegrationSettings({ mollie_enabled: mollieEnabled, mollie_api_key: mollieApiKey })
+      await saveIntegrationSettings({ mollie_enabled: mollieEnabled, mollie_api_key: mollieApiKey.trim() })
+      if (mollieApiKey) setMollieKeyOpgeslagen(true)
       toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
     } catch (err) {
       logger.error('Fout bij opslaan Mollie instellingen:', err)
-      toast.error('Kon Mollie instellingen niet opslaan')
+      toast.error(err instanceof Error ? err.message : 'Kon Mollie instellingen niet opslaan')
     } finally {
       setMollieSaving(false)
     }
@@ -1066,12 +1076,22 @@ export function IntegratiesTab() {
                   </Label>
                   <Input
                     id="mollie-api-key"
+                    name="mollie-api-key"
                     type="password"
                     value={mollieApiKey}
                     onChange={(e) => setMollieApiKey(e.target.value)}
-                    placeholder="live_... of test_..."
+                    placeholder={mollieKeyOpgeslagen ? 'Key staat opgeslagen — laat leeg om te behouden' : 'live_... of test_...'}
                     className="font-mono text-sm"
+                    autoComplete="off"
+                    data-lpignore="true"
+                    data-1p-ignore
+                    data-form-type="other"
                   />
+                  {mollieKeyOpgeslagen && (
+                    <p className="text-xs text-muted-foreground">
+                      Er staat al een key opgeslagen. Laat dit veld leeg om hem te behouden.
+                    </p>
+                  )}
                   <p className="text-xs text-muted-foreground">
                     Je vindt je API key in het{' '}
                     <a

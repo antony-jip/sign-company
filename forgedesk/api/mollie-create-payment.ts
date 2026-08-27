@@ -169,6 +169,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Haal mollie_api_key op uit app_settings — org-first met user_id-fallback
     // voor legacy rijen zonder organisatie_id.
     let mollieApiKey = ''
+    let mollieApiKeyBron: 'app_settings' | 'env' | 'geen' = 'geen'
 
     if (SUPABASE_URL && SUPABASE_SERVICE_KEY) {
       const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
@@ -195,12 +196,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       if (settings?.mollie_enabled && settings?.mollie_api_key) {
         mollieApiKey = decryptSecret(settings.mollie_api_key)
+        if (mollieApiKey) mollieApiKeyBron = 'app_settings'
       }
     }
 
     // Fallback naar Vercel environment variables
     if (!mollieApiKey) {
       mollieApiKey = process.env.MOLLIE_API_KEY_LIVE || process.env.MOLLIE_API_KEY_TEST || ''
+      if (mollieApiKey) mollieApiKeyBron = 'env'
     }
 
     if (!mollieApiKey) {
@@ -290,6 +293,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!mollieResponse.ok) {
       const errorBody = await mollieResponse.text()
       console.error('Mollie API error:', mollieResponse.status, errorBody)
+      // 401/403 = de opgeslagen API key deugt niet. Dat is geen incident bij de
+      // klant maar een instelling die stuk is; zonder alarm merkt niemand het,
+      // want de klant ziet enkel "betaling kon niet gestart worden" en pakt de
+      // bankoverschrijving. Elke betaallink van deze org is dan dood.
+      if (mollieResponse.status === 401 || mollieResponse.status === 403) {
+        Sentry.captureException(new Error(`Mollie weigert de API key (${mollieResponse.status})`), {
+          level: 'error',
+          extra: { factuur_id, organisatie_id, bron: mollieApiKeyBron },
+        })
+        return res.status(502).json({
+          error: 'De Mollie-koppeling is geweigerd. Controleer de API key in Instellingen > Integraties.',
+        })
+      }
       return res.status(502).json({ error: `Mollie fout: ${mollieResponse.status}` })
     }
 
