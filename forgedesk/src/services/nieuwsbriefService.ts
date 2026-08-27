@@ -23,10 +23,12 @@ export const GEDRAG_LABEL: Record<Gedrag, { titel: string; uitleg: string }> = {
 }
 
 export interface OntvangerSelectie {
-  type: 'alle' | 'filter' | 'handmatig'
+  type: 'alle' | 'filter' | 'handmatig' | 'lijst'
   statussen?: string[]
   labels?: string[]
   klantIds?: string[]
+  /** Bij type 'lijst': de losse adreslijst die gemaild wordt. Klanten blijven dan volledig buiten beeld. */
+  lijstId?: string
   inclusiefContactpersonen?: boolean
   gedrag?: Gedrag
   gedragVenster?: number
@@ -295,8 +297,9 @@ export interface Ontvanger {
   email: string
   naam: string
   bedrijfsnaam: string
-  klantId: string
-  bron: 'klant' | 'contactpersoon'
+  /** Null voor adressen uit een losse lijst: die hangen aan geen enkele klant. */
+  klantId: string | null
+  bron: 'klant' | 'contactpersoon' | 'lijst'
 }
 
 export interface KlantKeuze {
@@ -370,6 +373,10 @@ export async function getKlantKeuzes(): Promise<KlantKeuze[]> {
 }
 
 export function klantVoldoet(k: { id: string; status: string; labels: string[] }, sel: OntvangerSelectie): boolean {
+  // Een losse lijst staat los van het klantenbestand. Hier geen enkele klant
+  // doorlaten is precies het punt: anders lekt je eigen klantenbestand alsnog
+  // mee in een verzending die daar niet voor bedoeld is.
+  if (sel.type === 'lijst') return false
   if (sel.type === 'alle') return true
   if (sel.type === 'handmatig') return (sel.klantIds ?? []).includes(k.id)
   const statussen = sel.statussen ?? []
@@ -457,6 +464,27 @@ export function voldoetAanGedrag(email: string, gedrag: Gedrag | undefined, g: G
 
 export async function verzamelOntvangers(sel: OntvangerSelectie): Promise<{ ontvangers: Ontvanger[]; afgemeld: number }> {
   const { klanten, contacten, afgemeld } = await laadKlantenEnContacten()
+  // Een losse lijst gaat langs klanten en contactpersonen heen. Afmeldingen en
+  // harde bounces gelden wel: die staan op e-mailadres, niet op klant.
+  if (sel.type === 'lijst') {
+    if (!sel.lijstId) return { ontvangers: [], afgemeld: 0 }
+    const adressen = await getLijstAdressen(sel.lijstId)
+    const gezien = new Set<string>()
+    let afgemeldGeteld = 0
+    let uitLijst: Ontvanger[] = []
+    for (const a of adressen) {
+      const e = String(a.email || '').trim().toLowerCase()
+      if (!isEmail(e) || gezien.has(e)) continue
+      gezien.add(e)
+      if (afgemeld.has(e)) { afgemeldGeteld++; continue }
+      uitLijst.push({ email: e, naam: a.naam || '', bedrijfsnaam: a.bedrijfsnaam || '', klantId: null, bron: 'lijst' })
+    }
+    if (sel.gedrag && sel.gedrag !== 'alle') {
+      const g = await laadGedrag(sel.gedragVenster ?? 3)
+      uitLijst = uitLijst.filter(o => voldoetAanGedrag(o.email, sel.gedrag, g))
+    }
+    return { ontvangers: uitLijst, afgemeld: afgemeldGeteld }
+  }
   const map = new Map<string, Ontvanger>()
   let afgemeldGeteld = 0
   const voeg = (o: Ontvanger) => {
@@ -1027,10 +1055,153 @@ export async function markeerSegmentGebruikt(id: string): Promise<void> {
   if (error) console.warn('[nieuwsbrief] segment-gebruik bijwerken mislukt:', error.message)
 }
 
+// ── Losse adreslijsten ──────────────────────────────────────────────────────
+// Adressen die geen klant in doen. zijn: een branchelijst, beursbezoekers, een
+// eigen bestand. Ze staan bewust in een eigen tabel en niet in `klanten`, zodat
+// ze nooit meeliften in een verzending naar "Iedereen".
+
+export interface Lijst {
+  id: string
+  user_id: string
+  naam: string
+  omschrijving: string | null
+  created_at: string
+  updated_at: string
+  aantal?: number
+}
+
+export interface LijstAdres {
+  id: string
+  lijst_id: string
+  email: string
+  naam: string
+  bedrijfsnaam: string
+  created_at: string
+}
+
+export async function getLijsten(): Promise<Lijst[]> {
+  const { data, error } = await db()
+    .from('nieuwsbrief_lijsten')
+    .select('*, nieuwsbrief_lijst_adressen(count)')
+    .order('naam')
+  if (error) throw error
+  return (data ?? []).map(rij => {
+    const r = rij as unknown as Lijst & { nieuwsbrief_lijst_adressen?: { count: number }[] }
+    const { nieuwsbrief_lijst_adressen: telling, ...rest } = r
+    return { ...rest, aantal: telling?.[0]?.count ?? 0 }
+  })
+}
+
+export async function getLijstAdressen(lijstId: string): Promise<LijstAdres[]> {
+  const uit: LijstAdres[] = []
+  for (let van = 0; ; van += PAGINA) {
+    const { data, error } = await db()
+      .from('nieuwsbrief_lijst_adressen')
+      .select('id, lijst_id, email, naam, bedrijfsnaam, created_at')
+      .eq('lijst_id', lijstId)
+      .order('email')
+      .range(van, van + PAGINA - 1)
+    if (error) throw error
+    const rijen = (data ?? []) as unknown as LijstAdres[]
+    uit.push(...rijen)
+    if (rijen.length < PAGINA) break
+  }
+  return uit
+}
+
+export async function maakLijst(naam: string, omschrijving?: string): Promise<Lijst> {
+  const { data: { user } } = await db().auth.getUser()
+  if (!user) throw new Error('Niet ingelogd')
+  const { data, error } = await db()
+    .from('nieuwsbrief_lijsten')
+    .insert({ user_id: user.id, naam: naam.trim(), omschrijving: omschrijving?.trim() || null })
+    .select('*')
+    .single()
+  if (error) throw new Error(error.code === '23505' ? `Je hebt al een lijst met de naam "${naam.trim()}"` : error.message)
+  return { ...(data as unknown as Lijst), aantal: 0 }
+}
+
+export async function verwijderLijst(id: string): Promise<void> {
+  const { error } = await db().from('nieuwsbrief_lijsten').delete().eq('id', id)
+  if (error) throw error
+}
+
+export async function verwijderLijstAdres(id: string): Promise<void> {
+  const { error } = await db().from('nieuwsbrief_lijst_adressen').delete().eq('id', id)
+  if (error) throw error
+}
+
+/**
+ * Voegt adressen toe aan een lijst. Bestaande adressen worden overgeslagen, niet
+ * overschreven: twee keer hetzelfde bestand importeren mag geen dubbele mail
+ * opleveren. Per 500 wegschrijven, want een lijst van duizenden adressen past
+ * niet in één PostgREST-aanroep.
+ */
+export async function voegAdressenToe(lijstId: string, rijen: NieuwAdres[]): Promise<{ toegevoegd: number; overgeslagen: number }> {
+  const { data: { user } } = await db().auth.getUser()
+  if (!user) throw new Error('Niet ingelogd')
+  const bestaand = new Set((await getLijstAdressen(lijstId)).map(a => a.email))
+  const gezien = new Set<string>()
+  const nieuw: Record<string, unknown>[] = []
+  let overgeslagen = 0
+  for (const r of rijen) {
+    const email = String(r.email || '').trim().toLowerCase()
+    if (!isEmail(email) || bestaand.has(email) || gezien.has(email)) { overgeslagen++; continue }
+    gezien.add(email)
+    nieuw.push({ lijst_id: lijstId, user_id: user.id, email, naam: (r.naam || '').trim(), bedrijfsnaam: (r.bedrijfsnaam || '').trim() })
+  }
+  const BROK = 500
+  for (let i = 0; i < nieuw.length; i += BROK) {
+    const { error } = await db().from('nieuwsbrief_lijst_adressen').insert(nieuw.slice(i, i + BROK))
+    if (error) throw error
+  }
+  if (nieuw.length > 0) {
+    await db().from('nieuwsbrief_lijsten').update({ updated_at: new Date().toISOString() }).eq('id', lijstId)
+  }
+  return { toegevoegd: nieuw.length, overgeslagen }
+}
+
+export interface NieuwAdres { email: string; naam?: string; bedrijfsnaam?: string }
+
+/**
+ * Leest geplakte tekst of een CSV-export uit Excel. Slikt komma's, puntkomma's
+ * en tabs als scheidingsteken, en herkent een kopregel aan het woord e-mail.
+ * Zonder kopregel wordt de kolom met een @ als adres genomen, zodat "Bedrijf;
+ * Naam; adres@..." net zo goed werkt als een kale lijst adressen.
+ */
+export function parseAdressen(tekst: string): NieuwAdres[] {
+  const regels = tekst.split(/\r?\n/).map(r => r.trim()).filter(Boolean)
+  if (regels.length === 0) return []
+  const splits = (r: string) => r.split(/[;,\t]/).map(v => v.trim().replace(/^"|"$/g, ''))
+
+  let kolEmail = -1, kolNaam = -1, kolBedrijf = -1
+  const kop = splits(regels[0]).map(v => v.toLowerCase())
+  const heeftKop = kop.some(v => /e-?mail|mailadres/.test(v)) && !kop.some(v => v.includes('@'))
+  if (heeftKop) {
+    kolEmail = kop.findIndex(v => /e-?mail|mailadres/.test(v))
+    kolNaam = kop.findIndex(v => /naam|contact/.test(v) && !/bedrijf/.test(v))
+    kolBedrijf = kop.findIndex(v => /bedrijf|organisatie|company/.test(v))
+  }
+
+  const uit: NieuwAdres[] = []
+  for (const regel of regels.slice(heeftKop ? 1 : 0)) {
+    const velden = splits(regel)
+    const email = kolEmail >= 0 ? (velden[kolEmail] ?? '') : (velden.find(v => v.includes('@')) ?? '')
+    if (!email) continue
+    uit.push({
+      email,
+      naam: kolNaam >= 0 ? (velden[kolNaam] ?? '') : '',
+      bedrijfsnaam: kolBedrijf >= 0 ? (velden[kolBedrijf] ?? '') : '',
+    })
+  }
+  return uit
+}
+
 // Korte omschrijving van een selectie, voor in de lijst met segmenten.
 export function omschrijfSelectie(sel: OntvangerSelectie): string {
   const delen: string[] = []
   if (sel.type === 'alle') delen.push('iedereen')
+  else if (sel.type === 'lijst') delen.push('losse adreslijst')
   else if (sel.type === 'handmatig') delen.push(`${(sel.klantIds ?? []).length} gekozen klanten`)
   else {
     const st = sel.statussen ?? []

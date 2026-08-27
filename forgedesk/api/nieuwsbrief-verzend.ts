@@ -24,10 +24,12 @@ const THROTTLE_MS = 110
 const AFMELD_GEHEIM = process.env.NIEUWSBRIEF_WEBHOOK_TOKEN || (process.env.SUPABASE_SERVICE_ROLE_KEY ? `afmeld:${process.env.SUPABASE_SERVICE_ROLE_KEY}` : '')
 
 interface OntvangerSelectie {
-  type?: 'alle' | 'filter' | 'handmatig'
+  type?: 'alle' | 'filter' | 'handmatig' | 'lijst'
   statussen?: string[]
   labels?: string[]
   klantIds?: string[]
+  /** Bij type 'lijst': een losse adreslijst. Klanten blijven dan buiten beeld. */
+  lijstId?: string
   inclusiefContactpersonen?: boolean
   gedrag?: Gedrag
   gedragVenster?: number
@@ -186,7 +188,7 @@ interface Ontvanger {
   contactpersoonId: string | null
   naam: string
   bedrijfsnaam: string
-  bron: 'klant' | 'contactpersoon'
+  bron: 'klant' | 'contactpersoon' | 'lijst'
   labels: string[]
 }
 
@@ -221,7 +223,60 @@ async function allesVanOrg(tabel: string, kolommen: string, orgId: string): Prom
   return uit
 }
 
+// Adressen uit een losse lijst (nieuwsbrief_lijst_adressen). Die hangen aan geen
+// enkele klant, dus klanten en contactpersonen blijven hier volledig buiten.
+// Afmeldingen en harde bounces gelden wel: die staan op e-mailadres.
+async function lijstOntvangers(sel: OntvangerSelectie): Promise<Ontvanger[]> {
+  if (!sel.lijstId) return []
+  const adressen: Record<string, unknown>[] = []
+  for (let van = 0; ; van += 1000) {
+    const { data, error } = await supabase
+      .from('nieuwsbrief_lijst_adressen')
+      .select('email, naam, bedrijfsnaam')
+      .eq('lijst_id', sel.lijstId)
+      .eq('user_id', OWNER_USER_ID)
+      .order('email')
+      .range(van, van + 999)
+    if (error) throw error
+    const rijen = (data ?? []) as unknown as Record<string, unknown>[]
+    adressen.push(...rijen)
+    if (rijen.length < 1000) break
+  }
+
+  const [{ data: afmeldingen }, { data: problemen }] = await Promise.all([
+    supabase.from('nieuwsbrief_afmeldingen').select('email').eq('user_id', OWNER_USER_ID),
+    supabase.from('nieuwsbrief_adres_problemen').select('email').eq('user_id', OWNER_USER_ID).eq('hard', true),
+  ])
+  const geblokkeerd = new Set((afmeldingen ?? []).map(a => String((a as Record<string, unknown>).email).toLowerCase()))
+  for (const r of problemen ?? []) geblokkeerd.add(String((r as Record<string, unknown>).email).toLowerCase())
+
+  const map = new Map<string, Ontvanger>()
+  for (const rij of adressen) {
+    const e = String(rij.email || '').trim().toLowerCase()
+    if (!isEmail(e) || map.has(e) || geblokkeerd.has(e)) continue
+    const naam = String(rij.naam || '')
+    map.set(e, {
+      email: e,
+      ...splitNaam(naam),
+      naam: naam.trim(),
+      klantId: null,
+      contactpersoonId: null,
+      bedrijfsnaam: String(rij.bedrijfsnaam || ''),
+      bron: 'lijst',
+      // Geen klantlabels, dus een blok dat op een label gericht is valt weg.
+      labels: [],
+    })
+  }
+  let uit = Array.from(map.values())
+  if (sel.gedrag && sel.gedrag !== 'alle') {
+    const g = await laadGedrag(sel.gedragVenster ?? 3)
+    uit = uit.filter(o => voldoetAanGedrag(o.email, sel.gedrag, g))
+  }
+  return uit
+}
+
 async function verzamelOntvangers(orgId: string, sel: OntvangerSelectie): Promise<Ontvanger[]> {
+  if (sel.type === 'lijst') return lijstOntvangers(sel)
   const klanten = await allesVanOrg('klanten', 'id, email, bedrijfsnaam, contactpersoon, status, labels, is_demo_data', orgId)
   const statussen = sel.statussen ?? []
   const labels = sel.labels ?? []
