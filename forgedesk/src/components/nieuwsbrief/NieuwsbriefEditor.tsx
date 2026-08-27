@@ -242,6 +242,14 @@ export function NieuwsbriefEditor({ nieuwsbrief, onTerug, onGewijzigd, startMetD
       }
       const r = await verstuurNieuwsbrief(nieuwsbrief.id, onderwerp.trim(), gerenderd, preheader.trim() || undefined, scheduledAt, selectie, stijl, ab.actief ? ab : undefined)
       if (r.nieuwsbrief) onGewijzigd(r.nieuwsbrief)
+      if (r.teGaan) {
+        // Deze lijst paste niet binnen één verzending. Niet afsluiten: de
+        // afzender moet hier blijven en nog een keer klikken, anders blijft de
+        // rest ongemerkt liggen.
+        toast.warning(`${r.aantalOntvangers} verstuurd, nog ${r.teGaan} te gaan. Klik nog eens op Verstuur; wie de mail al kreeg wordt overgeslagen.`, { duration: 12000 })
+        setBevestigOpen(null)
+        return
+      }
       toast.success(
         r.status === 'gepland' ? `Ingepland voor ${r.aantalOntvangers} ontvangers`
           : r.wachtOpWinnaar ? `Test verstuurd naar ${r.aantalOntvangers}. Over ${ab.wachttijdUren} uur gaat het winnende onderwerp naar de andere ${r.wachtOpWinnaar}.`

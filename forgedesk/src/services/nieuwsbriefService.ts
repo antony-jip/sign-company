@@ -238,6 +238,8 @@ export interface VerzendResultaat {
   aantalOntvangers: number
   /** Bij een A/B-test: hoeveel mensen nog op het winnende onderwerp wachten. */
   wachtOpWinnaar?: number
+  /** Halverwege gestopt op het tijdsbudget: zoveel ontvangers staan nog open. */
+  teGaan?: number
   broadcastId: string
   nieuwsbrief: Nieuwsbrief | null
 }

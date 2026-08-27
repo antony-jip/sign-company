@@ -5,7 +5,9 @@ import { Ratelimit } from '@upstash/ratelimit'
 import { Redis } from '@upstash/redis'
 import { createHmac } from 'node:crypto'
 
-export const config = { maxDuration: 60 }
+// Vijf minuten in plaats van één. Een verzending naar duizenden adressen gaat
+// zo in één klik de deur uit; met 60 seconden kapte Vercel de lus af halverwege.
+export const config = { maxDuration: 300 }
 
 const OWNER_USER_ID = 'ce6843e3-5cd9-4043-9461-55071bc91eb7'
 const AUDIENCE_NAAM = 'Sign Company nieuwsbrief'
@@ -18,6 +20,13 @@ const APP_URL = (process.env.VITE_APP_URL || process.env.APP_URL || 'https://app
 const BATCH_GROOTTE = 100
 const MAX_GEPLAND_PER_RUN = 120
 const THROTTLE_MS = 110
+// Vangnet onder de maxDuration van 300. Bij een gewone lijst raakt dit budget
+// nooit op; het is er voor het geval een lijst zó groot is dat Vercel de lus
+// anders afkapt. Dan draait de afsluiting niet, blijft de brief op 'gepland'
+// staan en ziet de afzender een doodgelopen scherm. Stoppen we zelf, dan
+// sluiten we netjes af en gaat de rest mee bij een tweede klik; wie 'sent'
+// heeft wordt daarbij overgeslagen.
+const TIJD_BUDGET_MS = 270_000
 
 // Afmeldlink-sleutel: webhook-token als dat er is, anders afgeleid van de
 // service-role-key (altijd aanwezig en geheim). Zelfde keuze in nieuwsbrief-afmelden.ts.
@@ -551,8 +560,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .from('profiles').select('organisatie_id').eq('id', OWNER_USER_ID).maybeSingle()
     const orgId = (profile?.organisatie_id as string | null) ?? null
     const nu = new Date().toISOString()
+    const gestart = Date.now()
+    const tijdOp = () => Date.now() - gestart > TIJD_BUDGET_MS
     let aantal = 0
     let restAantal = 0
+    // Gezet zodra het tijdsbudget op is: de brief gaat dan terug naar concept in
+    // plaats van naar verzonden, zodat de rest bij een volgende klik meegaat.
+    let afgebroken = false
+    let teGaan = 0
     let broadcastId: string | null = null
 
     // Een broadcast gaat ongefilterd naar de hele Resend-lijst. Zodra er een
@@ -641,14 +656,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const mislukt: string[] = []
       if (gepland) {
+        let gedaan = 0
         for (const o of lijst) {
+          if (tijdOp()) { afgebroken = true; teGaan = lijst.length - gedaan; break }
           const { error } = await resend.emails.send({ ...maak(o), scheduledAt })
           if (error) mislukt.push(o.email)
           else aantal++
+          gedaan++
           await sleep(THROTTLE_MS)
         }
       } else {
         for (let i = 0; i < lijst.length; i += BATCH_GROOTTE) {
+          if (tijdOp()) { afgebroken = true; teGaan = lijst.length - i; break }
           const deel = lijst.slice(i, i + BATCH_GROOTTE)
           const { data, error } = await resend.batch.send(deel.map(maak))
           if (error) {
@@ -691,11 +710,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // niet opende moet dezelfde mail zijn, en achteraf wil je kunnen zien
         // wat er precies verstuurd is.
         verzend_html: volledigeHtml,
-        status: gepland ? 'gepland' : 'verzonden',
+        // Halverwege gestopt = terug naar concept, niet naar verzonden. Anders
+        // telt de brief als afgerond terwijl er mensen open staan, en pakt de
+        // A/B-cron hem op (die zoekt op status 'verzonden') voordat de testgroep
+        // compleet is.
+        status: afgebroken ? 'concept' : gepland ? 'gepland' : 'verzonden',
         resend_broadcast_id: broadcastId,
         aantal_ontvangers: aantal,
-        gepland_op: gepland ? scheduledAt : null,
-        verzonden_op: gepland ? null : nu,
+        gepland_op: !afgebroken && gepland ? scheduledAt : null,
+        verzonden_op: afgebroken || gepland ? null : nu,
         updated_at: nu,
       })
       .eq('id', nieuwsbriefId)
@@ -708,9 +731,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.status(200).json({
       ok: true,
-      status: gepland ? 'gepland' : 'verzonden',
+      status: afgebroken ? 'concept' : gepland ? 'gepland' : 'verzonden',
       aantalOntvangers: aantal,
-      wachtOpWinnaar: restAantal,
+      wachtOpWinnaar: afgebroken ? 0 : restAantal,
+      teGaan: afgebroken ? teGaan : 0,
       broadcastId,
       nieuwsbrief: bijgewerkt ?? null,
     })
