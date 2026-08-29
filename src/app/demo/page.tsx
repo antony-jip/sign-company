@@ -9,6 +9,7 @@ import DemoVideo from '@/components/DemoVideo'
 import AppShowcase from '@/components/home/AppShowcase'
 import { EigenGebruikBand, EigenGebruikNotitie, EIGEN_GEBRUIK_DUUR } from '@/components/EigenGebruik'
 import { STAFFEL_ZIN } from '@/data/pricing'
+import { RONDLEIDING_HREF } from '@/data/cta'
 import { AanmeldKaart } from '@/components/Aanmelden'
 import { OnboardingRegel } from '@/components/Onboarding'
 import JsonLd from '@/components/JsonLd'
@@ -239,11 +240,11 @@ export default function DemoPage() {
                   <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={2.5} />
                 </a>
                 <Link
-                  href="/contact"
+                  href={RONDLEIDING_HREF}
                   className="group inline-flex items-center gap-2 text-[16px] font-semibold text-white"
                 >
                   <span className="relative">
-                    Liever eerst even bellen
+                    Liever samen doorlopen
                     <span className="absolute left-0 -bottom-1 h-px w-full origin-left transition-transform duration-300 group-hover:scale-x-0 bg-white/50" />
                   </span>
                   <span aria-hidden className="transition-transform duration-300 group-hover:translate-x-1">→</span>

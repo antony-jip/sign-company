@@ -91,3 +91,40 @@ export const RONDLEIDING_OPBRENGST: Opbrengst[] = [
       'In geld en in tijd. Wat je per maand kwijt bent, wat de onboarding doet, wat wij overzetten en op welke maandag je erop kunt draaien.',
   },
 ]
+
+export type Bezwaar = {
+  vraag: string
+  antwoord: string
+}
+
+/* De drie dingen die een eigenaar denkt maar niet vraagt. Ze staan hier
+   omdat een scepticus die ze niet beantwoord ziet, aanneemt dat het
+   antwoord hem niet bevalt. De prijs staat er met opzet vóór het gesprek:
+   niets jaagt iemand harder weg dan het idee dat hij een half uur moet
+   zitten om te horen wat het kost. */
+export const RONDLEIDING_BEZWAREN: Bezwaar[] = [
+  {
+    vraag: 'Krijg ik de prijs pas te horen in het gesprek?',
+    antwoord:
+      'Nee, die staat gewoon op de site. Vanaf € 129 per maand ex btw, all-in en niet per gebruiker, maandelijks opzegbaar. Je hoeft niet te bellen om te weten waar je aan toe bent.',
+  },
+  {
+    vraag: 'Moet ik dan in één weekend om?',
+    antwoord:
+      'Nee. Je oude systeem hoeft er op dag één niet uit. Stuur ons een export van je klanten en producten, dan zetten wij die erin. De onboarding is gratis en duurt ongeveer een uur.',
+  },
+  {
+    vraag: 'Word ik daarna nagebeld?',
+    antwoord:
+      'Nee. Je krijgt één mail met wat je gezien hebt en wat het kost. Daarna hoor je niets meer, tenzij je zelf van je laat horen. Geen belrondje, geen tweede afspraak die je niet gevraagd hebt.',
+  },
+]
+
+/* Jezelf diskwalificeren werkt bij een scepticus beter dan nog een
+   voordeel. Alleen dingen opschrijven die echt waar zijn. */
+export const RONDLEIDING_NIET_VOOR_JOU = [
+  'Je zoekt een boekhoudpakket. doen. rekent en factureert, maar je boekhouding blijft in Exact, Moneybird of e-Boekhouden staan.',
+  'Je werkt in je eentje en je Excel doet precies wat je wil. Dan levert een systeem je vooral werk op.',
+  'Je wil je huidige pakket exact nagebouwd hebben. Dat gaan we niet doen, en dat zou je ook niet moeten willen.',
+  'Je monteurs komen er niet aan te pas. Zonder de mensen op de bus valt de helft van de winst weg.',
+]

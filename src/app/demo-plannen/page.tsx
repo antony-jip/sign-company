@@ -11,10 +11,13 @@ import { OnboardingRegel } from '@/components/Onboarding'
 import { RONDLEIDING_BERICHT } from '@/data/cta'
 import {
   RONDLEIDING_AGENDA,
+  RONDLEIDING_BEZWAREN,
   RONDLEIDING_DUUR,
+  RONDLEIDING_NIET_VOOR_JOU,
   RONDLEIDING_OPBRENGST,
   RONDLEIDING_ZEKERHEDEN,
 } from '@/data/rondleiding'
+import { PRICE_PER_MONTH } from '@/data/pricing'
 
 export const metadata: Metadata = paginaMeta({
   title: 'Plan een rondleiding · een half uur, jouw klus | doen.',
@@ -63,6 +66,22 @@ export default function DemoPlannenPage() {
               </a>
             </div>
 
+            {/* Wie er straks in beeld komt, meteen bij de knop. Een eigenaar
+                die geen software wil, wil eerst weten wie hij aan de lijn krijgt. */}
+            <div className="mt-8 flex items-center gap-3.5">
+              <Image
+                src="/images/maker/antony-portret.webp"
+                alt="Antony Bootsma"
+                width={52}
+                height={52}
+                className="rounded-full object-cover w-[52px] h-[52px]"
+              />
+              <p className="text-[15px] leading-[1.5] text-muted">
+                Je doet hem met <span className="font-semibold text-petrol">Antony Bootsma</span>,
+                <br className="hidden sm:block" /> die doen. zelf bouwde en er zelf op draait.
+              </p>
+            </div>
+
             {/* De vier bezwaren die een eigenaar meteen heeft, meteen weg */}
             <dl className="mt-10 md:mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-6 border-t border-petrol/10 pt-8">
               {RONDLEIDING_ZEKERHEDEN.map((z) => (
@@ -75,6 +94,73 @@ export default function DemoPlannenPage() {
                 </div>
               ))}
             </dl>
+          </div>
+        </section>
+
+
+        {/* ─── Het moment waar het kwartje valt ───
+            Twee echte schermen uit de app, geen praatje: de aanvraag in de
+            mailbox en het project dat eruit ontstaat. Dit is het stuk waar
+            een signmaker aan tafel rechtop gaat zitten, dus het staat hoog. */}
+        <section className="bg-white border-t border-petrol/10">
+          <div className="container-site py-14 md:py-24">
+            <div className="md:grid md:grid-cols-12 md:gap-10 items-end mb-8 md:mb-14">
+              <h2
+                className="md:col-span-7 font-heading font-bold text-petrol leading-[1.02] mb-4 md:mb-0"
+                style={{ fontSize: 'clamp(28px, 3.8vw, 48px)', letterSpacing: '-0.03em', textWrap: 'balance' }}
+              >
+                Deze mail<span className="text-flame">.</span> Eén klik
+                <span className="text-flame">.</span> Dit project
+                <span className="text-flame">.</span>
+              </h2>
+              <p className="md:col-span-5 text-[16px] md:text-[17px] leading-[1.6] text-muted">
+                Meestal is dit het moment dat het kwartje valt. De aanvraag die nu nog in
+                je mailbox blijft liggen tot je er tijd voor hebt, staat hier als klus
+                klaar. In de rondleiding doen we het met een aanvraag van jou.
+              </p>
+            </div>
+
+            <figure className="m-0">
+              <div className="rounded-[10px] overflow-hidden border border-petrol/10 shadow-[0_1px_2px_rgba(20,40,40,0.04),0_20px_48px_-30px_rgba(13,52,60,0.35)]">
+                <Image
+                  src="/images/modules/flow-mail.webp"
+                  alt="De mailbox in doen. met klantmail op een rij, waaronder een nieuwe aanvraag voor bewegwijzering"
+                  width={2069}
+                  height={1186}
+                  className="w-full h-auto block"
+                  sizes="(max-width: 1200px) 100vw, 1104px"
+                />
+              </div>
+              <figcaption className="mt-3 text-[14px] text-muted">
+                Je eigen mailbox, in doen. Alle mail van een klant hangt aan die klant.
+              </figcaption>
+            </figure>
+
+            <div className="flex items-center gap-4 my-8 md:my-12">
+              <span aria-hidden className="h-px flex-1 bg-petrol/12" />
+              <span className="inline-flex items-center gap-2.5 text-[14px] md:text-[15px] font-semibold text-petrol">
+                <span aria-hidden className="text-flame text-[20px] leading-none">↓</span>
+                één klik
+              </span>
+              <span aria-hidden className="h-px flex-1 bg-petrol/12" />
+            </div>
+
+            <figure className="m-0">
+              <div className="rounded-[10px] overflow-hidden border border-petrol/10 shadow-[0_1px_2px_rgba(20,40,40,0.04),0_20px_48px_-30px_rgba(13,52,60,0.35)]">
+                <Image
+                  src="/images/modules/flow-project.webp"
+                  alt="Het project dat uit de mail ontstaat, met voortgang, briefing, offerte en klantgegevens bij elkaar"
+                  width={2069}
+                  height={1186}
+                  className="w-full h-auto block"
+                  sizes="(max-width: 1200px) 100vw, 1104px"
+                />
+              </div>
+              <figcaption className="mt-3 text-[14px] text-muted">
+                Dezelfde klant als klus. Briefing, offerte, contactpersoon en de mailwisseling
+                staan er al in. Van hieruit maak je de werkbon en de factuur.
+              </figcaption>
+            </figure>
           </div>
         </section>
 
@@ -254,6 +340,63 @@ export default function DemoPlannenPage() {
           </div>
         </section>
 
+
+        {/* ─── Wat een scepticus denkt maar niet vraagt ───
+            Deze sectie is er voor de eigenaar die geen nieuwe software wil.
+            De prijs vóór het gesprek, de overstap, en de belofte dat er geen
+            belrondje achteraan komt. Daarna diskwalificeren we onszelf: dat
+            overtuigt zo iemand meer dan nog een voordeel. */}
+        <section className="bg-white">
+          <div className="container-site py-14 md:py-24">
+            <h2
+              className="font-heading font-bold text-petrol leading-[1.02] max-w-3xl"
+              style={{ fontSize: 'clamp(28px, 3.8vw, 48px)', letterSpacing: '-0.03em', textWrap: 'balance' }}
+            >
+              Wat je waarschijnlijk denkt<span className="text-flame">.</span>
+            </h2>
+            <p className="mt-4 text-[16px] md:text-[18px] text-muted max-w-2xl leading-[1.6]">
+              Je hebt geen zin in nieuwe software. Terecht, de meeste pakketten leveren
+              vooral werk op. Dus hier alvast de antwoorden waar je anders een half uur
+              op moet wachten.
+            </p>
+
+            <div className="mt-10 md:mt-14 grid grid-cols-1 md:grid-cols-3 gap-x-10 gap-y-9">
+              {RONDLEIDING_BEZWAREN.map((b) => (
+                <div key={b.vraag} className="border-t-2 border-flame pt-5">
+                  <h3 className="font-heading text-[18px] md:text-[20px] font-bold text-petrol leading-[1.25]">
+                    {b.vraag}
+                  </h3>
+                  <p className="mt-3 text-[15px] md:text-[16px] leading-[1.6] text-muted">{b.antwoord}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-12 md:mt-20 rounded-[8px] bg-bg border border-petrol/10 p-7 md:p-10">
+              <h3
+                className="font-heading font-bold text-petrol leading-[1.1]"
+                style={{ fontSize: 'clamp(21px, 2.4vw, 28px)', letterSpacing: '-0.02em' }}
+              >
+                Wanneer je het beter niet doet<span className="text-flame">.</span>
+              </h3>
+              <ul className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4 max-w-4xl">
+                {RONDLEIDING_NIET_VOOR_JOU.map((regel) => (
+                  <li key={regel} className="flex items-start gap-3 text-[15px] md:text-[16px] leading-[1.6] text-ink">
+                    <span aria-hidden className="text-muted font-semibold mt-[1px] shrink-0">
+                      —
+                    </span>
+                    <span>{regel}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-7 text-[15px] md:text-[16px] leading-[1.6] text-muted max-w-2xl">
+                Herken je jezelf hierin, dan kost een rondleiding je een half uur dat je
+                beter aan een klus besteedt. Zeg het gerust in het formulier, dan mailen we
+                je waarom het bij ons ook niet zou werken.
+              </p>
+            </div>
+          </div>
+        </section>
+
         {/* ─── Plannen ─── */}
         <section id="plannen" className="bg-white scroll-mt-24">
           <div className="container-site py-14 md:py-24">
@@ -288,6 +431,17 @@ export default function DemoPlannenPage() {
                 </ul>
 
                 <p className="mt-8 text-[15px] leading-[1.6] text-muted max-w-md">
+                  Wat het daarna kost weet je nu al: vanaf € {PRICE_PER_MONTH} per maand ex
+                  btw, all-in en niet per gebruiker.{' '}
+                  <Link
+                    href="/prijzen"
+                    className="font-semibold text-petrol underline decoration-flame decoration-2 underline-offset-4 hover:text-flame transition-colors"
+                  >
+                    Bekijk de prijzen
+                  </Link>
+                  .
+                </p>
+                <p className="mt-4 text-[15px] leading-[1.6] text-muted max-w-md">
                   Liever meteen zelf klikken?{' '}
                   <a
                     href="https://app.doen.team/register"
