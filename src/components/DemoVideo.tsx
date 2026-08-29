@@ -7,7 +7,16 @@ import { ArrowRight } from 'lucide-react'
    Standaard click-to-play; met autoStart speelt hij direct gedempt af
    (de video is muted-first gemaakt: captions dragen het verhaal) en
    verschijnt na afloop de Start-gratis-knop ín het beeld. */
-export default function DemoVideo({ autoStart = false, ctaHref = 'https://app.doen.team/register' }: { autoStart?: boolean; ctaHref?: string }) {
+export default function DemoVideo({
+  autoStart = false,
+  ctaHref = 'https://app.doen.team/register',
+  ctaLabel = 'Start gratis · 30 dagen',
+}: {
+  autoStart?: boolean
+  ctaHref?: string
+  /** Hoort bij ctaHref: op /demo-plannen wijst de knop naar het formulier, niet naar registreren. */
+  ctaLabel?: string
+}) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [playing, setPlaying] = useState(false)
   const [muted, setMuted] = useState(autoStart)
@@ -103,7 +112,7 @@ export default function DemoVideo({ autoStart = false, ctaHref = 'https://app.do
             href={ctaHref}
             className="group inline-flex items-center gap-2.5 text-[16px] md:text-[17px] font-semibold text-white bg-flame px-9 h-[60px] rounded-[8px] shadow-[0_4px_16px_rgba(241,80,37,0.4)] transition-transform duration-300 hover:scale-[1.04] active:scale-[0.97]"
           >
-            <span>Start gratis · 30 dagen</span>
+            <span>{ctaLabel}</span>
             <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={2.5} />
           </a>
           <button

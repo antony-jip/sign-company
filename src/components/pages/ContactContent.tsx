@@ -2,55 +2,27 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { ArrowRight } from 'lucide-react'
 import { ONBOARDING_OP_LOCATIE_PRIJS } from '@/data/onboarding'
-import { RONDLEIDING_BERICHT } from '@/data/cta'
-
-const easing: [number, number, number, number] = [0.16, 1, 0.3, 1]
+import { RONDLEIDING_BERICHT, RONDLEIDING_HREF } from '@/data/cta'
+import ContactFormulier from '@/components/ContactFormulier'
 
 export default function ContactContent() {
-  const reduce = useReducedMotion() ?? false
-  const [formState, setFormState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
-  const [formData, setFormData] = useState({ naam: '', email: '', bericht: '' })
-  const [errorMsg, setErrorMsg] = useState<string | null>(null)
-
-  /* "Plan een rondleiding" in de header, de hero en de afsluiter komt hier
-     binnen met ?over=rondleiding. Dan staat de vraag al in het bericht, zodat
-     iemand alleen nog naam en mailadres invult.
+  /* Oude mails en bookmarks komen hier nog binnen met ?over=rondleiding.
+     Dan staat de vraag al in het bericht, zodat iemand alleen nog naam en
+     mailadres invult. De CTA's op de site gaan tegenwoordig naar
+     /rondleiding, waar het hele verhaal staat.
 
      Bewust via window.location en niet via useSearchParams: die hook dwingt
      een Suspense-grens af bij het statisch renderen van deze pagina, en dat
      is te veel machinerie voor één voorinvulling. */
+  const [beginBericht, setBeginBericht] = useState('')
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     if (params.get('over') !== 'rondleiding') return
-    setFormData((d) => (d.bericht ? d : { ...d, bericht: RONDLEIDING_BERICHT }))
+    setBeginBericht(RONDLEIDING_BERICHT)
   }, [])
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setFormState('loading')
-    setErrorMsg(null)
-    try {
-      const res = await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      })
-      if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { error?: string }
-        setErrorMsg(data.error ?? 'Er ging iets mis. Probeer het later nog eens.')
-        setFormState('error')
-        return
-      }
-      setFormState('success')
-      setFormData({ naam: '', email: '', bericht: '' })
-    } catch {
-      setErrorMsg('Geen verbinding. Probeer het later nog eens.')
-      setFormState('error')
-    }
-  }
 
   return (
     <div className="bg-bg">
@@ -92,12 +64,12 @@ export default function ContactContent() {
                 <div className="flex items-baseline justify-between gap-4 py-4 border-t border-petrol/10">
                   <dt className="text-[14px] text-muted shrink-0">Demo plannen</dt>
                   <dd>
-                    <a
-                      href="#contact-formulier"
+                    <Link
+                      href={RONDLEIDING_HREF}
                       className="text-[15px] font-semibold text-petrol hover:text-flame transition-colors"
                     >
-                      Gebruik het formulier, we plannen direct iets in
-                    </a>
+                      Bekijk wat we in een half uur doorlopen
+                    </Link>
                   </dd>
                 </div>
                 <div className="flex items-baseline justify-between gap-4 py-4 border-t border-petrol/10">
@@ -150,94 +122,13 @@ export default function ContactContent() {
           {/* Rechts: formulier */}
           <div id="contact-formulier" className="hero-fade lg:col-span-3 scroll-mt-28" style={{ animationDelay: '0.35s' }}>
             <div className="bg-white rounded-[8px] border border-petrol/10 p-6 md:p-12">
-              <AnimatePresence mode="wait" initial={false}>
-                {formState === 'success' ? (
-                  <SuccessState key="success" reduce={reduce} />
-                ) : (
-                  <motion.form
-                    key="form"
-                    onSubmit={handleSubmit}
-                    className="space-y-6"
-                    initial={reduce ? false : { opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={reduce ? undefined : { opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <h2
-                      className="font-heading font-bold text-petrol leading-[1.1] mb-8"
-                      style={{ fontSize: 'clamp(24px, 3vw, 32px)', letterSpacing: '-0.03em' }}
-                    >
-                      Stuur een bericht<span className="text-flame">.</span>
-                    </h2>
-
-                    <Field
-                      id="naam"
-                      label="Naam"
-                      value={formData.naam}
-                      onChange={(v) => setFormData({ ...formData, naam: v })}
-                      required
-                      autoComplete="name"
-                    />
-                    <Field
-                      id="email"
-                      label="Email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(v) => setFormData({ ...formData, email: v })}
-                      required
-                      autoComplete="email"
-                    />
-                    <Field
-                      id="bericht"
-                      label="Bericht"
-                      value={formData.bericht}
-                      onChange={(v) => setFormData({ ...formData, bericht: v })}
-                      required
-                      multiline
-                    />
-
-                    {formState === 'error' && errorMsg && (
-                      <p
-                        role="alert"
-                        className="text-[14px] leading-snug px-4 py-3 rounded-[6px] border border-flame/25 bg-flame/5"
-                        style={{ color: '#A03318' }}
-                      >
-                        {errorMsg}
-                      </p>
-                    )}
-
-                    <button
-                      type="submit"
-                      disabled={formState === 'loading'}
-                      className="group w-full inline-flex items-center justify-center gap-2.5 text-[15px] font-semibold text-white bg-flame h-[54px] rounded-[6px] transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
-                    >
-                      {formState === 'loading' ? (
-                        <>
-                          <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeOpacity="0.3" strokeWidth="3" />
-                            <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-                          </svg>
-                          <span>Versturen…</span>
-                        </>
-                      ) : (
-                        <>
-                          <span>Verstuur bericht</span>
-                          <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={2.5} />
-                        </>
-                      )}
-                    </button>
-
-                    <p className="text-[13px] text-center text-muted">
-                      We gebruiken je naam, e-mailadres en bericht alleen om je vraag te
-                      beantwoorden. Zie de{' '}
-                      <Link href="/privacy" className="font-semibold text-petrol underline underline-offset-2 hover:text-flame transition-colors">
-                        privacyverklaring
-                      </Link>
-                      .
-                    </p>
-                  </motion.form>
-                )}
-              </AnimatePresence>
+              {/* key: pas als de voorinvulling binnen is remount het formulier
+                  één keer, zodat het bericht al ingevuld staat. */}
+              <ContactFormulier
+                key={beginBericht ? 'rondleiding' : 'leeg'}
+                titel="Stuur een bericht"
+                beginBericht={beginBericht}
+              />
             </div>
           </div>
         </div>
@@ -270,93 +161,5 @@ export default function ContactContent() {
         </div>
       </section>
     </div>
-  )
-}
-
-/* ─────────────────────────────────────────────────────────── */
-
-function Field({
-  id,
-  label,
-  value,
-  onChange,
-  type = 'text',
-  multiline = false,
-  required,
-  autoComplete,
-}: {
-  id: string
-  label: string
-  value: string
-  onChange: (v: string) => void
-  type?: string
-  multiline?: boolean
-  required?: boolean
-  autoComplete?: string
-}) {
-  const commonClasses =
-    'w-full px-4 rounded-[6px] bg-bg text-ink text-[16px] border border-petrol/15 outline-none transition-[border-color,box-shadow] duration-200 focus:border-flame focus:ring-[3px] focus:ring-flame/15'
-
-  return (
-    <div>
-      <label htmlFor={id} className="block text-[14px] font-semibold text-ink mb-2">
-        {label}
-      </label>
-      {multiline ? (
-        <textarea
-          id={id}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          required={required}
-          rows={5}
-          className={`${commonClasses} py-3 resize-none`}
-        />
-      ) : (
-        <input
-          id={id}
-          type={type}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          required={required}
-          autoComplete={autoComplete}
-          className={`${commonClasses} h-[50px]`}
-        />
-      )}
-    </div>
-  )
-}
-
-function SuccessState({ reduce }: { reduce: boolean }) {
-  return (
-    <motion.div
-      initial={reduce ? false : { opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: easing }}
-      className="text-center py-12"
-    >
-      <div className="w-14 h-14 rounded-full bg-flame flex items-center justify-center mx-auto mb-6">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <motion.path
-            d="M5 12l5 5 9-11"
-            stroke="#FFFFFF"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            initial={reduce ? false : { pathLength: 0 }}
-            animate={{ pathLength: 1 }}
-            transition={{ duration: 0.5, delay: 0.2, ease: easing }}
-          />
-        </svg>
-      </div>
-      <p
-        className="font-heading font-bold text-petrol leading-none mb-3"
-        style={{ fontSize: 'clamp(26px, 3vw, 32px)', letterSpacing: '-0.03em' }}
-      >
-        Verstuurd<span className="text-flame">.</span>
-      </p>
-      <p className="text-[15px] max-w-xs mx-auto leading-[1.6] text-muted">
-        We reageren binnen één werkdag. Kijk voor de zekerheid ook in je spam-folder.
-      </p>
-    </motion.div>
   )
 }
