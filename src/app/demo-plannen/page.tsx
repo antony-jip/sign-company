@@ -6,6 +6,7 @@ import { paginaMeta } from '@/lib/metadata'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import DemoVideo from '@/components/DemoVideo'
+import KlusDoorlopen from '@/components/KlusDoorlopen'
 import ContactFormulier from '@/components/ContactFormulier'
 import { OnboardingRegel } from '@/components/Onboarding'
 import { RONDLEIDING_BERICHT } from '@/data/cta'
@@ -109,58 +110,26 @@ export default function DemoPlannenPage() {
                 className="md:col-span-7 font-heading font-bold text-petrol leading-[1.02] mb-4 md:mb-0"
                 style={{ fontSize: 'clamp(28px, 3.8vw, 48px)', letterSpacing: '-0.03em', textWrap: 'balance' }}
               >
-                Deze mail<span className="text-flame">.</span> Eén klik
-                <span className="text-flame">.</span> Dit project
-                <span className="text-flame">.</span>
+                Doe een hele klus<span className="text-flame">.</span> Hier
+                <span className="text-flame">.</span> Nu<span className="text-flame">.</span>
               </h2>
               <p className="md:col-span-5 text-[16px] md:text-[17px] leading-[1.6] text-muted">
-                Meestal is dit het moment dat het kwartje valt. De aanvraag die nu nog in
-                je mailbox blijft liggen tot je er tijd voor hebt, staat hier als klus
-                klaar. In de rondleiding doen we het met een aanvraag van jou.
+                Dit is de app zelf, nagebouwd in deze pagina. Van de aanvraag in je
+                mailbox tot de verstuurde factuur, in vijf klikken. In de rondleiding
+                doen we het nog een keer, met een klus van jou.
               </p>
             </div>
 
-            <figure className="m-0">
-              <div className="rounded-[10px] overflow-hidden border border-petrol/10 shadow-[0_1px_2px_rgba(20,40,40,0.04),0_20px_48px_-30px_rgba(13,52,60,0.35)]">
-                <Image
-                  src="/images/modules/flow-mail.webp"
-                  alt="De mailbox in doen. met klantmail op een rij, waaronder een nieuwe aanvraag voor bewegwijzering"
-                  width={2069}
-                  height={1186}
-                  className="w-full h-auto block"
-                  sizes="(max-width: 1200px) 100vw, 1104px"
-                />
-              </div>
-              <figcaption className="mt-3 text-[14px] text-muted">
-                Je eigen mailbox, in doen. Alle mail van een klant hangt aan die klant.
-              </figcaption>
-            </figure>
+            <KlusDoorlopen />
 
-            <div className="flex items-center gap-4 my-8 md:my-12">
-              <span aria-hidden className="h-px flex-1 bg-petrol/12" />
-              <span className="inline-flex items-center gap-2.5 text-[14px] md:text-[15px] font-semibold text-petrol">
-                <span aria-hidden className="text-flame text-[20px] leading-none">↓</span>
-                één klik
+            <p className="mt-8 md:mt-10 text-[17px] md:text-[21px] leading-[1.4] font-semibold text-petrol max-w-3xl">
+              Vijf klikken. De klantgegevens, de omschrijving en de bedragen tikte je
+              nul keer over<span className="text-flame">.</span>{' '}
+              <span className="text-muted font-normal">
+                Doe dezelfde klus in je huidige pakket en tel mee: hoeveel programma&apos;s
+                open je, en hoe vaak typ je dezelfde regel opnieuw?
               </span>
-              <span aria-hidden className="h-px flex-1 bg-petrol/12" />
-            </div>
-
-            <figure className="m-0">
-              <div className="rounded-[10px] overflow-hidden border border-petrol/10 shadow-[0_1px_2px_rgba(20,40,40,0.04),0_20px_48px_-30px_rgba(13,52,60,0.35)]">
-                <Image
-                  src="/images/modules/flow-project.webp"
-                  alt="Het project dat uit de mail ontstaat, met voortgang, briefing, offerte en klantgegevens bij elkaar"
-                  width={2069}
-                  height={1186}
-                  className="w-full h-auto block"
-                  sizes="(max-width: 1200px) 100vw, 1104px"
-                />
-              </div>
-              <figcaption className="mt-3 text-[14px] text-muted">
-                Dezelfde klant als klus. Briefing, offerte, contactpersoon en de mailwisseling
-                staan er al in. Van hieruit maak je de werkbon en de factuur.
-              </figcaption>
-            </figure>
+            </p>
           </div>
         </section>
 
