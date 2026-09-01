@@ -58,11 +58,28 @@ export async function setBackfillTarget(target: BackfillTarget): Promise<void> {
 // de meelezers uit de thread laat vallen; `aan` bevat alleen de tekstvorm.
 const LIST_VIEW_COLUMNS = 'id,gmail_id,uid,message_id,van,aan,to_addresses,cc_addresses,onderwerp,datum,gelezen,starred,labels,bijlagen,map,from_name,from_address,imap_folder,pinned,snoozed_until,thread_id,attachment_meta,has_attachments,body_text,created_at,is_aanvraag,aanvraag_zekerheid,aanvraag_samenvatting,aanvraag_verborgen'
 
+/**
+ * De mailbox is persoonlijk. RLS op `emails` staat naast de eigenaar-policy
+ * ook toe dat teamleden mail lezen die via `email_project_koppelingen` aan een
+ * project van de organisatie hangt (migratie 109). Dat is gewenst binnen een
+ * project, maar de lijstquery's hieronder kennen geen context: zonder eigen
+ * filter belandde de projectmail van een collega gewoon in jouw postvak.
+ * Vandaar dat de mailmodule expliciet op de eigenaar filtert.
+ */
+async function eigenUserId(): Promise<string | null> {
+  if (!supabase) return null
+  const { data: { user } } = await supabase.auth.getUser()
+  return user?.id ?? null
+}
+
 export async function getEmails(limit = 200): Promise<Email[]> {
   if (isSupabaseConfigured() && supabase) {
+    const uid = await eigenUserId()
+    if (!uid) return []
     const { data, error } = await supabase
       .from('emails_list_view')
       .select(LIST_VIEW_COLUMNS)
+      .eq('user_id', uid)
       .order('datum', { ascending: false })
       .limit(limit)
     if (error) throw error
@@ -82,11 +99,13 @@ export async function getEmails(limit = 200): Promise<Email[]> {
  */
 export async function getMapTellers(): Promise<{ inboxOngelezen: number; concepten: number; gepland: number; gesnoozed: number } | null> {
   if (!isSupabaseConfigured() || !supabase) return null
+  const uid = await eigenUserId()
+  if (!uid) return null
   const [inboxQ, conceptenQ, geplandQ, gesnoozedQ] = await Promise.all([
-    supabase.from('emails').select('id', { count: 'exact', head: true }).eq('map', 'inbox').eq('gelezen', false),
-    supabase.from('emails').select('id', { count: 'exact', head: true }).eq('map', 'concepten'),
-    supabase.from('emails').select('id', { count: 'exact', head: true }).eq('map', 'gepland'),
-    supabase.from('emails').select('id', { count: 'exact', head: true }).not('snoozed_until', 'is', null),
+    supabase.from('emails').select('id', { count: 'exact', head: true }).eq('user_id', uid).eq('map', 'inbox').eq('gelezen', false),
+    supabase.from('emails').select('id', { count: 'exact', head: true }).eq('user_id', uid).eq('map', 'concepten'),
+    supabase.from('emails').select('id', { count: 'exact', head: true }).eq('user_id', uid).eq('map', 'gepland'),
+    supabase.from('emails').select('id', { count: 'exact', head: true }).eq('user_id', uid).not('snoozed_until', 'is', null),
   ])
   if (inboxQ.error || conceptenQ.error || geplandQ.error || gesnoozedQ.error) return null
   return {
@@ -109,9 +128,12 @@ export interface EmailPageCursor {
  */
 export async function getEmailsPage(map: string, cursor: EmailPageCursor | null, limit = 100): Promise<Email[]> {
   if (!isSupabaseConfigured() || !supabase) return []
+  const uid = await eigenUserId()
+  if (!uid) return []
   let q = supabase
     .from('emails_list_view')
     .select(LIST_VIEW_COLUMNS)
+    .eq('user_id', uid)
     .eq('map', map)
     .order('datum', { ascending: false })
     .order('id', { ascending: false })
@@ -136,12 +158,14 @@ function veiligeZoekterm(w: string): string {
 export async function searchEmailsFTS(query: string, limit = 50, offset = 0): Promise<Email[]> {
   if (!query.trim() || !isSupabaseConfigured() || !supabase) return []
   const client = supabase
+  const uid = await eigenUserId()
+  if (!uid) return []
   const filters = parseZoekQuery(query)
 
   // Alle filters buiten de vrije tekst gelden in beide rondes.
   type Bouwer = PostgrestFilterBuilder<any, any, any, any>
   const pasFiltersToe = (q: Bouwer): Bouwer => {
-    let uit = q
+    let uit = q.eq('user_id', uid)
     if (filters.van) {
       const veilig = veiligeZoekterm(filters.van)
       if (veilig) uit = uit.or(`van.ilike.%${veilig}%,from_address.ilike.%${veilig}%`)
