@@ -1,5 +1,6 @@
 export {
   getOffertes, zoekOffertes, getOfferte, getOffertesByProject, getOffertesByKlant,
+  getTeFacturerenOffertes,
   getMateriaalSuggesties,
   createOfferte, updateOfferte, deleteOfferte, OfferteConflictError,
   getOfferteItems, getOfferteItemsVoorOffertes, createOfferteItem, updateOfferteItem, deleteOfferteItem,

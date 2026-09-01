@@ -187,6 +187,28 @@ export async function getMateriaalSuggesties(query: string): Promise<Array<{ mat
   return results
 }
 
+/**
+ * Losse offertes die klaarstaan om gefactureerd te worden (migratie 230).
+ *
+ * Al gefactureerde offertes vallen er vanzelf uit: die hebben een factuur
+ * gekoppeld. De vlag wordt dus niet gewist bij het factureren, zodat je in de
+ * offerte kunt blijven zien dat hij ooit klaargezet is.
+ *
+ * Faalt stil met een lege lijst zolang migratie 230 nog niet gedraaid is; de
+ * tab Te factureren toont dan gewoon alleen de projecten.
+ */
+export async function getTeFacturerenOffertes(): Promise<Offerte[]> {
+  if (!isSupabaseConfigured() || !supabase) return []
+  const { data, error } = await supabase
+    .from('offertes')
+    .select('*')
+    .eq('te_factureren', true)
+    .is('geconverteerd_naar_factuur_id', null)
+    .order('te_factureren_op', { ascending: true })
+  if (error) return []
+  return (data ?? []) as Offerte[]
+}
+
 export async function createOfferte(offerte: Omit<Offerte, 'id' | 'created_at' | 'updated_at'>): Promise<Offerte> {
   if (isSupabaseConfigured() && supabase) {
     const _orgId = await getOrgId()

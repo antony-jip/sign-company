@@ -81,6 +81,7 @@ import {
   getProject,
   getProjecten,
   getOffertesByProject,
+  getTeFacturerenOffertes,
   getFacturenByProject,
   getVoorschottenVoorOfferte,
 } from '@/services/supabaseService'
@@ -565,6 +566,10 @@ export function FacturenLayout() {
   const [klanten, setKlanten] = useState<Klant[]>(() => getCached<Klant[]>('klanten') ?? [])
   const [offertes, setOffertes] = useState<Offerte[]>(() => getCached<Offerte[]>('offertes') ?? [])
   const [teFacturerenProjecten, setTeFacturerenProjecten] = useState<(Project & { offerteBedrag: number; alGefactureerd: number })[]>([])
+  // Losse offertes die klaargezet zijn (migratie 230). Staan naast de
+  // projecten in dezelfde tab: een project op te-factureren gaat in zijn
+  // geheel, een gevlagde offerte gaat als losse regel.
+  const [teFacturerenOffertes, setTeFacturerenOffertes] = useState<Offerte[]>([])
   const [bijlageCounts, setBijlageCounts] = useState<Map<string, number>>(new Map())
   const [isLoading, setIsLoading] = useState(() => getCached('facturen') === undefined)
 
@@ -696,6 +701,13 @@ export function FacturenLayout() {
           // Sort oldest first
           enriched.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
           if (!cancelled) setTeFacturerenProjecten(enriched)
+        } catch (err) {
+          // Non-critical, continue without te factureren data
+        }
+
+        try {
+          const losseOffertes = await getTeFacturerenOffertes()
+          if (!cancelled) setTeFacturerenOffertes(losseOffertes)
         } catch (err) {
           // Non-critical, continue without te factureren data
         }
@@ -898,7 +910,7 @@ export function FacturenLayout() {
     for (const f of facturen) {
       counts[f.status] = (counts[f.status] || 0) + 1
     }
-    counts['te_factureren'] = teFacturerenProjecten.length
+    counts['te_factureren'] = teFacturerenProjecten.length + teFacturerenOffertes.length
     counts['te_verzenden'] = facturen.filter((f) => f.status === 'concept' || f.status === 'open').length
     counts['te_herinneren'] = facturen.filter((f) => herinneringStaatKlaar(f, opvolgStappen)).length
     counts['credit'] = facturen.filter((f) => f.factuur_type === 'creditnota' || f.factuur_type === 'credit').length
@@ -906,7 +918,7 @@ export function FacturenLayout() {
     const vandaag = getTodayString()
     counts['verlopen'] = facturen.filter((f) => isAchterstallig(f, vandaag)).length
     return counts
-  }, [facturen, teFacturerenProjecten, opvolgStappen])
+  }, [facturen, teFacturerenProjecten, teFacturerenOffertes, opvolgStappen])
 
   // ============ BULK SELECTION ============
 
@@ -2236,7 +2248,7 @@ export function FacturenLayout() {
           {([
             { key: 'verlopen' as FilterStatus,      label: 'Vervallen',        sub: 'te laat betaald',         count: verlopenCount,                              isMoney: false, dot: '#F15025', pulse: true },
             { key: 'verzonden' as FilterStatus,     label: 'Openstaand',       sub: 'wacht op betaling, ex btw',     count: statistics.totaalOpenstaand,                isMoney: true,  dot: '#3A5A9A', pulse: false },
-            { key: 'te_factureren' as FilterStatus, label: 'Te factureren',    sub: 'projecten zijn af',       count: teFacturerenProjecten.length,               isMoney: false, dot: '#8A7A4A', pulse: false },
+            { key: 'te_factureren' as FilterStatus, label: 'Te factureren',    sub: 'klaar om te sturen',       count: teFacturerenProjecten.length + teFacturerenOffertes.length, isMoney: false, dot: '#8A7A4A', pulse: false },
             { key: 'betaald' as FilterStatus,       label: 'Betaald',          sub: 'deze maand, ex btw',            count: statistics.betaaldDezeMaand,                isMoney: true,  dot: '#2D6B48', pulse: false },
           ]).map((tile) => {
             const isActive = filterStatus === tile.key
@@ -2525,13 +2537,15 @@ export function FacturenLayout() {
       {/* ── Te factureren projecten view ── */}
       {filterStatus === 'te_factureren' ? (
         <div className="rounded-xl border border-border bg-card overflow-hidden -mx-3 sm:mx-0">
-          {teFacturerenProjecten.length === 0 ? (
+          {teFacturerenProjecten.length === 0 && teFacturerenOffertes.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-16 text-muted-foreground">
               <CheckCircle2 className="h-10 w-10 text-emerald-400 mb-2" />
               <p className="text-sm font-medium">Geen projecten om te factureren.</p>
               <p className="text-xs text-muted-foreground/60">Goed gedaan!</p>
             </div>
           ) : (
+            <>
+            {teFacturerenProjecten.length > 0 && (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -2576,6 +2590,62 @@ export function FacturenLayout() {
                 </tbody>
               </table>
             </div>
+            )}
+
+            {/* ── Losse offertes op te factureren (migratie 230) ── */}
+            {teFacturerenOffertes.length > 0 && (
+              <div className="overflow-x-auto border-t border-border">
+                <div className="px-4 pt-4 pb-2">
+                  <h3 className="text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">
+                    Losse offertes
+                  </h3>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    Klaargezet vanuit een project, zonder dat het hele project op te factureren staat.
+                  </p>
+                </div>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Klant</th>
+                      <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Offerte</th>
+                      <th className="text-right px-4 py-3 text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground">Bedrag</th>
+                      <th className="text-right px-4 py-3 text-[11px] font-semibold uppercase tracking-widest text-[#1A4A52]/55 dark:text-muted-foreground"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {teFacturerenOffertes.map((offerte) => (
+                      <tr key={offerte.id} className="border-b border-border last:border-b-0 hover:bg-[rgba(26,83,92,0.04)] dark:hover:bg-white/[0.03] transition-colors duration-150">
+                        <td className="px-4 py-3 text-sm">{offerte.klant_naam || '-'}</td>
+                        <td className="px-4 py-3 text-sm">
+                          <span className="font-medium">{offerte.titel || 'Offerte zonder titel'}</span>
+                          <span className="ml-2 font-mono text-[11px] text-muted-foreground">{offerte.nummer}</span>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-right tabular-nums font-medium">{formatCurrency(exBtw(offerte))}</td>
+                        <td className="px-4 py-3 text-right">
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              const params = new URLSearchParams({
+                                offerte_id: offerte.id,
+                                klant_id: offerte.klant_id || '',
+                                titel: offerte.titel || '',
+                              })
+                              if (offerte.project_id) params.set('project_id', offerte.project_id)
+                              navigate(`/facturen/nieuw?${params.toString()}`)
+                            }}
+                            className="text-white text-xs font-semibold"
+                            style={{ backgroundColor: '#F15025' }}
+                          >
+                            Factureer
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            </>
           )}
         </div>
       ) : (

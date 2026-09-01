@@ -942,6 +942,30 @@ export function ProjectDetail() {
     navigate(`/facturen/nieuw?${params.toString()}`, { state: { from: location.pathname } })
   }
 
+  // De projectstatus 'te-factureren' zet het hele project op de lijst. Zit er
+  // meer dan één offerte in, dan wil je er één klaarzetten en de rest laten
+  // staan; vandaar de vlag op de offerte zelf (migratie 230).
+  const handleTeFacturerenWissel = async (offerte: Offerte) => {
+    const aanzetten = !offerte.te_factureren
+    try {
+      await updateOfferte(offerte.id, {
+        te_factureren: aanzetten,
+        te_factureren_op: aanzetten ? new Date().toISOString() : null,
+      })
+      setProjectOffertes((prev) => prev.map((o) => (
+        o.id === offerte.id
+          ? { ...o, te_factureren: aanzetten, te_factureren_op: aanzetten ? new Date().toISOString() : null }
+          : o
+      )))
+      toast.success(aanzetten
+        ? `Offerte ${offerte.nummer} staat op Te factureren`
+        : `Offerte ${offerte.nummer} van Te factureren gehaald`)
+    } catch (err) {
+      logger.error('Te factureren wisselen mislukt:', err)
+      toast.error('Kon de offerte niet op Te factureren zetten')
+    }
+  }
+
   const openKopieDialog = async () => {
     if (!project) return
     setKopieNaam(`${project.naam} (kopie)`)
@@ -1885,6 +1909,7 @@ export function ProjectDetail() {
             }}
             onOpdrachtbevestiging={(offerte) => setObPreviewOfferte(offerte)}
             onFactureerOfferte={handleCreateFactuurFromOfferte}
+            onTeFacturerenWissel={handleTeFacturerenWissel}
             onOfferteDelete={async (offerte) => {
               const ok = await confirm({
                 message: `Offerte ${offerte.nummer} verwijderen? Dit kan niet ongedaan worden gemaakt.`,

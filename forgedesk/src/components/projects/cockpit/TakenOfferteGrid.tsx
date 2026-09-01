@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ListChecks, Receipt, Plus, Trash2, Wrench, CalendarDays, MapPin } from 'lucide-react'
+import { ListChecks, Receipt, Plus, Trash2, Wrench, CalendarDays, MapPin, ClipboardCheck } from 'lucide-react'
 import { formatAmount, getInitials } from '@/lib/utils'
 import { exBtw } from '@/utils/btwWeergave'
 import { getStatusPillClass, getStatusPillTone, getStatusLabel, type PillTone } from '@/utils/statusColors'
@@ -61,6 +61,8 @@ interface TakenOfferteGridProps {
   onOfferteDelete?: (offerte: Offerte) => Promise<void> | void
   /** Factureert precies deze offerte, of opent de factuur die er al is. */
   onFactureerOfferte?: (offerte: Offerte) => void
+  /** Zet deze offerte op de lijst Te factureren, of haalt hem eraf. */
+  onTeFacturerenWissel?: (offerte: Offerte) => void
   onQuickOfferte?: (bedrag: number) => Promise<void>
   onUpdateOffertePrice?: (offerte: Offerte, bedragExclBtw: number) => Promise<void>
 }
@@ -80,6 +82,7 @@ export function TakenOfferteGrid({
   onTaakDelete,
   onOfferteDelete,
   onFactureerOfferte,
+  onTeFacturerenWissel,
   onQuickOfferte,
   onUpdateOffertePrice,
 }: TakenOfferteGridProps) {
@@ -354,6 +357,29 @@ export function TakenOfferteGrid({
                         <span className="text-muted-foreground">€</span>
                         <span className="text-foreground font-bold ml-0.5">{formatAmount(exBtw(offerte))}</span>
                       </span>
+                    )}
+                    {onTeFacturerenWissel && !offerte.geconverteerd_naar_factuur_id && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onTeFacturerenWissel(offerte)
+                        }}
+                        title={offerte.te_factureren
+                          ? `Offerte ${offerte.nummer} van de lijst Te factureren halen`
+                          : `Offerte ${offerte.nummer} op de lijst Te factureren zetten`}
+                        aria-label={offerte.te_factureren
+                          ? `Offerte ${offerte.nummer} van de lijst Te factureren halen`
+                          : `Offerte ${offerte.nummer} op de lijst Te factureren zetten`}
+                        aria-pressed={!!offerte.te_factureren}
+                        className={`h-7 w-7 rounded-md flex items-center justify-center transition-all flex-shrink-0 ${
+                          offerte.te_factureren
+                            ? 'text-flame bg-[rgba(241,80,37,0.1)] hover:bg-[rgba(241,80,37,0.18)]'
+                            : 'opacity-0 group-hover:opacity-100 focus:opacity-100 text-muted-foreground/70 hover:bg-[rgba(241,80,37,0.1)] hover:text-flame'
+                        }`}
+                      >
+                        <ClipboardCheck className="h-3.5 w-3.5" strokeWidth={1.75} />
+                      </button>
                     )}
                     {onFactureerOfferte && (
                       <button

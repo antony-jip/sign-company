@@ -378,6 +378,10 @@ export interface Offerte {
   // Levering & betaling (migratie 224) — per offerte, valt terug op app_settings
   levertijd?: string;
   betalingsconditie?: string;
+  // Losse offerte klaargezet om te factureren (migratie 230). De projectstatus
+  // 'te-factureren' is te grof zodra er meerdere offertes in één project zitten.
+  te_factureren?: boolean;
+  te_factureren_op?: string | null;
   // Onder welk bedrijf deze offerte uitgaat (migratie 189). Leeg = het eigen
   // bedrijf uit profiles. Staat op de offerte zelf, want de PDF wordt elke keer
   // opnieuw gemaakt: zonder deze vastlegging zou een oude offerte later het
