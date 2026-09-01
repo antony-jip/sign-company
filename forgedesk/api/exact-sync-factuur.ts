@@ -160,12 +160,28 @@ const EXACT_API_BASE = 'https://start.exactonline.nl/api/v1'
  * dekt dit niet: die staat vóór de POST, waar het id nog leeg is. Hij stopt een
  * tweede invocatie, niet een tweede POST binnen één invocatie.
  *
- * Bij een 401 is er juist niets aangekomen en is retryen na een token-refresh
- * wel het goede gedrag. Vandaar dat alleen abort en timeout worden uitgesloten.
+ * Daarom is dit een allowlist en geen blocklist: alleen een 401 van Exact mag
+ * opnieuw, want dan heeft Exact het verzoek aantoonbaar geweigerd en is er niets
+ * geboekt. Alles daarbuiten telt als onbekende uitkomst. Een blocklist op de
+ * naam van de JavaScript-fout dekte dat niet: undici gooit bij een gesloten
+ * socket `TypeError: fetch failed`, een lege body geeft een `SyntaxError` uit
+ * `response.json()`, en elke niet-ok status gaf een gewone `Error`. Alle drie
+ * heten niet TimeoutError of AbortError en mochten dus opnieuw posten, terwijl
+ * juist bij die drie de boeking al in Exact kan staan.
  */
-function magOpnieuwNaFout(err: unknown): boolean {
-  const naam = (err as { name?: string } | null)?.name
-  return naam !== 'TimeoutError' && naam !== 'AbortError'
+export class ExactHttpError extends Error {
+  status: number
+  endpoint: string
+  constructor(status: number, endpoint: string, body: string) {
+    super(`Exact API fout (${endpoint}): ${status} - ${body}`)
+    this.name = 'ExactHttpError'
+    this.status = status
+    this.endpoint = endpoint
+  }
+}
+
+export function magOpnieuwNaFout(err: unknown): boolean {
+  return err instanceof ExactHttpError && err.status === 401
 }
 
 // Laatste syncfout op de factuur bewaren (migratie 213), zodat er na het
@@ -494,10 +510,43 @@ async function exactGet(token: string, division: string, endpoint: string): Prom
 
   if (!response.ok) {
     const body = await response.text()
-    throw new Error(`Exact API fout (GET ${endpoint}): ${response.status} - ${body}`)
+    throw new ExactHttpError(response.status, `GET ${endpoint}`, body)
   }
 
   return response.json()
+}
+
+/**
+ * Staat deze factuur al als SalesEntry in Exact?
+ *
+ * Exact kent geen idempotency-key, dus dit is de enige manier om een tweede
+ * boeking te voorkomen als een eerdere poging halverwege afbrak: het antwoord
+ * kan zijn weggevallen terwijl Exact de boeking wél aannam. Het factuurnummer
+ * staat als YourRef op de entry, en dat nummer is per administratie uniek.
+ *
+ * Faalt de vraag zelf, dan geeft hij null terug en gaat de sync gewoon door.
+ * Een mislukte controle mag het boeken niet blokkeren; hij maakt het alleen
+ * veiliger dan zonder.
+ */
+async function zoekBestaandeSalesEntry(
+  token: string,
+  division: string,
+  factuurNummer: string,
+): Promise<string | null> {
+  if (!factuurNummer) return null
+  try {
+    const data = await exactGet(
+      token,
+      division,
+      `salesentry/SalesEntries?$filter=YourRef eq ${odataString(factuurNummer)}&$select=EntryID&$top=1`
+    ) as { d?: { results?: Array<{ EntryID?: string }> } }
+    return data?.d?.results?.[0]?.EntryID ?? null
+  } catch (zoekFout) {
+    console.warn('[exact-sync] kon niet controleren of de factuur al in Exact staat', {
+      factuurNummer, fout: zoekFout instanceof Error ? zoekFout.message : String(zoekFout),
+    })
+    return null
+  }
 }
 
 async function exactPost(token: string, division: string, endpoint: string, data: unknown): Promise<unknown> {
@@ -514,7 +563,7 @@ async function exactPost(token: string, division: string, endpoint: string, data
 
   if (!response.ok) {
     const body = await response.text()
-    throw new Error(`Exact API fout (POST ${endpoint}): ${response.status} - ${body}`)
+    throw new ExactHttpError(response.status, `POST ${endpoint}`, body)
   }
 
   return response.json()
@@ -1605,14 +1654,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       salesEntry.Document = documentId
     }
 
+    // Staat hij al in Exact van een eerdere, afgebroken poging? Dan die boeking
+    // overnemen in plaats van er een tweede naast te zetten. Dit heelt ook de
+    // factuur die wél geboekt is maar waarvan het opslaan van het EntryID
+    // mislukte: die komt hier met een lege exact_entry_id opnieuw langs.
+    const bestaandeEntryId = await zoekBestaandeSalesEntry(token, division, factuur.nummer)
+    if (bestaandeEntryId) {
+      console.warn('[exact-sync] factuur stond al in Exact; bestaande boeking overgenomen', {
+        factuur_id, nummer: factuur.nummer, exact_entry_id: bestaandeEntryId,
+      })
+      Sentry.captureMessage(
+        `Exact had factuur ${factuur.nummer} al geboekt; bestaande SalesEntry overgenomen in plaats van opnieuw geboekt`,
+        'info'
+      )
+    }
+
     let entryResult: { d?: { EntryID?: string } }
+    let retryPostGestart = false
     try {
-      entryResult = await exactPost(
-        token,
-        division,
-        'salesentry/SalesEntries',
-        salesEntry
-      ) as { d?: { EntryID?: string } }
+      entryResult = bestaandeEntryId
+        ? { d: { EntryID: bestaandeEntryId } }
+        : await exactPost(
+            token,
+            division,
+            'salesentry/SalesEntries',
+            salesEntry
+          ) as { d?: { EntryID?: string } }
     } catch (syncError: unknown) {
       // Bij een afgebroken request NIET opnieuw posten: de eerste POST kan zijn
       // aangekomen en dan staat de factuur na een retry dubbel in Exact. Zie
@@ -1634,18 +1701,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           error: 'Exact reageerde niet binnen de tijd. De boeking is mogelijk wél aangekomen. Kijk eerst in Exact of de factuur er staat; staat hij er, dan is hij geboekt en hoef je niets meer te doen. Alleen als je hebt vastgesteld dat de factuur er níet staat, synchroniseer je hem over tien minuten opnieuw.',
         })
       }
-      // Retry 1x na token refresh
+      // Retry 1x na token refresh. De 401 zei dat er niets is aangekomen, dus
+      // deze tweede POST is veilig — maar hij kan zélf halverwege afbreken, en
+      // dan geldt dezelfde onzekerheid als bij de eerste. Vandaar dezelfde
+      // behandeling in plaats van een kale catch die de claim vrijgaf.
       try {
         token = await getValidToken(tokenUserId, user_id, tokenCache)
 
+        retryPostGestart = true
         entryResult = await exactPost(
           token,
           division,
           'salesentry/SalesEntries',
           salesEntry
         ) as { d?: { EntryID?: string } }
-      } catch {
-        const msg = syncError instanceof Error ? syncError.message : 'Factuur synchroniseren mislukt'
+      } catch (retryError: unknown) {
+        if (retryPostGestart && !magOpnieuwNaFout(retryError)) {
+          console.error('[Exact] tweede SalesEntry POST afgebroken; uitkomst onbekend', {
+            factuur_id, naam: (retryError as { name?: string })?.name,
+          })
+          Sentry.captureException(retryError, { extra: { factuur_id, fase: 'salesentry-retry-afgebroken' } })
+          await registreerSyncFout(factuur_id, 'Exact reageerde niet binnen de tijd; boeking mogelijk wel aangekomen.')
+          claimBehouden = true
+          return res.status(504).json({
+            success: false,
+            error: 'Exact reageerde niet binnen de tijd. De boeking is mogelijk wél aangekomen. Kijk eerst in Exact of de factuur er staat; staat hij er, dan is hij geboekt en hoef je niets meer te doen. Alleen als je hebt vastgesteld dat de factuur er níet staat, synchroniseer je hem over tien minuten opnieuw.',
+          })
+        }
+        // De fout van de tweede poging is wat er werkelijk gebeurde; de eerste
+        // was de 401 die tot deze retry leidde.
+        const msg = retryError instanceof Error ? retryError.message : 'Factuur synchroniseren mislukt'
         await registreerSyncFout(factuur_id, msg)
         return res.status(502).json({ success: false, error: msg })
       }
