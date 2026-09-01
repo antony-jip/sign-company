@@ -2410,6 +2410,71 @@ export function QuoteCreation() {
             />
           </div>
 
+          {/* ── Levering & betaling ── */}
+          {/* Levertijd en betaalconditie verschillen per offerte en stonden tot nu
+              toe verstopt in de voorwaardentekst. Eigen blok, met snelkeuzes zodat
+              je er niet omheen kunt bij het afronden. */}
+          <div className="doen-slate-surface rounded-2xl p-5 border border-[rgba(192,58,24,0.14)] dark:border-white/10">
+            <div className="flex items-baseline justify-between mb-3">
+              <h3 className="font-heading text-[15px] font-bold text-foreground">
+                Levering &amp; betaling<span className="text-flame">.</span>
+              </h3>
+              <span className="text-[12px] text-muted-foreground">Staat op de offerte en de opdrachtbevestiging</span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70">Levertijd</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {LEVERTIJD_SUGGESTIES.map((suggestie) => (
+                    <button
+                      key={suggestie}
+                      type="button"
+                      onClick={() => setLevertijd(suggestie)}
+                      className={`text-[12px] font-medium px-2.5 py-1 rounded-full border transition-colors ${
+                        levertijd === suggestie
+                          ? 'border-petrol bg-petrol/10 text-petrol dark:border-white/30 dark:bg-white/10 dark:text-foreground'
+                          : 'border-[rgba(26,83,92,0.12)] dark:border-white/10 bg-white dark:bg-white/[0.05] text-foreground/70 hover:bg-[rgba(26,83,92,0.05)] dark:hover:bg-white/[0.08] hover:border-[rgba(26,83,92,0.22)] dark:hover:border-white/20 hover:text-petrol dark:hover:text-foreground'
+                      }`}
+                    >
+                      {suggestie}
+                    </button>
+                  ))}
+                </div>
+                <Input
+                  value={levertijd}
+                  onChange={(e) => setLevertijd(e.target.value)}
+                  placeholder="In overleg"
+                  className="text-sm bg-white dark:bg-white/[0.05] border border-[rgba(26,83,92,0.12)] dark:border-white/10 focus-visible:border-petrol dark:focus-visible:border-white/30 focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] dark:focus-visible:ring-white/10 rounded-lg transition-colors"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70">Betalingsconditie</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {BETALINGSCONDITIE_SUGGESTIES.map((suggestie) => (
+                    <button
+                      key={suggestie}
+                      type="button"
+                      onClick={() => setBetalingsconditie(suggestie)}
+                      className={`text-[12px] font-medium px-2.5 py-1 rounded-full border transition-colors ${
+                        betalingsconditie === suggestie
+                          ? 'border-petrol bg-petrol/10 text-petrol dark:border-white/30 dark:bg-white/10 dark:text-foreground'
+                          : 'border-[rgba(26,83,92,0.12)] dark:border-white/10 bg-white dark:bg-white/[0.05] text-foreground/70 hover:bg-[rgba(26,83,92,0.05)] dark:hover:bg-white/[0.08] hover:border-[rgba(26,83,92,0.22)] dark:hover:border-white/20 hover:text-petrol dark:hover:text-foreground'
+                      }`}
+                    >
+                      {suggestie}
+                    </button>
+                  ))}
+                </div>
+                <Input
+                  value={betalingsconditie}
+                  onChange={(e) => setBetalingsconditie(e.target.value)}
+                  placeholder="Betaling binnen 30 dagen na factuurdatum."
+                  className="text-sm bg-white dark:bg-white/[0.05] border border-[rgba(26,83,92,0.12)] dark:border-white/10 focus-visible:border-petrol dark:focus-visible:border-white/30 focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] dark:focus-visible:ring-white/10 rounded-lg transition-colors"
+                />
+              </div>
+            </div>
+          </div>
+
           {/* ── Items ── */}
           <div className="doen-slate-surface rounded-2xl p-5">
             <div className="flex items-baseline justify-between mb-4">
@@ -2483,17 +2548,45 @@ export function QuoteCreation() {
                     value={notities}
                     onChange={(e) => setNotities(e.target.value)}
                     placeholder="Interne notities of opmerkingen voor de klant..."
-                    rows={4}
-                    className="text-sm bg-white dark:bg-white/[0.05] border border-[rgba(26,83,92,0.12)] dark:border-white/10 focus:bg-white dark:focus:bg-white/[0.07] focus-visible:border-petrol dark:focus-visible:border-white/30 focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] dark:focus-visible:ring-white/10 rounded-lg transition-colors"
+                    rows={9}
+                    className="resize-y text-sm bg-white dark:bg-white/[0.05] border border-[rgba(26,83,92,0.12)] dark:border-white/10 focus:bg-white dark:focus:bg-white/[0.07] focus-visible:border-petrol dark:focus-visible:border-white/30 focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] dark:focus-visible:ring-white/10 rounded-lg transition-colors"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70">Voorwaarden</label>
+                  <div className="flex items-baseline justify-between gap-3">
+                    <label className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70">Voorwaarden</label>
+                    {voorwaarden !== settings.offerte_voorwaarden && (
+                      <div className="flex items-center gap-2.5">
+                        <button
+                          type="button"
+                          onClick={() => setVoorwaarden(settings.offerte_voorwaarden)}
+                          className="text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          Standaard terugzetten
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              await updateSettings({ offerte_voorwaarden: voorwaarden })
+                              toast.success('Voorwaarden opgeslagen als standaard')
+                            } catch (err) {
+                              logger.error('Voorwaarden opslaan als standaard mislukt:', err)
+                              toast.error('Opslaan als standaard is niet gelukt')
+                            }
+                          }}
+                          className="text-[11px] font-medium text-petrol hover:underline"
+                        >
+                          Als standaard opslaan
+                        </button>
+                      </div>
+                    )}
+                  </div>
                   <Textarea
                     value={voorwaarden}
                     onChange={(e) => setVoorwaarden(e.target.value)}
-                    rows={4}
-                    className="text-sm bg-white dark:bg-white/[0.05] border border-[rgba(26,83,92,0.12)] dark:border-white/10 focus:bg-white dark:focus:bg-white/[0.07] focus-visible:border-petrol dark:focus-visible:border-white/30 focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] dark:focus-visible:ring-white/10 rounded-lg transition-colors"
+                    rows={9}
+                    className="resize-y text-sm bg-white dark:bg-white/[0.05] border border-[rgba(26,83,92,0.12)] dark:border-white/10 focus:bg-white dark:focus:bg-white/[0.07] focus-visible:border-petrol dark:focus-visible:border-white/30 focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] dark:focus-visible:ring-white/10 rounded-lg transition-colors"
                   />
                 </div>
               </div>
@@ -2614,71 +2707,6 @@ export function QuoteCreation() {
               )}
             </div>
           )}
-
-          {/* ── Levering & betaling ── */}
-          {/* Levertijd en betaalconditie verschillen per offerte en stonden tot nu
-              toe verstopt in de voorwaardentekst. Eigen blok, met snelkeuzes zodat
-              je er niet omheen kunt bij het afronden. */}
-          <div className="doen-slate-surface rounded-2xl p-5 border border-[rgba(192,58,24,0.14)] dark:border-white/10">
-            <div className="flex items-baseline justify-between mb-3">
-              <h3 className="font-heading text-[15px] font-bold text-foreground">
-                Levering &amp; betaling<span className="text-flame">.</span>
-              </h3>
-              <span className="text-[12px] text-muted-foreground">Staat op de offerte en de opdrachtbevestiging</span>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70">Levertijd</label>
-                <div className="flex flex-wrap gap-1.5">
-                  {LEVERTIJD_SUGGESTIES.map((suggestie) => (
-                    <button
-                      key={suggestie}
-                      type="button"
-                      onClick={() => setLevertijd(suggestie)}
-                      className={`text-[12px] font-medium px-2.5 py-1 rounded-full border transition-colors ${
-                        levertijd === suggestie
-                          ? 'border-petrol bg-petrol/10 text-petrol dark:border-white/30 dark:bg-white/10 dark:text-foreground'
-                          : 'border-[rgba(26,83,92,0.12)] dark:border-white/10 bg-white dark:bg-white/[0.05] text-foreground/70 hover:bg-[rgba(26,83,92,0.05)] dark:hover:bg-white/[0.08] hover:border-[rgba(26,83,92,0.22)] dark:hover:border-white/20 hover:text-petrol dark:hover:text-foreground'
-                      }`}
-                    >
-                      {suggestie}
-                    </button>
-                  ))}
-                </div>
-                <Input
-                  value={levertijd}
-                  onChange={(e) => setLevertijd(e.target.value)}
-                  placeholder="In overleg"
-                  className="text-sm bg-white dark:bg-white/[0.05] border border-[rgba(26,83,92,0.12)] dark:border-white/10 focus-visible:border-petrol dark:focus-visible:border-white/30 focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] dark:focus-visible:ring-white/10 rounded-lg transition-colors"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70">Betalingsconditie</label>
-                <div className="flex flex-wrap gap-1.5">
-                  {BETALINGSCONDITIE_SUGGESTIES.map((suggestie) => (
-                    <button
-                      key={suggestie}
-                      type="button"
-                      onClick={() => setBetalingsconditie(suggestie)}
-                      className={`text-[12px] font-medium px-2.5 py-1 rounded-full border transition-colors ${
-                        betalingsconditie === suggestie
-                          ? 'border-petrol bg-petrol/10 text-petrol dark:border-white/30 dark:bg-white/10 dark:text-foreground'
-                          : 'border-[rgba(26,83,92,0.12)] dark:border-white/10 bg-white dark:bg-white/[0.05] text-foreground/70 hover:bg-[rgba(26,83,92,0.05)] dark:hover:bg-white/[0.08] hover:border-[rgba(26,83,92,0.22)] dark:hover:border-white/20 hover:text-petrol dark:hover:text-foreground'
-                      }`}
-                    >
-                      {suggestie}
-                    </button>
-                  ))}
-                </div>
-                <Input
-                  value={betalingsconditie}
-                  onChange={(e) => setBetalingsconditie(e.target.value)}
-                  placeholder="Betaling binnen 30 dagen na factuurdatum."
-                  className="text-sm bg-white dark:bg-white/[0.05] border border-[rgba(26,83,92,0.12)] dark:border-white/10 focus-visible:border-petrol dark:focus-visible:border-white/30 focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] dark:focus-visible:ring-white/10 rounded-lg transition-colors"
-                />
-              </div>
-            </div>
-          </div>
 
           {/* ════════════════════════════════════════════════════════════════ */}
           {/* INLINE EMAIL COMPOSE · bottom of left column                   */}
