@@ -25,6 +25,7 @@ import { getCached, fetchQuery } from '@/lib/queryCache'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
 import type { Klant, Medewerker, MontageAfspraak } from '@/types'
+import { vergelijkTijd } from '@/utils/planningTijd'
 
 const STATUS_CONFIG: Record<
   MontageAfspraak['status'],
@@ -313,7 +314,7 @@ export function MontagePlanningLayoutMobile() {
     return afspraken
       .filter((a) => a.datum === dateStr)
       .filter((a) => scope === 'iedereen' || a.monteurs.includes(currentMedewerker?.id ?? ''))
-      .sort((a, b) => a.start_tijd.localeCompare(b.start_tijd))
+      .sort((a, b) => vergelijkTijd(a.start_tijd, b.start_tijd))
   }, [afspraken, dateStr, scope, currentMedewerker])
 
   const { toegewezen, ongetoewezen } = useMemo(() => {

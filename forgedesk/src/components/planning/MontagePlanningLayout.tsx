@@ -98,6 +98,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useOptimisticState } from "@/hooks/useOptimistic";
 import { useStilleRefresh } from "@/hooks/useStilleRefresh";
 import { useNavigateWithTab } from "@/hooks/useNavigateWithTab";
+import { vergelijkTijd, tijdLabel, tijdBereik } from "@/utils/planningTijd";
 
 const SWIMLANE_COLLAPSED_KEY = 'doen_planning_swimlane_collapsed';
 const SWIMLANE_UNASSIGNED_KEY = '__ongetoewezen__';
@@ -741,7 +742,7 @@ export function MontagePlanningLayout() {
       }
     });
     Object.values(map).forEach((arr) =>
-      arr.sort((a, b) => a.start_tijd.localeCompare(b.start_tijd))
+      arr.sort((a, b) => vergelijkTijd(a.start_tijd, b.start_tijd))
     );
     return map;
   }, [weekAfspraken, weekDates]);
@@ -911,7 +912,9 @@ export function MontagePlanningLayout() {
         for (let j = i + 1; j < dayItems.length; j++) {
           const a = dayItems[i];
           const b = dayItems[j];
-          // Check time overlap: a.start < b.end AND b.start < a.end
+          // Check time overlap: a.start < b.end AND b.start < a.end.
+          // Zonder tijden valt er niets te vergelijken; sla die rijen over.
+          if (!a.start_tijd || !a.eind_tijd || !b.start_tijd || !b.eind_tijd) continue;
           if (a.start_tijd < b.eind_tijd && b.start_tijd < a.eind_tijd) {
             // Find shared monteurs
             const shared = a.monteurs.filter((m) => b.monteurs.includes(m));
@@ -1063,7 +1066,7 @@ export function MontagePlanningLayout() {
 
     let printAfspraken = weekAfsprakenAll
       .filter((a) => a.status !== "afgerond")
-      .sort((a, b) => a.datum.localeCompare(b.datum) || a.start_tijd.localeCompare(b.start_tijd));
+      .sort((a, b) => a.datum.localeCompare(b.datum) || vergelijkTijd(a.start_tijd, b.start_tijd));
 
     if (selectedMonteur !== "alle") {
       printAfspraken = printAfspraken.filter((a) => a.monteurs.includes(selectedMonteur));
@@ -1081,7 +1084,7 @@ export function MontagePlanningLayout() {
 
       const rows = dagAfspraken.map((a) =>
         `<tr>
-          <td style="padding:6px 8px;border:1px solid #ddd;white-space:nowrap;">${a.start_tijd} – ${a.eind_tijd}</td>
+          <td style="padding:6px 8px;border:1px solid #ddd;white-space:nowrap;">${tijdBereik(a.start_tijd, a.eind_tijd)}</td>
           <td style="padding:6px 8px;border:1px solid #ddd;font-weight:600;">${a.titel}</td>
           <td style="padding:6px 8px;border:1px solid #ddd;">${a.klant_naam || ""}</td>
           <td style="padding:6px 8px;border:1px solid #ddd;">${a.locatie}</td>
@@ -1247,6 +1250,12 @@ export function MontagePlanningLayout() {
     }
     if (formData.monteurs.length === 0) {
       toast.error("Selecteer minimaal een medewerker");
+      return;
+    }
+    // Een leeg tijdveld wordt uit de payload gestript (sanitizeDates) en landt
+    // dan als NULL in de database. Vang dat hier af in plaats van in de planning.
+    if (!formData.start_tijd || !formData.eind_tijd) {
+      toast.error("Vul een start- en eindtijd in");
       return;
     }
 
@@ -1512,6 +1521,7 @@ export function MontagePlanningLayout() {
       if (ander.id === afspraak.id) continue;
       if (ander.datum !== datum) continue;
       if (ander.status === 'afgerond' || ander.status === 'uitgesteld') continue;
+      if (!ander.start_tijd || !ander.eind_tijd) continue;
       if (!(start < ander.eind_tijd && ander.start_tijd < eind)) continue;
       for (const m of afspraak.monteurs) {
         if (ander.monteurs.includes(m)) botsend.add(monteurMap[m]?.naam || 'Onbekend');
@@ -1553,7 +1563,11 @@ export function MontagePlanningLayout() {
     if (newStartTime) {
       const oldStart = timeToMinutes(afspraak.start_tijd);
       const oldEnd = timeToMinutes(afspraak.eind_tijd);
-      const duur = Math.max(15, oldEnd - oldStart);
+      // Zonder geldige start- én eindtijd is de duur niet af te leiden;
+      // die afspraak krijgt bij het verslepen een blok van een uur.
+      const duur = afspraak.start_tijd && afspraak.eind_tijd
+        ? Math.max(15, oldEnd - oldStart)
+        : 60;
       const targetStart = timeToMinutes(newStartTime);
       newStart = minutesToTime(targetStart);
       newEndTime = minutesToTime(targetStart + duur);
@@ -1594,8 +1608,10 @@ export function MontagePlanningLayout() {
     }
   }
 
-  function timeToMinutes(t: string): number {
+  function timeToMinutes(t?: string | null): number {
+    if (!t) return 0;
     const [h, m] = t.split(":").map(Number);
+    if (!Number.isFinite(h) || !Number.isFinite(m)) return 0;
     return h * 60 + m;
   }
   function minutesToTime(mins: number): string {
@@ -1872,7 +1888,7 @@ export function MontagePlanningLayout() {
             const feestdagInfo = isFeestdag(dateStr, feestdagen);
             const dayItems = monthAfspraken
               .filter((a) => a.datum === dateStr)
-              .sort((a, b) => a.start_tijd.localeCompare(b.start_tijd));
+              .sort((a, b) => vergelijkTijd(a.start_tijd, b.start_tijd));
             const visibleItems = dayItems.slice(0, 3);
             const remaining = dayItems.length - visibleItems.length;
 
@@ -1947,9 +1963,9 @@ export function MontagePlanningLayout() {
                           STATUS_PILL_CLASSES[a.status] || "bg-[#F0EFEC] text-foreground dark:bg-white/[0.06] dark:text-foreground",
                         )}
                         style={{ borderLeftColor: cfg?.dot || '#1A535C' }}
-                        title={`${a.titel} (${a.start_tijd}–${a.eind_tijd})`}
+                        title={`${a.titel} (${tijdBereik(a.start_tijd, a.eind_tijd)})`}
                       >
-                        <span className="font-mono mr-1 opacity-70">{a.start_tijd}</span>{a.titel}
+                        <span className="font-mono mr-1 opacity-70">{tijdLabel(a.start_tijd)}</span>{a.titel}
                       </button>
                     );
                   })}
@@ -2156,6 +2172,7 @@ export function MontagePlanningLayout() {
                   if (editingAfspraak && a.id === editingAfspraak.id) return false;
                   if (a.datum !== formData.datum) return false;
                   if (a.status === "afgerond" || a.status === "uitgesteld") return false;
+                  if (!a.start_tijd || !a.eind_tijd) return false;
                   if (a.start_tijd >= formData.eind_tijd || a.eind_tijd <= formData.start_tijd) return false;
                   return a.monteurs.some((m) => formData.monteurs.includes(m));
                 });

@@ -826,6 +826,8 @@ export function ProjectDetail() {
     if (montageStatus !== 'te-plannen' && !montageDatum) { toast.error('Selecteer een datum'); return }
     if (!montageLocatie.trim()) { toast.error('Vul een locatie in'); return }
     if (montageStatus !== 'te-plannen' && montageMonteurs.length === 0) { toast.error('Selecteer minimaal een monteur'); return }
+    // Leeg tijdveld wordt uit de payload gestript en landt als NULL in de db.
+    if (!montageStartTijd || !montageEindTijd) { toast.error('Vul een start- en eindtijd in'); return }
 
     try {
       setIsSavingMontage(true)

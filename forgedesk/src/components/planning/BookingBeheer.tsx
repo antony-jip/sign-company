@@ -36,6 +36,7 @@ import type { BookingSlot, BookingAfspraak } from '@/types'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { logger } from '../../utils/logger'
+import { vergelijkTijd, vergelijkTijdAflopend } from '@/utils/planningTijd'
 
 const DAGEN = ['Zondag', 'Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag']
 const DAGEN_KORT = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za']
@@ -82,7 +83,7 @@ export function BookingBeheer() {
     const vandaag = new Date().toISOString().split('T')[0]
     return afspraken
       .filter(a => a.datum >= vandaag && a.status !== 'geannuleerd')
-      .sort((a, b) => a.datum.localeCompare(b.datum) || a.start_tijd.localeCompare(b.start_tijd))
+      .sort((a, b) => a.datum.localeCompare(b.datum) || vergelijkTijd(a.start_tijd, b.start_tijd))
   }, [afspraken])
 
   const handleCopyLink = () => {
@@ -218,7 +219,7 @@ export function BookingBeheer() {
               ) : (
                 <div className="space-y-2">
                   {afspraken
-                    .sort((a, b) => b.datum.localeCompare(a.datum) || b.start_tijd.localeCompare(a.start_tijd))
+                    .sort((a, b) => b.datum.localeCompare(a.datum) || vergelijkTijdAflopend(a.start_tijd, b.start_tijd))
                     .map((afspraak) => (
                     <div key={afspraak.id} className="flex items-center gap-3 bg-background dark:bg-muted/50 rounded-lg px-4 py-3">
                       <div className="flex-shrink-0">

@@ -66,6 +66,7 @@ import { exportCSV, exportExcel } from "@/lib/export";
 import { useAuth } from "@/contexts/AuthContext";
 import { logCreate } from "@/utils/auditLogger";
 import { useTijdSessies } from "@/hooks/useTijdSessies";
+import { vergelijkTijdAflopend } from '@/utils/planningTijd'
 
 type FilterType = "alle" | "deze_week" | "deze_maand" | "facturabel" | "niet_facturabel" | "gefactureerd" | "niet_gefactureerd";
 
@@ -287,7 +288,7 @@ export function TijdregistratieLayout() {
   const sortedRegistraties = [...filteredRegistraties].sort((a, b) => {
     const datumCompare = b.datum.localeCompare(a.datum);
     if (datumCompare !== 0) return datumCompare;
-    return b.start_tijd.localeCompare(a.start_tijd);
+    return vergelijkTijdAflopend(a.start_tijd, b.start_tijd);
   });
 
   const weekDates = getWeekDates(weekOffset);
