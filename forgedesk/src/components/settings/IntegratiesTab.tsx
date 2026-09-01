@@ -255,6 +255,7 @@ export function IntegratiesTab() {
         token_exchange: 'Exact weigerde de koppeling zonder een reden mee te sturen. Probeer het opnieuw. Blijft het misgaan, controleer dan de Client ID, de Client Secret en de Redirect URI in het Exact App Center.',
         token_parse: 'Exact gaf een onleesbaar antwoord. Probeer het over een paar minuten opnieuw.',
         save_tokens: 'De koppeling is gelukt maar kon niet opgeslagen worden. Probeer opnieuw te verbinden.',
+        administratie: 'Exact gaf niet door welke administratie je gebruikt, dus de koppeling is niet afgemaakt. Zonder administratie kan er niets geboekt worden. Probeer het over een paar minuten opnieuw.',
         not_owner: 'Alleen de eigenaar van de koppeling kan opnieuw verbinden.',
         sessie: 'Je sessie was verlopen. Log opnieuw in en verbind daarna nog een keer.',
         unknown: 'Onbekende fout bij het verbinden. Probeer het opnieuw.',

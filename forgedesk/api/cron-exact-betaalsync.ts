@@ -673,13 +673,34 @@ async function syncOrganisatie(org: OrgConfig, deadline: number): Promise<{ verw
 
   const { data: state } = await supabaseAdmin
     .from('exact_sync_state')
-    .select('laatste_timestamp, inhaalslag_bezig')
+    .select('laatste_timestamp, inhaalslag_bezig, division')
     .eq('organisatie_id', org.organisatie_id)
     .maybeSingle()
-  const vanaf = Number((state as { laatste_timestamp?: number } | null)?.laatste_timestamp ?? 0)
+  // De rowversion van Exact telt per administratie. Wissel je van administratie
+  // en liggen de rowversions daar lager, dan levert `Timestamp gt <cursor>`
+  // elke nacht nul rijen op terwijl de run zichzelf als geslaagd wegschrijft:
+  // een koppeling die er kerngezond uitziet en niets meer ophaalt. Bij een
+  // andere administratie beginnen we dus opnieuw bij nul.
+  const vorigeDivision = (state as { division?: number | null } | null)?.division ?? null
+  const administratieGewisseld = vorigeDivision !== null && Number(vorigeDivision) !== Number(division)
+  if (administratieGewisseld) {
+    console.warn('[cron-exact-betaalsync] administratie gewisseld, cursor gereset', {
+      organisatie_id: org.organisatie_id, van: vorigeDivision, naar: division,
+    })
+    Sentry.captureMessage('Exact-administratie gewisseld; delta-cursor gereset', {
+      level: 'warning',
+      tags: { cron: 'exact-betaalsync' },
+      extra: { organisatie_id: org.organisatie_id, van: vorigeDivision, naar: division },
+    })
+  }
+  const vanaf = administratieGewisseld
+    ? 0
+    : Number((state as { laatste_timestamp?: number } | null)?.laatste_timestamp ?? 0)
   // Ontbrekende rij telt als inhaalslag: de eerste run moet sowieso de
-  // volledige evaluatie draaien zodra hij compleet is.
-  const inhaalslagWasBezig = (state as { inhaalslag_bezig?: boolean } | null)?.inhaalslag_bezig ?? true
+  // volledige evaluatie draaien zodra hij compleet is. Na een wissel geldt
+  // hetzelfde, want dan is de hele nieuwe administratie nog onbekend.
+  const inhaalslagWasBezig = administratieGewisseld
+    || ((state as { inhaalslag_bezig?: boolean } | null)?.inhaalslag_bezig ?? true)
 
   const { termijnen, afgekapt } = await haalTermijnPaginas(token, division, vanaf, deadline)
 
@@ -979,6 +1000,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           extra: { organisatie_id: org.organisatie_id },
         })
       }
+      // Een configuratiegat bij een organisatie die nog nooit gesynct heeft is
+      // ruis: die heeft Exact simpelweg niet gekoppeld. Bij een organisatie die
+      // het wél deed is hetzelfde signaal juist het bericht dat de koppeling
+      // eruit ligt, en dat hoort iemand te weten voordat de facturen zich
+      // opstapelen.
+      const { data: vorigeStaat } = await supabaseAdmin
+        .from('exact_sync_state')
+        .select('laatste_sync_op')
+        .eq('organisatie_id', org.organisatie_id)
+        .maybeSingle()
+      const liepEerder = !!(vorigeStaat as { laatste_sync_op?: string | null } | null)?.laatste_sync_op
+      const koppelingWeg = ['GEEN_TOKENS', 'GEEN_EIGENAAR', 'GEEN_ADMINISTRATIE', 'EIGENAAR_ANDERE_ORG', 'TOKEN_AFGEWEZEN'].includes(melding)
+      if (koppelingWeg && liepEerder) {
+        Sentry.captureMessage(`Exact-koppeling verbroken (${melding})`, {
+          level: 'error',
+          tags: { cron: 'exact-betaalsync', exact_koppeling: 'verbroken' },
+          extra: { organisatie_id: org.organisatie_id, laatste_sync_op: (vorigeStaat as { laatste_sync_op?: string | null } | null)?.laatste_sync_op },
+        })
+      }
+
       await supabaseAdmin
         .from('exact_sync_state')
         .upsert({
@@ -987,6 +1028,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           updated_at: new Date().toISOString(),
         }, { onConflict: 'organisatie_id' })
     }
+  }
+
+  // Een run waarin élke organisatie faalde is geen geslaagde run. Met een 200
+  // zag de cronmonitoring van het platform er geen verschil tussen "alles goed"
+  // en "niets gelukt", en dat is precies het scenario waarin niemand iets merkt.
+  const uitkomsten = Object.values(resultaten)
+  const allesGefaald = uitkomsten.length > 0 && uitkomsten.every(
+    (r) => !!r && typeof r === 'object' && 'fout' in (r as Record<string, unknown>)
+  )
+  if (allesGefaald) {
+    Sentry.captureMessage('Exact-betaalsync: elke organisatie faalde in deze run', {
+      level: 'error',
+      tags: { cron: 'exact-betaalsync' },
+      extra: { organisaties: uitkomsten.length },
+    })
+    return res.status(500).json({ ok: false, organisaties: resultaten })
   }
 
   return res.status(200).json({ ok: true, organisaties: resultaten })

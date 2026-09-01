@@ -60,8 +60,7 @@ import {
   Share2,
   MinusCircle,
   Paperclip,
-  Info,
-} from 'lucide-react'
+  Info, AlertCircle,} from 'lucide-react'
 import {
   getFacturen,
   getFactuur,
@@ -550,6 +549,22 @@ function isThisMonth(dateStr: string): boolean {
 
 // ============ COMPONENT ============
 
+// De betaalsync schrijft zijn signaalwoorden in laatste_fout. Die zeggen een
+// gebruiker niets, dus hier staat wat er aan de hand is en wat eraan te doen.
+function exactSyncFoutUitleg(melding: string): string {
+  const uitleg: Record<string, string> = {
+    GEEN_TOKENS: 'De koppeling met Exact is verbroken. Verbind opnieuw, anders komen betalingen en boekingen niet meer door.',
+    TOKEN_AFGEWEZEN: 'Exact heeft de koppeling afgewezen. Verbind opnieuw.',
+    GEEN_EIGENAAR: 'Er staat geen eigenaar van de koppeling ingesteld.',
+    GEEN_ADMINISTRATIE: 'Er is geen Exact-administratie gekozen.',
+    EIGENAAR_ANDERE_ORG: 'De eigenaar van de koppeling hoort niet meer bij deze organisatie.',
+    TOKEN_ROTATIE_NIET_OPGESLAGEN: 'De vernieuwde toegang van Exact kon niet worden opgeslagen. Verbind opnieuw als dit blijft terugkomen.',
+    RUN_ONVOLTOOID: 'De synchronisatie kwam niet rond binnen de tijd en gaat vannacht verder.',
+    EVALUATIE_ONVOLTOOID: 'De synchronisatie kwam niet rond binnen de tijd en gaat vannacht verder.',
+  }
+  return uitleg[melding] ?? melding
+}
+
 export function FacturenLayout() {
   const navigate = useNavigate()
   const { navigateWithTab } = useNavigateWithTab()
@@ -570,6 +585,10 @@ export function FacturenLayout() {
   // projecten in dezelfde tab: een project op te-factureren gaat in zijn
   // geheel, een gevlagde offerte gaat als losse regel.
   const [teFacturerenOffertes, setTeFacturerenOffertes] = useState<Offerte[]>([])
+  // De laatste fout van de Exact-betaalsync. Die kolom werd wel geschreven en
+  // door niemand gelezen, dus een koppeling die eruit lag bleef onzichtbaar
+  // tot iemand toevallig een factuur probeerde te versturen.
+  const [exactSyncFout, setExactSyncFout] = useState<{ melding: string; op: string | null } | null>(null)
   const [bijlageCounts, setBijlageCounts] = useState<Map<string, number>>(new Map())
   const [isLoading, setIsLoading] = useState(() => getCached('facturen') === undefined)
 
@@ -727,6 +746,24 @@ export function FacturenLayout() {
     getFactuurOpvolgStappen(organisatieId)
       .then((stappen) => { if (!cancelled) setOpvolgStappen(stappen) })
       .catch(() => { if (!cancelled) setOpvolgStappen([]) })
+    return () => { cancelled = true }
+  }, [organisatieId])
+
+  // Ligt de koppeling eruit, dan mist Exact vanaf nu betalingen én boekingen.
+  // Dat hoort bovenaan het factuurscherm te staan, niet in een logregel.
+  useEffect(() => {
+    if (!supabase || !organisatieId) return
+    let cancelled = false
+    supabase
+      .from('exact_sync_state')
+      .select('laatste_fout, updated_at')
+      .eq('organisatie_id', organisatieId)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (cancelled || error || !data) return
+        const melding = (data as { laatste_fout?: string | null }).laatste_fout
+        setExactSyncFout(melding ? { melding, op: (data as { updated_at?: string | null }).updated_at ?? null } : null)
+      })
     return () => { cancelled = true }
   }, [organisatieId])
 
@@ -2206,6 +2243,30 @@ export function FacturenLayout() {
         id="facturen"
         tekst="Keur een offerte goed en maak er hier met één klik een factuur van. Betaald vink je zelf af, ook met een boekhoudkoppeling."
       />
+
+      {/* ── Exact-koppeling ligt eruit ── */}
+      {exactSyncFout && (
+        <div className="mb-4 rounded-xl border border-[rgba(192,58,24,0.3)] bg-[hsl(var(--status-flame-bg))] px-4 py-3">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="h-4 w-4 text-[#C03A18] mt-0.5 flex-shrink-0" />
+            <div className="min-w-0">
+              <p className="text-[13px] font-semibold text-foreground">
+                De laatste synchronisatie met Exact is mislukt<span className="text-flame">.</span>
+              </p>
+              <p className="text-[12px] text-foreground/70 mt-0.5">
+                {exactSyncFoutUitleg(exactSyncFout.melding)}
+                {exactSyncFout.op ? ` Laatste poging: ${new Date(exactSyncFout.op).toLocaleString('nl-NL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}.` : ''}
+              </p>
+              <button
+                onClick={() => navigate('/instellingen?tab=integraties')}
+                className="text-[12px] font-medium text-petrol hover:underline mt-1"
+              >
+                Naar de koppeling
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Header + Stats ── */}
       <div className="space-y-4">

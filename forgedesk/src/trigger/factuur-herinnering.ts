@@ -511,9 +511,22 @@ export const factuurHerinneringCron = schedules.task({
 
         const dagen = dagenSinds(factuur.vervaldatum);
 
-        // Deelbetalingen: alleen manen voor wat er echt openstaat
-        const openstaand =
+        // Deelbetalingen: alleen manen voor wat er echt openstaat.
+        // betaald_bedrag kent alleen wat via doen. binnenkwam (Mollie, handmatig
+        // afgevinkt). Een bankbetaling van een deel van de factuur staat wél in
+        // Exact, in openstaand_exact, en die stand is dan de scherpste. Zonder
+        // deze vergelijking maande doen. het volle bedrag terwijl er al de helft
+        // binnen was, en rekende de betaallink datzelfde te hoge bedrag af.
+        const openstaandDoen =
           Math.round(((Number(factuur.totaal) || 0) - (Number(factuur.betaald_bedrag) || 0)) * 100) / 100;
+        const exactStandVers =
+          v2 &&
+          factuur.openstaand_exact != null &&
+          !!factuur.exact_stand_op &&
+          dagenSinds(factuur.exact_stand_op) < MAX_SYNC_LEEFTIJD_DAGEN;
+        const openstaand = exactStandVers
+          ? Math.min(openstaandDoen, Math.round(Number(factuur.openstaand_exact) * 100) / 100)
+          : openstaandDoen;
         if (openstaand <= 0) {
           result.overgeslagen++;
           continue;
@@ -521,13 +534,7 @@ export const factuurHerinneringCron = schedules.task({
 
         // Extra zekering: zegt een verse Exact-stand dat er niets meer
         // openstaat (bank betaald, settle nog onderweg), dan niet manen.
-        if (
-          v2 &&
-          factuur.openstaand_exact != null &&
-          factuur.exact_stand_op &&
-          dagenSinds(factuur.exact_stand_op) < MAX_SYNC_LEEFTIJD_DAGEN &&
-          Number(factuur.openstaand_exact) <= 0.05
-        ) {
+        if (exactStandVers && Number(factuur.openstaand_exact) <= 0.05) {
           result.overgeslagen++;
           continue;
         }

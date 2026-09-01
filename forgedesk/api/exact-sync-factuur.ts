@@ -184,6 +184,45 @@ export function magOpnieuwNaFout(err: unknown): boolean {
   return err instanceof ExactHttpError && err.status === 401
 }
 
+/**
+ * Eén factuurregel uit de kopbedragen, voor facturen die er geen hebben.
+ *
+ * Voorschot- en eindafrekeningsfacturen worden bewust zonder regels aangemaakt:
+ * alleen totalen op de kop. Die weigeren betekende dat ze nooit naar Exact
+ * konden, en omdat de Exact-stap vóór het mailen komt, kreeg de klant ook geen
+ * factuur. De PDF reconstrueert zo'n regel allang (regelsUitTotalen in
+ * factuurVerzendService); dit is dezelfde rekenwijze, zodat het btw-bedrag op
+ * de cent klopt.
+ *
+ * Bij een gemengd tarief levert dit een percentage op dat geen Exact-btw-code
+ * heeft. De bestaande controle daarop geeft dan een leesbare 400 in plaats van
+ * een verkeerde boeking, en dat is precies de bedoeling: zo'n factuur hoort met
+ * echte regels gemaakt te worden.
+ */
+export function regelUitTotalen(beschrijving: string, subtotaal: number, btwBedrag: number) {
+  const netto = Math.round(subtotaal * 100) / 100
+  let btwPercentage = 21
+  if (netto !== 0) {
+    const absNetto = Math.abs(netto)
+    const absBtw = Math.abs(Math.round(btwBedrag * 100) / 100)
+    const zuiver = [21, 9, 0].find(
+      (tarief) => Math.abs(absBtw - Math.round((absNetto * tarief)) / 100) <= 0.02
+    )
+    btwPercentage = zuiver !== undefined ? zuiver : Math.round((absBtw / absNetto) * 10000) / 100
+  }
+  return {
+    beschrijving,
+    aantal: 1,
+    eenheidsprijs: netto,
+    btw_percentage: btwPercentage,
+    korting_percentage: 0,
+    totaal: netto,
+    volgorde: 0,
+    detail_regels: [],
+    grootboek_code: null,
+  }
+}
+
 // Laatste syncfout op de factuur bewaren (migratie 213), zodat er na het
 // wegklikken van de toast nog iets terug te vinden is. Best-effort: vóór de
 // migratie ontbreken de kolommen en mag dit de echte foutafhandeling niet
@@ -1126,9 +1165,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       if (!documentId) {
         // Resolve klant alleen als we het Document echt nog moeten aanmaken.
+        // Dezelfde velden als de hoofdflow. Met alleen naam, e-mail en telefoon
+        // sloeg findOrCreateKlant de match op debiteurennummer over en viel hij
+        // terug op een exacte naamvergelijking; bij nul treffers maakte hij een
+        // kale relatie aan, die daarna elke volgende factuur van deze klant naar
+        // zich toetrok. Een bijlage opnieuw proberen mag geen tweede debiteur
+        // opleveren.
         const { data: retryKlant, error: retryKlantError } = await supabaseAdmin
           .from('klanten')
-          .select('bedrijfsnaam, email, telefoon')
+          .select('bedrijfsnaam, email, telefoon, debiteurennummer, adres, postcode, stad, land, btw_nummer, kvk_nummer')
           .eq('id', factuur.klant_id)
           .maybeSingle()
         if (retryKlantError) console.error('[exact-sync] klant lookup fout (retry-flow):', retryKlantError.message)
@@ -1139,10 +1184,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             naam: retryKlantNaam,
             email: retryKlant?.email,
             telefoon: retryKlant?.telefoon,
+            debiteurennummer: retryKlant?.debiteurennummer,
+            adres: retryKlant?.adres,
+            postcode: retryKlant?.postcode,
+            stad: retryKlant?.stad,
+            land: retryKlant?.land,
+            btw_nummer: retryKlant?.btw_nummer,
+            kvk_nummer: retryKlant?.kvk_nummer,
           })
           retryCustomerGuid = retryKlantResultaat.id
         } catch (klantErr) {
           console.error('Klant lookup mislukt in retry-flow:', klantErr)
+          Sentry.captureException(klantErr, { tags: { exact_endpoint: 'sync-factuur' }, extra: { factuur_id, fase: 'klant-lookup-retry' } })
           return res.status(502).json({ error: 'Klant niet gevonden in Exact' })
         }
 
@@ -1185,11 +1238,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             documentId = docResult?.d?.ID ?? null
           } catch (retryErr) {
             console.error('Document POST mislukt in retry-flow:', docErr, retryErr)
+            Sentry.captureException(retryErr, { tags: { exact_endpoint: 'sync-factuur' }, extra: { factuur_id, fase: 'document-post-retry' } })
             return res.status(502).json({ error: 'Document aanmaken in Exact mislukt' })
           }
         }
 
         if (!documentId) {
+          Sentry.captureMessage('Exact gaf geen Document-GUID terug', { level: 'error', tags: { exact_endpoint: 'sync-factuur' }, extra: { factuur_id } })
           return res.status(502).json({ error: 'Document GUID niet terug van Exact' })
         }
 
@@ -1224,6 +1279,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           bijlageSynced = true
         } catch (retryErr) {
           console.error('DocumentAttachment POST mislukt in retry-flow:', attErr, retryErr)
+          Sentry.captureException(retryErr, { tags: { exact_endpoint: 'sync-factuur' }, extra: { factuur_id, fase: 'bijlage-post-retry' } })
           return res.status(502).json({ error: 'Bijlage uploaden naar Exact mislukt' })
         }
       }
@@ -1290,17 +1346,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Zonder regels valt er niets te boeken; Exact geeft daar zelf een
-    // onnavolgbare 400 op (komt voor bij creditnota's uit de snelle
-    // lijst-dialoog, die alleen kopbedragen aanmaakt).
-    if (!factuurItems || factuurItems.length === 0) {
-      return res.status(400).json({
-        error: 'Deze factuur heeft geen regels; voeg regels toe voordat je naar Exact boekt.',
+    // onnavolgbare 400 op. Voorschot- en eindafrekeningsfacturen hébben geen
+    // regels, alleen kopbedragen, dus die reconstrueren we hier tot één regel.
+    // Blijft het subtotaal nul, dan valt er echt niets te boeken.
+    let teBoekenItems = factuurItems as Array<Record<string, unknown>> | null
+    if (!teBoekenItems || teBoekenItems.length === 0) {
+      const kopSubtotaal = Number(factuur.subtotaal) || 0
+      const kopBtw = Number(factuur.btw_bedrag) || 0
+      if (kopSubtotaal === 0 && kopBtw === 0) {
+        return res.status(400).json({
+          error: 'Deze factuur heeft geen regels en geen bedrag; voeg regels toe voordat je naar Exact boekt.',
+        })
+      }
+      teBoekenItems = [regelUitTotalen(factuur.titel || `Factuur ${factuur.nummer}`, kopSubtotaal, kopBtw)]
+      console.warn('[exact-sync] factuur zonder regels; één regel uit de kopbedragen geboekt', {
+        factuur_id, nummer: factuur.nummer, factuur_type: factuur.factuur_type,
       })
     }
 
     // Elke regel moet op een geconfigureerde btw-code uitkomen; een lege code
     // ging voorheen stilzwijgend als VATCode null naar Exact.
-    for (const item of factuurItems as Array<{ btw_percentage: unknown }>) {
+    for (const item of teBoekenItems as Array<{ btw_percentage: unknown }>) {
       if (bepaalBtwCode(item.btw_percentage, exactSettings) === null) {
         if (item.btw_percentage === null || item.btw_percentage === undefined || item.btw_percentage === '') {
           return res.status(400).json({
@@ -1320,7 +1386,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // PostgREST soms als string binnen en `.toFixed()` op een string gooit.
     const regelTotalen: number[] = []
     const regelBtwTarieven: number[] = []
-    for (const item of factuurItems as Array<{ totaal: unknown; btw_percentage: unknown }>) {
+    for (const item of teBoekenItems as Array<{ totaal: unknown; btw_percentage: unknown }>) {
       const regelBedrag = alsBedrag(item.totaal)
       if (regelBedrag === null) {
         return res.status(400).json({
@@ -1421,8 +1487,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const klantResultaat = await findOrCreateKlant(token, division, klantVoorExact)
         customerGuid = klantResultaat.id
         klantNaamWaarschuwing = klantResultaat.naamWaarschuwing
-      } catch {
+      } catch (klantRetryError) {
         const msg = klantError instanceof Error ? klantError.message : 'Klant aanmaken mislukt'
+        Sentry.captureException(klantRetryError, { tags: { exact_endpoint: 'sync-factuur' }, extra: { factuur_id, fase: 'klant-aanmaken-retry' } })
         await registreerSyncFout(factuur_id, msg)
         return res.status(502).json({ error: msg })
       }
@@ -1435,7 +1502,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // lookup koppelt de DOEN-grootboekcode aan de Exact GLAccount met dezelfde Code.
     const defaultGrootboekCode = (exactSettings.exact_grootboek || '').trim()
     const grootboekGuidPerCode = new Map<string, string>()
-    for (const item of (factuurItems || []) as Array<{ grootboek_code?: string | null }>) {
+    for (const item of (teBoekenItems || []) as Array<{ grootboek_code?: string | null }>) {
       const code = (item.grootboek_code || '').trim() || defaultGrootboekCode
       if (!code) {
         return res.status(400).json({
@@ -1601,7 +1668,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       kostenplaatsCode = (kostenplaats?.code as string | undefined)?.trim() || null
     }
 
-    const salesEntryLines = (factuurItems || []).map((item: {
+    const salesEntryLines = ((teBoekenItems || []) as unknown as Array<{
       beschrijving: string
       btw_percentage: number
       totaal: number
@@ -1609,7 +1676,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       eenheidsprijs: number
       korting_percentage: number
       grootboek_code?: string | null
-    }, index: number) => {
+    }>).map((item, index: number) => {
       // factuur_items.totaal is al excl. BTW (zie calcLineTotal in FactuurEditor).
       // Genormaliseerd bij de consistentiecheck hierboven, in dezelfde volgorde.
       const regelTotaal = regelTotalen[index]
@@ -1775,6 +1842,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Er kan meer dan één ding zijn misgegaan zonder dat de boeking faalde; de
     // editor toont één `waarschuwing`-veld, dus alles wat speelt gaat samen mee.
     const waarschuwingen = [
+      mainBijlagenSyncResult.failed > 0
+        ? `${mainBijlagenSyncResult.failed} van de ${mainBijlagenSyncResult.geprobeerd} bijlagen kwam niet in Exact. De boeking staat er wel.`
+        : null,
       syncOpslagFout
         ? 'De boeking staat in Exact, maar het registreren in doen. mislukte. Synchroniseer NIET opnieuw voordat je in Exact gecontroleerd hebt of de factuur er staat.'
         : null,
@@ -1794,6 +1864,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Onbekende fout bij synchroniseren'
     console.error('Exact sync factuur error:', message)
+    // Zonder dit kwam een gewone Exact-fout nergens terecht: de gebruiker zag
+    // een melding, verder niemand. Juist deze zijn de terugkerende.
+    Sentry.captureException(error instanceof Error ? error : new Error(message), {
+      tags: { exact_endpoint: 'sync-factuur' },
+      extra: { factuur_id: (req.body as { factuur_id?: string } | undefined)?.factuur_id },
+    })
     const factuurId = (req.body as { factuur_id?: string } | undefined)?.factuur_id
     // Alleen loggen op een factuur waarvan vaststaat dat de caller erbij mag.
     if (factuurGeautoriseerd && factuurId) await registreerSyncFout(factuurId, message)

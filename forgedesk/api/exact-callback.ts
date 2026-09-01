@@ -331,6 +331,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       division = meData?.d?.results?.[0]?.CurrentDivision ?? null
     } else {
       console.error('Exact /current/Me error:', meResponse.status, await meResponse.text())
+      Sentry.captureMessage(`Exact /current/Me gaf ${meResponse.status}; administratie onbekend`, 'error')
+    }
+
+    // Zonder administratie is de koppeling niet bruikbaar: de sync, de
+    // grootboeken, de dagboeken en de btw-codes hangen er allemaal aan. Vroeger
+    // ging `exact_online_connected` toch op true en kreeg je de groene melding,
+    // waarna alles wat je daarna probeerde faalde op een lege administratie.
+    // Een bestaande administratie van een eerdere koppeling houden we vast: een
+    // mislukte /current/Me mag een goede waarde niet met NULL overschrijven.
+    if (division === null) {
+      const { data: bestaand } = await supabase
+        .from('exact_tokens')
+        .select('division')
+        .eq('user_id', user_id)
+        .maybeSingle()
+      const bewaarde = (bestaand as { division?: number | null } | null)?.division ?? null
+      if (bewaarde !== null) division = bewaarde
     }
 
     // 4. Sla tokens op in exact_tokens tabel
@@ -350,6 +367,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (upsertError) {
       console.error('Exact tokens opslaan mislukt:', upsertError)
       return res.redirect(302, `${APP_URL}/instellingen?tab=integraties&exact=error&reason=save_tokens`)
+    }
+
+    // Nog steeds geen administratie, ook niet uit een eerdere koppeling: dan is
+    // dit een mislukte koppeling en geen geslaagde. Niet groen melden.
+    if (division === null) {
+      return res.redirect(302, `${APP_URL}/instellingen?tab=integraties&exact=error&reason=administratie`)
     }
 
     // 5a. Haal default DocumentType voor bijlagen op.
