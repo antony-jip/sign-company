@@ -1680,7 +1680,7 @@ export function ProjectDetail() {
               <button
                 onClick={() => handleCreateFactuurFromOfferte(activeOfferte)}
                 className="inline-flex items-center gap-1.5 h-8 md:h-9 px-2.5 md:px-3 rounded-lg border border-petrol/30 bg-card text-petrol hover:bg-petrol hover:text-white transition-colors text-[12px] md:text-[13px] font-medium"
-                title={isGefactureerd ? `Factuur openen` : 'Factuur maken van deze offerte'}
+                title={isGefactureerd ? `Factuur van ${activeOfferte.nummer} openen` : `Offerte ${activeOfferte.nummer} factureren`}
               >
                 <Receipt className="h-3.5 w-3.5" />
                 {isGefactureerd ? 'Factuur' : 'Maak factuur'}
@@ -1884,6 +1884,7 @@ export function ProjectDetail() {
               }
             }}
             onOpdrachtbevestiging={(offerte) => setObPreviewOfferte(offerte)}
+            onFactureerOfferte={handleCreateFactuurFromOfferte}
             onOfferteDelete={async (offerte) => {
               const ok = await confirm({
                 message: `Offerte ${offerte.nummer} verwijderen? Dit kan niet ongedaan worden gemaakt.`,

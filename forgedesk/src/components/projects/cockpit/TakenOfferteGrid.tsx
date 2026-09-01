@@ -59,6 +59,8 @@ interface TakenOfferteGridProps {
   onTaakDelete?: (taak: Taak) => Promise<void> | void
   onOpdrachtbevestiging?: (offerte: Offerte) => void
   onOfferteDelete?: (offerte: Offerte) => Promise<void> | void
+  /** Factureert precies deze offerte, of opent de factuur die er al is. */
+  onFactureerOfferte?: (offerte: Offerte) => void
   onQuickOfferte?: (bedrag: number) => Promise<void>
   onUpdateOffertePrice?: (offerte: Offerte, bedragExclBtw: number) => Promise<void>
 }
@@ -77,6 +79,7 @@ export function TakenOfferteGrid({
   onTaakEdit,
   onTaakDelete,
   onOfferteDelete,
+  onFactureerOfferte,
   onQuickOfferte,
   onUpdateOffertePrice,
 }: TakenOfferteGridProps) {
@@ -351,6 +354,28 @@ export function TakenOfferteGrid({
                         <span className="text-muted-foreground">€</span>
                         <span className="text-foreground font-bold ml-0.5">{formatAmount(exBtw(offerte))}</span>
                       </span>
+                    )}
+                    {onFactureerOfferte && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onFactureerOfferte(offerte)
+                        }}
+                        title={offerte.geconverteerd_naar_factuur_id
+                          ? `Factuur van offerte ${offerte.nummer} openen`
+                          : `Offerte ${offerte.nummer} factureren`}
+                        aria-label={offerte.geconverteerd_naar_factuur_id
+                          ? `Factuur van offerte ${offerte.nummer} openen`
+                          : `Offerte ${offerte.nummer} factureren`}
+                        className={`h-7 w-7 rounded-md flex items-center justify-center transition-all flex-shrink-0 ${
+                          offerte.geconverteerd_naar_factuur_id
+                            ? 'text-[#2D6B48] hover:bg-[rgba(45,107,72,0.1)]'
+                            : 'opacity-0 group-hover:opacity-100 focus:opacity-100 text-muted-foreground/70 hover:bg-[rgba(45,107,72,0.1)] hover:text-[#2D6B48]'
+                        }`}
+                      >
+                        <Receipt className="h-3.5 w-3.5" strokeWidth={1.75} />
+                      </button>
                     )}
                     {onOfferteDelete && !offerte.geconverteerd_naar_factuur_id && (
                       <button
