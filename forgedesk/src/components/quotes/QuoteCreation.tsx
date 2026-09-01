@@ -2536,37 +2536,80 @@ export function QuoteCreation() {
             />
           </div>
 
-          {/* ── Uitgeven namens ── */}
-          {/* Alleen in beeld als er echt een tweede bedrijf is ingesteld. Eén
-              bedrijf betekent geen keuze, en dan hoort er ook geen keuzelijst
-              te staan. */}
+          {/* ── Briefpapier ── */}
+          {/* Alleen in beeld als er een tweede vel is ingesteld. Eén briefpapier
+              betekent geen keuze, en dan hoort er ook geen keuzelijst te staan.
+              Het vel bepaalt de bedrijfsgegevens op de PDF, want die horen bij
+              elkaar: het adres van het ene bedrijf op het papier van het andere
+              zou een fout document opleveren. */}
           {bedrijfsprofielen.length > 0 && (
             <div className="doen-slate-surface rounded-2xl p-5 border border-[rgba(192,58,24,0.14)] dark:border-white/10">
               <div className="flex items-baseline justify-between mb-3">
                 <h3 className="font-heading text-[15px] font-bold text-foreground">
-                  Uitgeven namens<span className="text-flame">.</span>
+                  Briefpapier<span className="text-flame">.</span>
                 </h3>
-                <span className="text-[12px] text-muted-foreground">Bepaalt het briefpapier en de bedrijfsgegevens op de PDF</span>
+                <span className="text-[12px] text-muted-foreground">Geldt voor de offerte en de opdrachtbevestiging</span>
               </div>
-              <div className="flex flex-wrap gap-1.5">
-                {[{ id: null as string | null, label: bedrijfsnaam || 'Eigen bedrijf' }, ...bedrijfsprofielen.map((p) => ({ id: p.id as string | null, label: p.label }))].map((keuze) => (
-                  <button
-                    key={keuze.id ?? 'eigen'}
-                    type="button"
-                    onClick={() => setBedrijfsprofielId(keuze.id)}
-                    className={`text-[12px] font-medium px-2.5 py-1 rounded-full border transition-colors ${
-                      bedrijfsprofielId === keuze.id
-                        ? 'border-petrol bg-petrol/10 text-petrol dark:border-white/30 dark:bg-white/10 dark:text-foreground'
-                        : 'border-[rgba(26,83,92,0.12)] dark:border-white/10 bg-white dark:bg-white/[0.05] text-foreground/70 hover:bg-[rgba(26,83,92,0.05)] dark:hover:bg-white/[0.08] hover:border-[rgba(26,83,92,0.22)] dark:hover:border-white/20 hover:text-petrol dark:hover:text-foreground'
-                    }`}
-                  >
-                    {keuze.label}
-                  </button>
-                ))}
+              <div className="flex flex-wrap gap-3">
+                {[
+                  {
+                    id: null as string | null,
+                    label: bedrijfsnaam || 'Eigen bedrijf',
+                    papier: documentStyle?.briefpapier_modus !== 'geen' ? (documentStyle?.briefpapier_url || '') : '',
+                    vervolg: documentStyle?.briefpapier_modus === 'eerste_en_vervolg' ? (documentStyle?.vervolgpapier_url || '') : '',
+                  },
+                  ...bedrijfsprofielen.map((p) => ({
+                    id: p.id as string | null,
+                    label: p.label,
+                    papier: p.briefpapier_modus !== 'geen' ? (p.briefpapier_url || '') : '',
+                    vervolg: p.briefpapier_modus === 'eerste_en_vervolg' ? (p.vervolgpapier_url || '') : '',
+                  })),
+                ].map((keuze) => {
+                  const gekozen = bedrijfsprofielId === keuze.id
+                  return (
+                    <button
+                      key={keuze.id ?? 'eigen'}
+                      type="button"
+                      onClick={() => setBedrijfsprofielId(keuze.id)}
+                      className={`group text-left rounded-xl border p-2 transition-colors ${
+                        gekozen
+                          ? 'border-petrol bg-petrol/[0.06] dark:border-white/30 dark:bg-white/10'
+                          : 'border-[rgba(26,83,92,0.12)] dark:border-white/10 bg-white dark:bg-white/[0.05] hover:border-[rgba(26,83,92,0.28)] dark:hover:border-white/20'
+                      }`}
+                    >
+                      <div className="flex items-end gap-1.5">
+                        {keuze.papier ? (
+                          <img
+                            src={keuze.papier}
+                            alt={`Briefpapier ${keuze.label}`}
+                            className="w-[74px] aspect-[210/297] object-cover object-top rounded-md border border-black/10 bg-white"
+                          />
+                        ) : (
+                          <div className="w-[74px] aspect-[210/297] rounded-md border border-dashed border-[rgba(26,83,92,0.25)] dark:border-white/20 bg-white dark:bg-white/[0.04] flex items-center justify-center px-1">
+                            <span className="text-[10px] leading-tight text-muted-foreground text-center">Blanco papier</span>
+                          </div>
+                        )}
+                        {keuze.vervolg && (
+                          <img
+                            src={keuze.vervolg}
+                            alt={`Vervolgpapier ${keuze.label}`}
+                            className="w-[46px] aspect-[210/297] object-cover object-top rounded-md border border-black/10 bg-white opacity-80"
+                          />
+                        )}
+                      </div>
+                      <div className={`mt-2 text-[12px] font-medium ${gekozen ? 'text-petrol dark:text-foreground' : 'text-foreground/70'}`}>
+                        {keuze.label}
+                      </div>
+                      <div className="text-[11px] text-muted-foreground">
+                        {keuze.vervolg ? 'Met vervolgpapier' : keuze.papier ? 'Eén vel' : 'Zonder briefpapier'}
+                      </div>
+                    </button>
+                  )
+                })}
               </div>
               {bedrijfsprofielId && (
-                <p className="text-[12px] text-muted-foreground mt-2.5">
-                  De offerte en de opdrachtbevestiging krijgen het briefpapier en de gegevens van dit bedrijf. De mail waarmee je verstuurt blijft van {bedrijfsnaam || 'je eigen bedrijf'}.
+                <p className="text-[12px] text-muted-foreground mt-3">
+                  Op dit papier komen ook de bedrijfsgegevens van {bedrijfsprofielen.find((p) => p.id === bedrijfsprofielId)?.label || 'dit bedrijf'} te staan. De mail waarmee je verstuurt blijft van {bedrijfsnaam || 'je eigen bedrijf'}.
                 </p>
               )}
             </div>
