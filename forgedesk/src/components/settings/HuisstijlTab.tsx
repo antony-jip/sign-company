@@ -84,7 +84,7 @@ const HUISSTIJL_TABS: SubTab[] = [
 
 // ============ LIVE PREVIEW COMPONENT ============
 
-function SliderWithInput({ label, unit, min, max, value, onChange }: {
+export function SliderWithInput({ label, unit, min, max, value, onChange }: {
   label: string
   unit: string
   min: number
@@ -586,7 +586,7 @@ function hexToRgb(hex: string): [number, number, number] {
 
 // ============ COLLAPSIBLE SECTION ============
 
-function Section({ title, icon: Icon, children, defaultOpen = true }: {
+export function Section({ title, icon: Icon, children, defaultOpen = true }: {
   title: string
   icon: React.ElementType
   children: React.ReactNode

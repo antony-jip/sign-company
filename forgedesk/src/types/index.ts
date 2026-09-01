@@ -378,6 +378,11 @@ export interface Offerte {
   // Levering & betaling (migratie 224) — per offerte, valt terug op app_settings
   levertijd?: string;
   betalingsconditie?: string;
+  // Onder welk bedrijf deze offerte uitgaat (migratie 189). Leeg = het eigen
+  // bedrijf uit profiles. Staat op de offerte zelf, want de PDF wordt elke keer
+  // opnieuw gemaakt: zonder deze vastlegging zou een oude offerte later het
+  // briefpapier van je andere bedrijf krijgen.
+  bedrijfsprofiel_id?: string | null;
   // Contactpersoon koppeling
   contactpersoon_id?: string;
   // Klant acceptatie
@@ -2093,6 +2098,42 @@ export interface InkoopRegel {
 export type DocumentTemplateId = 'klassiek' | 'modern' | 'minimaal' | 'industrieel';
 export type LogoPositie = 'links' | 'rechts' | 'midden';
 export type BriefpapierModus = 'geen' | 'achtergrond' | 'alleen_eerste_pagina' | 'eerste_en_vervolg';
+
+// ============ BEDRIJFSPROFIELEN ============
+
+/**
+ * Een tweede bedrijf om documenten onder uit te geven (migratie 189).
+ * Bedrijfsgegevens en briefpapier zijn eigen; lettertypen, kleuren, marges en
+ * tabelstijl blijven gedeeld met document_styles. Alleen de identiteit en het
+ * papier wisselen dus mee.
+ */
+export interface Bedrijfsprofiel {
+  id: string;
+  organisatie_id?: string;
+  /** Interne naam in de keuzelijst, bijvoorbeeld "Duurzame Vlaggen". */
+  label: string;
+  bedrijfsnaam: string;
+  bedrijfs_adres: string;
+  bedrijfs_telefoon?: string | null;
+  bedrijfs_email?: string | null;
+  bedrijfs_website?: string | null;
+  kvk_nummer: string;
+  btw_nummer: string;
+  iban?: string | null;
+  logo_url?: string | null;
+  briefpapier_url: string;
+  vervolgpapier_url: string;
+  briefpapier_modus: BriefpapierModus;
+  briefpapier_toon_branding: boolean;
+  briefpapier_safe_zone_boven?: number | null;
+  briefpapier_safe_zone_onder?: number | null;
+  briefpapier_safe_zone_links?: number | null;
+  briefpapier_safe_zone_rechts?: number | null;
+  actief: boolean;
+  volgorde: number;
+  created_at: string;
+  updated_at: string;
+}
 
 // ============ SIGNING VISUALIZER ============
 

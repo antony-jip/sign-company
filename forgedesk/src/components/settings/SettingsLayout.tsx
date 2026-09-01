@@ -48,6 +48,7 @@ import { DEFAULT_OFFERTE_VOORWAARDEN, DEFAULT_OFFERTE_LEVERTIJD, DEFAULT_OFFERTE
 
 // Already-extracted tab components
 import { HuisstijlTab } from './HuisstijlTab'
+import { BedrijfsprofielenTab } from './BedrijfsprofielenTab'
 import { CalculatieTab } from './CalculatieTab'
 import { ForgieTab } from './ForgieTab'
 import { confirm } from '@/components/shared/ConfirmDialog'
@@ -152,6 +153,7 @@ const settingsGroups: SettingsGroup[] = [
     ]},
     { id: 'producten', label: 'Documenten', icon: FileText, tabs: [
       { id: 'briefpapier', label: 'Briefpapier', icon: Image },
+      { id: 'bedrijfsprofielen', label: 'Tweede bedrijf', icon: Building2 },
       { id: 'tekeningen', label: 'Tekeningen', icon: Image },
       { id: 'documenten', label: 'Documenten', icon: FileText },
     ]},
@@ -224,6 +226,7 @@ function renderTabContent(tabId: string) {
     case 'bedrijf': return <BedrijfTab />
     case 'documenten': return <DocumentenTab />
     case 'briefpapier': return <HuisstijlTab lockedSubTab="briefpapier" />
+    case 'bedrijfsprofielen': return <BedrijfsprofielenTab />
     case 'huisstijl-template': return <HuisstijlTab lockedSubTab="template" />
     case 'huisstijl-typografie': return <HuisstijlTab lockedSubTab="typografie" />
     case 'huisstijl-layout': return <HuisstijlTab lockedSubTab="layout" />

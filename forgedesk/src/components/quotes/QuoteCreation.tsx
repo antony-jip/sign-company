@@ -70,7 +70,7 @@ import { getKlanten, getProjecten, getOffertes, createOfferte, createOfferteItem
 import { useAuth } from '@/contexts/AuthContext'
 import { logCreate } from '@/utils/auditLogger'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
-import type { Klant, Project, Contactpersoon, Factuur, OfferteItem } from '@/types'
+import type { Klant, Project, Contactpersoon, Factuur, OfferteItem, Bedrijfsprofiel } from '@/types'
 import { berekenRegelInkoop } from '@/utils/calculatieBerekening'
 import { round2 } from '@/utils/budgetUtils'
 import { berekenMarkupPercentage } from '@/utils/margeBerekening'
@@ -79,6 +79,7 @@ import { generateOffertePDF, generateOpdrachtbevestigingPDF } from '@/services/p
 import { WerkbonAanmaakDialog } from '@/components/werkbonnen/WerkbonAanmaakDialog'
 const PdfPreviewDialog = React.lazy(() => import('@/components/shared/PdfPreviewDialog').then(m => ({ default: m.PdfPreviewDialog })))
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
+import { getBedrijfsprofielen } from '@/services/bedrijfsprofielService'
 import { sendEmail } from '@/services/gmailService'
 import { supabase } from '@/services/supabaseClient'
 import { offerteVerzendTemplate } from '@/services/emailTemplateService'
@@ -387,6 +388,11 @@ export function QuoteCreation() {
   // Levering & betaling — per offerte, voorgevuld met de organisatie-standaard.
   const [levertijd, setLevertijd] = useState(offerteLevertijd)
   const [betalingsconditie, setBetalingsconditie] = useState(offerteBetalingsconditie)
+  // Onder welk bedrijf de offerte uitgaat (migratie 189). Leeg = het eigen
+  // bedrijf. De keuze staat op de offerte, want de PDF wordt elke keer opnieuw
+  // gemaakt en moet ook over een jaar nog hetzelfde briefpapier pakken.
+  const [bedrijfsprofielen, setBedrijfsprofielen] = useState<Bedrijfsprofiel[]>([])
+  const [bedrijfsprofielId, setBedrijfsprofielId] = useState<string | null>(null)
 
   // ── Suggesties voor item omschrijvingen ──
   const [omschrijvingSuggesties, setOmschrijvingSuggesties] = useState<OmschrijvingSuggestie[]>([])
@@ -687,6 +693,17 @@ export function QuoteCreation() {
     return () => { cancelled = true }
   }, [])
 
+  // ── Tweede bedrijf om onder uit te geven (migratie 189) ──
+  // Faalt stil: is de tabel er nog niet, dan blijft de lijst leeg en verdwijnt
+  // de keuze uit beeld. De offerte gaat dan gewoon onder het eigen bedrijf uit.
+  useEffect(() => {
+    let cancelled = false
+    getBedrijfsprofielen(true)
+      .then((profielen) => { if (!cancelled) setBedrijfsprofielen(profielen) })
+      .catch(() => { /* geen tweede bedrijf: geen keuzelijst */ })
+    return () => { cancelled = true }
+  }, [])
+
   // ── Load suggesties voor item omschrijvingen (single query) ──
   useEffect(() => {
     let cancelled = false
@@ -741,6 +758,7 @@ export function QuoteCreation() {
         setOutroTekst(offerte.outro_tekst || '')
         setLevertijd(offerte.levertijd || offerteLevertijd)
         setBetalingsconditie(offerte.betalingsconditie || offerteBetalingsconditie)
+        setBedrijfsprofielId(offerte.bedrijfsprofiel_id || null)
 
         // Map OfferteItem[] → QuoteLineItem[]
         const mappedItems: QuoteLineItem[] = offerteItems
@@ -1208,6 +1226,7 @@ export function QuoteCreation() {
           outro_tekst: outroTekst,
           levertijd,
           betalingsconditie,
+          bedrijfsprofiel_id: bedrijfsprofielId,
           // Altijd meesturen: conditioneel weglaten betekende dat terugzetten
           // naar 0 nooit werd opgeslagen en de oude waarde bleef staan.
           afrondingskorting_excl_btw: afrondingskorting,
@@ -1238,6 +1257,7 @@ export function QuoteCreation() {
           outro_tekst: outroTekst,
           levertijd,
           betalingsconditie,
+          bedrijfsprofiel_id: bedrijfsprofielId,
           afrondingskorting_excl_btw: afrondingskorting,
           uren_correctie: urenCorrectie,
           versie: versioning.versieNummer,
@@ -1273,7 +1293,7 @@ export function QuoteCreation() {
     } finally {
       saveLockRef.current = false
     }
-  }, [user?.id, selectedKlantId, selectedProjectId, selectedContactId, offerteTitel, items, geldigTot, notities, voorwaarden, introTekst, outroTekst, levertijd, betalingsconditie, editOfferteId, offerteNummer, isSaving, klanten, afrondingskorting, urenCorrectie, urenCorrectieBedrag, isTrialBlocked, versioning.versieNummer])
+  }, [user?.id, selectedKlantId, selectedProjectId, selectedContactId, offerteTitel, items, geldigTot, notities, voorwaarden, introTekst, outroTekst, levertijd, betalingsconditie, bedrijfsprofielId, editOfferteId, offerteNummer, isSaving, klanten, afrondingskorting, urenCorrectie, urenCorrectieBedrag, isTrialBlocked, versioning.versieNummer])
 
   // Keep ref in sync so unmount handler can call latest version
   useEffect(() => {
@@ -1303,7 +1323,7 @@ export function QuoteCreation() {
     return () => {
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
     }
-  }, [items, offerteTitel, notities, voorwaarden, introTekst, outroTekst, levertijd, betalingsconditie, geldigTot, selectedKlantId, selectedProjectId, selectedContactId, showKlantSelector, afrondingskorting, urenCorrectie])
+  }, [items, offerteTitel, notities, voorwaarden, introTekst, outroTekst, levertijd, betalingsconditie, bedrijfsprofielId, geldigTot, selectedKlantId, selectedProjectId, selectedContactId, showKlantSelector, afrondingskorting, urenCorrectie])
 
   // Save on unmount (navigating away) · fire-and-forget
   useEffect(() => {
@@ -1375,6 +1395,7 @@ export function QuoteCreation() {
         outro_tekst: outroTekst,
         levertijd,
         betalingsconditie,
+        bedrijfsprofiel_id: bedrijfsprofielId,
         ...(afrondingskorting !== 0 ? { afrondingskorting_excl_btw: afrondingskorting } : {}),
         ...(dupHeeftUrenCorrectie ? { uren_correctie: urenCorrectie } : {}),
       })
@@ -1459,6 +1480,7 @@ export function QuoteCreation() {
           outro_tekst: outroTekst,
           levertijd,
           betalingsconditie,
+          bedrijfsprofiel_id: bedrijfsprofielId,
           // Altijd meesturen zodat terugzetten naar 0 ook opgeslagen wordt
           afrondingskorting_excl_btw: afrondingskorting,
           uren_correctie: urenCorrectie,
@@ -1491,6 +1513,7 @@ export function QuoteCreation() {
           outro_tekst: outroTekst,
           levertijd,
           betalingsconditie,
+          bedrijfsprofiel_id: bedrijfsprofielId,
           afrondingskorting_excl_btw: afrondingskorting,
           uren_correctie: urenCorrectie,
           versie: versioning.versieNummer,
@@ -1640,6 +1663,7 @@ export function QuoteCreation() {
         outro_tekst: outroTekst,
         levertijd,
         betalingsconditie,
+        bedrijfsprofiel_id: bedrijfsprofielId,
         versie: versioning.versieNummer,
         ...(afrondingskorting !== 0 ? { afrondingskorting_excl_btw: afrondingskorting } : {}),
         created_at: new Date().toISOString(),
@@ -1891,6 +1915,7 @@ export function QuoteCreation() {
             outro_tekst: outroTekst,
             levertijd,
             betalingsconditie,
+            bedrijfsprofiel_id: bedrijfsprofielId,
             ...(afrondingskorting !== 0 ? { afrondingskorting_excl_btw: afrondingskorting } : {}),
           } as Parameters<typeof generateOffertePDF>[0]
           const pdfItems = items.map(toPdfItem)
@@ -2510,6 +2535,42 @@ export function QuoteCreation() {
               className="resize-y text-sm bg-white dark:bg-white/[0.05] border border-[rgba(26,83,92,0.12)] dark:border-white/10 focus:bg-white dark:focus:bg-white/[0.07] focus-visible:border-petrol dark:focus-visible:border-white/30 focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] dark:focus-visible:ring-white/10 rounded-lg transition-colors"
             />
           </div>
+
+          {/* ── Uitgeven namens ── */}
+          {/* Alleen in beeld als er echt een tweede bedrijf is ingesteld. Eén
+              bedrijf betekent geen keuze, en dan hoort er ook geen keuzelijst
+              te staan. */}
+          {bedrijfsprofielen.length > 0 && (
+            <div className="doen-slate-surface rounded-2xl p-5 border border-[rgba(192,58,24,0.14)] dark:border-white/10">
+              <div className="flex items-baseline justify-between mb-3">
+                <h3 className="font-heading text-[15px] font-bold text-foreground">
+                  Uitgeven namens<span className="text-flame">.</span>
+                </h3>
+                <span className="text-[12px] text-muted-foreground">Bepaalt het briefpapier en de bedrijfsgegevens op de PDF</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {[{ id: null as string | null, label: bedrijfsnaam || 'Eigen bedrijf' }, ...bedrijfsprofielen.map((p) => ({ id: p.id as string | null, label: p.label }))].map((keuze) => (
+                  <button
+                    key={keuze.id ?? 'eigen'}
+                    type="button"
+                    onClick={() => setBedrijfsprofielId(keuze.id)}
+                    className={`text-[12px] font-medium px-2.5 py-1 rounded-full border transition-colors ${
+                      bedrijfsprofielId === keuze.id
+                        ? 'border-petrol bg-petrol/10 text-petrol dark:border-white/30 dark:bg-white/10 dark:text-foreground'
+                        : 'border-[rgba(26,83,92,0.12)] dark:border-white/10 bg-white dark:bg-white/[0.05] text-foreground/70 hover:bg-[rgba(26,83,92,0.05)] dark:hover:bg-white/[0.08] hover:border-[rgba(26,83,92,0.22)] dark:hover:border-white/20 hover:text-petrol dark:hover:text-foreground'
+                    }`}
+                  >
+                    {keuze.label}
+                  </button>
+                ))}
+              </div>
+              {bedrijfsprofielId && (
+                <p className="text-[12px] text-muted-foreground mt-2.5">
+                  De offerte en de opdrachtbevestiging krijgen het briefpapier en de gegevens van dit bedrijf. De mail waarmee je verstuurt blijft van {bedrijfsnaam || 'je eigen bedrijf'}.
+                </p>
+              )}
+            </div>
+          )}
 
           {/* ── Levering & betaling ── */}
           {/* Levertijd en betaalconditie verschillen per offerte en stonden tot nu

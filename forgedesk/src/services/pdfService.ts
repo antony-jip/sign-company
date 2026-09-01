@@ -1,7 +1,7 @@
 import jsPDF, { GState } from 'jspdf'
 import autoTable, { type RowInput } from 'jspdf-autotable'
 import type { Offerte, OfferteItem, OfferteItemPrijsVariant, Klant, Profile, DocumentStyle, WerkbonRegel, WerkbonFoto, SigningVisualisatie } from '@/types'
-import { getJsPdfFontFamily } from '@/lib/documentTemplates'
+import { getJsPdfFontFamily, getDefaultDocumentStyle } from '@/lib/documentTemplates'
 import { round2 } from '@/utils/budgetUtils'
 import { isLabelVoor } from '@/utils/offerteSpecs'
 import { getMeetellendeVarianten } from '@/utils/offerteTotalen'
@@ -547,10 +547,32 @@ export async function generateOffertePDF(
   offerte: Offerte,
   items: OfferteItem[],
   klant: Partial<Klant>,
-  bedrijfsProfiel: PdfBedrijfsProfiel,
-  docStyle?: DocumentStyle | null,
+  bedrijfsProfielInvoer: PdfBedrijfsProfiel,
+  docStyleInvoer?: DocumentStyle | null,
   options?: { documentTitel?: string; referentieNummer?: string }
 ): Promise<jsPDF> {
+  // Gaat de offerte onder een tweede bedrijf uit, dan wisselen hier de
+  // identiteit en het briefpapier. Dat gebeurt bewust hier en niet bij elke
+  // aanroeper: zo volgen downloaden, versturen, het klantportaal en de
+  // opdrachtbevestiging dezelfde keuze zonder dat ze het hoeven te weten.
+  let bedrijfsProfiel = bedrijfsProfielInvoer
+  let docStyle = docStyleInvoer
+  if (offerte.bedrijfsprofiel_id) {
+    try {
+      const { getBedrijfsprofiel } = await import('@/services/bedrijfsprofielService')
+      const gekozen = await getBedrijfsprofiel(offerte.bedrijfsprofiel_id)
+      if (gekozen) {
+        const { pasIdentiteitToe, pasPapierToe } = await import('@/utils/bedrijfsprofiel')
+        bedrijfsProfiel = pasIdentiteitToe(bedrijfsProfiel, gekozen)
+        const basisStijl = docStyle || getDefaultDocumentStyle(bedrijfsProfiel.id || '')
+        docStyle = pasPapierToe(basisStijl, gekozen)
+      }
+    } catch {
+      // Bedrijfsprofiel niet op te halen: liever de PDF onder het eigen bedrijf
+      // dan helemaal geen PDF.
+    }
+  }
+
   const brand = getBrandColor(bedrijfsProfiel, docStyle)
   const margins = getMargins(docStyle)
   const headingFont = getHeadingFont(docStyle)
