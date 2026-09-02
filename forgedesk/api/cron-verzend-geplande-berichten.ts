@@ -296,6 +296,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           })
           .eq('id', bericht.id)
 
+        // Spiegel van api/send-email.ts: een verstuurde mail zet de lead op
+        // 'benaderd'. Zonder dit blijft een ingeplande mail de lead op 'nieuw'
+        // laten staan, waarna dezelfde lead opnieuw in de wachtrij belandt.
+        // Alleen vooruit vanaf 'nieuw'; gereageerd blijft gereageerd.
+        try {
+          const naarAdres = (bericht.ontvanger || '').split(',')[0].trim().toLowerCase()
+          if (naarAdres) {
+            const { error: leadFout } = await supabaseAdmin
+              .from('leads')
+              .update({ status: 'benaderd', status_sinds: new Date().toISOString() })
+              .eq('user_id', bericht.user_id)
+              .eq('status', 'nieuw')
+              .ilike('email', naarAdres)
+            if (leadFout) console.error('[cron-verzend] leadstatus benaderd zetten mislukt:', leadFout)
+          }
+        } catch (leadFout) {
+          console.error('[cron-verzend] leadstatus-update mislukt:', leadFout)
+        }
+
         // Persist verzonden mail zodat ie in de conversatie-thread verschijnt
         // (gelijk aan de directe-verzendroute in api/send-email.ts).
         try {
