@@ -4,7 +4,7 @@ import type { Offerte, OfferteItem, OfferteItemPrijsVariant, Klant, Profile, Doc
 import { getJsPdfFontFamily, getDefaultDocumentStyle } from '@/lib/documentTemplates'
 import { round2 } from '@/utils/budgetUtils'
 import { isLabelVoor } from '@/utils/offerteSpecs'
-import { getMeetellendeVarianten } from '@/utils/offerteTotalen'
+import { berekenKortingBedrag, getMeetellendeVarianten } from '@/utils/offerteTotalen'
 
 // jspdf-autotable adds lastAutoTable to jsPDF instances
 interface JsPDFWithAutoTable extends jsPDF {
@@ -804,6 +804,19 @@ export async function generateOffertePDF(
         waarde: regel.waarde.trim(),
       })
     }
+
+    // Korting hoort bij de regel waar hij vanaf gaat. Zonder deze regel zag de
+    // klant alleen een prijs en een lager totaal, zonder te lezen waarom.
+    // Bij meerdere prijsopties staat de korting bij de optie zelf.
+    const heeftOpties = (item.prijs_varianten ?? []).length > 1
+    const kortingPercentage = item.korting_percentage || 0
+    if (!heeftOpties && kortingPercentage > 0) {
+      const kortingBedrag = round2(item.aantal * item.eenheidsprijs * (kortingPercentage / 100))
+      regels.push({
+        label: 'Korting',
+        waarde: `${formatAantal(kortingPercentage)}% (-${formatBedrag(kortingBedrag)})`,
+      })
+    }
     return regels
   }
 
@@ -945,9 +958,12 @@ export async function generateOffertePDF(
         const variantTotaal = variantTotaalVan(variant)
         // Geen Unicode prefix en geen "(standaard)" suffix — de klant kiest zelf.
         // Bold + brand kleur op de actieve variant geeft visueel aan welke nu
-        // in het totaal staat zonder het expliciet te benoemen.
+        // in het totaal staat zonder het expliciet te benoemen. De korting staat
+        // er wel bij: die verklaart het verschil tussen prijs en totaal.
         const labelPrefix = ''
-        const labelSuffix = ''
+        const labelSuffix = variant.korting_percentage
+          ? ` (-${formatAantal(variant.korting_percentage)}% korting)`
+          : ''
         const variantColor = isActief ? brand : mutedColor
         const isLast = vi === varianten.length - 1
         rows.push([
@@ -1093,19 +1109,44 @@ export async function generateOffertePDF(
 
   // Het totalenblok mag niet half over de voettekst vallen als de items tot
   // onderaan de pagina lopen: past het niet meer, dan begint het op een nieuwe pagina.
-  const totalenHoogte = offerte.afrondingskorting_excl_btw ? 32 : 26
+  // Korting over de meetellende regels van de verplichte items — dezelfde set die
+  // het subtotaal vormt. Is er korting, dan komt het bruto bedrag erboven te staan
+  // met de korting eronder, zodat het subtotaal navolgbaar is.
+  const kortingBedrag = berekenKortingBedrag(verplichteItems)
+  const toonKorting = kortingBedrag > 0
+  const brutoSubtotaal = round2(offerte.subtotaal + kortingBedrag)
+  const totalenHoogte =
+    (offerte.afrondingskorting_excl_btw ? 32 : 26) + (toonKorting ? 12 : 0)
   if (totalsY + totalenHoogte > pageHeight - margins.bottom) {
     doc.addPage()
     totalsY = margins.top
   }
 
-  const totalsX = pageWidth - margins.right - 55
+  // Bij korting staat er een langer label ("Subtotaal na korting") in de kolom;
+  // die krijgt dan extra breedte zodat label en bedrag elkaar niet raken.
+  const totalsX = pageWidth - margins.right - (toonKorting ? 68 : 55)
 
   doc.setFontSize(baseFontSize - 0.5)
   doc.setTextColor(120, 120, 115)
 
   doc.setFont(bodyFont, 'normal')
-  doc.text('Subtotaal', totalsX, totalsY)
+  if (toonKorting) {
+    doc.text('Subtotaal', totalsX, totalsY)
+    doc.setTextColor(...textColor)
+    doc.text(formatBedrag(brutoSubtotaal), pageWidth - margins.right, totalsY, { align: 'right' })
+    totalsY += 6
+
+    doc.setTextColor(120, 120, 115)
+    doc.text('Korting', totalsX, totalsY)
+    doc.setTextColor(...textColor)
+    doc.text(`-${formatBedrag(kortingBedrag)}`, pageWidth - margins.right, totalsY, { align: 'right' })
+    totalsY += 6
+
+    doc.setTextColor(120, 120, 115)
+    doc.text('Subtotaal na korting', totalsX, totalsY)
+  } else {
+    doc.text('Subtotaal', totalsX, totalsY)
+  }
   doc.setTextColor(...textColor)
   doc.text(formatBedrag(offerte.subtotaal), pageWidth - margins.right, totalsY, { align: 'right' })
   totalsY += 6

@@ -13,7 +13,7 @@ export interface OfferteTotalen {
   totaal: number
 }
 
-interface PrijsVariantBron {
+export interface PrijsVariantBron {
   id: string
   aantal: number
   eenheidsprijs: number
@@ -22,7 +22,7 @@ interface PrijsVariantBron {
   telt_mee?: boolean
 }
 
-interface PrijsRegelBron {
+export interface PrijsRegelBron {
   aantal: number
   eenheidsprijs: number
   korting_percentage: number
@@ -106,4 +106,24 @@ export function berekenOfferteTotalen(
   const totaal = round2(subtotaal + btw_bedrag)
 
   return { subtotaal, btw_bedrag, totaal }
+}
+
+/**
+ * Het kortingsbedrag over de meetellende prijsregels. Het subtotaal is al netto,
+ * dus zonder dit bedrag ziet de klant nergens terug wat er van de prijs af ging.
+ * Wordt afgetrokken van hetzelfde bruto als berekenOfferteTotalen gebruikt, zodat
+ * bruto min korting exact op het getoonde subtotaal uitkomt.
+ */
+export function berekenKortingBedrag(items: PrijsRegelBron[]): number {
+  return round2(
+    items.reduce(
+      (sum, item) =>
+        sum +
+        getPrijsRegels(item).reduce((regelSom, r) => {
+          const bruto = r.aantal * r.eenheidsprijs
+          return regelSom + (bruto - round2(bruto - bruto * (r.korting_percentage / 100)))
+        }, 0),
+      0
+    )
+  )
 }

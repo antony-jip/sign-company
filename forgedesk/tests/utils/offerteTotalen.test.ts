@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { berekenOfferteTotalen, berekenItemTotaal, getMeetellendeVarianten, type OfferteTotaalRegel } from '../../src/utils/offerteTotalen'
+import { berekenOfferteTotalen, berekenItemTotaal, berekenKortingBedrag, getMeetellendeVarianten, type OfferteTotaalRegel } from '../../src/utils/offerteTotalen'
 
 function round2(n: number): number {
   return Math.round((n + Number.EPSILON) * 100) / 100
@@ -123,5 +123,40 @@ describe('berekenItemTotaal', () => {
       ],
     }
     expect(berekenItemTotaal(item)).toBe(230)
+  })
+})
+
+describe('berekenKortingBedrag', () => {
+  const item = (o: Partial<{ aantal: number; eenheidsprijs: number; korting_percentage: number }>) => ({
+    aantal: 1, eenheidsprijs: 0, korting_percentage: 0, btw_percentage: 21, ...o,
+  })
+
+  it('zonder korting -> 0, zodat de offerte er niets over zegt', () => {
+    expect(berekenKortingBedrag([item({ aantal: 2, eenheidsprijs: 100 })])).toBe(0)
+  })
+
+  it('korting op een regel -> het bedrag dat eraf gaat', () => {
+    expect(berekenKortingBedrag([item({ eenheidsprijs: 1800, korting_percentage: 10 })])).toBe(180)
+  })
+
+  it('korting per prijsoptie telt mee, niet-meetellende opties niet', () => {
+    const metOpties = {
+      ...item({ eenheidsprijs: 999 }),
+      prijs_varianten: [
+        { id: 'a', aantal: 2, eenheidsprijs: 100, korting_percentage: 10, btw_percentage: 21, telt_mee: true },
+        { id: 'b', aantal: 1, eenheidsprijs: 500, korting_percentage: 50, btw_percentage: 21 },
+      ],
+    }
+    expect(berekenKortingBedrag([metOpties])).toBe(20)
+  })
+
+  it('bruto min korting komt exact op het subtotaal uit', () => {
+    const regels = [
+      item({ aantal: 3, eenheidsprijs: 0.665, korting_percentage: 12.5 }),
+      item({ aantal: 7, eenheidsprijs: 2.005, korting_percentage: 3.33 }),
+    ]
+    const { subtotaal } = berekenOfferteTotalen(regels)
+    const bruto = round2(regels.reduce((sum, r) => sum + r.aantal * r.eenheidsprijs, 0))
+    expect(round2(subtotaal + berekenKortingBedrag(regels))).toBe(bruto)
   })
 })

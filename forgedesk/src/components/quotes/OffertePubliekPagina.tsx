@@ -478,6 +478,20 @@ export function OffertePubliekPagina() {
   const berekendeBtw = useMemo(() => {
     return round2(btwGroepen.reduce((sum, g) => sum + g.btw, 0))
   }, [btwGroepen])
+  // Het subtotaal is al netto: zonder dit bedrag leest de klant nergens terug wat
+  // er van de prijs af ging. Alleen berekend over wat meetelt in het subtotaal.
+  const kortingBedrag = useMemo(() => {
+    let sum = 0
+    for (const item of items) {
+      if (item.soort === 'tekst') continue
+      if (hasOptionalItems && !selectedItems.has(item.id)) continue
+      for (const r of effectievePrijsRegels(item, selectedVariants[item.id])) {
+        const bruto = r.aantal * r.eenheidsprijs
+        sum += bruto - round2(bruto * (1 - (r.korting_percentage || 0) / 100))
+      }
+    }
+    return round2(sum)
+  }, [items, selectedItems, selectedVariants, hasOptionalItems])
 
   // ============ LOADING STATE ============
   if (isLoading) {
@@ -768,6 +782,20 @@ export function OffertePubliekPagina() {
                               {item.is_optioneel && (
                                 <span className="ml-2 text-2xs uppercase tracking-wide bg-[#F8F7F5] text-[#9B9B95] px-1.5 py-0.5 rounded">Optioneel</span>
                               )}
+                              {/* Korting hoort bij de regel waar hij vanaf gaat; anders ziet de
+                                  klant alleen een prijs en een lager totaal. Bij losse
+                                  optie-regels staat de korting bij de optie zelf. */}
+                              {!toonOptieRegels && effectiveValues && effectiveValues.korting_percentage > 0 && (
+                                <div className="mt-0.5 text-xs text-[#6B6B66]">
+                                  {`Korting ${effectiveValues.korting_percentage}% (-${formatCurrency(
+                                    round2(
+                                      effectiveValues.aantal *
+                                        effectiveValues.eenheidsprijs *
+                                        (effectiveValues.korting_percentage / 100)
+                                    )
+                                  )})`}
+                                </div>
+                              )}
                             </td>
                             {item.soort === 'tekst' ? (
                               <td colSpan={5} />
@@ -785,7 +813,14 @@ export function OffertePubliekPagina() {
                           {toonOptieRegels && meetellendeVarianten.map((v) => (
                             <tr key={v.id} className="border-b border-[#EBEBEB]">
                               {hasOptionalItems && <td />}
-                              <td className="py-2 pr-4 pl-6 text-[#6B6B66]">{v.label}</td>
+                              <td className="py-2 pr-4 pl-6 text-[#6B6B66]">
+                                {v.label}
+                                {(v.korting_percentage || 0) > 0 && (
+                                  <span className="ml-2 text-xs">
+                                    (-{v.korting_percentage}% korting)
+                                  </span>
+                                )}
+                              </td>
                               <td className="py-2 pr-4 text-right text-[#6B6B66] font-mono">{v.aantal}</td>
                               <td className="py-2 pr-4 text-right text-[#9B9B95] hidden md:table-cell">stuk</td>
                               <td className="py-2 pr-4 text-right text-[#6B6B66] font-mono">{formatCurrency(v.eenheidsprijs)}</td>
@@ -852,8 +887,20 @@ export function OffertePubliekPagina() {
           {/* Totalen sectie */}
           <div className="bg-[#F8F7F5] border-t border-[#EBEBEB] px-6 md:px-8 py-6">
             <div className="max-w-xs ml-auto space-y-2">
+              {kortingBedrag > 0 && (
+                <>
+                  <div className="flex justify-between text-sm text-[#6B6B66]">
+                    <span>Subtotaal excl. btw</span>
+                    <span className="font-mono">{formatCurrency(round2(subtotaalBedrag + kortingBedrag))}</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-[#6B6B66]">
+                    <span>Korting</span>
+                    <span className="font-mono">-{formatCurrency(kortingBedrag)}</span>
+                  </div>
+                </>
+              )}
               <div className="flex justify-between text-sm text-[#6B6B66]">
-                <span>Subtotaal excl. btw</span>
+                <span>{kortingBedrag > 0 ? 'Subtotaal na korting' : 'Subtotaal excl. btw'}</span>
                 <span className="font-mono">{formatCurrency(subtotaalBedrag)}</span>
               </div>
               {btwGroepen.map((g) => (
