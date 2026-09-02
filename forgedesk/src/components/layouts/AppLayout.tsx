@@ -8,6 +8,7 @@ import { ForgieChatWidget } from '@/components/forgie/ForgieChatWidget'
 import { FloatingQuickActions } from '@/components/dashboard/FloatingQuickActions'
 import { FloatingEmailButton } from '@/components/shared/FloatingEmailButton'
 import { TrialBanner } from '@/components/shared/TrialBanner'
+import { DemoBalk } from '@/components/shared/DemoBalk'
 import { InkoopAILimietBanner } from '@/components/shared/InkoopAILimietBanner'
 import { TabBar } from '@/components/layouts/TabBar'
 import { MobileTabBar } from '@/components/layouts/MobileTabBar'
@@ -133,6 +134,7 @@ export function AppLayout() {
     return (
       <>
         <div className="flex flex-col h-[100dvh] overflow-hidden bg-background">
+          <DemoBalk />
           <OfflineBanner />
           <TrialBanner />
           <InkoopAILimietBanner variant="globaal" />
@@ -176,6 +178,7 @@ export function AppLayout() {
       <div className="flex h-[100dvh] overflow-hidden bg-background">
         <Sidebar />
         <div className="flex-1 flex flex-col min-w-0 w-0 overflow-hidden">
+          <DemoBalk />
           <OfflineBanner />
           <TrialBanner />
           <InkoopAILimietBanner variant="globaal" />

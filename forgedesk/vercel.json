@@ -98,6 +98,9 @@
     },
     "api/nieuwsbrief-herzend.ts": {
       "maxDuration": 60
+    },
+    "api/cron-demo-reset.ts": {
+      "maxDuration": 60
     }
   },
   "crons": [
@@ -128,6 +131,10 @@
     {
       "path": "/api/cron-nieuwsbrief",
       "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron-demo-reset",
+      "schedule": "20 2 * * *"
     }
   ]
 }

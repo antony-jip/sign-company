@@ -160,6 +160,7 @@ const LeadInzendingenLayout = lazy(() => import('@/components/leads/LeadInzendin
 const WebsiteAanvragenLayout = lazy(() => import('@/components/website/WebsiteAanvragenLayout'), 'WebsiteAanvragenLayout')
 
 // Portaal
+const DemoStart = lazy(() => import('@/components/demo/DemoStart'), 'DemoStart')
 const PortaalPagina = lazy(() => import('@/components/portaal/PortaalPagina'), 'PortaalPagina')
 const PortalenOverzicht = lazy(() => import('@/components/portaal/PortalenOverzicht'), 'PortalenOverzicht')
 
@@ -279,6 +280,7 @@ function AppContent() {
       <Route path="/formulier/:token" element={<LeadFormulierPubliek />} />
       {/* Publieke route - klantportaal (geen login vereist) */}
       <Route path="/portaal/:token" element={<PortaalPagina />} />
+      <Route path="/demo" element={<DemoStart />} />
       <Route path="/welkom" element={
         <ProtectedRoute>
           <WelkomPagina />
