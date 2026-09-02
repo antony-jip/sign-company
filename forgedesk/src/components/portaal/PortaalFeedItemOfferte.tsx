@@ -1,5 +1,46 @@
-import { useState } from 'react'
-import { FileText, ExternalLink, Loader2 } from 'lucide-react'
+import { useCallback, useState } from 'react'
+import { Download, FileText, ExternalLink, Loader2 } from 'lucide-react'
+
+interface PubliekeOfferteRegel {
+  id?: string
+  beschrijving?: string
+  aantal?: number
+  eenheidsprijs?: number
+  btw_percentage?: number
+  korting_percentage?: number
+  totaal?: number
+  soort?: 'prijs' | 'tekst'
+  is_optioneel?: boolean
+  extra_velden?: unknown
+  detail_regels?: unknown
+  prijs_varianten?: unknown
+  actieve_variant_id?: string
+}
+
+interface PubliekeOfferteRespons {
+  offerte: {
+    id?: string
+    nummer?: string
+    titel?: string
+    status?: string
+    subtotaal?: number
+    btw_bedrag?: number
+    totaal?: number
+    aangepast_totaal?: number | null
+    geldig_tot?: string
+    notities?: string | null
+    voorwaarden?: string | null
+    intro_tekst?: string | null
+    outro_tekst?: string | null
+    klant_id?: string
+    created_at?: string
+    updated_at?: string
+  }
+  items?: PubliekeOfferteRegel[]
+  bedrijf?: Record<string, string | null> | null
+  klant?: Record<string, string | null> | null
+  docStyle?: Record<string, unknown> | null
+}
 
 interface PortaalFeedItemOfferteProps {
   item: {
@@ -51,6 +92,96 @@ export function PortaalFeedItemOfferte({
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; tekst: string } | null>(null)
   const isAfgehandeld = ['goedgekeurd', 'geaccepteerd', 'betaald'].includes(item.status)
+  const [pdfBezig, setPdfBezig] = useState(false)
+  const [pdfFout, setPdfFout] = useState<string | null>(null)
+  const offerteToken = item.offerte_publiek_token
+
+  // Het portaal draait token-based zonder Supabase-sessie, dus de PDF wordt hier
+  // in de browser gebouwd uit /api/offerte-publiek. Die respons is al gefilterd
+  // op klantvelden, zodat calculatieregels en interne notities niet meereizen.
+  const handleDownloadPDF = useCallback(async () => {
+    if (!offerteToken) return
+    setPdfBezig(true)
+    setPdfFout(null)
+    try {
+      const respons = await fetch(`/api/offerte-publiek?token=${encodeURIComponent(offerteToken)}`)
+      if (!respons.ok) throw new Error('Offerte ophalen mislukt')
+      const data = (await respons.json()) as PubliekeOfferteRespons
+      const offerte = data.offerte || {}
+      const regels = data.items || []
+      const bedrijf = data.bedrijf || {}
+      const docStyle = data.docStyle || null
+
+      const { generateOffertePDF } = await import('@/services/pdfService')
+
+      const offerteData = {
+        id: offerte.id || '',
+        user_id: '',
+        klant_id: offerte.klant_id || '',
+        nummer: offerte.nummer || '',
+        titel: offerte.titel || '',
+        status: offerte.status || 'verzonden',
+        subtotaal: offerte.subtotaal ?? 0,
+        btw_bedrag: offerte.btw_bedrag ?? 0,
+        totaal: offerte.aangepast_totaal ?? offerte.totaal ?? 0,
+        geldig_tot: offerte.geldig_tot || '',
+        notities: offerte.notities || '',
+        voorwaarden: offerte.voorwaarden || '',
+        intro_tekst: offerte.intro_tekst || '',
+        outro_tekst: offerte.outro_tekst || '',
+        versie: 1,
+        created_at: offerte.created_at || new Date().toISOString(),
+        updated_at: offerte.updated_at || new Date().toISOString(),
+      }
+
+      const pdfRegels = regels.map((regel, index) => ({
+        id: regel.id || `item-${index}`,
+        offerte_id: offerte.id || '',
+        beschrijving: regel.beschrijving || '',
+        aantal: regel.aantal ?? 1,
+        eenheidsprijs: regel.eenheidsprijs ?? 0,
+        btw_percentage: regel.btw_percentage ?? 21,
+        korting_percentage: regel.korting_percentage ?? 0,
+        totaal: regel.totaal ?? 0,
+        volgorde: index + 1,
+        soort: regel.soort,
+        extra_velden: regel.extra_velden,
+        detail_regels: regel.detail_regels,
+        prijs_varianten: regel.prijs_varianten,
+        actieve_variant_id: regel.actieve_variant_id,
+        is_optioneel: regel.is_optioneel,
+        created_at: new Date().toISOString(),
+      }))
+
+      const bedrijfsProfiel = {
+        bedrijfsnaam: bedrijf.bedrijfsnaam || '',
+        bedrijfs_adres: bedrijf.bedrijfs_adres || '',
+        bedrijfs_telefoon: bedrijf.bedrijfs_telefoon || '',
+        bedrijfs_email: bedrijf.bedrijfs_email || '',
+        bedrijfs_website: bedrijf.bedrijfs_website || '',
+        kvk_nummer: bedrijf.kvk_nummer || '',
+        btw_nummer: bedrijf.btw_nummer || '',
+        iban: bedrijf.iban || '',
+        logo_url: bedrijf.logo_url || '',
+        primaireKleur: (docStyle?.primaire_kleur as string | undefined) || '#1A535C',
+      }
+
+      const doc = await generateOffertePDF(
+        offerteData as Parameters<typeof generateOffertePDF>[0],
+        pdfRegels as Parameters<typeof generateOffertePDF>[1],
+        (data.klant || {}) as Parameters<typeof generateOffertePDF>[2],
+        bedrijfsProfiel as Parameters<typeof generateOffertePDF>[3],
+        (docStyle as Parameters<typeof generateOffertePDF>[4]) || undefined,
+      )
+
+      doc.save(`Offerte-${offerte.nummer || 'download'}.pdf`)
+    } catch (err) {
+      console.error('Offerte PDF downloaden mislukt:', err)
+      setPdfFout('PDF downloaden mislukt. Probeer het opnieuw of neem contact op.')
+    } finally {
+      setPdfBezig(false)
+    }
+  }, [offerteToken])
 
   async function handleAccepteren() {
     setLoading(true)
@@ -129,29 +260,49 @@ export function PortaalFeedItemOfferte({
           )}
 
           {/* Offerte bekijken link */}
-          {item.offerte_publiek_token ? (
-            <a
-              href={`/offerte-bekijken/${item.offerte_publiek_token}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 mt-2 text-sm hover:opacity-70 transition-opacity"
-              style={{ color: '#1A535C' }}
-            >
-              <ExternalLink className="w-3.5 h-3.5" />
-              Offerte bekijken
-            </a>
-          ) : item.bestanden && item.bestanden.length > 0 ? (
-            <a
-              href={item.bestanden[0].url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 mt-2 text-sm hover:opacity-70 transition-opacity"
-              style={{ color: '#1A535C' }}
-            >
-              <ExternalLink className="w-3.5 h-3.5" />
-              Offerte bekijken
-            </a>
-          ) : null}
+          <div className="flex items-center flex-wrap gap-x-4 gap-y-1">
+            {offerteToken ? (
+              <a
+                href={`/offerte-bekijken/${offerteToken}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 mt-2 text-sm hover:opacity-70 transition-opacity"
+                style={{ color: '#1A535C' }}
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                Offerte bekijken
+              </a>
+            ) : item.bestanden && item.bestanden.length > 0 ? (
+              <a
+                href={item.bestanden[0].url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 mt-2 text-sm hover:opacity-70 transition-opacity"
+                style={{ color: '#1A535C' }}
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                Offerte bekijken
+              </a>
+            ) : null}
+
+            {offerteToken && (
+              <button
+                onClick={handleDownloadPDF}
+                disabled={pdfBezig}
+                className="inline-flex items-center gap-1.5 mt-2 text-sm hover:opacity-70 transition-opacity disabled:opacity-50"
+                style={{ color: '#1A535C' }}
+              >
+                {pdfBezig ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                PDF downloaden
+              </button>
+            )}
+          </div>
+
+          {pdfFout && (
+            <p className="mt-2 text-sm font-medium" style={{ color: '#C0451A' }}>
+              {pdfFout}
+            </p>
+          )}
 
           {/* Bestanden */}
           {item.bestanden && item.bestanden.length > 0 && (
