@@ -97,7 +97,21 @@ function leaseGrens(nu: number): string {
 // Alleen de mailbox zelf is 'auth'. Die krijgt géén backoff maar meteen de
 // dodebrievenbus: een verkeerd wachtwoord elke drie minuten opnieuw bij Gmail
 // aanbieden is de manier om het account door Gmail geblokkeerd te krijgen.
-const AUTH_PATROON = /authenticationfailed|invalid credentials|auth(?:enticatie)?\s*(?:mislukt|geweigerd|failed)|wachtwoord|password/i
+// Domeinen van vrije mailproviders. Een lead op zo'n adres mag nooit op
+// 'gereageerd' komen omdat een willekeurige andere gmail-gebruiker mailde, dus
+// bij deze domeinen telt alleen een exacte adresmatch.
+const GEDEELDE_MAILDOMEINEN = new Set([
+  'gmail.com', 'googlemail.com', 'hotmail.com', 'hotmail.nl', 'hotmail.be',
+  'outlook.com', 'outlook.nl', 'outlook.be', 'live.nl', 'live.com', 'live.be',
+  'msn.com', 'yahoo.com', 'yahoo.co.uk', 'icloud.com', 'me.com', 'mac.com',
+  'protonmail.com', 'proton.me', 'gmx.com', 'gmx.net', 'aol.com',
+  'ziggo.nl', 'kpnmail.nl', 'kpnplanet.nl', 'planet.nl', 'home.nl', 'casema.nl',
+  'xs4all.nl', 'telfort.nl', 'hetnet.nl', 'chello.nl', 'upcmail.nl', 'online.nl',
+  'zonnet.nl', 'quicknet.nl', 'wanadoo.nl', 'tiscali.nl', 'solcon.nl', 'caiway.nl',
+  'telenet.be', 'skynet.be', 'scarlet.be', 'proximus.be',
+])
+
+const AUTH_PATROON =/authenticationfailed|invalid credentials|auth(?:enticatie)?\s*(?:mislukt|geweigerd|failed)|wachtwoord|password/i
 
 // Serverconfiguratie, geen gebruikersfout. Deze twee kwamen eerst in
 // AUTH_PATROON terecht en gingen daarmee zonder backoff naar de dodebrievenbus.
@@ -1165,18 +1179,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           .limit(500)
 
         const nieuwsteVanAfzender = new Map<string, string>()
+        // Naast het exacte adres ook per bedrijfsdomein. Ruim honderd leads
+        // staan op een info@-adres, en daar antwoordt vaak een collega vanaf
+        // zijn eigen adres. Zonder deze match stuur je een opvolgmail aan
+        // iemand die net persoonlijk heeft gereageerd.
+        const nieuwsteVanDomein = new Map<string, string>()
         for (const mail of inkomendVanLeads || []) {
           const adres = (mail.from_address as string).toLowerCase()
           const datum = mail.datum as string
           const huidig = nieuwsteVanAfzender.get(adres)
           if (!huidig || datum > huidig) nieuwsteVanAfzender.set(adres, datum)
+
+          const domein = adres.split('@')[1] || ''
+          if (domein && !GEDEELDE_MAILDOMEINEN.has(domein)) {
+            const huidigDomein = nieuwsteVanDomein.get(domein)
+            if (!huidigDomein || datum > huidigDomein) nieuwsteVanDomein.set(domein, datum)
+          }
         }
 
         // Eén update voor alle gereageerde leads samen. Was N sequentiële
         // round-trips zonder deadline; de sales-match hierboven had die wel.
         const gereageerdeIds = openLeads
           .filter((lead) => {
-            const replyDatum = nieuwsteVanAfzender.get((lead.email as string).toLowerCase())
+            const adres = (lead.email as string).toLowerCase()
+            const domein = adres.split('@')[1] || ''
+            const replyDatum =
+              nieuwsteVanAfzender.get(adres) ??
+              (domein && !GEDEELDE_MAILDOMEINEN.has(domein) ? nieuwsteVanDomein.get(domein) : undefined)
             return !!replyDatum && replyDatum > (lead.status_sinds as string)
           })
           .map((lead) => lead.id)
