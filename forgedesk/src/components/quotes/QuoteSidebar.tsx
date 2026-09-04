@@ -570,10 +570,10 @@ export function QuoteSidebar({
                             <div className="space-y-1.5 text-[13px]">
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-[#C03A18] flex-shrink-0" />
+                                  <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 flex-shrink-0" />
                                   <span className="text-foreground/70">Inkoop</span>
                                 </div>
-                                <span className="font-mono tabular-nums font-semibold text-[#C03A18]">{totaalInkoop > 0 ? formatCurrency(totaalInkoop) : '—'}</span>
+                                <span className="font-mono tabular-nums font-semibold text-foreground/80">{totaalInkoop > 0 ? formatCurrency(totaalInkoop) : '—'}</span>
                               </div>
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">

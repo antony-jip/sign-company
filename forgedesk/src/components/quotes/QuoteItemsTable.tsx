@@ -486,9 +486,9 @@ function BijlageDropZone({
 }
 
 function getMargeColor(pct: number): { text: string; bg: string; bar: string } {
-  if (pct >= 90) return { text: 'text-green-600 dark:text-green-400', bg: 'bg-green-100 dark:bg-green-900/30', bar: 'bg-green-500' }
+  if (pct >= 90) return { text: 'text-[#2D6B48] dark:text-[#66BC85]', bg: 'bg-[rgba(45,107,72,0.10)] dark:bg-[rgba(102,188,133,0.16)]', bar: 'bg-[#2D6B48] dark:bg-[#66BC85]' }
   if (pct >= 60) return { text: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-100 dark:bg-amber-900/30', bar: 'bg-amber-500' }
-  return { text: 'text-red-600 dark:text-red-400', bg: 'bg-red-100 dark:bg-red-900/30', bar: 'bg-red-500' }
+  return { text: 'text-[#C03A18] dark:text-[#E8785A]', bg: 'bg-[rgba(192,58,24,0.08)] dark:bg-[rgba(232,120,90,0.16)]', bar: 'bg-[#C03A18] dark:bg-[#E8785A]' }
 }
 
 function AutocompleteInput({

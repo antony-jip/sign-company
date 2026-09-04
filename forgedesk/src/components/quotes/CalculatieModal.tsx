@@ -198,9 +198,9 @@ function PercentCell({
   const [editing, setEditing] = useState(false)
   const colorClass = colored
     ? value > 0
-      ? 'text-emerald-600 dark:text-emerald-400'
+      ? 'text-[#2D6B48] dark:text-[#66BC85]'
       : value < 0
-        ? 'text-red-600 dark:text-red-400'
+        ? 'text-[#C03A18] dark:text-[#E8785A]'
         : ''
     : ''
   if (editing) {
@@ -652,7 +652,7 @@ export function CalculatieModal({
 
                     <div className="flex items-center gap-1 pb-0.5">
                       {regelTotaal !== 0 && (
-                        <span className={`mr-1 font-semibold font-mono tabular-nums text-[15px] ${isWinst ? 'text-foreground' : 'text-red-600 dark:text-red-400'}`}>
+                        <span className={`mr-1 font-semibold font-mono tabular-nums text-[15px] ${isWinst ? 'text-foreground' : 'text-[#C03A18] dark:text-[#E8785A]'}`}>
                           {formatCurrency(regelTotaal)}
                         </span>
                       )}
@@ -838,7 +838,7 @@ export function CalculatieModal({
                           <span className={`font-semibold font-mono tabular-nums text-sm ${
                             isWinst
                               ? 'text-foreground'
-                              : 'text-red-600 dark:text-red-400'
+                              : 'text-[#C03A18] dark:text-[#E8785A]'
                           }`}>
                             {formatCurrency(regelTotaal)}
                           </span>
@@ -940,8 +940,8 @@ export function CalculatieModal({
                 <span className="text-sm text-muted-foreground">Marge</span>
                 <span className={`font-mono tabular-nums text-base font-medium ${
                   totalen.margeBedrag >= 0
-                    ? 'text-emerald-600 dark:text-emerald-400'
-                    : 'text-red-600 dark:text-red-400'
+                    ? 'text-[#2D6B48] dark:text-[#66BC85]'
+                    : 'text-[#C03A18] dark:text-[#E8785A]'
                 }`}>
                   {formatCurrency(totalen.margeBedrag)}
                 </span>
