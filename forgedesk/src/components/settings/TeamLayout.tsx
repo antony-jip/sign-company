@@ -56,6 +56,7 @@ import {
 import type { Medewerker, Verlof } from '@/types';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { useAuth } from '@/contexts/AuthContext';
+import { isAdminUser } from '@/utils/authHelpers';
 import { cn, getInitials } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -124,6 +125,7 @@ function blankMedewerker(): Omit<Medewerker, 'id' | 'user_id' | 'created_at' | '
     afdeling: '',
     avatar_url: '',
     uurtarief: 0,
+    kostprijs_uur: null,
     status: 'actief',
     rol: 'medewerker',
     vaardigheden: [],
@@ -136,7 +138,9 @@ function blankMedewerker(): Omit<Medewerker, 'id' | 'user_id' | 'created_at' | '
 // Component
 // ---------------------------------------------------------------------------
 export function TeamLayout() {
-  const { user } = useAuth();
+  const { user, userRol } = useAuth();
+  // Kostprijs per uur is wat een collega kost; dat blijft bij admin.
+  const magKostprijs = isAdminUser(userRol);
   // ---- state ---------------------------------------------------------------
   const [activeTab, setActiveTab] = useState<TeamTab>('overzicht');
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>([]);
@@ -250,6 +254,7 @@ export function TeamLayout() {
       afdeling: m.afdeling,
       avatar_url: m.avatar_url,
       uurtarief: m.uurtarief,
+      kostprijs_uur: m.kostprijs_uur ?? null,
       status: m.status,
       rol: m.rol,
       vaardigheden: [...m.vaardigheden],
@@ -1101,6 +1106,25 @@ export function TeamLayout() {
                 }
               />
             </div>
+
+            {/* Kostprijs · alleen admin */}
+            {magKostprijs && (
+              <div className="grid gap-2">
+                <Label htmlFor="kostprijs_uur">Kostprijs per uur (&euro;)</Label>
+                <Input
+                  id="kostprijs_uur"
+                  type="number"
+                  min={0}
+                  step={0.5}
+                  placeholder="leeg = organisatie-standaard"
+                  value={form.kostprijs_uur ?? ''}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, kostprijs_uur: e.target.value === '' ? null : parseFloat(e.target.value) || 0 }))
+                  }
+                />
+                <p className="text-xs text-muted-foreground">Wat een uur van deze medewerker kost. Wordt als momentopname op elke urenregel bewaard.</p>
+              </div>
+            )}
 
             {/* Status */}
             <div className="flex items-center justify-between">

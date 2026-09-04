@@ -555,6 +555,7 @@ function DocumentenTab() {
   const [offerteBetalingsconditie, setOfferteBetalingsconditie] = useState('')
 
   const [werkbonMonteurUren, setWerkbonMonteurUren] = useState(true)
+  const [werkbonUrenVerdelen, setWerkbonUrenVerdelen] = useState(false)
   const [werkbonMonteurOpmerkingen, setWerkbonMonteurOpmerkingen] = useState(true)
   const [werkbonMonteurFotos, setWerkbonMonteurFotos] = useState(false)
   const [werkbonKlantHandtekening, setWerkbonKlantHandtekening] = useState(false)
@@ -587,6 +588,7 @@ function DocumentenTab() {
       setOfferteLevertijd(data.offerte_levertijd || DEFAULT_OFFERTE_LEVERTIJD)
       setOfferteBetalingsconditie(data.offerte_betalingsconditie || DEFAULT_OFFERTE_BETALINGSCONDITIE)
       setWerkbonMonteurUren(data.werkbon_monteur_uren ?? true)
+      setWerkbonUrenVerdelen(data.werkbon_uren_verdelen ?? false)
       setWerkbonMonteurOpmerkingen(data.werkbon_monteur_opmerkingen ?? true)
       // Zelfde default als AppSettingsContext: stond hier op false, waardoor de
       // schakelaar uit leek te staan terwijl de werkbon-module de instelling
@@ -632,6 +634,7 @@ function DocumentenTab() {
         offerte_levertijd: offerteLevertijd,
         offerte_betalingsconditie: offerteBetalingsconditie,
         werkbon_monteur_uren: werkbonMonteurUren,
+        werkbon_uren_verdelen: werkbonUrenVerdelen,
         werkbon_monteur_opmerkingen: werkbonMonteurOpmerkingen,
         werkbon_monteur_fotos: werkbonMonteurFotos,
         werkbon_klant_handtekening: werkbonKlantHandtekening,
@@ -874,6 +877,18 @@ function DocumentenTab() {
                   </div>
                   <Switch checked={werkbonMonteurUren} onCheckedChange={setWerkbonMonteurUren} />
                 </div>
+                {werkbonMonteurUren && (
+                  <>
+                    <Separator />
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="text-sm font-medium">Werkbon-uren verdelen over de monteurs</Label>
+                        <p className="text-xs text-muted-foreground">Bij afronden komen de uren als urenregels op het project. Aan: gelijk verdeeld over de monteurs van de montageafspraak. Uit: op degene die afrondt.</p>
+                      </div>
+                      <Switch checked={werkbonUrenVerdelen} onCheckedChange={setWerkbonUrenVerdelen} />
+                    </div>
+                  </>
+                )}
                 <Separator />
                 <div className="flex items-center justify-between">
                   <div>

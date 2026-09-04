@@ -329,6 +329,8 @@ export interface Taak {
   bestede_tijd: number;
   locatie?: string;
   offerte_id?: string;
+  /** Bewerking waar de taak uit voortkomt; uren op de taak erven dit (migratie 233). */
+  urenveld?: string | null;
   bijlagen?: string[];
   created_at: string;
   updated_at: string;
@@ -832,6 +834,10 @@ export interface AppSettings {
   aanmaning_onderwerp: string;
   factuur_opvolging_automatisch?: boolean;
   standaard_uurtarief: number;
+  /** Terugval-kostprijs per uur als de medewerker er geen heeft (migratie 233). */
+  standaard_kostprijs_uur?: number | null;
+  /** Werkbon-uren verdelen over de monteurs van de montageafspraak i.p.v. op de afronder (migratie 233). */
+  werkbon_uren_verdelen?: boolean;
   // Offerte teksten
   offerte_intro_tekst: string;
   offerte_outro_tekst: string;
@@ -931,6 +937,7 @@ export interface CalculatieProduct {
   standaard_marge: number;         // Markup als percentage van inkoop: (verkoop - inkoop) / inkoop * 100
   btw_percentage: number;          // BTW tarief (21, 9, of 0)
   actief: boolean;                 // Staat het product actief in je catalogus?
+  urenveld?: string | null;        // Bewerking die dit product vertegenwoordigt; wint van naam-matching (migratie 233)
   notitie: string;                 // Eventuele toelichting
   created_at: string;
   updated_at: string;
@@ -1212,6 +1219,10 @@ export interface Tijdregistratie {
   eind_tijd: string;
   duur_minuten: number;
   uurtarief: number;
+  /** Bewerking (urenveld) waarvoor geschreven is; null = Overig (migratie 233). */
+  urenveld?: string | null;
+  /** Kostprijs per uur als momentopname bij schrijven, net als uurtarief (migratie 233). */
+  kostprijs_uur?: number | null;
   facturabel: boolean;
   gefactureerd: boolean;
   // Feature 7: Link naar factuur na facturatie
@@ -1231,6 +1242,7 @@ export interface TijdSessie {
   project_id: string;
   project_naam?: string;
   taak_id?: string;
+  urenveld?: string | null;
   omschrijving?: string;
   gestart_op: string;
   created_at: string;
@@ -1250,6 +1262,8 @@ export interface Medewerker {
   afdeling: string;
   avatar_url: string;
   uurtarief: number;
+  /** Wat een uur van deze medewerker kost; alleen admin (migratie 233). */
+  kostprijs_uur?: number | null;
   status: 'actief' | 'inactief';
   rol: 'admin' | 'medewerker' | 'monteur' | 'verkoop' | 'productie';
   // Feature 4: App-brede rol voor rechten
@@ -1546,6 +1560,8 @@ export interface Werkbon {
   // Extra
   omschrijving?: string;
   contactpersoon_id?: string;
+  /** Wanneer uren_gewerkt als urenregel(s) geboekt is; voorkomt dubbel boeken (migratie 233). */
+  uren_geboekt_op?: string | null;
   // PDF opties
   toon_briefpapier: boolean;
   created_at: string;

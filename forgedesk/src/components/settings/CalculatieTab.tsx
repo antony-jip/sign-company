@@ -36,6 +36,7 @@ import {
   EyeOff,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import { isAdminUser } from '@/utils/authHelpers'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import type { AppSettings, CalculatieProduct, CalculatieTemplate, CalculatieRegel, OfferteTemplate, OfferteTemplateRegel } from '@/types'
 import {
@@ -1955,6 +1956,10 @@ function InstellingenSection() {
   const [isSaving, setIsSaving] = useState(false)
 
   const [standaardMarge, setStandaardMarge] = useState(settings.calculatie_standaard_marge ?? 35)
+  // Kostprijs is wat een uur kost, niet wat het oplevert: alleen admin ziet en zet dit.
+  const { userRol } = useAuth()
+  const magKostprijs = isAdminUser(userRol)
+  const [standaardKostprijs, setStandaardKostprijs] = useState<number | null>(settings.standaard_kostprijs_uur ?? null)
   const [categorieen, setCategorieen] = useState<string[]>(
     settings.calculatie_categorieen || ['Materiaal', 'Arbeid', 'Transport', 'Apparatuur', 'Overig']
   )
@@ -1980,6 +1985,7 @@ function InstellingenSection() {
     setCategorieen(settings.calculatie_categorieen || ['Materiaal', 'Arbeid', 'Transport', 'Apparatuur', 'Overig'])
     setEenheden(settings.calculatie_eenheden || ['stuks', 'm\u00B2', 'm\u00B9', 'uur', 'dag', 'meter', 'kg', 'set'])
     setToonM2(settings.offerte_toon_m2 ?? true)
+    setStandaardKostprijs(settings.standaard_kostprijs_uur ?? null)
     setRegelVelden(settings.offerte_regel_velden || ['Materiaal', 'Lay-out', 'Montage', 'Opmerking'])
     setUrenVelden((settings.calculatie_uren_velden && settings.calculatie_uren_velden.length > 0)
       ? settings.calculatie_uren_velden
@@ -1997,6 +2003,7 @@ function InstellingenSection() {
         offerte_toon_m2: toonM2,
         offerte_regel_velden: regelVelden,
         calculatie_uren_velden: urenVelden,
+        ...(magKostprijs ? { standaard_kostprijs_uur: standaardKostprijs } : {}),
       })
       toast.success('Instellingen opgeslagen')
     } catch (err) {
@@ -2058,6 +2065,25 @@ function InstellingenSection() {
                 </p>
               </div>
             </div>
+            {magKostprijs && (
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Standaard kostprijs per uur (&euro;)</Label>
+                <div className="flex items-center gap-3">
+                  <Input
+                    type="number"
+                    value={standaardKostprijs ?? ''}
+                    onChange={(e) => setStandaardKostprijs(e.target.value === '' ? null : parseFloat(e.target.value) || 0)}
+                    min={0}
+                    step={0.5}
+                    placeholder="bijv. 45"
+                    className="w-28"
+                  />
+                  <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
+                    Terugval als een medewerker geen eigen kostprijs heeft. Leeg: geen urenkosten en geen marge-indicatie op projecten.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
