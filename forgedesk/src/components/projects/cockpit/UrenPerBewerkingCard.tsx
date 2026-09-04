@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { ChevronDown } from 'lucide-react'
 import { cn, formatCurrency } from '@/lib/utils'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useAuth } from '@/contexts/AuthContext'
@@ -29,6 +30,18 @@ interface Kosten {
 
 function formatUren(u: number): string {
   return u.toLocaleString('nl-NL', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
+}
+
+// Ingeklapt is een voorkeur van de gebruiker, niet van het project: wie het
+// niet gebruikt wil het op elk project dicht hebben.
+const INGEKLAPT_KEY = 'doen_project_bewerkingen_ingeklapt'
+
+function leesIngeklapt(): boolean {
+  try { return localStorage.getItem(INGEKLAPT_KEY) === '1' } catch { return false }
+}
+
+function bewaarIngeklapt(waarde: boolean) {
+  try { localStorage.setItem(INGEKLAPT_KEY, waarde ? '1' : '0') } catch { /* privémodus of geen opslag: dan onthouden we het gewoon niet */ }
 }
 
 /**
@@ -81,6 +94,11 @@ export function UrenPerBewerking({ projectId, tijdregistraties }: UrenPerBewerki
   const { userRol } = useAuth()
   const urenVelden = useMemo(() => urenVeldenUitInstellingen(settings.calculatie_uren_velden), [settings.calculatie_uren_velden])
   const [budget, setBudget] = useState<ProjectUrenBudget | null>(null)
+  const [ingeklapt, setIngeklapt] = useState(leesIngeklapt)
+
+  function toggleIngeklapt() {
+    setIngeklapt((v) => { bewaarIngeklapt(!v); return !v })
+  }
 
   useEffect(() => {
     let actief = true
@@ -126,10 +144,21 @@ export function UrenPerBewerking({ projectId, tijdregistraties }: UrenPerBewerki
 
   return (
     <div className="mt-4 pt-3 border-t border-border/50">
-      <div className="flex items-baseline justify-between text-[11px] text-muted-foreground">
-        <span>per bewerking{totaalBegroot > 0 ? ' · geschreven / verkocht' : ''}</span>
-        {verwacht && totaalBegroot > 0 && <span>verwacht, nog geen akkoord</span>}
-      </div>
+      <button
+        type="button"
+        onClick={toggleIngeklapt}
+        aria-expanded={!ingeklapt}
+        className="flex w-full items-baseline justify-between gap-2 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <span className="inline-flex items-center gap-1">
+          <ChevronDown className={cn('h-3 w-3 transition-transform', ingeklapt && '-rotate-90')} strokeWidth={2} />
+          per bewerking{!ingeklapt && totaalBegroot > 0 ? ' · geschreven / verkocht' : ''}
+        </span>
+        {ingeklapt
+          ? <span className="font-mono tabular-nums">{totaalBegroot > 0 ? `${formatUren(totaalGeschreven)} / ${formatUren(totaalBegroot)} u` : `${formatUren(totaalGeschreven)} u`}</span>
+          : verwacht && totaalBegroot > 0 && <span>verwacht, nog geen akkoord</span>}
+      </button>
+      {ingeklapt ? null : (<>
       <div className="mt-2 space-y-2">
         {rijen.map((r) => {
           const pct = r.begroot > 0 ? (r.geschreven / r.begroot) * 100 : 0
@@ -178,6 +207,7 @@ export function UrenPerBewerking({ projectId, tijdregistraties }: UrenPerBewerki
           )}
         </div>
       )}
+      </>)}
     </div>
   )
 }

@@ -36,6 +36,7 @@ import {
   Eye,
   Printer,
   MoreHorizontal,
+  ListPlus,
   ChevronDown,
   ChevronRight,
   Pencil,
@@ -1755,6 +1756,12 @@ export function ProjectDetail() {
               <Copy className="mr-2 h-3.5 w-3.5" />
               Kopiëren
             </DropdownMenuItem>
+            {takenUitOfferteMogelijk && (
+              <DropdownMenuItem onClick={() => void handleTakenUitOfferte()}>
+                <ListPlus className="mr-2 h-3.5 w-3.5" />
+                Taken uit offerte
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem onClick={handleAiAnalysis}>
               <Sparkles className="mr-2 h-3.5 w-3.5" />
               AI Analyse
@@ -1897,8 +1904,6 @@ export function ProjectDetail() {
             onMontageDelete={handleDeleteMontage}
             onNewMontage={handleOpenMontageDialog}
             onNewTaak={() => setNieuweTaakOpen(true)}
-            onTakenUitOfferte={handleTakenUitOfferte}
-            takenUitOfferteMogelijk={takenUitOfferteMogelijk}
             onTaakEdit={(taak) => {
               setEditTaakId(taak.id)
               setNieuweTaakTitel(taak.titel)
