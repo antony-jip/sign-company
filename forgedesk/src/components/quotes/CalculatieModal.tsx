@@ -38,6 +38,8 @@ import {
   Loader2,
   Minus,
   Copy,
+  ChevronUp,
+  ChevronDown,
 } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import { round2 } from '@/utils/budgetUtils'
@@ -121,6 +123,31 @@ function berekenVerkoopVanInkoop(inkoop: number, margePerc: number): number {
 
 function berekenMarge(inkoop: number, verkoop: number): number {
   return Math.round(berekenMarkupPercentage(inkoop, verkoop) * 10) / 10
+}
+
+function AantalCel({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const stap = (d: number) => onChange(Math.max(0, round2((value || 0) + d)))
+  return (
+    <div className="flex items-center justify-end gap-0.5">
+      <Input
+        type="number"
+        inputMode="decimal"
+        value={value || ''}
+        onChange={(e) => onChange(Math.max(0, parseFloat(e.target.value) || 0))}
+        min={0}
+        step={1}
+        className={NUM_INPUT_CLS}
+      />
+      <div className="flex shrink-0 flex-col">
+        <button type="button" tabIndex={-1} onClick={() => stap(1)} aria-label="Eén meer" className="flex h-3.5 w-4 items-center justify-center rounded-sm text-muted-foreground/60 hover:text-petrol hover:bg-[rgba(26,83,92,0.08)] transition-colors">
+          <ChevronUp className="h-3 w-3" strokeWidth={2.5} />
+        </button>
+        <button type="button" tabIndex={-1} onClick={() => stap(-1)} disabled={!value} aria-label="Eén minder" className="flex h-3.5 w-4 items-center justify-center rounded-sm text-muted-foreground/60 hover:text-petrol hover:bg-[rgba(26,83,92,0.08)] disabled:opacity-30 disabled:hover:bg-transparent transition-colors">
+          <ChevronDown className="h-3 w-3" strokeWidth={2.5} />
+        </button>
+      </div>
+    </div>
+  )
 }
 
 const NUM_INPUT_CLS = 'border-0 bg-transparent dark:bg-transparent shadow-none focus-visible:ring-1 h-8 w-full px-2 text-right text-sm font-mono tabular-nums [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none'
@@ -584,15 +611,7 @@ export function CalculatieModal({
                     <label className="flex flex-col gap-1 min-w-0">
                       <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Aantal</span>
                       <div className="rounded-lg border border-border/60 bg-background">
-                        <Input
-                          type="number"
-                          inputMode="decimal"
-                          value={regel.aantal || ''}
-                          onChange={(e) => updateRegel(regel.id, { aantal: Math.max(0, parseFloat(e.target.value) || 0) })}
-                          min={0}
-                          step={1}
-                          className={NUM_INPUT_CLS}
-                        />
+                        <AantalCel value={regel.aantal} onChange={(v) => updateRegel(regel.id, { aantal: v })} />
                       </div>
                     </label>
                     <label className="flex flex-col gap-1 min-w-0">
@@ -768,14 +787,7 @@ export function CalculatieModal({
 
                       {/* Aantal */}
                       <td className="px-2 py-1.5">
-                        <Input
-                          type="number"
-                          value={regel.aantal || ''}
-                          onChange={(e) => updateRegel(regel.id, { aantal: Math.max(0, parseFloat(e.target.value) || 0) })}
-                          min={0}
-                          step={1}
-                          className={NUM_INPUT_CLS}
-                        />
+                        <AantalCel value={regel.aantal} onChange={(v) => updateRegel(regel.id, { aantal: v })} />
                       </td>
 
                       {/* Eenheid */}
