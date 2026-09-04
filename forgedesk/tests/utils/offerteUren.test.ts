@@ -168,6 +168,31 @@ describe('berekenOfferteUren', () => {
     expect(uit.urenPerVeld.Montage).toBe(0)
   })
 
+  it('volgt actieve_variant_id als geen enkele optie telt_mee heeft (legacy offertes)', () => {
+    const legacy = item({
+      actieve_variant_id: 'b',
+      prijs_varianten: [
+        { id: 'a', aantal: 1, eenheidsprijs: 0, btw_percentage: 21, korting_percentage: 0,
+          calculatie_regels: [regel({ product_naam: 'Montage', aantal: 5, verkoop_prijs: 75 })] },
+        { id: 'b', aantal: 1, eenheidsprijs: 0, btw_percentage: 21, korting_percentage: 0,
+          calculatie_regels: [regel({ product_naam: 'Montage', aantal: 12, verkoop_prijs: 75 })] },
+      ],
+    })
+    expect(berekenOfferteUren([legacy], VELDEN)).toEqual(referentie([legacy], VELDEN))
+    expect(berekenOfferteUren([legacy], VELDEN).urenPerVeld.Montage).toBe(12)
+  })
+
+  it('matcht een detailregel ook andersom (label is een deel van het veld) en een leeg label op het eerste veld', () => {
+    const items = [
+      item({ detail_regels: [{ label: 'DTP', waarde: '2' }] }),
+      item({ detail_regels: [{ label: '', waarde: '3 uur' }] }),
+    ]
+    const uit = berekenOfferteUren(items, VELDEN)
+    expect(uit).toEqual(referentie(items, VELDEN))
+    expect(uit.urenPerVeld['Ontwerp & DTP']).toBe(2)
+    expect(uit.urenPerVeld.Montage).toBe(3)
+  })
+
   it('negeert een expliciete bewerking die niet in de instellingen staat en valt terug op de naam', () => {
     const regels = [regel({ product_naam: 'Montage', aantal: 2, verkoop_prijs: 75, urenveld: 'Beletteren' })]
     const uit = berekenOfferteUren([item({ calculatie_regels: regels })], VELDEN)

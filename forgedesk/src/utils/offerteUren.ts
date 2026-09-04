@@ -52,7 +52,7 @@ export function urenVeldenUitInstellingen(velden: string[] | undefined | null): 
 
 /** Alleen prijsregels die verplicht zijn tellen mee voor uren en totalen. */
 export function verplichtePrijsItems<T extends UrenItem>(items: T[]): T[] {
-  return items.filter((i) => (i.soort ?? 'prijs') === 'prijs' && !i.is_optioneel)
+  return items.filter((i) => (i.soort || 'prijs') === 'prijs' && !i.is_optioneel)
 }
 
 export function getPrijsDataRegels(item: UrenItem): PrijsData[] {

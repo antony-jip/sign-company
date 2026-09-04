@@ -289,8 +289,12 @@ verslechteren.
 - `CalculatieTab`: veld Standaard kostprijs per uur, alleen admin.
 - `TeamLayout`: veld Kostprijs per uur op de medewerker, alleen admin.
 
-Acceptatie: build groen, tsc niet gestegen, app draait identiek zonder migratie
-(alle nieuwe kolommen optioneel in de types).
+Acceptatie: build groen, tsc niet gestegen. Let op: de app draait NIET
+identiek zonder migratie 233. Nieuwe velden gaan als `null` mee en PostgREST
+weigert een onbekende kolom, dus inklokken, uitklokken en het opslaan van
+urenregels, taken, medewerkers, producten en instellingen falen tot 233
+gedraaid is. Lezen werkt wel. Daarom: 233 draaien vóór merge naar `main`
+(gedaan op 4 sep 2026).
 
 ### Fase 1 · Het budget de editor uit (1,5 dag)
 
@@ -319,9 +323,12 @@ identiek (test bewijst het).
 - Kaart toont nu geschreven uren per bewerking en de balk.
 
 Acceptatie: inklokken met bewerking Montage en uitklokken geeft een urenregel
-met `urenveld = 'Montage'`, en de balk Montage op het project loopt op. Een
-urenregel op een taak met bewerking krijgt die bewerking als voorkeuze. Oude
-urenregels blijven zichtbaar als Overig. Nacalculatie en klant-urentab tonen
+met `urenveld = 'Montage'`, en de balk Montage op het project loopt op. Oude
+urenregels blijven zichtbaar als Overig. Bewuste afwijking (review 4 sep):
+"een urenregel op een taak erft de bewerking" is niet gebouwd, omdat het veld
+Taak in het urenformulier vrije tekst is en geen taak koppelt; de taakdialoog
+op het bord kreeg het veld in plaats van `TaakNieuwSheet` (mobiele snelinvoer
+zonder project). Nacalculatie en klant-urentab tonen
 dezelfde totalen als vóór de sprint.
 
 ### Fase 3 · Taken uit de bewerkingen (halve dag)
@@ -385,6 +392,20 @@ Aanvullingen na eigen review, akkoord Antony (4 sep):
    voorgevuld: uit de taak, anders de enige bewerking met open budget, anders
    leeg.
 
-Status: **plan akkoord**, bouw gestart op branch `feature/uren-op-de-regel`
-(afgezet van `main`, dat bij migratie 230 stopt; 231 en 232 zitten op
-`supabase-dieet`, 233 blijft uniek op beide).
+Status: **in aanbouw** op branch `feature/uren-op-de-regel` (afgezet van
+`main`, dat bij migratie 230 stopt; 231 en 232 zitten op `supabase-dieet`,
+233 blijft uniek op beide).
+
+| Fase | Commit | Stand |
+|---|---|---|
+| 0 Fundament | `8d55a007` | klaar; migratie 233 gedraaid op productie, 4 sep 2026 |
+| 1 Budget op het project | `0594fdb3` | klaar; util met oracle-test, kaart naast TijdCard, bewerking op catalogusproduct |
+| 2 Schrijven met bewerking | `07ddaf37` | klaar; urenformulier, inklokpaneel, TijdCard en taakdialoog. Bewust niet: `TaakNieuwSheet` (mobiele snelinvoer zonder project); taken uit de offerte krijgen hun bewerking via fase 3 |
+| 3 Taken uit bewerkingen | | in aanbouw door agent, branch `feature/uren-fase-3` |
+| 4 Werkbon en kostprijs | | in aanbouw door agent, branch `feature/uren-fase-4` |
+
+Let op vóór mergen naar `main`: draai migratie 233 eerst. Zonder de kolommen
+falen het opslaan van een product (urenveld), een medewerker (kostprijs_uur),
+de calculatie-instellingen (standaard_kostprijs_uur), de werkbon-instellingen
+(werkbon_uren_verdelen) en elke nieuwe urenregel (urenveld, kostprijs_uur).
+Lezen blijft overal werken.

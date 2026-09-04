@@ -1519,3 +1519,39 @@ staan: UBL-export zet een mengpercentage zonder guard in <cbc:Percent>
 (UBL is download-only en sowieso niet-compliant, zie fase-1-onderzoek)
 en de dode helper-callers in FacturenLayout (handleOpenEdit/Create/
 ConvertOfferte zonder aanroepers) zijn een opruimkandidaat.
+
+## Uren op de regel, sprint 1, fase 0 t/m 2 (2026-09-04)
+
+Gate-review op `feature/uren-op-de-regel` (commits 8d55a007, 0594fdb3,
+07ddaf37). Verdict BLOKKADE op één punt, opgelost als procesafspraak; de rest
+hieronder als opmerkingen.
+
+- **Blokkade, opgelost.** De claim "de app draait identiek zonder migratie
+  233" was onwaar: nieuwe velden gaan als `null` mee en `sanitizeDates` stript
+  geen `null`, dus PostgREST meldt een onbekende kolom bij inklokken,
+  uitklokken, urenregel opslaan, taak opslaan, medewerker opslaan,
+  documentinstellingen en product opslaan. Gekozen oplossing: de claim is uit
+  het plan geschrapt en "migratie 233 gedraaid" is een harde stap vóór merge
+  naar `main`. 233 is op 4 sep op productie gedraaid. Er is één gedeelde
+  database, dus dit raakt geen andere organisatie meer. Voorwaardelijk
+  meesturen van de velden is bewust niet gebouwd: zes bestanden extra logica
+  om een toestand te ondersteunen die niet meer bestaat.
+- **Kostprijs is niet getoond, niet afgeschermd.** `updateMedewerker` en
+  `updateAppSettings` hebben geen rolpoort en RLS is org-breed; elke
+  org-gebruiker kan `kostprijs_uur`, `standaard_kostprijs_uur` en
+  `tijdregistraties.kostprijs_uur` lezen en via devtools schrijven, en
+  `useTijdSessies` rekent de kostprijs client-side voor iedereen. Acceptabel
+  binnen radicale transparantie; RLS-afscherming hoort bij de rechtenvlag in
+  sprint 4 (F1). Formulering in UI en plan is "alleen zichtbaar voor admin".
+- **Fase-2-acceptatie "urenregel op een taak erft de bewerking" is niet
+  gebouwd.** Het veld Taak in het urenformulier is vrije tekst (bestaand), dus
+  er is geen taak om van te erven. TijdCard start op Overig in plaats van "de
+  enige bewerking met open budget". Bewuste afwijking; de voorkeuze uit budget
+  komt bij de kaart-fix na fase 4.
+- **UrenPerBewerkingCard:** `budget` niet gereset bij projectwissel (even
+  balken van project A bij uren van B), en label "verwacht" ook zonder begrote
+  uren. Beide na merge van fase 4 (die agent werkt in dat bestand).
+- **Tests:** twee bestaande paden (legacy `actieve_variant_id` zonder
+  `telt_mee`, omgekeerde detailregel-match met leeg label) toegevoegd aan
+  `tests/utils/offerteUren.test.ts`; `soort || 'prijs'` in pariteit met de
+  editor.
