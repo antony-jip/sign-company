@@ -339,7 +339,7 @@ export function QuoteSidebar({
                                 )}
 
                                 <div className="flex flex-wrap gap-1.5 pt-2" style={{ borderTop: '0.5px solid hsl(var(--border))' }}>
-                                  {selectedKlant.telefoon && <a href={`tel:${selectedKlant.telefoon}`} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors bg-[#E2F0E8] dark:bg-[#2D6B48]/20 text-[#2D6B48] dark:text-[#7AAF85]"><Phone className="h-3 w-3" />Bellen</a>}
+                                  {selectedKlant.telefoon && <a href={`tel:${selectedKlant.telefoon}`} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors bg-[rgba(26,83,92,0.08)] text-petrol hover:bg-[rgba(26,83,92,0.14)] dark:bg-white/10 dark:text-foreground"><Phone className="h-3 w-3" />Bellen</a>}
                                   {selectedKlant.email && <a href="#" onClick={(e) => { e.preventDefault(); navigateWithTab({ path: `/email/compose?to=${encodeURIComponent(selectedKlant.email)}`, label: 'Nieuwe email', id: `/email/compose-${selectedKlant.email}` }) }} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors cursor-pointer bg-[#E2F0F0] dark:bg-petrol/30 text-petrol dark:text-[#5AABB5]"><Mail className="h-3 w-3" />Email</a>}
                                   <Link to={`/klanten/${selectedKlant.id}`} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors bg-border text-muted-foreground dark:text-muted-foreground"><ExternalLink className="h-3 w-3" />Profiel</Link>
                                 </div>
@@ -409,30 +409,27 @@ export function QuoteSidebar({
                           </>
                         ) : (
                           <>
-                            <div className="p-4 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #F15025 0%, #D03A18 100%)' }}>
-                              {/* Decorative glow */}
-                              <div
-                                aria-hidden
-                                className="absolute -top-8 -right-8 w-32 h-32 rounded-full"
-                                style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%)' }}
-                              />
-                              <div className="relative">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <Receipt className="h-4 w-4 text-white" />
-                                  <p className="text-[10px] uppercase tracking-widest text-white/85 font-semibold">
-                                    Klaar om te factureren<span className="text-white">.</span>
-                                  </p>
-                                </div>
-                                <p className="text-[10px] text-white/70 uppercase tracking-wider">Offerte bedrag ex BTW</p>
-                                <p className="text-[22px] font-extrabold text-white font-mono tabular-nums leading-tight">{formatCurrency(subtotaal)}</p>
-                                <div className="flex items-center gap-3 mt-1">
-                                  <p className="text-[11px] text-white/70"><span className="font-mono">{formatCurrency(round2(subtotaal + btwBedrag))}</span> incl btw</p>
-                                  <span className="text-white/40">·</span>
-                                  <p className="text-[11px] text-white/70"><span className="font-mono">+{formatCurrency(btwBedrag)}</span> BTW</p>
-                                </div>
+                            {/* Rustig blok: de status is een woord met een flame-punt, het bedrag
+                                draagt, en de knop is de enige kleurvlek. Oranje vlak met groene knop
+                                vocht met de totalenkaart eronder. */}
+                            <div className="p-4 pb-3">
+                              <div className="flex items-center gap-2 mb-3">
+                                <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-[rgba(241,80,37,0.10)] text-flame">
+                                  <Receipt className="h-3.5 w-3.5" />
+                                </span>
+                                <p className="font-heading text-[13px] font-bold text-foreground">
+                                  Klaar om te factureren<span className="text-flame">.</span>
+                                </p>
                               </div>
+                              <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Offerte bedrag ex btw</p>
+                              <p className="text-[24px] font-extrabold text-foreground font-mono tabular-nums leading-tight">{formatCurrency(subtotaal)}</p>
+                              <p className="text-[11px] text-muted-foreground mt-1">
+                                <span className="font-mono tabular-nums">{formatCurrency(round2(subtotaal + btwBedrag))}</span> incl. btw
+                                <span className="mx-1.5 text-muted-foreground/50">·</span>
+                                <span className="font-mono tabular-nums">{formatCurrency(btwBedrag)}</span> btw
+                              </p>
                             </div>
-                            <div className="p-3">
+                            <div className="px-3 pb-3">
                               <button
                                 onClick={() => {
                                   const quoteId = editOfferteId || autoSaveIdRef.current
@@ -442,11 +439,10 @@ export function QuoteSidebar({
                                   if (selectedProjectId) params.set('project_id', selectedProjectId)
                                   navigate(`/facturen/nieuw?${params.toString()}`)
                                 }}
-                                className="w-full inline-flex items-center justify-center gap-2 h-10 rounded-xl bg-[#2D6B48] text-white text-[13px] font-semibold shadow-[0_2px_8px_rgba(45,107,72,0.25)] hover:bg-[#235A3B] hover:shadow-[0_4px_14px_rgba(45,107,72,0.35)] hover:-translate-y-[1px] active:translate-y-0 transition-all"
+                                className="w-full inline-flex items-center justify-center gap-2 h-10 rounded-xl bg-flame text-white text-[13px] font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:bg-[#D9431E] hover:shadow-[0_4px_14px_rgba(241,80,37,0.32)] hover:-translate-y-[1px] active:translate-y-0 transition-all"
                               >
-                                <Receipt className="h-4 w-4" />
                                 Factuur aanmaken
-                                <ArrowRight className="h-3.5 w-3.5 ml-auto" />
+                                <ArrowRight className="h-3.5 w-3.5" />
                               </button>
                             </div>
                           </>
