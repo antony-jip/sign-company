@@ -962,6 +962,7 @@ export interface CalculatieRegel {
   btw_percentage: number;          // BTW tarief
   notitie: string;                 // Eventuele toelichting per regel
   is_opstartkosten?: boolean;      // Vaste opstartkosten-regel (alleen eerste offerte-item)
+  urenveld?: string | null;        // Bewerking, overgenomen van het catalogusproduct; wint van naam-matching (migratie 233)
 }
 
 /**

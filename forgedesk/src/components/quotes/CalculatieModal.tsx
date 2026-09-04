@@ -331,6 +331,7 @@ export function CalculatieModal({
       product_id: product.id,
       product_naam: product.naam,
       categorie: product.categorie,
+      urenveld: product.urenveld ?? null,
       eenheid: product.eenheid,
       inkoop_prijs: product.inkoop_prijs,
       verkoop_prijs: product.verkoop_prijs,
@@ -576,7 +577,7 @@ export function CalculatieModal({
                     value={regel.product_naam}
                     producten={producten}
                     onSelectProduct={(p) => vulRegelMetProduct(regel.id, p)}
-                    onVrijeNaam={(naam) => updateRegel(regel.id, { product_naam: naam, product_id: undefined })}
+                    onVrijeNaam={(naam) => updateRegel(regel.id, { product_naam: naam, product_id: undefined, urenveld: null })}
                     placeholder="Zoek of typ product..."
                   />
 
@@ -751,7 +752,7 @@ export function CalculatieModal({
                           value={regel.product_naam}
                           producten={producten}
                           onSelectProduct={(p) => vulRegelMetProduct(regel.id, p)}
-                          onVrijeNaam={(naam) => updateRegel(regel.id, { product_naam: naam, product_id: undefined })}
+                          onVrijeNaam={(naam) => updateRegel(regel.id, { product_naam: naam, product_id: undefined, urenveld: null })}
                           placeholder="Zoek of typ product..."
                         />
                       </td>

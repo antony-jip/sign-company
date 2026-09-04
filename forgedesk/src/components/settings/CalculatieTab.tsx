@@ -37,6 +37,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { isAdminUser } from '@/utils/authHelpers'
+import { urenVeldenUitInstellingen } from '@/utils/offerteUren'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import type { AppSettings, CalculatieProduct, CalculatieTemplate, CalculatieRegel, OfferteTemplate, OfferteTemplateRegel } from '@/types'
 import {
@@ -607,6 +608,10 @@ function ProductenSection({
   const [productNaam, setProductNaam] = useState('')
   const [productCategorie, setProductCategorie] = useState('')
   const [productEenheid, setProductEenheid] = useState('stuks')
+  // Bewerking van het product: wint in de urenberekening van de naam-matching.
+  const { settings: instellingen } = useAppSettings()
+  const urenVeldenKeuze = urenVeldenUitInstellingen(instellingen.calculatie_uren_velden)
+  const [productUrenveld, setProductUrenveld] = useState('')
   const [productInkoop, setProductInkoop] = useState(0)
   const [productVerkoop, setProductVerkoop] = useState(0)
   const [productMarge, setProductMarge] = useState(standaardMarge)
@@ -617,6 +622,7 @@ function ProductenSection({
     setProductNaam('')
     setProductCategorie('')
     setProductEenheid('stuks')
+    setProductUrenveld('')
     setProductInkoop(0)
     setProductVerkoop(0)
     setProductMarge(standaardMarge)
@@ -631,6 +637,7 @@ function ProductenSection({
     setProductNaam(p.naam)
     setProductCategorie(p.categorie)
     setProductEenheid(p.eenheid)
+    setProductUrenveld(p.urenveld ?? '')
     setProductInkoop(p.inkoop_prijs)
     setProductVerkoop(p.verkoop_prijs)
     setProductMarge(p.standaard_marge)
@@ -651,6 +658,7 @@ function ProductenSection({
           naam: productNaam,
           categorie: productCategorie,
           eenheid: productEenheid,
+          urenveld: productUrenveld || null,
           inkoop_prijs: productInkoop,
           verkoop_prijs: productVerkoop,
           standaard_marge: productMarge,
@@ -665,6 +673,7 @@ function ProductenSection({
           naam: productNaam,
           categorie: productCategorie,
           eenheid: productEenheid,
+          urenveld: productUrenveld || null,
           inkoop_prijs: productInkoop,
           verkoop_prijs: productVerkoop,
           standaard_marge: productMarge,
@@ -791,6 +800,19 @@ function ProductenSection({
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Bewerking</Label>
+                <Select value={productUrenveld || 'geen'} onValueChange={(v) => setProductUrenveld(v === 'geen' ? '' : v)}>
+                  <SelectTrigger><SelectValue placeholder="Geen" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="geen">Geen (op naam herkennen)</SelectItem>
+                    {urenVeldenKeuze.map((v) => (
+                      <SelectItem key={v} value={v}>{v}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground/60">Uren van dit product tellen als deze bewerking op offerte en project</p>
               </div>
             </div>
 

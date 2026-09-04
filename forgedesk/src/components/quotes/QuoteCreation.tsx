@@ -73,6 +73,7 @@ import { useAppSettings } from '@/contexts/AppSettingsContext'
 import type { Klant, Project, Contactpersoon, Factuur, OfferteItem, Bedrijfsprofiel } from '@/types'
 import { berekenRegelInkoop } from '@/utils/calculatieBerekening'
 import { round2 } from '@/utils/budgetUtils'
+import { berekenOfferteUren } from '@/utils/offerteUren'
 import { berekenMarkupPercentage } from '@/utils/margeBerekening'
 import { berekenOfferteTotalen, getMeetellendeVarianten } from '@/utils/offerteTotalen'
 import { generateOffertePDF, generateOpdrachtbevestigingPDF } from '@/services/pdfService'
@@ -555,83 +556,12 @@ export function QuoteCreation() {
     ? settings.calculatie_uren_velden
     : ['Montage', 'Voorbereiding', 'Ontwerp & DTP', 'Applicatie']
 
-  const { urenPerVeld, totaalUren, materiaalKosten, tariefPerVeld } = useMemo(() => {
-    const urenMap: Record<string, number> = {}
-    const tariefMap: Record<string, { totaalPrijs: number; totaalAantal: number }> = {}
-    let totaal = 0
-    let materiaal = 0
-
-    // Initialiseer alle velden op 0
-    urenVelden.forEach((veld) => {
-      urenMap[veld] = 0
-      tariefMap[veld] = { totaalPrijs: 0, totaalAantal: 0 }
-    })
-
-    verplichtePrijsItems.forEach((item) => {
-
-      // Bron 1: Calculatieregels · match productnaam/categorie tegen uren-velden.
-      // Elke meetellende prijsoptie heeft zijn eigen calculatie.
-      getPrijsDataRegels(item).forEach((data) => {
-        if (!data.calculatie_regels || data.calculatie_regels.length === 0) return
-        data.calculatie_regels.forEach((r) => {
-          const categorieLower = (r.categorie || '').toLowerCase()
-          const naamLower = (r.product_naam || '').toLowerCase()
-
-          // Check of deze regel matcht met een geconfigureerd uren-veld
-          for (const veld of urenVelden) {
-            const veldLower = veld.toLowerCase()
-            if (categorieLower.includes(veldLower) || naamLower.includes(veldLower)) {
-              urenMap[veld] = (urenMap[veld] || 0) + r.aantal
-              totaal += r.aantal
-              // Track tarief voor +/- berekening
-              tariefMap[veld].totaalPrijs += round2(r.verkoop_prijs * r.aantal)
-              tariefMap[veld].totaalAantal += r.aantal
-              break
-            }
-          }
-
-          if (categorieLower.includes('materiaal') || categorieLower === 'materiaal') {
-            materiaal += round2(r.verkoop_prijs * r.aantal)
-          }
-        })
-      })
-
-      // Bron 2: Detail velden (namefields) · bijv. label "Voorbereiding", waarde "4" of "4 uur"
-      if (item.detail_regels && item.detail_regels.length > 0) {
-        item.detail_regels.forEach((dr) => {
-          const labelLower = (dr.label || '').toLowerCase()
-          const waarde = (dr.waarde || '').trim()
-          if (!waarde) return
-
-          // Probeer een getal uit de waarde te halen (bijv. "4", "4 uur", "2.5")
-          const numMatch = waarde.match(/^[\d]+([.,]\d+)?/)
-          if (!numMatch) return
-          const uren = parseFloat(numMatch[0].replace(',', '.'))
-          if (isNaN(uren) || uren <= 0) return
-
-          // Match tegen geconfigureerde uren-velden
-          for (const veld of urenVelden) {
-            const veldLower = veld.toLowerCase()
-            if (labelLower.includes(veldLower) || veldLower.includes(labelLower)) {
-              urenMap[veld] = (urenMap[veld] || 0) + uren
-              totaal += uren
-              break
-            }
-          }
-        })
-      }
-    })
-
-    // Bereken gemiddeld tarief per veld (verkoop_prijs per uur)
-    const tarieven: Record<string, number> = {}
-    urenVelden.forEach((veld) => {
-      tarieven[veld] = tariefMap[veld].totaalAantal > 0
-        ? round2(tariefMap[veld].totaalPrijs / tariefMap[veld].totaalAantal)
-        : 0
-    })
-
-    return { urenPerVeld: urenMap, totaalUren: totaal, materiaalKosten: round2(materiaal), tariefPerVeld: tarieven }
-  }, [verplichtePrijsItems, urenVelden])
+  // Zelfde functie als het project gebruikt voor zijn budget (utils/offerteUren),
+  // zodat editor en project nooit verschillend rekenen.
+  const { urenPerVeld, totaalUren, materiaalKosten, tariefPerVeld } = useMemo(
+    () => berekenOfferteUren(verplichtePrijsItems, urenVelden),
+    [verplichtePrijsItems, urenVelden],
+  )
 
   // Bereken uren correctie bedrag (ex BTW)
   const urenCorrectieBedrag = useMemo(() => {
