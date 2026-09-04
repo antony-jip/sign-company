@@ -60,6 +60,8 @@ import { cn } from '@/lib/utils'
 import { exBtw } from '@/utils/btwWeergave'
 // DOEN design · ModuleHeader verwijderd
 import { useAuth } from '@/contexts/AuthContext'
+import { useAppSettings } from '@/contexts/AppSettingsContext'
+import { urenVeldenUitInstellingen } from '@/utils/offerteUren'
 import { getTaken, createTaak, updateTaak, deleteTaak, getProjecten, getKlanten, getMontageAfspraken, getOffertes, uploadTaakBijlage, getMedewerkers } from '@/services/supabaseService'
 import { getDisplayFilename } from '@/services/projectService'
 import { confirm } from '@/components/shared/ConfirmDialog'
@@ -200,12 +202,13 @@ interface TaakFormData {
   klant_id: string
   locatie: string
   bijlagen: string[]
+  urenveld: string
 }
 
 const EMPTY_FORM: TaakFormData = {
   titel: '', beschrijving: '', status: 'todo', prioriteit: 'medium',
   toegewezen_aan: '', deadline: '', geschatte_tijd: 0, bestede_tijd: 0, project_id: '',
-  klant_id: '', locatie: '', bijlagen: [],
+  klant_id: '', locatie: '', bijlagen: [], urenveld: '',
 }
 
 // === HELPERS ===
@@ -1300,6 +1303,7 @@ export function TasksLayout() {
       prioriteit: taak.prioriteit, toegewezen_aan: taak.toegewezen_aan,
       deadline: taak.deadline ? taak.deadline.split('T')[0] : '',
       geschatte_tijd: taak.geschatte_tijd, bestede_tijd: taak.bestede_tijd,
+      urenveld: taak.urenveld || '',
       project_id: taak.project_id || '',
       klant_id: taak.klant_id || '',
       locatie: taak.locatie || '',
@@ -1348,6 +1352,7 @@ export function TasksLayout() {
           return formData.deadline
         })(),
         geschatte_tijd: formData.geschatte_tijd, bestede_tijd: formData.bestede_tijd,
+        urenveld: formData.urenveld || null,
         project_id: formData.project_id || undefined,
         klant_id: formData.klant_id || undefined,
         locatie: formData.locatie.trim() || undefined,
@@ -3376,6 +3381,9 @@ function EditTaskDialog({
   onDelete?: () => void
   onAfronden?: () => void
 }) {
+  const { settings: appSettings } = useAppSettings()
+  const urenVelden = useMemo(() => urenVeldenUitInstellingen(appSettings.calculatie_uren_velden), [appSettings.calculatie_uren_velden])
+
   function updateField<K extends keyof TaakFormData>(field: K, value: TaakFormData[K]) {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
@@ -3442,6 +3450,20 @@ function EditTaskDialog({
             onChange={(uren) => updateField('geschatte_tijd', uren)}
             triggerClassName={pillBase}
           />
+
+          {/* Bewerking · uren op deze taak erven dit veld, zodat ze op het
+              project tegen het verkochte budget van die bewerking tellen. */}
+          <select
+            value={formData.urenveld}
+            onChange={(e) => updateField('urenveld', e.target.value)}
+            className={cn(pillBase, 'appearance-none pr-6 text-foreground', !formData.urenveld && 'text-muted-foreground')}
+            aria-label="Bewerking"
+          >
+            <option value="">Bewerking</option>
+            {urenVelden.map((v) => (
+              <option key={v} value={v}>{v}</option>
+            ))}
+          </select>
 
           {/* Toegewezen */}
           {medewerkers.length > 0 ? (

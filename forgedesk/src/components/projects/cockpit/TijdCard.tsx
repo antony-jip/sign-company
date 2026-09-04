@@ -1,7 +1,10 @@
+import { useState } from 'react'
 import { Play, Square, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
 import { useTijdSessies } from '@/hooks/useTijdSessies'
+import { useAppSettings } from '@/contexts/AppSettingsContext'
+import { urenVeldenUitInstellingen } from '@/utils/offerteUren'
 import type { Medewerker, Tijdregistratie, TijdSessie } from '@/types'
 
 interface TijdCardProps {
@@ -85,9 +88,15 @@ export function TijdCard({ projectId, projectNaam, eigenMedewerker, medewerkers,
   const geboekteMinuten = tijdregistraties.reduce((som, t) => som + (t.duur_minuten || 0), 0)
   const geboektPerPersoon = groepeerPerPersoon(tijdregistraties, medewerkers)
 
+  // Bewerking waarop de inklok-uren komen. Leeg is Overig, zodat inklokken
+  // nooit trager wordt dan één tik.
+  const { settings } = useAppSettings()
+  const urenVelden = urenVeldenUitInstellingen(settings.calculatie_uren_velden)
+  const [urenveld, setUrenveld] = useState('')
+
   async function handleInklokken() {
     try {
-      const vorige = await inklokken()
+      const vorige = await inklokken({ urenveld: urenveld || null })
       if (vorige?.registratie) {
         toast.success(`Uitgeklokt op ${vorige.sessie.project_naam || 'vorig project'}: ${formatDuur(vorige.duurMinuten)} geboekt`)
         onGeboekt()
@@ -150,7 +159,18 @@ export function TijdCard({ projectId, projectNaam, eigenMedewerker, medewerkers,
           </button>
         </div>
       ) : (
-        <div>
+        <div className="space-y-2">
+          <select
+            value={urenveld}
+            onChange={(e) => setUrenveld(e.target.value)}
+            aria-label="Bewerking"
+            className="h-9 w-full rounded-lg border border-border bg-background px-2.5 text-[13px] text-foreground"
+          >
+            <option value="">Bewerking: overig</option>
+            {urenVelden.map((v) => (
+              <option key={v} value={v}>{v}</option>
+            ))}
+          </select>
           <button
             type="button"
             onClick={handleInklokken}

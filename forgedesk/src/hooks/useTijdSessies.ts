@@ -9,6 +9,7 @@ import type { StopResultaat } from '@/services/tijdSessieService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import type { TijdSessie, Medewerker } from '@/types'
+import { kostprijsVoor } from '@/utils/kostprijs'
 
 const POLL_MS = 30_000
 
@@ -16,6 +17,8 @@ export interface InklokDoel {
   projectId?: string
   projectNaam?: string
   omschrijving?: string
+  /** Bewerking waarop de uren komen; leeg = Overig. */
+  urenveld?: string | null
 }
 
 interface Opties {
@@ -40,6 +43,7 @@ export function useTijdSessies({ projectId, projectNaam, medewerker }: Opties) {
   const kanaalIdRef = useRef(Math.random().toString(36).slice(2))
 
   const uurtarief = medewerker?.uurtarief || settings.standaard_uurtarief || 0
+  const kostprijsUur = kostprijsVoor(medewerker, settings)
 
   const herlaad = useCallback(async () => {
     try {
@@ -112,26 +116,28 @@ export function useTijdSessies({ projectId, projectNaam, medewerker }: Opties) {
         medewerker_id: medewerker?.id,
         medewerker_naam: medewerker?.naam,
         omschrijving: doel?.omschrijving,
+        urenveld: doel?.urenveld ?? null,
         uurtarief,
+        kostprijs_uur: kostprijsUur,
       })
       await herlaad()
       return vorige
     } finally {
       if (gemountRef.current) setBezig(false)
     }
-  }, [user?.id, projectId, projectNaam, medewerker?.id, medewerker?.naam, uurtarief, bezig, herlaad])
+  }, [user?.id, projectId, projectNaam, medewerker?.id, medewerker?.naam, uurtarief, kostprijsUur, bezig, herlaad])
 
   const uitklokken = useCallback(async (): Promise<StopResultaat | null> => {
     if (!eigenSessie || bezig) return null
     setBezig(true)
     try {
-      const resultaat = await stopTijdSessie(eigenSessie, uurtarief)
+      const resultaat = await stopTijdSessie(eigenSessie, uurtarief, kostprijsUur)
       await herlaad()
       return resultaat
     } finally {
       if (gemountRef.current) setBezig(false)
     }
-  }, [eigenSessie, uurtarief, bezig, herlaad])
+  }, [eigenSessie, uurtarief, kostprijsUur, bezig, herlaad])
 
   return {
     projectSessies,

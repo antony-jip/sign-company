@@ -56,6 +56,10 @@ import {
   createFactuur,
   createFactuurItem,
 } from "@/services/supabaseService";
+import { useAppSettings } from "@/contexts/AppSettingsContext";
+import { getProjectUrenBudget, type ProjectUrenBudget } from "@/services/projectUrenService";
+import { urenVeldenUitInstellingen } from "@/utils/offerteUren";
+import { kostprijsVoor, uurtariefVoorkeuze } from "@/utils/kostprijs";
 import { getCached, fetchQuery } from "@/lib/queryCache";
 import type { Tijdregistratie, Project, Klant, Medewerker } from "@/types";
 import { round2 } from "@/utils/budgetUtils";
@@ -73,6 +77,7 @@ type FilterType = "alle" | "deze_week" | "deze_maand" | "facturabel" | "niet_fac
 interface FormData {
   project_id: string;
   taak_id: string;
+  urenveld: string;
   omschrijving: string;
   datum: string;
   start_tijd: string;
@@ -160,6 +165,7 @@ const DAG_NAMEN = ["Ma", "Di", "Wo", "Do", "Vr"];
 const EMPTY_FORM: FormData = {
   project_id: "",
   taak_id: "",
+  urenveld: "",
   omschrijving: "",
   datum: new Date().toISOString().split("T")[0],
   start_tijd: "08:00",
@@ -182,9 +188,32 @@ export function TijdregistratieLayout() {
   const [formData, setFormData] = useState<FormData>(EMPTY_FORM);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
+  const { settings } = useAppSettings();
+  const urenVelden = useMemo(() => urenVeldenUitInstellingen(settings.calculatie_uren_velden), [settings.calculatie_uren_velden]);
+  // Budget van het gekozen project, voor de tariefvoorkeuze per bewerking.
+  const [budgetVanProject, setBudgetVanProject] = useState<ProjectUrenBudget | null>(null);
+  useEffect(() => {
+    if (!dialogOpen || !formData.project_id) { setBudgetVanProject(null); return; }
+    let actief = true;
+    getProjectUrenBudget(formData.project_id, urenVelden)
+      .then((b) => { if (actief) setBudgetVanProject(b); })
+      .catch(() => { if (actief) setBudgetVanProject(null); });
+    return () => { actief = false; };
+  }, [dialogOpen, formData.project_id, urenVelden]);
+
+  function kiesBewerking(veld: string) {
+    setFormData((prev) => ({
+      ...prev,
+      urenveld: veld,
+      // Bij een nieuwe regel volgt het tarief de bewerking; een bestaande regel houdt zijn tarief.
+      uurtarief: editingId ? prev.uurtarief : uurtariefVoorkeuze(budgetVanProject?.perVeld[veld]?.tarief, eigenMedewerker, settings),
+    }));
+  }
+
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>(() => getCached<Medewerker[]>('medewerkers') ?? []);
   const [keuzeProjectId, setKeuzeProjectId] = useState("");
   const [keuzeOmschrijving, setKeuzeOmschrijving] = useState("");
+  const [keuzeUrenveld, setKeuzeUrenveld] = useState("");
 
   const eigenMedewerker = useMemo(() => {
     if (!user?.id || medewerkers.length === 0) return null;
@@ -233,6 +262,7 @@ export function TijdregistratieLayout() {
         projectId: keuzeProjectId,
         projectNaam: projecten.find((p) => p.id === keuzeProjectId)?.naam,
         omschrijving: keuzeOmschrijving || undefined,
+        urenveld: keuzeUrenveld || null,
       });
       if (vorige?.registratie) {
         toast.success(`Uitgeklokt op ${vorige.sessie.project_naam || 'vorig project'}: ${formatDuur(vorige.duurMinuten)} geboekt`);
@@ -322,7 +352,7 @@ export function TijdregistratieLayout() {
 
   function openNewDialog() {
     setEditingId(null);
-    setFormData(EMPTY_FORM);
+    setFormData({ ...EMPTY_FORM, uurtarief: uurtariefVoorkeuze(null, eigenMedewerker, settings) });
     setDialogOpen(true);
   }
 
@@ -331,6 +361,7 @@ export function TijdregistratieLayout() {
     setFormData({
       project_id: reg.project_id,
       taak_id: reg.taak_id || "",
+      urenveld: reg.urenveld || "",
       omschrijving: reg.omschrijving,
       datum: reg.datum,
       start_tijd: reg.start_tijd,
@@ -367,6 +398,7 @@ export function TijdregistratieLayout() {
       project_id: formData.project_id,
       project_naam: selectedProject?.naam || "",
       taak_id: formData.taak_id || undefined,
+      urenveld: formData.urenveld || null,
       omschrijving: formData.omschrijving,
       datum: formData.datum,
       start_tijd: formData.start_tijd,
@@ -376,6 +408,8 @@ export function TijdregistratieLayout() {
       facturabel: formData.facturabel,
       gefactureerd: false,
     };
+    // Kostprijs alleen bij een nieuwe regel vastleggen: een momentopname wijzig je niet achteraf.
+    if (!editingId) entry.kostprijs_uur = kostprijsVoor(eigenMedewerker, settings);
 
     try {
       if (editingId) {
@@ -416,7 +450,7 @@ export function TijdregistratieLayout() {
 
     setDialogOpen(false);
     setEditingId(null);
-    setFormData(EMPTY_FORM);
+    setFormData({ ...EMPTY_FORM, uurtarief: uurtariefVoorkeuze(null, eigenMedewerker, settings) });
   }
 
   async function handleDelete(id: string) {
@@ -676,6 +710,19 @@ export function TijdregistratieLayout() {
                       value={keuzeOmschrijving}
                       onChange={(e) => setKeuzeOmschrijving(e.target.value)}
                     />
+                  </div>
+                  <div className="w-full sm:w-40">
+                    <Label className="text-xs text-muted-foreground mb-1 block">Bewerking</Label>
+                    <select
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+                      value={keuzeUrenveld}
+                      onChange={(e) => setKeuzeUrenveld(e.target.value)}
+                    >
+                      <option value="">Overig</option>
+                      {urenVelden.map((v) => (
+                        <option key={v} value={v}>{v}</option>
+                      ))}
+                    </select>
                   </div>
                 </>
               )}
@@ -1087,6 +1134,21 @@ export function TijdregistratieLayout() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="form-urenveld">Bewerking</Label>
+              <select
+                id="form-urenveld"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+                value={formData.urenveld}
+                onChange={(e) => kiesBewerking(e.target.value)}
+              >
+                <option value="">Overig</option>
+                {urenVelden.map((v) => (
+                  <option key={v} value={v}>{v}</option>
+                ))}
+              </select>
             </div>
 
             <div className="grid gap-2">
