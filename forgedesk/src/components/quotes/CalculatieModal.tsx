@@ -12,7 +12,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import {
   Select,
@@ -461,7 +460,7 @@ export function CalculatieModal({
 
         {/* Beschrijving */}
         <div className="space-y-2">
-          <Label htmlFor="calc-beschrijving" className="text-sm font-semibold text-foreground">
+          <Label htmlFor="calc-beschrijving" className="text-xs font-medium text-muted-foreground">
             Omschrijving offerte-regel
           </Label>
           <Input
@@ -469,7 +468,7 @@ export function CalculatieModal({
             value={beschrijving}
             onChange={(e) => setBeschrijving(e.target.value)}
             placeholder="Bijv. Gevelreclame doosletter incl. montage"
-            className="font-medium h-11 text-base"
+            className="h-10 text-sm font-medium bg-white dark:bg-white/[0.05] border border-[rgba(26,83,92,0.12)] dark:border-white/10 focus-visible:border-petrol dark:focus-visible:border-white/30 focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] dark:focus-visible:ring-white/10 rounded-lg"
           />
         </div>
 
@@ -540,10 +539,10 @@ export function CalculatieModal({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Badge variant="outline" className="gap-1 text-xs cursor-help">
-                    <Package className="h-3 w-3" />
+                  <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground cursor-help">
+                    <Package className="h-3.5 w-3.5" />
                     {producten.filter(p => p.actief).length} producten in catalogus
-                  </Badge>
+                  </span>
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>Kies een product per regel via het dropdown menu in de &quot;Product&quot; kolom</p>
@@ -669,7 +668,7 @@ export function CalculatieModal({
               <thead>
                 <tr className="bg-background dark:bg-muted/50">
                   {/* Kolom headers met uitleg tooltips */}
-                  <th className="text-left px-3 py-2.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground dark:text-muted-foreground/60 min-w-[200px]">
+                  <th className="text-left px-3 py-2.5 text-[12px] font-medium text-muted-foreground min-w-[200px]">
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger className="flex items-center gap-1">
@@ -680,7 +679,7 @@ export function CalculatieModal({
                       </Tooltip>
                     </TooltipProvider>
                   </th>
-                  <th className="text-right px-2 py-2.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground dark:text-muted-foreground/60 w-20">
+                  <th className="text-right px-2 py-2.5 text-[12px] font-medium text-muted-foreground w-20">
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger className="flex items-center gap-1 ml-auto">
@@ -691,10 +690,10 @@ export function CalculatieModal({
                       </Tooltip>
                     </TooltipProvider>
                   </th>
-                  <th className="text-left px-2 py-2.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground dark:text-muted-foreground/60 w-20">
-                    Eenh.
+                  <th className="text-left px-2 py-2.5 text-[12px] font-medium text-muted-foreground w-20">
+                    Eenheid
                   </th>
-                  <th className="text-right px-2 py-2.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground dark:text-muted-foreground/60 w-32">
+                  <th className="text-right px-2 py-2.5 text-[12px] font-medium text-muted-foreground w-32">
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger className="flex items-center gap-1 ml-auto">
@@ -705,7 +704,7 @@ export function CalculatieModal({
                       </Tooltip>
                     </TooltipProvider>
                   </th>
-                  <th className="text-right px-2 pl-4 py-2.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground dark:text-muted-foreground/60 w-32 border-l border-petrol/10 dark:border-[#5BB5B5]/10">
+                  <th className="text-right px-2 pl-4 py-2.5 text-[12px] font-medium text-muted-foreground w-32 border-l border-petrol/10 dark:border-[#5BB5B5]/10">
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger className="flex items-center gap-1 ml-auto">
@@ -716,19 +715,19 @@ export function CalculatieModal({
                       </Tooltip>
                     </TooltipProvider>
                   </th>
-                  <th className="text-right px-2 py-2.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground dark:text-muted-foreground/60 w-20">
+                  <th className="text-right px-2 py-2.5 text-[12px] font-medium text-muted-foreground w-20">
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger className="flex items-center gap-1 ml-auto">
-                          Marge%                        </TooltipTrigger>
+                          Marge                        </TooltipTrigger>
                         <TooltipContent>
                           <p>Markup = winst t.o.v. inkoop.<br />Voorbeeld: inkoop &euro;100, verkoop &euro;200 &rarr; 100% markup.</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                   </th>
-                  <th className="text-right px-3 py-2.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground dark:text-muted-foreground/60 w-32">
-                    Regeltotaal
+                  <th className="text-right px-3 py-2.5 text-[12px] font-medium text-muted-foreground w-32">
+                    Totaal
                   </th>
                   <th className="w-16" />
                 </tr>
@@ -748,13 +747,23 @@ export function CalculatieModal({
                     >
                       {/* Product */}
                       <td className="px-2 py-1.5">
-                        <ProductCatalogusCombobox
-                          value={regel.product_naam}
-                          producten={producten}
-                          onSelectProduct={(p) => vulRegelMetProduct(regel.id, p)}
-                          onVrijeNaam={(naam) => updateRegel(regel.id, { product_naam: naam, product_id: undefined, urenveld: null })}
-                          placeholder="Zoek of typ product..."
-                        />
+                        <div className="flex items-center gap-1.5">
+                          <ProductCatalogusCombobox
+                            value={regel.product_naam}
+                            producten={producten}
+                            onSelectProduct={(p) => vulRegelMetProduct(regel.id, p)}
+                            onVrijeNaam={(naam) => updateRegel(regel.id, { product_naam: naam, product_id: undefined, urenveld: null })}
+                            placeholder="Zoek of typ product..."
+                          />
+                          {regel.urenveld && (
+                            <span
+                              title={`Uren tellen mee onder ${regel.urenveld}`}
+                              className="shrink-0 rounded-full bg-[rgba(26,83,92,0.08)] dark:bg-white/10 px-2 py-0.5 text-[10.5px] font-medium text-petrol dark:text-foreground/80"
+                            >
+                              {regel.urenveld}
+                            </span>
+                          )}
+                        </div>
                       </td>
 
                       {/* Aantal */}
@@ -816,7 +825,7 @@ export function CalculatieModal({
                         {regelTotaal !== 0 && (
                           <span className={`font-semibold font-mono tabular-nums text-sm ${
                             isWinst
-                              ? 'text-foreground dark:text-muted-foreground/20'
+                              ? 'text-foreground'
                               : 'text-red-600 dark:text-red-400'
                           }`}>
                             {formatCurrency(regelTotaal)}
