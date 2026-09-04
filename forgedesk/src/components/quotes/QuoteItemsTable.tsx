@@ -331,12 +331,10 @@ function BijlageDropZone({
         onClick={() => setSectionOpen(!sectionOpen)}
         className="flex items-center gap-2 w-full text-left"
       >
-        <div className="flex items-center justify-center h-5 w-5 rounded bg-violet-100 dark:bg-violet-900/30">
-          <ImageIcon className="h-3 w-3 text-petrol dark:text-violet-400" />
-        </div>
-        <span className="text-xs font-bold text-text-tertiary uppercase tracking-label">Tekening / Bijlage</span>
+        <ImageIcon className="h-3 w-3 text-muted-foreground" />
+        <span className="text-xs font-medium text-muted-foreground">Tekening / bijlage</span>
         {!sectionOpen && hasContent && (
-          <span className="text-2xs font-medium text-petrol dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20 px-2 py-0.5 rounded-full">
+          <span className="text-2xs font-medium text-petrol dark:text-foreground/80 bg-[rgba(26,83,92,0.08)] dark:bg-white/10 px-2 py-0.5 rounded-full">
             {hasBijlage ? item.bijlage_naam || '1 bestand' : `${visualisaties.length} voorbeeld${visualisaties.length > 1 ? 'en' : ''}`}
           </span>
         )}
@@ -1127,7 +1125,7 @@ export function QuoteItemsTable({
               {onCopyItem && (
                 <button
                   onClick={() => onCopyItem(item)}
-                  className="text-muted-foreground/60 hover:text-blue-500 flex-shrink-0 p-1"
+                  className="text-muted-foreground/60 hover:text-petrol flex-shrink-0 p-1"
                   title="Kopieer naar klembord"
                 >
                   <Copy className="h-4 w-4" />
@@ -1288,12 +1286,12 @@ export function QuoteItemsTable({
 
                 {/* Beschrijving-regels (dynamisch) */}
                 <div className="px-4 py-3 border-b border-border dark:border-border">
-                  <div className="rounded-lg border border-[rgba(26,83,92,0.12)] dark:border-white/10 bg-white dark:bg-white/[0.03] divide-y divide-[rgba(26,83,92,0.08)] dark:divide-white/[0.06] overflow-hidden">
+                  <div className="divide-y divide-[rgba(26,83,92,0.08)] dark:divide-white/[0.06]">
                   {detailRegels.map((regel) => (
                     <div
                       key={regel.id}
                       className={cn(
-                        "flex items-center gap-2 group px-1 transition-colors hover:bg-[rgba(26,83,92,0.03)] dark:hover:bg-white/[0.03]",
+                        "flex items-center gap-2 group rounded-md transition-colors hover:bg-[rgba(26,83,92,0.03)] dark:hover:bg-white/[0.03]",
                         dragOverRegelId === regel.id && dragRegel?.itemId === item.id
                           ? "bg-[rgba(241,80,37,0.04)] ring-1 ring-[rgba(241,80,37,0.25)]"
                           : "",
@@ -1417,8 +1415,8 @@ export function QuoteItemsTable({
                               className={cn(
                                 'absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 rounded-md flex items-center justify-center transition-colors',
                                 item.heeft_calculatie
-                                  ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400'
-                                  : 'bg-muted text-muted-foreground hover:bg-blue-100 hover:text-blue-600 dark:bg-muted dark:text-muted-foreground/60 dark:hover:bg-blue-900/40 dark:hover:text-blue-400'
+                                  ? 'bg-[rgba(26,83,92,0.10)] text-petrol dark:bg-white/10 dark:text-foreground'
+                                  : 'bg-muted text-muted-foreground hover:bg-[rgba(26,83,92,0.10)] hover:text-petrol dark:bg-muted dark:text-muted-foreground/60 dark:hover:bg-white/10 dark:hover:text-foreground'
                               )}
                               title={item.heeft_calculatie ? 'Calculatie bewerken' : 'Calculatie openen'}
                             >
@@ -1515,7 +1513,7 @@ export function QuoteItemsTable({
                       <div className="mt-2 pt-2 border-t border-border dark:border-border">
                         <button
                           onClick={() => addPrijsVariant(item.id)}
-                          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-accent transition-colors"
+                          className="flex items-center gap-1.5 text-xs font-medium text-flame hover:text-[#D9421C] transition-colors"
                         >
                           <Copy className="h-3 w-3" />
                           Prijsvariant toevoegen
@@ -1625,8 +1623,8 @@ export function QuoteItemsTable({
                                     className={cn(
                                       'absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 rounded flex items-center justify-center transition-colors',
                                       variant.heeft_calculatie
-                                        ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400'
-                                        : 'bg-muted text-muted-foreground hover:bg-blue-100 hover:text-blue-600 dark:bg-muted dark:text-muted-foreground/60'
+                                        ? 'bg-[rgba(26,83,92,0.10)] text-petrol dark:bg-white/10 dark:text-foreground'
+                                        : 'bg-muted text-muted-foreground hover:bg-[rgba(26,83,92,0.10)] hover:text-petrol dark:bg-muted dark:text-muted-foreground/60'
                                     )}
                                     title={variant.heeft_calculatie ? 'Calculatie bewerken' : 'Calculatie openen'}
                                   >
@@ -1676,7 +1674,7 @@ export function QuoteItemsTable({
                               <div className="mt-1.5 pt-1.5 border-t border-border dark:border-border">
                                 <button
                                   onClick={() => openCalculatie(item.id, variant.id)}
-                                  className="text-2xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                                  className="text-2xs font-medium text-petrol dark:text-foreground/80 hover:underline flex items-center gap-1"
                                 >
                                   <Calculator className="h-2.5 w-2.5" />
                                   Calculatie: {variant.calculatie_regels.length} regels —
@@ -1715,7 +1713,7 @@ export function QuoteItemsTable({
                       {/* Variant toevoegen knop */}
                       <button
                         onClick={() => addPrijsVariant(item.id)}
-                        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-accent transition-colors pt-1"
+                        className="flex items-center gap-1.5 text-xs font-medium text-flame hover:text-[#D9421C] transition-colors pt-1"
                       >
                         <Plus className="h-3 w-3" />
                         Prijsvariant toevoegen
