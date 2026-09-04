@@ -368,11 +368,14 @@ export function WerkbonDetail() {
         || medewerkers.find((m) => !!user?.email && m.email?.toLowerCase() === user.email.toLowerCase())
         || null
       boekWerkbonUren({
-        werkbon: afgerondeWerkbon, afronder, medewerkers, settings,
+        werkbon: afgerondeWerkbon, afronder, afronderNaam: medewerkerNaam, medewerkers, settings,
         urenVelden: urenVeldenUitInstellingen(settings.calculatie_uren_velden),
       })
         .then((regels) => { if (regels.length > 0) toast.success(geboektMelding(regels)) })
-        .catch((err) => logger.warn('Kon werkbon-uren niet op het project boeken:', err))
+        .catch((err) => {
+          logger.warn('Kon werkbon-uren niet op het project boeken:', err)
+          toast.error('Uren niet op het project geboekt. Rond opnieuw af of voeg ze handmatig toe.')
+        })
 
       // Sluit gekoppelde montage automatisch · fire-and-forget, faalt stil
       if (montageAfspraakId) {

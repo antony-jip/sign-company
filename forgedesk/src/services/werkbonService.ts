@@ -184,6 +184,32 @@ export async function updateWerkbon(id: string, updates: Partial<Werkbon>): Prom
   return items[index]
 }
 
+/**
+ * Claimt het boeken van de werkbon-uren: zet `uren_geboekt_op` alleen als die
+ * nog leeg is. Geeft false als iemand anders (of een eerdere poging) al
+ * geclaimd heeft, zodat twee afronders tegelijk nooit dubbel boeken.
+ */
+export async function claimWerkbonUren(id: string): Promise<boolean> {
+  assertId(id)
+  const stempel = now()
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('werkbonnen')
+      .update({ uren_geboekt_op: stempel, updated_at: stempel })
+      .eq('id', id)
+      .is('uren_geboekt_op', null)
+      .select('id')
+    if (error) throw error
+    return (data?.length ?? 0) > 0
+  }
+  const items = getLocalData<Werkbon>('werkbonnen')
+  const index = items.findIndex((w) => w.id === id)
+  if (index === -1 || items[index].uren_geboekt_op) return false
+  items[index] = { ...items[index], uren_geboekt_op: stempel, updated_at: stempel }
+  setLocalData('werkbonnen', items)
+  return true
+}
+
 export async function deleteWerkbon(id: string): Promise<void> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {

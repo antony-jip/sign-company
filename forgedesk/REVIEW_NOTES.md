@@ -1555,3 +1555,36 @@ hieronder als opmerkingen.
   `telt_mee`, omgekeerde detailregel-match met leeg label) toegevoegd aan
   `tests/utils/offerteUren.test.ts`; `soort || 'prijs'` in pariteit met de
   editor.
+
+## Uren op de regel, sprint 1, fase 3 en 4 (2026-09-04)
+
+Gate-review op `f774e13c..a085ce9f` (merges 18c101aa en 985bd7ac, kaart-fix
+a085ce9f). Verdict BLOKKADE op één punt, gefixt; na fix
+AKKOORD-MET-OPMERKINGEN.
+
+- **Blokkade, gefixt.** `MontageAfspraak.monteurs` bevat medewerker-id's,
+  geen namen; `matchMonteurs` vergeleek op naam, dus verdelen over monteurs
+  matchte in productie nooit. Nu eerst op id, dan op naam (oude afspraken),
+  test aangepast naar id's plus één legacy-naam.
+- **Dubbel boeken bij storing halverwege, gefixt.** Volgorde is nu: claim de
+  werkbon met een conditionele update (`uren_geboekt_op` alleen als leeg,
+  `claimWerkbonUren`), boek alle regels in één insert
+  (`createTijdregistraties`), en draai bij een fout de claim terug en meld
+  het met een `toast.error`. Restrisico is "uren ontbreken, gemeld" in plaats
+  van "uren dubbel, stil". Twee afronders tegelijk kunnen ook niet meer
+  dubbel.
+- **Afronder zonder medewerker-record, gefixt.** `afronderNaam` als terugval
+  voor `medewerker_naam` (kantoor: profielnaam of e-mail; monteur: e-mail).
+- **Idempotentie hoofdletterongevoelig, gefixt.** `projectTakenService`
+  vergelijkt bewerkingen getrimd en in kleine letters.
+- **Offerte-keuze bij meerdere offertes**: de nieuwste meetellende (sortering
+  van `getOffertesByProject`), vastgelegd in een comment; het plan zei "eerste
+  goedgekeurde". Bij één offerte geen verschil.
+- **Open, opruimronde:** het budget wordt per projectopening tot drie keer
+  geladen (ProjectDetail voor de knop, de kaart voor zichzelf, en opnieuw bij
+  offerte-wijziging). Functioneel juist, twee queries per keer. `takenUit
+  OfferteMogelijk` kan uit `projectOffertes` + `kiesMeetellendeOffertes` en de
+  kaart kan het budget als prop krijgen.
+- **Open, nitpick:** "Uren verkocht" op de kaart rekent met het afgeronde
+  gemiddelde tarief per veld (centen-drift). Exact vraagt `prijsTotaal` per
+  veld uit `getProjectUrenBudget`.

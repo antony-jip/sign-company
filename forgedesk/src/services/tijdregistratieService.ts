@@ -33,6 +33,21 @@ export async function createTijdregistratie(entry: Omit<Tijdregistratie, 'id' | 
   return newEntry
 }
 
+/** Meerdere regels in één insert, zodat ze samen slagen of samen falen. */
+export async function createTijdregistraties(entries: Omit<Tijdregistratie, 'id' | 'created_at' | 'updated_at'>[]): Promise<Tijdregistratie[]> {
+  if (entries.length === 0) return []
+  if (isSupabaseConfigured() && supabase) {
+    const _orgId = await getOrgId()
+    const rijen = await Promise.all(entries.map(async (entry) => ({ ...await withUserId({ ...entry, created_at: now(), updated_at: now() }), organisatie_id: _orgId })))
+    const { data, error } = await supabase.from('tijdregistraties').insert(rijen).select()
+    if (error) throw error
+    return data
+  }
+  const uit: Tijdregistratie[] = []
+  for (const entry of entries) uit.push(await createTijdregistratie(entry))
+  return uit
+}
+
 export async function updateTijdregistratie(id: string, updates: Partial<Tijdregistratie>): Promise<Tijdregistratie> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {

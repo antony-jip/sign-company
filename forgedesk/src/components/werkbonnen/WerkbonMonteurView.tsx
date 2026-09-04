@@ -528,11 +528,14 @@ export function WerkbonMonteurView() {
         || medewerkers.find((m) => !!user?.email && m.email?.toLowerCase() === user.email.toLowerCase())
         || null
       boekWerkbonUren({
-        werkbon: afgerondeWerkbon, afronder, medewerkers, settings,
+        werkbon: afgerondeWerkbon, afronder, afronderNaam: user?.email || undefined, medewerkers, settings,
         urenVelden: urenVeldenUitInstellingen(settings.calculatie_uren_velden),
       })
         .then((regels) => { if (regels.length > 0) toast.success(geboektMelding(regels)) })
-        .catch((err) => logger.warn('Kon werkbon-uren niet op het project boeken:', err))
+        .catch((err) => {
+          logger.warn('Kon werkbon-uren niet op het project boeken:', err)
+          toast.error('Uren niet op het project geboekt. Rond opnieuw af of voeg ze handmatig toe.')
+        })
 
       if (werkbon.montage_afspraak_id) {
         getMontageAfspraak(werkbon.montage_afspraak_id)

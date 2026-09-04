@@ -23,10 +23,10 @@ export async function maakTakenUitBewerkingen(projectId: string, urenVelden: str
 
   const [project, bestaandeTaken] = await Promise.all([getProject(projectId), getTakenByProject(projectId)])
   if (!project) throw new Error('Project niet gevonden')
-  const bezetteVelden = new Set(bestaandeTaken.map((t) => t.urenveld).filter((v): v is string => !!v))
+  const bezetteVelden = new Set(bestaandeTaken.map((t) => t.urenveld?.trim().toLowerCase()).filter((v): v is string => !!v))
 
   for (const veld of veldenMetUren) {
-    if (bezetteVelden.has(veld)) {
+    if (bezetteVelden.has(veld.trim().toLowerCase())) {
       resultaat.overgeslagen.push(veld)
       continue
     }
@@ -35,6 +35,7 @@ export async function maakTakenUitBewerkingen(projectId: string, urenVelden: str
       beschrijving: '',
       project_id: projectId,
       klant_id: project.klant_id,
+      // Bij meerdere meetellende offertes de nieuwste (getOffertesByProject sorteert op created_at desc).
       offerte_id: budget.offerteIds[0],
       urenveld: veld,
       geschatte_tijd: round2(budget.perVeld[veld].uren),

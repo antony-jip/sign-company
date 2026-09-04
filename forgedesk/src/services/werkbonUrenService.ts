@@ -1,5 +1,5 @@
-import { createTijdregistratie } from './tijdregistratieService'
-import { updateWerkbon } from './werkbonService'
+import { createTijdregistraties } from './tijdregistratieService'
+import { claimWerkbonUren, updateWerkbon } from './werkbonService'
 import { getMontageAfspraak } from './planningService'
 import { getProjectUrenBudget, type ProjectUrenBudget } from './projectUrenService'
 import { kostprijsVoor, uurtariefVoorkeuze } from '@/utils/kostprijs'
@@ -9,6 +9,8 @@ import type { AppSettings, Medewerker, Tijdregistratie, Werkbon } from '@/types'
 export interface BoekWerkbonUrenInput {
   werkbon: Werkbon
   afronder: Medewerker | null
+  /** Naam voor de urenregel als de afronder geen medewerker-record heeft. */
+  afronderNaam?: string
   medewerkers: Medewerker[]
   settings: AppSettings
   urenVelden: string[]
@@ -26,12 +28,17 @@ export function verdeelMinuten(totaal: number, aantal: number): number[] {
   return Array.from({ length: aantal }, (_, i) => basis + (i === 0 ? rest : 0))
 }
 
-function matchMonteurs(namen: string[], medewerkers: Medewerker[]): Medewerker[] {
+/**
+ * `MontageAfspraak.monteurs` bevat medewerker-id's; oude afspraken kunnen nog
+ * namen bevatten. Eerst op id, dan op naam, zoals de planning zelf ook doet.
+ */
+export function matchMonteurs(monteurs: string[], medewerkers: Medewerker[]): Medewerker[] {
   const gevonden: Medewerker[] = []
-  for (const naam of namen) {
-    const sleutel = naam.trim().toLowerCase()
+  for (const monteur of monteurs) {
+    const sleutel = monteur.trim()
     if (!sleutel) continue
-    const medewerker = medewerkers.find((m) => m.naam.trim().toLowerCase() === sleutel)
+    const medewerker = medewerkers.find((m) => m.id === sleutel)
+      || medewerkers.find((m) => m.naam.trim().toLowerCase() === sleutel.toLowerCase())
     if (medewerker && !gevonden.includes(medewerker)) gevonden.push(medewerker)
   }
   return gevonden
@@ -63,11 +70,14 @@ export function geboektMelding(regels: Tijdregistratie[]): string {
 
 /**
  * Zet de gewerkte uren van een afgeronde werkbon om in urenregels op het
- * project. `uren_geboekt_op` voorkomt dubbel boeken bij opnieuw afronden.
- * Fouten worden doorgegooid; de aanroeper beslist wat hij ermee doet.
+ * project. Volgorde: eerst de werkbon claimen (`uren_geboekt_op` alleen zetten
+ * als die leeg is), dan alle regels in één insert. Faalt de insert, dan gaat
+ * de claim terug en gooit de functie, zodat de afronder een melding krijgt en
+ * opnieuw afronden alsnog boekt. Zo is het restrisico "uren ontbreken,
+ * gemeld" in plaats van "uren dubbel, stil".
  */
 export async function boekWerkbonUren(input: BoekWerkbonUrenInput): Promise<Tijdregistratie[]> {
-  const { werkbon, settings, urenVelden } = input
+  const { werkbon, settings, urenVelden, afronderNaam } = input
   const totaalMinuten = Math.round((werkbon.uren_gewerkt || 0) * 60)
   if (totaalMinuten <= 0 || !werkbon.project_id || werkbon.uren_geboekt_op) return []
 
@@ -78,26 +88,31 @@ export async function boekWerkbonUren(input: BoekWerkbonUrenInput): Promise<Tijd
   const minuten = verdeelMinuten(totaalMinuten, personen.length)
   const datum = werkbon.datum || new Date().toISOString().slice(0, 10)
 
-  const regels: Tijdregistratie[] = []
-  for (let i = 0; i < personen.length; i++) {
-    const medewerker = personen[i]
-    regels.push(await createTijdregistratie({
-      project_id: projectId,
-      urenveld: bewerking,
-      medewerker_id: medewerker?.id,
-      medewerker_naam: medewerker?.naam,
-      omschrijving: `Werkbon ${werkbon.werkbon_nummer}`,
-      datum,
-      start_tijd: '',
-      eind_tijd: '',
-      duur_minuten: minuten[i],
-      uurtarief: uurtariefVoorkeuze(tariefVanBewerking, medewerker, settings),
-      kostprijs_uur: kostprijsVoor(medewerker, settings),
-      facturabel: true,
-      gefactureerd: false,
-    }))
-  }
+  const entries = personen.map((medewerker, i) => ({
+    project_id: projectId,
+    urenveld: bewerking,
+    medewerker_id: medewerker?.id,
+    medewerker_naam: medewerker?.naam || afronderNaam || undefined,
+    omschrijving: `Werkbon ${werkbon.werkbon_nummer}`,
+    datum,
+    start_tijd: '',
+    eind_tijd: '',
+    duur_minuten: minuten[i],
+    uurtarief: uurtariefVoorkeuze(tariefVanBewerking, medewerker, settings),
+    kostprijs_uur: kostprijsVoor(medewerker, settings),
+    facturabel: true,
+    gefactureerd: false,
+  }))
 
-  await updateWerkbon(werkbon.id, { uren_geboekt_op: new Date().toISOString() })
-  return regels
+  const geclaimd = await claimWerkbonUren(werkbon.id)
+  if (!geclaimd) return []
+
+  try {
+    return await createTijdregistraties(entries)
+  } catch (err) {
+    await updateWerkbon(werkbon.id, { uren_geboekt_op: null }).catch((terugErr) => {
+      logger.warn('Kon claim op werkbon-uren niet terugdraaien:', terugErr)
+    })
+    throw err
+  }
 }
