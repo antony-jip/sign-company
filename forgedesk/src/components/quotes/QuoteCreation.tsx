@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { SuggestieInput } from './SuggestieInput'
 import { LEVERTIJD_SUGGESTIES, BETALINGSCONDITIE_SUGGESTIES } from '@/utils/defaults'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -2306,7 +2307,7 @@ export function QuoteCreation() {
         <div className="space-y-5 min-w-0">
           {/* ── Introductietekst ── */}
           <div className="doen-slate-surface rounded-2xl p-5">
-            <div className="flex items-baseline justify-between mb-3">
+            <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
               <h3 className="font-heading text-[15px] font-bold text-foreground">
                 Introductietekst<span className="doen-subtitel text-flame">.</span>
                 <span
@@ -2315,8 +2316,8 @@ export function QuoteCreation() {
                   optioneel
                 </span>
               </h3>
-            </div>
-            <div className="flex flex-wrap gap-1.5 mb-3">
+            {/* Sjablonen in de kopregel, zodat het blok één tekstvak hoog blijft. */}
+            <div className="flex flex-wrap gap-1.5">
               {[
                 { label: 'Standaard', tekst: offerteIntroTekst || `Beste ${selectedKlant?.contactpersoon || selectedKlant?.bedrijfsnaam || '{klant_naam}'}, hierbij ontvangt u onze offerte voor de door u gevraagde werkzaamheden.` },
                 { label: 'Na gesprek', tekst: `Geachte heer/mevrouw ${selectedKlant?.contactpersoon || selectedKlant?.bedrijfsnaam || '{klant_naam}'}, naar aanleiding van ons gesprek sturen wij u hierbij onze offerte.` },
@@ -2331,11 +2332,12 @@ export function QuoteCreation() {
                 </button>
               ))}
             </div>
+            </div>
             <Textarea
               value={introTekst}
               onChange={(e) => setIntroTekst(e.target.value)}
               placeholder="Beste ..., hierbij ontvangt u onze offerte voor..."
-              rows={3}
+              rows={2}
               className="resize-y text-sm bg-white dark:bg-white/[0.05] border border-[rgba(26,83,92,0.12)] dark:border-white/10 focus:bg-white dark:focus:bg-white/[0.07] focus-visible:border-petrol dark:focus-visible:border-white/30 focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] dark:focus-visible:ring-white/10 rounded-lg transition-colors"
             />
           </div>
@@ -2354,52 +2356,22 @@ export function QuoteCreation() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70">Levertijd</label>
-                <div className="flex flex-wrap gap-1.5">
-                  {LEVERTIJD_SUGGESTIES.map((suggestie) => (
-                    <button
-                      key={suggestie}
-                      type="button"
-                      onClick={() => setLevertijd(suggestie)}
-                      className={`text-[12px] font-medium px-2.5 py-1 rounded-full border transition-colors ${
-                        levertijd === suggestie
-                          ? 'border-petrol bg-petrol/10 text-petrol dark:border-white/30 dark:bg-white/10 dark:text-foreground'
-                          : 'border-[rgba(26,83,92,0.12)] dark:border-white/10 bg-white dark:bg-white/[0.05] text-foreground/70 hover:bg-[rgba(26,83,92,0.05)] dark:hover:bg-white/[0.08] hover:border-[rgba(26,83,92,0.22)] dark:hover:border-white/20 hover:text-petrol dark:hover:text-foreground'
-                      }`}
-                    >
-                      {suggestie}
-                    </button>
-                  ))}
-                </div>
-                <Input
+                <SuggestieInput
+                  label="Levertijd"
                   value={levertijd}
-                  onChange={(e) => setLevertijd(e.target.value)}
+                  onChange={setLevertijd}
+                  suggesties={LEVERTIJD_SUGGESTIES}
                   placeholder="In overleg"
-                  className="text-sm bg-white dark:bg-white/[0.05] border border-[rgba(26,83,92,0.12)] dark:border-white/10 focus-visible:border-petrol dark:focus-visible:border-white/30 focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] dark:focus-visible:ring-white/10 rounded-lg transition-colors"
                 />
               </div>
               <div className="space-y-1.5">
                 <label className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70">Betalingsconditie</label>
-                <div className="flex flex-wrap gap-1.5">
-                  {BETALINGSCONDITIE_SUGGESTIES.map((suggestie) => (
-                    <button
-                      key={suggestie}
-                      type="button"
-                      onClick={() => setBetalingsconditie(suggestie)}
-                      className={`text-[12px] font-medium px-2.5 py-1 rounded-full border transition-colors ${
-                        betalingsconditie === suggestie
-                          ? 'border-petrol bg-petrol/10 text-petrol dark:border-white/30 dark:bg-white/10 dark:text-foreground'
-                          : 'border-[rgba(26,83,92,0.12)] dark:border-white/10 bg-white dark:bg-white/[0.05] text-foreground/70 hover:bg-[rgba(26,83,92,0.05)] dark:hover:bg-white/[0.08] hover:border-[rgba(26,83,92,0.22)] dark:hover:border-white/20 hover:text-petrol dark:hover:text-foreground'
-                      }`}
-                    >
-                      {suggestie}
-                    </button>
-                  ))}
-                </div>
-                <Input
+                <SuggestieInput
+                  label="Betalingsconditie"
                   value={betalingsconditie}
-                  onChange={(e) => setBetalingsconditie(e.target.value)}
+                  onChange={setBetalingsconditie}
+                  suggesties={BETALINGSCONDITIE_SUGGESTIES}
                   placeholder="Betaling binnen 30 dagen na factuurdatum."
-                  className="text-sm bg-white dark:bg-white/[0.05] border border-[rgba(26,83,92,0.12)] dark:border-white/10 focus-visible:border-petrol dark:focus-visible:border-white/30 focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] dark:focus-visible:ring-white/10 rounded-lg transition-colors"
                 />
               </div>
             </div>
@@ -2463,79 +2435,14 @@ export function QuoteCreation() {
             </div>
           </div>
 
-          {/* ── Notities & Voorwaarden ── */}
-          <div className="doen-slate-surface rounded-2xl p-5">
-            <div className="flex items-baseline justify-between mb-3">
-              <h3 className="font-heading text-[15px] font-bold text-foreground">
-                Notities &amp; voorwaarden<span className="text-flame">.</span>
-              </h3>
-            </div>
-            <div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70">Notities</label>
-                  <Textarea
-                    value={notities}
-                    onChange={(e) => setNotities(e.target.value)}
-                    placeholder="Interne notities of opmerkingen voor de klant..."
-                    rows={9}
-                    className="resize-y text-sm bg-white dark:bg-white/[0.05] border border-[rgba(26,83,92,0.12)] dark:border-white/10 focus:bg-white dark:focus:bg-white/[0.07] focus-visible:border-petrol dark:focus-visible:border-white/30 focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] dark:focus-visible:ring-white/10 rounded-lg transition-colors"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <div className="flex items-baseline justify-between gap-3">
-                    <label className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70">Voorwaarden</label>
-                    {voorwaarden !== settings.offerte_voorwaarden && (
-                      <div className="flex items-center gap-2.5">
-                        <button
-                          type="button"
-                          onClick={() => setVoorwaarden(settings.offerte_voorwaarden)}
-                          className="text-[11px] text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          Standaard terugzetten
-                        </button>
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            try {
-                              await updateSettings({ offerte_voorwaarden: voorwaarden })
-                              toast.success('Voorwaarden opgeslagen als standaard')
-                            } catch (err) {
-                              logger.error('Voorwaarden opslaan als standaard mislukt:', err)
-                              toast.error('Opslaan als standaard is niet gelukt')
-                            }
-                          }}
-                          className="text-[11px] font-medium text-petrol hover:underline"
-                        >
-                          Als standaard opslaan
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                  <Textarea
-                    value={voorwaarden}
-                    onChange={(e) => setVoorwaarden(e.target.value)}
-                    rows={9}
-                    className="resize-y text-sm bg-white dark:bg-white/[0.05] border border-[rgba(26,83,92,0.12)] dark:border-white/10 focus:bg-white dark:focus:bg-white/[0.07] focus-visible:border-petrol dark:focus-visible:border-white/30 focus-visible:ring-[3px] focus-visible:ring-[rgba(26,83,92,0.12)] dark:focus-visible:ring-white/10 rounded-lg transition-colors"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* ── Afsluittekst ── */}
           <div className="doen-slate-surface rounded-2xl p-5">
-            <div className="flex items-baseline justify-between mb-3">
+            <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
               <h3 className="font-heading text-[15px] font-bold text-foreground">
                 Afsluittekst<span className="doen-subtitel text-flame">.</span>
-                <span
-                  className="ml-2 text-[12px] text-muted-foreground font-normal"
-                >
-                  optioneel
-                </span>
+                <span className="ml-2 text-[12px] text-muted-foreground font-normal">optioneel</span>
               </h3>
-            </div>
-            <div className="flex flex-wrap gap-1.5 mb-3">
+              <div className="flex flex-wrap gap-1.5">
               {[
                 { label: 'Standaard', tekst: offerteOutroTekst || 'Wij zien uw reactie graag tegemoet.' },
                 { label: 'Met vragen', tekst: 'Mocht u vragen hebben of aanvullende informatie wensen, neem dan gerust contact met ons op.' },
@@ -2549,6 +2456,7 @@ export function QuoteCreation() {
                   {tmpl.label}
                 </button>
               ))}
+              </div>
             </div>
             <Textarea
               value={outroTekst}
