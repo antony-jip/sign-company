@@ -31,6 +31,10 @@ function avatarGradient(name: string): string {
   return colors[Math.abs(hash) % colors.length]
 }
 
+function formatUren(u: number): string {
+  return u.toLocaleString('nl-NL', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
+}
+
 function formatDeadline(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit' })
 }
@@ -99,6 +103,21 @@ export function TaskChecklistView({ taken, medewerkers, onStatusChange, onTaskCl
               )}>
                 {taak.titel}
               </span>
+
+              {taak.urenveld && taak.urenveld !== taak.titel && (
+                <span
+                  className="text-[10px] font-medium text-petrol bg-[rgba(26,83,92,0.08)] rounded px-1.5 py-0.5 flex-shrink-0 truncate max-w-[110px]"
+                  title={`Bewerking ${taak.urenveld}`}
+                >
+                  {taak.urenveld}
+                </span>
+              )}
+
+              {taak.geschatte_tijd > 0 && (
+                <span className="text-[10px] font-mono tabular-nums text-muted-foreground flex-shrink-0" title="Geschatte uren">
+                  {formatUren(taak.geschatte_tijd)} u
+                </span>
+              )}
 
               {!isDone && (
                 <span className="text-[10px] font-medium flex-shrink-0" style={{ color: st.color }}>
