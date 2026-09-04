@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ListChecks, Receipt, Plus, Trash2, Wrench, CalendarDays, MapPin, ClipboardCheck } from 'lucide-react'
+import { ListChecks, ListPlus, Receipt, Plus, Trash2, Wrench, CalendarDays, MapPin, ClipboardCheck } from 'lucide-react'
 import { formatAmount, getInitials } from '@/lib/utils'
 import { exBtw } from '@/utils/btwWeergave'
 import { getStatusPillClass, getStatusPillTone, getStatusLabel, type PillTone } from '@/utils/statusColors'
@@ -53,6 +53,9 @@ interface TakenOfferteGridProps {
   onMontageDelete?: (m: MontageAfspraak) => Promise<void> | void
   onNewMontage?: () => void
   onNewTaak: () => void
+  /** Maakt per verkochte bewerking een taak; alleen zichtbaar als takenUitOfferteMogelijk. */
+  onTakenUitOfferte?: () => Promise<void> | void
+  takenUitOfferteMogelijk?: boolean
   onNewOfferte: () => void
   onTaakStatusChange: (taakId: string, newStatus: Taak['status']) => Promise<void>
   onTaakEdit?: (taak: Taak) => void
@@ -76,6 +79,8 @@ export function TakenOfferteGrid({
   onMontageDelete,
   onNewMontage,
   onNewTaak,
+  onTakenUitOfferte,
+  takenUitOfferteMogelijk = false,
   onNewOfferte,
   onTaakStatusChange,
   onTaakEdit,
@@ -92,6 +97,17 @@ export function TakenOfferteGrid({
   const [editingPriceId, setEditingPriceId] = useState<string | null>(null)
   const [priceInput, setPriceInput] = useState('')
   const [savingPrice, setSavingPrice] = useState(false)
+  const [takenUitOfferteBezig, setTakenUitOfferteBezig] = useState(false)
+
+  async function handleTakenUitOfferte() {
+    if (!onTakenUitOfferte || takenUitOfferteBezig) return
+    setTakenUitOfferteBezig(true)
+    try {
+      await onTakenUitOfferte()
+    } finally {
+      setTakenUitOfferteBezig(false)
+    }
+  }
 
   // Montage-monteurs worden als medewerker-id opgeslagen; toon de naam i.p.v. de id.
   const monteurNaam = (idOrNaam: string) => medewerkers.find((mw) => mw.id === idOrNaam)?.naam || idOrNaam
@@ -154,6 +170,18 @@ export function TakenOfferteGrid({
               >
                 <Wrench className="h-3 w-3" strokeWidth={2} />
                 Montage
+              </button>
+            )}
+            {onTakenUitOfferte && takenUitOfferteMogelijk && (
+              <button
+                type="button"
+                onClick={() => void handleTakenUitOfferte()}
+                disabled={takenUitOfferteBezig}
+                title="Per verkochte bewerking een taak aanmaken"
+                className="inline-flex items-center gap-1 text-[12px] font-semibold text-petrol hover:text-[#0F3D44] hover:underline transition-colors disabled:opacity-50 disabled:no-underline"
+              >
+                <ListPlus className="h-3 w-3" strokeWidth={2} />
+                {takenUitOfferteBezig ? 'Taken aanmaken.' : 'Taken uit offerte'}
               </button>
             )}
             <button
