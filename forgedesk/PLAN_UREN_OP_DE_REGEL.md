@@ -392,7 +392,8 @@ Aanvullingen na eigen review, akkoord Antony (4 sep):
    voorgevuld: uit de taak, anders de enige bewerking met open budget, anders
    leeg.
 
-Status: **in aanbouw** op branch `feature/uren-op-de-regel` (afgezet van
+Status: **klaar voor merge naar main**, twee gate-reviews verwerkt (zie
+REVIEW_NOTES.md, 4 sep). Branch `feature/uren-op-de-regel` (afgezet van
 `main`, dat bij migratie 230 stopt; 231 en 232 zitten op `supabase-dieet`,
 233 blijft uniek op beide).
 
