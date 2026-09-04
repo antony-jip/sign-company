@@ -1287,12 +1287,13 @@ export function QuoteItemsTable({
                 </div>
 
                 {/* Beschrijving-regels (dynamisch) */}
-                <div className="px-4 py-3 space-y-0.5 border-b border-border dark:border-border">
+                <div className="px-4 py-3 border-b border-border dark:border-border">
+                  <div className="rounded-lg border border-[rgba(26,83,92,0.12)] dark:border-white/10 bg-white dark:bg-white/[0.03] divide-y divide-[rgba(26,83,92,0.08)] dark:divide-white/[0.06] overflow-hidden">
                   {detailRegels.map((regel) => (
                     <div
                       key={regel.id}
                       className={cn(
-                        "flex items-center gap-2 group rounded-md transition-colors",
+                        "flex items-center gap-2 group px-1 transition-colors hover:bg-[rgba(26,83,92,0.03)] dark:hover:bg-white/[0.03]",
                         dragOverRegelId === regel.id && dragRegel?.itemId === item.id
                           ? "bg-[rgba(241,80,37,0.04)] ring-1 ring-[rgba(241,80,37,0.25)]"
                           : "",
@@ -1317,8 +1318,8 @@ export function QuoteItemsTable({
                       <Input
                         value={regel.label}
                         onChange={(e) => updateDetailRegelField(item.id, regel.id, 'label', e.target.value)}
-                        placeholder="LABEL"
-                        className="w-32 flex-shrink-0 h-7 text-[11px] uppercase tracking-wider font-semibold text-muted-foreground bg-transparent dark:bg-transparent border-transparent dark:border-transparent hover:bg-[rgba(26,83,92,0.04)] focus-visible:bg-[rgba(26,83,92,0.06)] focus-visible:ring-0 focus-visible:border-transparent shadow-none px-2 placeholder:text-muted-foreground/50 placeholder:font-semibold placeholder:tracking-wider"
+                        placeholder="Label"
+                        className="w-32 flex-shrink-0 h-8 text-[12px] font-semibold text-petrol dark:text-foreground/80 bg-transparent dark:bg-transparent border-transparent dark:border-transparent hover:bg-[rgba(26,83,92,0.04)] focus-visible:bg-[rgba(26,83,92,0.06)] focus-visible:ring-0 focus-visible:border-transparent shadow-none px-2 rounded-md placeholder:text-muted-foreground/40 placeholder:font-normal"
                       />
 
                       {/* Waarde · with autofill for omschrijving/materiaal/lay-out/montage */}
@@ -1327,15 +1328,15 @@ export function QuoteItemsTable({
                           field={labelToAutofillField(regel.label)!}
                           value={regel.waarde}
                           onChange={(val) => updateDetailRegelField(item.id, regel.id, 'waarde', val)}
-                          placeholder="Vul in..."
-                          className="flex-1 h-8 text-sm"
+                          placeholder="Vul in"
+                          className="flex-1 h-8 text-sm text-foreground bg-transparent dark:bg-transparent border-0 rounded-none shadow-none px-2 focus-visible:ring-0 focus-visible:bg-[rgba(26,83,92,0.05)] dark:focus-visible:bg-white/[0.06] placeholder:text-muted-foreground/40 transition-colors"
                         />
                       ) : (
                         <Input
                           value={regel.waarde}
                           onChange={(e) => updateDetailRegelField(item.id, regel.id, 'waarde', e.target.value)}
-                          placeholder="Vul in..."
-                          className="flex-1 h-8 text-sm"
+                          placeholder="Vul in"
+                          className="flex-1 h-8 text-sm text-foreground bg-transparent dark:bg-transparent border-0 rounded-none shadow-none px-2 focus-visible:ring-0 focus-visible:bg-[rgba(26,83,92,0.05)] dark:focus-visible:bg-white/[0.06] placeholder:text-muted-foreground/40 transition-colors"
                         />
                       )}
 
@@ -1358,6 +1359,7 @@ export function QuoteItemsTable({
                       </div>
                     </div>
                   ))}
+                  </div>
 
                   {/* Rij toevoegen · Flame text-link stijl */}
                   <button
@@ -1476,11 +1478,11 @@ export function QuoteItemsTable({
                         <div className="mt-2 pt-2 border-t border-border dark:border-border">
                           <button
                             onClick={() => openCalculatie(item.id)}
-                            className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                            className="text-xs font-medium text-petrol dark:text-foreground/80 hover:underline flex items-center gap-1"
                           >
                             <Calculator className="h-3 w-3" />
-                            Calculatie: {item.calculatie_regels.length} regels —
-                            Inkoop {formatCurrency(round2(item.calculatie_regels.reduce((s, r) => s + r.inkoop_prijs * r.aantal, 0)))} |
+                            Calculatie: {item.calculatie_regels.length} regels ·
+                            Inkoop {formatCurrency(round2(item.calculatie_regels.reduce((s, r) => s + r.inkoop_prijs * r.aantal, 0)))} ·
                             Verkoop {formatCurrency(round2(item.calculatie_regels.reduce((s, r) => s + r.verkoop_prijs * r.aantal, 0)))}
                           </button>
 
