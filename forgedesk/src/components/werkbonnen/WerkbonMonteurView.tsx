@@ -35,6 +35,8 @@ import {
   fotoOpnieuwProberen, WACHTRIJ_GEWIJZIGD, isFotoPayload,
 } from '@/utils/werkbonFotoWachtrij'
 import { generateWerkbonInstructiePDF } from '@/services/werkbonPdfService'
+import { boekWerkbonUren, geboektMelding } from '@/services/werkbonUrenService'
+import { urenVeldenUitInstellingen } from '@/utils/offerteUren'
 import { WerkbonMonteurFeedback } from './WerkbonMonteurFeedback'
 
 const PdfPreviewDialog = React.lazy(() =>
@@ -76,7 +78,7 @@ export function WerkbonMonteurView() {
   const { user, organisatieId } = useAuth()
   const { medewerkers } = useMedewerkers()
   const {
-    profile, primaireKleur,
+    settings, profile, primaireKleur,
     werkbonMonteurUren, werkbonMonteurOpmerkingen,
     werkbonMonteurFotos, werkbonKlantHandtekening,
   } = useAppSettings()
@@ -509,7 +511,7 @@ export function WerkbonMonteurView() {
       setIsSaving(true)
       const medewerkerNaam = profile?.naam || user?.email || 'Onbekend'
       const nieuweOpmerkingen = opmerkingenMetAfronder(monteurOpmerkingen, medewerkerNaam)
-      await updateWerkbon(werkbon.id, {
+      const afgerondeWerkbon = await updateWerkbon(werkbon.id, {
         status: 'afgerond',
         uren_gewerkt: urenGewerkt,
         monteur_opmerkingen: nieuweOpmerkingen,
@@ -521,6 +523,16 @@ export function WerkbonMonteurView() {
       setWerkbon((prev) => prev ? { ...prev, status: 'afgerond' } : prev)
       setDirty(false)
       toast.success('Werkbon afgerond')
+
+      const afronder = medewerkers.find((m) => m.user_id === user?.id)
+        || medewerkers.find((m) => !!user?.email && m.email?.toLowerCase() === user.email.toLowerCase())
+        || null
+      boekWerkbonUren({
+        werkbon: afgerondeWerkbon, afronder, medewerkers, settings,
+        urenVelden: urenVeldenUitInstellingen(settings.calculatie_uren_velden),
+      })
+        .then((regels) => { if (regels.length > 0) toast.success(geboektMelding(regels)) })
+        .catch((err) => logger.warn('Kon werkbon-uren niet op het project boeken:', err))
 
       if (werkbon.montage_afspraak_id) {
         getMontageAfspraak(werkbon.montage_afspraak_id)
@@ -538,7 +550,7 @@ export function WerkbonMonteurView() {
       setIsSaving(false)
     }
     bumpPreview()
-  }, [werkbon, urenGewerkt, monteurOpmerkingen, handtekeningData, klantNaamGetekend, profile, user, setDirty, bumpPreview, mislukteFotos])
+  }, [werkbon, urenGewerkt, monteurOpmerkingen, handtekeningData, klantNaamGetekend, profile, user, setDirty, bumpPreview, mislukteFotos, medewerkers, settings])
 
   const generatePreviewPdf = useCallback(async (): Promise<Blob> => {
     if (!werkbon) throw new Error('Werkbon niet geladen')

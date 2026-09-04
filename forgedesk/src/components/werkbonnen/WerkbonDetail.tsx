@@ -33,7 +33,9 @@ import {
   getMontageAfspraak, updateMontageAfspraak,
 } from '@/services/supabaseService'
 import { generateWerkbonInstructiePDF } from '@/services/werkbonPdfService'
+import { boekWerkbonUren, geboektMelding } from '@/services/werkbonUrenService'
 import { uploadFile } from '@/services/storageService'
+import { urenVeldenUitInstellingen } from '@/utils/offerteUren'
 import { resolveWerkbonUrl, resizeWerkbonImage, opmerkingenMetAfronder } from '@/utils/werkbonMedia'
 import { sanitizeStorageFilename } from '@/utils/storageHelpers'
 import { pdfEerstePaginaNaarImage } from '@/utils/pdfToImage'
@@ -74,7 +76,7 @@ export function WerkbonDetail() {
   const { user } = useAuth()
   const { medewerkers } = useMedewerkers()
   const {
-    profile, primaireKleur,
+    settings, profile, primaireKleur,
     werkbonMonteurUren, werkbonMonteurOpmerkingen,
     werkbonMonteurFotos, werkbonKlantHandtekening, werkbonBriefpapier,
     werkbonCanvasVersie,
@@ -338,7 +340,7 @@ export function WerkbonDetail() {
       const medewerkerNaam = profile?.naam || user?.email || 'Onbekend'
       // Volledige payload meesturen (incl. header-velden), anders gaan
       // niet-opgeslagen wijzigingen aan titel/locatie/contact/datum verloren.
-      await updateWerkbon(werkbonId, {
+      const afgerondeWerkbon = await updateWerkbon(werkbonId, {
         klant_id: klantId,
         project_id: projectId || undefined,
         offerte_id: offerteId || undefined,
@@ -361,6 +363,17 @@ export function WerkbonDetail() {
       setDirty(false)
       toast.success('Werkbon afgerond')
 
+      // Gewerkte uren naar het project · fire-and-forget, faalt stil
+      const afronder = medewerkers.find((m) => m.user_id === user?.id)
+        || medewerkers.find((m) => !!user?.email && m.email?.toLowerCase() === user.email.toLowerCase())
+        || null
+      boekWerkbonUren({
+        werkbon: afgerondeWerkbon, afronder, medewerkers, settings,
+        urenVelden: urenVeldenUitInstellingen(settings.calculatie_uren_velden),
+      })
+        .then((regels) => { if (regels.length > 0) toast.success(geboektMelding(regels)) })
+        .catch((err) => logger.warn('Kon werkbon-uren niet op het project boeken:', err))
+
       // Sluit gekoppelde montage automatisch · fire-and-forget, faalt stil
       if (montageAfspraakId) {
         getMontageAfspraak(montageAfspraakId)
@@ -382,6 +395,7 @@ export function WerkbonDetail() {
     werkbonId, klantId, projectId, offerteId, titel, locatieAdres, locatieStad, locatiePostcode,
     contactNaam, contactTelefoon, datum, toonBriefpapier, urenGewerkt, monteurOpmerkingen,
     handtekeningData, klantNaamGetekend, profile, user, setDirty, montageAfspraakId, bumpPreview,
+    medewerkers, settings,
   ])
 
   // Item toevoegen · auto-save werkbon als die nog niet bestaat
