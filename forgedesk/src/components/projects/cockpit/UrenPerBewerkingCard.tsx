@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Gauge } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, formatCurrency } from '@/lib/utils'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
+import { useAuth } from '@/contexts/AuthContext'
+import { isAdminUser } from '@/utils/authHelpers'
 import { getProjectUrenBudget, geschrevenMinutenPerVeld, OVERIG, type ProjectUrenBudget } from '@/services/projectUrenService'
 import { urenVeldenUitInstellingen } from '@/utils/offerteUren'
+import { round2 } from '@/utils/budgetUtils'
 import { logger } from '@/utils/logger'
 import type { Tijdregistratie } from '@/types'
 
@@ -19,8 +22,55 @@ interface Rij {
   geschreven: number
 }
 
+interface Kosten {
+  /** Verkochte uren tegen het offertetarief; null zonder meetellend budget. */
+  verkocht: number | null
+  urenkosten: number
+  regelsZonderKostprijs: number
+}
+
 function formatUren(u: number): string {
   return u.toLocaleString('nl-NL', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
+}
+
+/**
+ * Rekent met de kostprijs-momentopname op de urenregel, anders de
+ * organisatie-standaard. Is er nergens een kostprijs bekend, dan is er geen
+ * kostenblok: liever niets dan een verzonnen getal.
+ */
+function berekenKosten(
+  registraties: Tijdregistratie[],
+  budget: ProjectUrenBudget | null,
+  standaardKostprijs: number | null | undefined,
+): Kosten | null {
+  const standaard = typeof standaardKostprijs === 'number' && standaardKostprijs > 0 ? standaardKostprijs : null
+  const kostprijsBekend = standaard !== null || registraties.some((r) => typeof r.kostprijs_uur === 'number' && r.kostprijs_uur > 0)
+  if (!kostprijsBekend) return null
+
+  let urenkosten = 0
+  let regelsZonderKostprijs = 0
+  for (const r of registraties) {
+    const minuten = r.duur_minuten || 0
+    if (minuten <= 0) continue
+    const kostprijs = typeof r.kostprijs_uur === 'number' && r.kostprijs_uur > 0 ? r.kostprijs_uur : standaard
+    if (kostprijs === null) { regelsZonderKostprijs++; continue }
+    urenkosten += (minuten / 60) * kostprijs
+  }
+
+  const verkocht = budget && budget.soort !== 'geen'
+    ? Object.values(budget.perVeld).reduce((s, v) => s + v.uren * v.tarief, 0)
+    : null
+
+  return { verkocht: verkocht === null ? null : round2(verkocht), urenkosten: round2(urenkosten), regelsZonderKostprijs }
+}
+
+function KostenRegel({ label, bedrag, nadruk }: { label: string; bedrag: number; nadruk?: boolean }) {
+  return (
+    <div className={cn('flex items-baseline justify-between gap-3', nadruk ? 'text-foreground font-medium' : 'text-muted-foreground')}>
+      <span>{label}</span>
+      <span className="font-mono tabular-nums">{formatCurrency(bedrag)}</span>
+    </div>
+  )
 }
 
 /**
@@ -29,6 +79,7 @@ function formatUren(u: number): string {
  */
 export function UrenPerBewerkingCard({ projectId, tijdregistraties }: UrenPerBewerkingCardProps) {
   const { settings } = useAppSettings()
+  const { userRol } = useAuth()
   const urenVelden = useMemo(() => urenVeldenUitInstellingen(settings.calculatie_uren_velden), [settings.calculatie_uren_velden])
   const [budget, setBudget] = useState<ProjectUrenBudget | null>(null)
 
@@ -57,9 +108,17 @@ export function UrenPerBewerkingCard({ projectId, tijdregistraties }: UrenPerBew
     return uit
   }, [urenVelden, geschreven, budget])
 
+  const kosten = useMemo(
+    () => (isAdminUser(userRol) ? berekenKosten(tijdregistraties, budget, settings.standaard_kostprijs_uur) : null),
+    [userRol, tijdregistraties, budget, settings.standaard_kostprijs_uur],
+  )
+
   if (rijen.length === 0) return null
 
   const verwacht = budget?.soort === 'verwacht'
+  const verkocht = kosten?.verkocht ?? null
+  const marge = kosten && verkocht !== null ? round2(verkocht - kosten.urenkosten) : null
+  const margePct = marge !== null && verkocht ? Math.round((marge / verkocht) * 100) : null
   const totaalBegroot = rijen.reduce((s, r) => s + r.begroot, 0)
   const totaalGeschreven = rijen.reduce((s, r) => s + r.geschreven, 0)
 
@@ -97,6 +156,26 @@ export function UrenPerBewerkingCard({ projectId, tijdregistraties }: UrenPerBew
           <div className="flex items-baseline justify-between border-t pt-2 text-xs text-muted-foreground">
             <span>Totaal</span>
             <span className="tabular-nums">{formatUren(totaalGeschreven)} / {formatUren(totaalBegroot)} u</span>
+          </div>
+        )}
+        {kosten && (
+          <div className="space-y-1 border-t pt-2 text-xs">
+            {kosten.verkocht !== null && <KostenRegel label="Uren verkocht ex btw" bedrag={kosten.verkocht} />}
+            <KostenRegel label="Urenkosten" bedrag={kosten.urenkosten} />
+            {marge !== null && (
+              <div className="flex items-baseline justify-between gap-3 font-medium">
+                <span>Indicatie marge</span>
+                <span className="font-mono tabular-nums">
+                  {formatCurrency(marge)}
+                  {margePct !== null && <span className="ml-2 font-sans text-muted-foreground">{margePct}%</span>}
+                </span>
+              </div>
+            )}
+            {kosten.regelsZonderKostprijs > 0 && (
+              <p className="text-[11px] text-muted-foreground">
+                {kosten.regelsZonderKostprijs === 1 ? '1 urenregel' : `${kosten.regelsZonderKostprijs} urenregels`} zonder kostprijs niet meegeteld
+              </p>
+            )}
           </div>
         )}
       </CardContent>
