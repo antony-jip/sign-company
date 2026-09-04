@@ -85,6 +85,8 @@ export function UrenPerBewerkingCard({ projectId, tijdregistraties }: UrenPerBew
 
   useEffect(() => {
     let actief = true
+    // Eerst leeg, anders staan bij een projectwissel even de balken van het vorige project onder de uren van dit project.
+    setBudget(null)
     getProjectUrenBudget(projectId, urenVelden)
       .then((b) => { if (actief) setBudget(b) })
       .catch((err) => logger.warn('Kon urenbudget van project niet laden:', err))
@@ -127,7 +129,7 @@ export function UrenPerBewerkingCard({ projectId, tijdregistraties }: UrenPerBew
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center justify-between text-sm font-medium">
           <span className="flex items-center gap-2"><Gauge className="h-4 w-4" />Uren per bewerking</span>
-          {verwacht && <span className="text-[11px] font-normal text-muted-foreground">verwacht, nog geen akkoord</span>}
+          {verwacht && totaalBegroot > 0 && <span className="text-[11px] font-normal text-muted-foreground">verwacht, nog geen akkoord</span>}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">

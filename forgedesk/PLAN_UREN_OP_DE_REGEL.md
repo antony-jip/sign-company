@@ -401,8 +401,8 @@ Status: **in aanbouw** op branch `feature/uren-op-de-regel` (afgezet van
 | 0 Fundament | `8d55a007` | klaar; migratie 233 gedraaid op productie, 4 sep 2026 |
 | 1 Budget op het project | `0594fdb3` | klaar; util met oracle-test, kaart naast TijdCard, bewerking op catalogusproduct |
 | 2 Schrijven met bewerking | `07ddaf37` | klaar; urenformulier, inklokpaneel, TijdCard en taakdialoog. Bewust niet: `TaakNieuwSheet` (mobiele snelinvoer zonder project); taken uit de offerte krijgen hun bewerking via fase 3 |
-| 3 Taken uit bewerkingen | | in aanbouw door agent, branch `feature/uren-fase-3` |
-| 4 Werkbon en kostprijs | | in aanbouw door agent, branch `feature/uren-fase-4` |
+| 3 Taken uit bewerkingen | `18c101aa` (merge) | klaar; knop Taken uit offerte, idempotent per bewerking, schatting en bewerking zichtbaar op de checklist. Bewust zonder deadline op gegenereerde taken; geen unieke constraint op (project, bewerking), dus twee gebruikers tegelijk kunnen dubbel aanmaken |
+| 4 Werkbon en kostprijs | `985bd7ac` (merge) | klaar; werkbon-uren als urenregels via beide afrond-paden (WerkbonDetail en WerkbonMonteurView), verdelen over gematchte monteurs als de instelling aan staat, kostenblok admin-only met "N urenregels zonder kostprijs niet meegeteld". Bewust: geen materiaalregel in de marge (materiaalKosten is verkoopwaarde, geen inkoop), dus het blok heet "Uren verkocht", "Urenkosten", "Indicatie marge" op uren. Partiële boeking bij een storing halverwege kan dubbel boeken bij opnieuw afronden; zichtbaar via de omschrijving "Werkbon WB-…" |
 
 Let op vóór mergen naar `main`: draai migratie 233 eerst. Zonder de kolommen
 falen het opslaan van een product (urenveld), een medewerker (kostprijs_uur),
