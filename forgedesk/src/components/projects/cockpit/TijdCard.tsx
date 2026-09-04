@@ -1,8 +1,10 @@
 import { useState } from 'react'
-import { Play, Square, AlertTriangle } from 'lucide-react'
+import { Play, Square, AlertTriangle, ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
 import { useTijdSessies } from '@/hooks/useTijdSessies'
+import { cn } from '@/lib/utils'
+import { UrenPerBewerking } from './UrenPerBewerkingCard'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { urenVeldenUitInstellingen } from '@/utils/offerteUren'
 import type { Medewerker, Tijdregistratie, TijdSessie } from '@/types'
@@ -159,18 +161,7 @@ export function TijdCard({ projectId, projectNaam, eigenMedewerker, medewerkers,
           </button>
         </div>
       ) : (
-        <div className="space-y-2">
-          <select
-            value={urenveld}
-            onChange={(e) => setUrenveld(e.target.value)}
-            aria-label="Bewerking"
-            className="h-9 w-full rounded-lg border border-border bg-background px-2.5 text-[13px] text-foreground"
-          >
-            <option value="">Bewerking: overig</option>
-            {urenVelden.map((v) => (
-              <option key={v} value={v}>{v}</option>
-            ))}
-          </select>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <button
             type="button"
             onClick={handleInklokken}
@@ -180,6 +171,25 @@ export function TijdCard({ projectId, projectNaam, eigenMedewerker, medewerkers,
             <Play className="h-3.5 w-3.5" strokeWidth={2.25} />
             Inklokken
           </button>
+          {/* Bewerking is optioneel en niet elk bedrijf houdt het bij: daarom een
+              tekst-chevron naast de knop, geen veld dat een rij opeist. */}
+          <span className="relative inline-flex items-center">
+            <select
+              value={urenveld}
+              onChange={(e) => setUrenveld(e.target.value)}
+              aria-label="Bewerking"
+              className={cn(
+                'appearance-none bg-transparent pr-4 text-[12px] cursor-pointer focus:outline-none',
+                urenveld ? 'text-foreground font-medium' : 'text-muted-foreground',
+              )}
+            >
+              <option value="">Bewerking</option>
+              {urenVelden.map((v) => (
+                <option key={v} value={v}>{v}</option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-0 h-3 w-3 text-muted-foreground" strokeWidth={2} />
+          </span>
           {eigenSessieElders && (
             <p className="text-[11px] text-muted-foreground mt-2">
               Je staat nu ingeklokt op {eigenSessieElders.project_naam || 'een ander project'}. Inklokken hier sluit dat af en boekt de uren.
@@ -237,6 +247,8 @@ export function TijdCard({ projectId, projectNaam, eigenMedewerker, medewerkers,
           </div>
         </div>
       )}
+
+      <UrenPerBewerking projectId={projectId} tijdregistraties={tijdregistraties} />
     </div>
   )
 }

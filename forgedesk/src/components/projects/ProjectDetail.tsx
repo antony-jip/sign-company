@@ -161,7 +161,6 @@ import { confirm } from '@/components/shared/ConfirmDialog'
 import { TaskChecklistView } from './cockpit/TaskChecklistView'
 import { BriefingCard } from './cockpit/BriefingCard'
 import { TakenOfferteGrid } from './cockpit/TakenOfferteGrid'
-import { UrenPerBewerkingCard } from './cockpit/UrenPerBewerkingCard'
 import { getProjectUrenBudget } from '@/services/projectUrenService'
 import { maakTakenUitBewerkingen } from '@/services/projectTakenService'
 import { urenVeldenUitInstellingen } from '@/utils/offerteUren'
@@ -2059,8 +2058,6 @@ export function ProjectDetail() {
             tijdregistraties={projectTijdregistraties}
             onGeboekt={herlaadTijdregistraties}
           />
-
-          <UrenPerBewerkingCard projectId={id!} tijdregistraties={projectTijdregistraties} />
 
           {klant && (
             <KlantCard

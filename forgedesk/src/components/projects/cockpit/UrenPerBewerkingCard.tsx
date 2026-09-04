@@ -1,6 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Gauge } from 'lucide-react'
 import { cn, formatCurrency } from '@/lib/utils'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useAuth } from '@/contexts/AuthContext'
@@ -11,7 +9,7 @@ import { round2 } from '@/utils/budgetUtils'
 import { logger } from '@/utils/logger'
 import type { Tijdregistratie } from '@/types'
 
-interface UrenPerBewerkingCardProps {
+interface UrenPerBewerkingProps {
   projectId: string
   tijdregistraties: Tijdregistratie[]
 }
@@ -66,7 +64,7 @@ function berekenKosten(
 
 function KostenRegel({ label, bedrag, nadruk }: { label: string; bedrag: number; nadruk?: boolean }) {
   return (
-    <div className={cn('flex items-baseline justify-between gap-3', nadruk ? 'text-foreground font-medium' : 'text-muted-foreground')}>
+    <div className={cn('flex items-baseline justify-between gap-3 text-[11px]', nadruk ? 'text-foreground font-medium' : 'text-muted-foreground')}>
       <span>{label}</span>
       <span className="font-mono tabular-nums">{formatCurrency(bedrag)}</span>
     </div>
@@ -74,10 +72,11 @@ function KostenRegel({ label, bedrag, nadruk }: { label: string; bedrag: number;
 }
 
 /**
- * Verkocht tegen geschreven, per bewerking. Het scherm dat een calculator de
- * hele dag open heeft. Verbergt zichzelf als er niets te tonen is.
+ * Verkocht tegen geschreven, per bewerking. Onderdeel van de tijdkaart op het
+ * project, geen eigen kaart: niet elk bedrijf houdt bewerkingen bij, dus het
+ * blok verschijnt alleen als er iets te tonen is.
  */
-export function UrenPerBewerkingCard({ projectId, tijdregistraties }: UrenPerBewerkingCardProps) {
+export function UrenPerBewerking({ projectId, tijdregistraties }: UrenPerBewerkingProps) {
   const { settings } = useAppSettings()
   const { userRol } = useAuth()
   const urenVelden = useMemo(() => urenVeldenUitInstellingen(settings.calculatie_uren_velden), [settings.calculatie_uren_velden])
@@ -106,7 +105,8 @@ export function UrenPerBewerkingCard({ projectId, tijdregistraties }: UrenPerBew
       begroot: budget?.perVeld[veld]?.uren ?? 0,
       geschreven: (geschreven[veld] || 0) / 60,
     })).filter((r) => r.begroot > 0 || r.geschreven > 0)
-    if (geschreven[OVERIG]) uit.push({ veld: OVERIG, begroot: 0, geschreven: geschreven[OVERIG] / 60 })
+    // Overig alleen tonen als er ook bewerkingen zijn; anders is het gewoon "geboekt op dit project".
+    if (geschreven[OVERIG] && uit.length > 0) uit.push({ veld: OVERIG, begroot: 0, geschreven: geschreven[OVERIG] / 60 })
     return uit
   }, [urenVelden, geschreven, budget])
 
@@ -125,62 +125,59 @@ export function UrenPerBewerkingCard({ projectId, tijdregistraties }: UrenPerBew
   const totaalGeschreven = rijen.reduce((s, r) => s + r.geschreven, 0)
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="flex items-center justify-between text-sm font-medium">
-          <span className="flex items-center gap-2"><Gauge className="h-4 w-4" />Uren per bewerking</span>
-          {verwacht && totaalBegroot > 0 && <span className="text-[11px] font-normal text-muted-foreground">verwacht, nog geen akkoord</span>}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
+    <div className="mt-4 pt-3 border-t border-border/50">
+      <div className="flex items-baseline justify-between text-[11px] text-muted-foreground">
+        <span>per bewerking{totaalBegroot > 0 ? ' · geschreven / verkocht' : ''}</span>
+        {verwacht && totaalBegroot > 0 && <span>verwacht, nog geen akkoord</span>}
+      </div>
+      <div className="mt-2 space-y-2">
         {rijen.map((r) => {
           const pct = r.begroot > 0 ? (r.geschreven / r.begroot) * 100 : 0
-          const kleur = r.begroot === 0 ? 'bg-muted-foreground/40' : pct >= 100 ? 'bg-red-500' : pct >= 90 ? 'bg-amber-500' : 'bg-primary'
+          const kleur = r.begroot === 0 ? 'bg-muted-foreground/40' : pct >= 100 ? 'bg-red-500' : pct >= 90 ? 'bg-amber-500' : 'bg-petrol'
           return (
             <div key={r.veld} className="space-y-1">
-              <div className="flex items-baseline justify-between gap-3 text-sm">
-                <span className={cn('truncate', r.veld === OVERIG && 'text-muted-foreground')}>{r.veld}</span>
-                <span className="tabular-nums text-xs text-muted-foreground whitespace-nowrap">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className={cn('text-[12px] truncate', r.veld === OVERIG ? 'text-muted-foreground' : 'text-foreground')}>{r.veld}</span>
+                <span className="text-[12px] font-mono tabular-nums text-muted-foreground whitespace-nowrap">
                   {r.begroot > 0
                     ? <>{formatUren(r.geschreven)} / {formatUren(r.begroot)} u</>
                     : <>{formatUren(r.geschreven)} u</>}
                 </span>
               </div>
               {r.begroot > 0 && (
-                <div className="h-1.5 w-full rounded-sm bg-muted overflow-hidden" title={`${Math.round(pct)}%`}>
+                <div className="h-1 w-full rounded-sm bg-border/60 overflow-hidden" title={`${Math.round(pct)}%`}>
                   <div className={cn('h-full rounded-sm', kleur, verwacht && 'opacity-60')} style={{ width: `${Math.min(100, pct)}%` }} />
                 </div>
               )}
             </div>
           )
         })}
-        {totaalBegroot > 0 && (
-          <div className="flex items-baseline justify-between border-t pt-2 text-xs text-muted-foreground">
-            <span>Totaal</span>
-            <span className="tabular-nums">{formatUren(totaalGeschreven)} / {formatUren(totaalBegroot)} u</span>
-          </div>
-        )}
-        {kosten && (
-          <div className="space-y-1 border-t pt-2 text-xs">
-            {kosten.verkocht !== null && <KostenRegel label="Uren verkocht ex btw" bedrag={kosten.verkocht} />}
-            <KostenRegel label="Urenkosten" bedrag={kosten.urenkosten} />
-            {marge !== null && (
-              <div className="flex items-baseline justify-between gap-3 font-medium">
-                <span>Indicatie marge</span>
-                <span className="font-mono tabular-nums">
-                  {formatCurrency(marge)}
-                  {margePct !== null && <span className="ml-2 font-sans text-muted-foreground">{margePct}%</span>}
-                </span>
-              </div>
-            )}
-            {kosten.regelsZonderKostprijs > 0 && (
-              <p className="text-[11px] text-muted-foreground">
-                {kosten.regelsZonderKostprijs === 1 ? '1 urenregel' : `${kosten.regelsZonderKostprijs} urenregels`} zonder kostprijs niet meegeteld
-              </p>
-            )}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      </div>
+      {totaalBegroot > 0 && (
+        <div className="mt-2 flex items-baseline justify-between text-[11px] text-muted-foreground">
+          <span>totaal</span>
+          <span className="font-mono tabular-nums text-foreground/80">{formatUren(totaalGeschreven)} / {formatUren(totaalBegroot)} u</span>
+        </div>
+      )}
+      {kosten && (
+        <div className="mt-3 pt-2 border-t border-border/50 space-y-1">
+          {kosten.verkocht !== null && <KostenRegel label="uren verkocht ex btw" bedrag={kosten.verkocht} />}
+          <KostenRegel label="urenkosten" bedrag={kosten.urenkosten} />
+          {marge !== null && (
+            <div className="flex items-baseline justify-between gap-3 text-[11px] font-medium text-foreground">
+              <span>indicatie marge</span>
+              <span className="font-mono tabular-nums">
+                {formatCurrency(marge)}{margePct !== null && <span className="text-muted-foreground font-normal"> · {margePct}%</span>}
+              </span>
+            </div>
+          )}
+          {kosten.regelsZonderKostprijs > 0 && (
+            <p className="text-[10.5px] text-muted-foreground">
+              {kosten.regelsZonderKostprijs === 1 ? '1 urenregel' : `${kosten.regelsZonderKostprijs} urenregels`} zonder kostprijs niet meegeteld
+            </p>
+          )}
+        </div>
+      )}
+    </div>
   )
 }
