@@ -162,6 +162,9 @@ import { TaskChecklistView } from './cockpit/TaskChecklistView'
 import { BriefingCard } from './cockpit/BriefingCard'
 import { TakenOfferteGrid } from './cockpit/TakenOfferteGrid'
 import { UrenPerBewerkingCard } from './cockpit/UrenPerBewerkingCard'
+import { getProjectUrenBudget } from '@/services/projectUrenService'
+import { maakTakenUitBewerkingen } from '@/services/projectTakenService'
+import { urenVeldenUitInstellingen } from '@/utils/offerteUren'
 import { ProjectFaseBar } from './cockpit/ProjectFaseBar'
 import { BestandenSection } from './cockpit/BestandenSection'
 import { ActiviteitFeed, buildActivityFeed, type ActivityEvent } from './cockpit/ActiviteitFeed'
@@ -420,7 +423,7 @@ export function ProjectDetail() {
   const location = useLocation()
   const { user } = useAuth()
   const { medewerkers } = useMedewerkers()
-  const { offertePrefix, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, primaireKleur, emailHandtekening } = useAppSettings()
+  const { settings, offertePrefix, offerteGeldigheidDagen, standaardBtw, bedrijfsnaam, primaireKleur, emailHandtekening } = useAppSettings()
   const { config: sidebarConfig } = useProjectSidebarConfig()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
@@ -1097,6 +1100,35 @@ export function ProjectDetail() {
       logger.error('Fout bij ophalen taken:', err)
     }
   }, [id])
+
+  const urenVelden = useMemo(() => urenVeldenUitInstellingen(settings.calculatie_uren_velden), [settings.calculatie_uren_velden])
+  const [takenUitOfferteMogelijk, setTakenUitOfferteMogelijk] = useState(false)
+  const offertesBudgetKey = projectOffertes.map((o) => `${o.id}:${o.status}`).join(',')
+
+  useEffect(() => {
+    if (!id) return
+    let actief = true
+    getProjectUrenBudget(id, urenVelden)
+      .then((b) => { if (actief) setTakenUitOfferteMogelijk(b.soort !== 'geen' && b.totaalUren > 0) })
+      .catch((err) => logger.warn('Kon urenbudget voor taken niet laden:', err))
+    return () => { actief = false }
+  }, [id, urenVelden, offertesBudgetKey])
+
+  const handleTakenUitOfferte = async () => {
+    if (!id) return
+    try {
+      const { aangemaakt } = await maakTakenUitBewerkingen(id, urenVelden)
+      for (const taak of aangemaakt) {
+        logCreate({ user, medewerkers: alleMedewerkers, entityType: 'taak', entityId: taak.id })
+      }
+      if (aangemaakt.length === 0) toast.info('Alle bewerkingen hebben al een taak')
+      else toast.success(aangemaakt.length === 1 ? '1 taak aangemaakt' : `${aangemaakt.length} taken aangemaakt`)
+      await fetchTaken()
+    } catch (err) {
+      logger.error('Kon taken uit offerte niet aanmaken:', err)
+      toast.error('Kon taken niet aanmaken')
+    }
+  }
 
   const fetchOffertes = useCallback(async () => {
     if (!id) return
@@ -1866,6 +1898,8 @@ export function ProjectDetail() {
             onMontageDelete={handleDeleteMontage}
             onNewMontage={handleOpenMontageDialog}
             onNewTaak={() => setNieuweTaakOpen(true)}
+            onTakenUitOfferte={handleTakenUitOfferte}
+            takenUitOfferteMogelijk={takenUitOfferteMogelijk}
             onTaakEdit={(taak) => {
               setEditTaakId(taak.id)
               setNieuweTaakTitel(taak.titel)
