@@ -408,6 +408,40 @@ export async function voegRegelsToeAanConcept(
   return updateFactuur(factuurId, { ...extra, subtotaal, btw_bedrag, totaal: round2(subtotaal + btw_bedrag) })
 }
 
+// Concepten van dezelfde klant op één factuur: de regels van de rest komen
+// achter die van het doel (het oudste concept), daarna verdwijnen de andere
+// concepten. Alleen concepten: een genummerde factuur is een boekstuk.
+export async function voegConceptfacturenSamen(doelId: string, bronIds: string[], userId: string): Promise<Factuur> {
+  assertId(doelId, 'factuur_id')
+  const bronnen = (await Promise.all(bronIds.map((id) => getFactuur(id)))).filter((f): f is Factuur => !!f)
+  const doel = await getFactuur(doelId)
+  if (!doel) throw new Error('Doelfactuur niet gevonden')
+  const alle = [doel, ...bronnen]
+  if (alle.some((f) => f.status !== 'concept')) throw new Error('Alleen conceptfacturen kunnen samengevoegd worden')
+  if (alle.some((f) => f.klant_id !== doel.klant_id)) throw new Error('Samenvoegen kan alleen voor dezelfde klant')
+  const regels: NieuweFactuurRegel[] = []
+  for (const bron of bronnen) {
+    const items = await getFactuurItems(bron.id)
+    for (const r of items.sort((a, b) => a.volgorde - b.volgorde)) {
+      regels.push({
+        beschrijving: r.beschrijving,
+        aantal: r.aantal,
+        eenheidsprijs: r.eenheidsprijs,
+        btw_percentage: r.btw_percentage,
+        korting_percentage: r.korting_percentage || 0,
+        grootboek_code: r.grootboek_code || '',
+        detail_regels: r.detail_regels || [],
+        offerte_item_id: r.offerte_item_id || null,
+      })
+    }
+  }
+  const bijgewerkt = await voegRegelsToeAanConcept(doelId, regels, userId)
+  for (const bron of bronnen) {
+    await deleteFactuur(bron.id)
+  }
+  return bijgewerkt
+}
+
 export async function deleteFactuur(id: string): Promise<void> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {

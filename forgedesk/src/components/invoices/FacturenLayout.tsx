@@ -88,6 +88,7 @@ import {
   getFactuurOpvolgStappen,
   bepaalHerinneringOntvanger,
   STANDAARD_HERINNERING_TEKSTEN,
+  voegConceptfacturenSamen,
   type FactuurOpvolgStap,
   type HerinneringOntvanger,
 } from '@/services/factuurService'
@@ -578,6 +579,7 @@ export function FacturenLayout() {
   const exactConnected = settings.exact_online_connected ?? false
   const stepperAan = useFunctie('factuur_stepper')
   const actieTabAan = useFunctie('factuur_actie_tab')
+  const samenvoegenAan = useFunctie('factuur_samenvoegen')
   const documentStyle = useDocumentStyle()
 
   // Data state
@@ -1179,6 +1181,40 @@ export function FacturenLayout() {
     ),
     [filteredFacturen, selectedIds]
   )
+
+  // Samenvoegen kan alleen als álle geselecteerde facturen concepten van
+  // dezelfde klant zijn; het oudste concept wordt het doel.
+  const selectieSamenvoegbaar = useMemo(() => {
+    if (!samenvoegenAan || selectedIds.size < 2) return null
+    const gekozen = facturen.filter((f) => selectedIds.has(f.id))
+    if (gekozen.length !== selectedIds.size) return null
+    if (gekozen.some((f) => f.status !== 'concept')) return null
+    if (new Set(gekozen.map((f) => f.klant_id)).size !== 1) return null
+    return [...gekozen].sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''))
+  }, [samenvoegenAan, facturen, selectedIds])
+
+  const handleSamenvoegen = useCallback(async () => {
+    if (!selectieSamenvoegbaar) return
+    const [doel, ...rest] = selectieSamenvoegbaar
+    const naam = (f: Factuur) => f.nummer || `concept "${f.titel}"`
+    const ok = await confirm({
+      title: 'Conceptfacturen samenvoegen',
+      message: `De regels van ${rest.map(naam).join(', ')} komen achter die van ${naam(doel)}. De andere concepten verdwijnen daarna. Doorgaan?`,
+      confirmLabel: 'Samenvoegen',
+      cancelLabel: 'Annuleren',
+    })
+    if (!ok) return
+    try {
+      const bijgewerkt = await voegConceptfacturenSamen(doel.id, rest.map((f) => f.id), user?.id || '')
+      const weg = new Set(rest.map((f) => f.id))
+      setFacturen((prev) => prev.filter((f) => !weg.has(f.id)).map((f) => (f.id === doel.id ? { ...f, ...bijgewerkt } : f)))
+      setSelectedIds(new Set())
+      toast.success(`${rest.length + 1} concepten samengevoegd in ${naam(doel)}`)
+    } catch (err) {
+      logger.error('Samenvoegen mislukt:', err)
+      toast.error((err as { message?: string })?.message || 'Kon de concepten niet samenvoegen')
+    }
+  }, [selectieSamenvoegbaar, user?.id])
 
   // "Markeer als betaald" zat alleen in het drie-puntjes-menu per rij, helemaal
   // rechts en op een brede lijst dus buiten beeld. Wie een handvol facturen wil
@@ -2532,6 +2568,11 @@ export function FacturenLayout() {
           >
             Selectie wissen
           </button>
+          {selectieSamenvoegbaar && (
+            <Button size="sm" variant="outline" onClick={handleSamenvoegen} className="gap-1.5">
+              Samenvoegen ({selectieSamenvoegbaar.length})
+            </Button>
+          )}
           <Button
             size="sm"
             onClick={handleBulkBetaald}
