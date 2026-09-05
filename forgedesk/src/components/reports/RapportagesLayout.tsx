@@ -32,6 +32,7 @@ import {
   ArrowDownRight,
   Minus,
   CalendarDays,
+  ChevronRight,
 } from 'lucide-react';
 import {
   getKlanten,
@@ -58,6 +59,7 @@ import { round2 } from '@/utils/budgetUtils';
 import { berekenMarkupPercentage } from '@/utils/margeBerekening';
 import { toast } from 'sonner';
 import { exportCSV, exportExcel } from '@/lib/export';
+import { useFunctie } from '@/hooks/useFunctie';
 import { generateRapportPDF } from '@/services/pdfService';
 import { useDocumentStyle } from '@/hooks/useDocumentStyle';
 import { useAppSettings } from '@/contexts/AppSettingsContext';
@@ -300,6 +302,56 @@ export function RapportagesLayout() {
       .sort((a, b) => b.totaalGefactureerd - a.totaalGefactureerd)
       .slice(0, 5);
   }, [gefilterdeFacturen, projecten]);
+
+  // ---------------------------------------------------------------------------
+  // Openstaand per ouderdom (peildatum vandaag, niet de gekozen periode:
+  // openstaand is een stand, geen omzet)
+  // ---------------------------------------------------------------------------
+
+  const ouderdomAan = useFunctie('rapport_ouderdom');
+  const [ouderdomOpen, setOuderdomOpen] = useState<Set<string>>(new Set());
+
+  const ouderdom = useMemo(() => {
+    const vandaag = Date.now();
+    const bucketVan = (dagen: number): 0 | 1 | 2 | 3 => (dagen <= 30 ? 0 : dagen <= 60 ? 1 : dagen <= 90 ? 2 : 3);
+    const totalen = [0, 0, 0, 0];
+    const perKlant = new Map<string, { naam: string; buckets: number[]; totaal: number; facturen: { id: string; nummer: string; dagen: number; openstaand: number; bucket: number }[] }>();
+    for (const f of facturen) {
+      if (f.status !== 'verzonden' && f.status !== 'vervallen') continue;
+      const open = openstaandExBtw(f);
+      if (open <= 0) continue;
+      const verval = new Date(f.vervaldatum).getTime();
+      const dagen = isNaN(verval) ? 0 : Math.max(0, Math.floor((vandaag - verval) / 86400000));
+      const bucket = bucketVan(dagen);
+      totalen[bucket] += open;
+      const sleutel = f.klant_id || f.klant_naam || '?';
+      if (!perKlant.has(sleutel)) perKlant.set(sleutel, { naam: f.klant_naam || 'Onbekende klant', buckets: [0, 0, 0, 0], totaal: 0, facturen: [] });
+      const rij = perKlant.get(sleutel)!;
+      rij.buckets[bucket] += open;
+      rij.totaal += open;
+      rij.facturen.push({ id: f.id, nummer: f.nummer || 'concept', dagen, openstaand: open, bucket });
+    }
+    const klanten = [...perKlant.entries()]
+      .map(([id, k]) => ({ id, ...k, facturen: k.facturen.sort((a, b) => b.dagen - a.dagen) }))
+      .sort((a, b) => b.totaal - a.totaal);
+    return { totalen, klanten, totaal: totalen.reduce((s, v) => s + v, 0) };
+  }, [facturen]);
+
+  const OUDERDOM_LABELS = ['0-30 dagen', '31-60 dagen', '61-90 dagen', '91+ dagen'];
+
+  function handleExportOuderdom() {
+    const headers = ['Klant', ...OUDERDOM_LABELS, 'Totaal'];
+    const data = ouderdom.klanten.map((k) => ({
+      Klant: k.naam,
+      [OUDERDOM_LABELS[0]]: k.buckets[0],
+      [OUDERDOM_LABELS[1]]: k.buckets[1],
+      [OUDERDOM_LABELS[2]]: k.buckets[2],
+      [OUDERDOM_LABELS[3]]: k.buckets[3],
+      Totaal: k.totaal,
+    }));
+    exportCSV('openstaand-per-ouderdom', headers, data);
+    toast.success('Ouderdom geexporteerd als CSV');
+  }
 
   // ---------------------------------------------------------------------------
   // Project profitability
@@ -979,6 +1031,94 @@ export function RapportagesLayout() {
           </div>
         </CardContent>
       </Card>
+
+      {ouderdomAan && (
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <CalendarDays className="h-5 w-5" />
+                  Openstaand per ouderdom
+                </CardTitle>
+                <CardDescription>Dagen na vervaldatum, peildatum vandaag, ex btw</CardDescription>
+              </div>
+              <Button variant="outline" size="sm" onClick={handleExportOuderdom} disabled={ouderdom.klanten.length === 0}>
+                <Download className="mr-1 h-3 w-3" />
+                CSV
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {OUDERDOM_LABELS.map((label, i) => (
+                <div key={label} className="rounded-lg border border-border px-3 py-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
+                  <p className={cn('mt-0.5 font-mono tabular-nums text-base font-semibold', i === 3 && ouderdom.totalen[3] > 0 && 'text-flame-text dark:text-[#FF8866]')}>
+                    {formatCurrency(ouderdom.totalen[i])}
+                  </p>
+                </div>
+              ))}
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-left">
+                    <th className="pb-3 font-medium text-muted-foreground">Klant</th>
+                    {OUDERDOM_LABELS.map((label) => (
+                      <th key={label} className="pb-3 font-medium text-muted-foreground text-right whitespace-nowrap">{label.replace(' dagen', '')}</th>
+                    ))}
+                    <th className="pb-3 font-medium text-muted-foreground text-right">Totaal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ouderdom.klanten.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-8 text-center text-muted-foreground">Er staat niets open.</td>
+                    </tr>
+                  ) : (
+                    ouderdom.klanten.map((k) => {
+                      const open = ouderdomOpen.has(k.id);
+                      return [
+                        <tr
+                          key={k.id}
+                          className="border-b last:border-0 hover:bg-muted/50 transition-colors cursor-pointer"
+                          onClick={() => setOuderdomOpen((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(k.id)) next.delete(k.id); else next.add(k.id);
+                            return next;
+                          })}
+                        >
+                          <td className="py-3 font-medium">
+                            <span className="inline-flex items-center gap-1.5">
+                              <ChevronRight className={cn('h-3 w-3 text-muted-foreground transition-transform', open && 'rotate-90')} />
+                              {k.naam}
+                              <span className="text-muted-foreground font-normal text-xs">{k.facturen.length}</span>
+                            </span>
+                          </td>
+                          {k.buckets.map((b, i) => (
+                            <td key={i} className={cn('py-3 text-right font-mono tabular-nums', b === 0 && 'text-muted-foreground/40')}>{b === 0 ? '·' : formatCurrency(b)}</td>
+                          ))}
+                          <td className="py-3 text-right font-mono tabular-nums font-medium">{formatCurrency(k.totaal)}</td>
+                        </tr>,
+                        ...(open ? k.facturen.map((f) => (
+                          <tr key={f.id} className="border-b last:border-0 bg-muted/20 text-xs">
+                            <td className="py-1.5 pl-6 font-mono">{f.nummer} <span className="text-muted-foreground">· {f.dagen}d</span></td>
+                            {[0, 1, 2, 3].map((i) => (
+                              <td key={i} className="py-1.5 text-right font-mono tabular-nums text-muted-foreground">{f.bucket === i ? formatCurrency(f.openstaand) : ''}</td>
+                            ))}
+                            <td className="py-1.5 text-right font-mono tabular-nums">{formatCurrency(f.openstaand)}</td>
+                          </tr>
+                        )) : []),
+                      ];
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* ------------------------------------------------------------------ */}
       {/* Project Winstgevendheid */}
