@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { NoemTextarea, stuurNoemMeldingen } from '@/components/shared/NoemTextarea'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
@@ -272,6 +273,10 @@ export function ClientProfile() {
     notitieHerstelRef.current = null
   }, [klant])
 
+  // @-noemen: gekozen collega's uit beide notitievelden; alleen wie nog niet
+  // gemeld is krijgt bij opslaan een melding.
+  const genoemdRef = useRef<string[]>([])
+  const gemeldRef = useRef<Set<string>>(new Set())
   async function handleSaveNotitie() {
     if (!klant) return
     setSavingNotitie(true)
@@ -279,6 +284,11 @@ export function ClientProfile() {
       const updated = await updateKlant(klant.id, { notities: notitie })
       setKlant(updated)
       toast.success('Notitie opgeslagen')
+      const nieuwGenoemd = genoemdRef.current.filter((uid) => !gemeldRef.current.has(uid))
+      if (nieuwGenoemd.length > 0) {
+        nieuwGenoemd.forEach((uid) => gemeldRef.current.add(uid))
+        void stuurNoemMeldingen({ userIds: nieuwGenoemd, tekst: notitie, link: `/klanten/${klant.id}?tab=notities`, bron: 'klantnotitie' })
+      }
     } catch (err) {
       logger.error('Fout bij opslaan notitie:', err)
       toast.error('Fout bij opslaan notitie')
@@ -1681,10 +1691,11 @@ export function ClientProfile() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Textarea
+                <NoemTextarea
                   value={notitie}
                   onChange={(e) => setNotitie(e.target.value)}
-                  placeholder="Notities over deze klant..."
+                  onNoem={(ids) => { genoemdRef.current = Array.from(new Set([...genoemdRef.current, ...ids])) }}
+                  placeholder="Notities over deze klant... Typ @ om een collega te noemen."
                   rows={8}
                   className="min-h-[200px]"
                 />
@@ -1708,10 +1719,11 @@ export function ClientProfile() {
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-0 space-y-3">
-              <Textarea
+              <NoemTextarea
                 value={notitie}
                 onChange={(e) => setNotitie(e.target.value)}
-                placeholder="Notities over deze klant..."
+                onNoem={(ids) => { genoemdRef.current = Array.from(new Set([...genoemdRef.current, ...ids])) }}
+                placeholder="Notities over deze klant... Typ @ om een collega te noemen."
                 rows={5}
                 className="text-sm"
               />

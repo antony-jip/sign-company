@@ -77,6 +77,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { NoemTextarea, stuurNoemMeldingen } from '@/components/shared/NoemTextarea'
 import {
   Select,
   SelectContent,
@@ -898,6 +899,11 @@ export function ProjectDetail() {
     }
   }
 
+  // @-noemen: alles wat in dit veld gekozen is, en wat al gemeld is. Het
+  // verschil gaat bij opslaan de deur uit, zodat een tweede save niet
+  // opnieuw meldt.
+  const genoemdRef = useRef<string[]>([])
+  const gemeldRef = useRef<Set<string>>(new Set())
   const handleSaveBriefing = async () => {
     if (!project || !id) return
     setBriefingSaving(true)
@@ -907,6 +913,11 @@ export function ProjectDetail() {
       toast.success('Briefing opgeslagen')
       setDirty(false)
       setBriefingOpen(false)
+      const nieuwGenoemd = genoemdRef.current.filter((uid) => !gemeldRef.current.has(uid))
+      if (nieuwGenoemd.length > 0) {
+        nieuwGenoemd.forEach((uid) => gemeldRef.current.add(uid))
+        void stuurNoemMeldingen({ userIds: nieuwGenoemd, tekst: briefingText, link: `/projecten/${id}?tab=notities`, bron: 'projectnotitie' })
+      }
     } catch (err) {
       logger.error('Fout bij opslaan briefing:', err)
       toast.error('Kon briefing niet opslaan')
@@ -2779,10 +2790,11 @@ export function ProjectDetail() {
               {briefingSaving ? 'Opslaan...' : 'Opslaan'}
             </button>
           </div>
-          <Textarea
+          <NoemTextarea
             value={briefingText}
             onChange={(e) => setBriefingText(e.target.value)}
-            placeholder="Voeg hier de projectbriefing en notities toe..."
+            onNoem={(ids) => { genoemdRef.current = ids }}
+            placeholder="Voeg hier de projectbriefing en notities toe... Typ @ om een collega te noemen."
             rows={20}
             className="resize-y bg-background rounded-lg p-4 border-none focus:ring-1 focus:ring-petrol/20 transition-colors text-sm leading-relaxed"
           />

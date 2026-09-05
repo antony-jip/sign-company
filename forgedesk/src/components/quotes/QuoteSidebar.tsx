@@ -42,6 +42,9 @@ import type { InkoopRegel } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
 import { cn, formatCurrency, getStatusColor } from '@/lib/utils'
 import { KlantStatusWarning } from '@/components/shared/KlantStatusWarning'
+import { useAuth } from '@/contexts/AuthContext'
+import { useAppSettings } from '@/contexts/AppSettingsContext'
+import { isAdminUser } from '@/utils/authHelpers'
 import { InkoopOffertePaneel } from './InkoopOffertePaneel'
 import type { SidebarSectionId } from '@/hooks/useSidebarLayout'
 
@@ -198,6 +201,14 @@ export function QuoteSidebar({
   handleInkoopRegelToevoegen,
   handleInkoopRegelAlsPrijsvariant,
 }: QuoteSidebarProps) {
+  // Indicatie nettowinst: marge min uren maal de standaard kostprijs per uur.
+  // De echte kostprijs per medewerker is op de offerte niet bekend, dus dit is
+  // een indicatie; alleen admins zien kostprijzen.
+  const { userRol } = useAuth()
+  const { settings } = useAppSettings()
+  const kostprijsUur = settings.standaard_kostprijs_uur ?? null
+  const toonNettowinst = isAdminUser(userRol) && kostprijsUur != null && kostprijsUur > 0
+  const nettowinst = toonNettowinst ? round2(winstExBtw - effectieveTotaalUren * (kostprijsUur as number)) : 0
   const { navigateWithTab } = useNavigateWithTab()
   return (
         <div className="lg:block">
@@ -617,6 +628,18 @@ export function QuoteSidebar({
                               )}
                             </div>
                           </div>
+
+                          {toonNettowinst && totaalInkoop > 0 && (
+                            <div className="flex items-center justify-between text-[12px] px-1">
+                              <span className="text-foreground/70">
+                                Indicatie nettowinst
+                                <span className="text-muted-foreground"> · {effectieveTotaalUren} uur × {formatCurrency(kostprijsUur as number)}</span>
+                              </span>
+                              <span className={cn('font-mono tabular-nums font-semibold', nettowinst >= 0 ? 'text-[#2D6B48]' : 'text-[#C0451A]')}>
+                                {formatCurrency(nettowinst)}
+                              </span>
+                            </div>
+                          )}
 
                           {itemMarges.some(m => m.hasCalc) && (
                             <>
