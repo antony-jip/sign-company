@@ -22,6 +22,7 @@ import { berekenMarkupPercentage } from '@/utils/margeBerekening'
 import { uploadFile, downloadFile, deleteFile } from '@/services/storageService'
 import { createDocument, getSigningVisualisatiesByOfferte, getSigningVisualisatiesByProject } from '@/services/supabaseService'
 import { telItemsMetBijlage } from '@/services/offerteService'
+import { useFunctie } from '@/hooks/useFunctie'
 import type { SigningVisualisatie } from '@/types'
 
 // ============================================================
@@ -623,6 +624,7 @@ export function QuoteItemsTable({
   const templateLabels = sanitizedTemplateLabels.length > 0
     ? sanitizedTemplateLabels
     : DEFAULT_DETAIL_LABELS
+  const interneNotitieAan = useFunctie('offerte_interne_notitie')
   // Calculatie modal
   const [calculatieOpen, setCalculatieOpen] = useState(false)
   const [activeItemId, setActiveItemId] = useState<string | null>(null)
@@ -1247,7 +1249,8 @@ export function QuoteItemsTable({
                   }}
                 />
 
-                {/* ── FIX 15: Interne notitie ── */}
+                {/* Interne notitie: komt nooit op de PDF of de klantpagina (schakelaar offerte_interne_notitie) */}
+                {interneNotitieAan && (
                 <div className="px-4 py-2 border-b border-border dark:border-border">
                   <button
                     onClick={() => {
@@ -1260,7 +1263,7 @@ export function QuoteItemsTable({
                     className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
                   >
                     <Lock className="h-3 w-3" />
-                    Interne notitie
+                    Intern · komt niet op de offerte
                     {item.interne_notitie && item.interne_notitie.trim() && (
                       <span className="h-1.5 w-1.5 rounded-full bg-amber-500 flex-shrink-0" />
                     )}
@@ -1270,9 +1273,9 @@ export function QuoteItemsTable({
                       <textarea
                         value={item.interne_notitie || ''}
                         onChange={(e) => onUpdateItem(item.id, 'interne_notitie', e.target.value)}
-                        placeholder="Interne notitie · niet zichtbaar voor klant"
+                        placeholder="PMS-nummer, montage-afspraak, waarschuwing voor de werkplaats"
                         rows={2}
-                        className="w-full text-xs px-3 py-2 rounded-lg border border-amber-200 dark:border-amber-800/50 bg-amber-50/80 dark:bg-amber-900/20 text-foreground placeholder:text-amber-400 dark:placeholder:text-amber-600 focus:outline-none focus:ring-1 focus:ring-amber-300 dark:focus:ring-amber-700 resize-y"
+                        className="w-full text-xs px-3 py-2 rounded-lg border border-amber-200 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/10 text-foreground placeholder:text-amber-500/70 dark:placeholder:text-amber-300/50 focus:outline-none focus:ring-1 focus:ring-amber-300 dark:focus:ring-amber-500/40 resize-y"
                       />
                       <button
                         onClick={() => onUpdateItem(item.id, 'interne_notitie', undefined as unknown as string)}
@@ -1283,6 +1286,7 @@ export function QuoteItemsTable({
                     </div>
                   )}
                 </div>
+                )}
 
                 {/* Beschrijving-regels (dynamisch) */}
                 <div className="px-4 py-3 border-b border-border dark:border-border">
