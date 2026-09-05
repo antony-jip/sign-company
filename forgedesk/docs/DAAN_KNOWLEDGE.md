@@ -1048,6 +1048,10 @@ hoe de app eruitziet en werkt. De belangrijkste tabbladen:
 - **Abonnement** — je plan, facturatie en de status van je proefperiode.
 - **Daan** — de instellingen van de AI-assistent, zoals bedrijfscontext en
   toon, en het creditverbruik.
+- **Functies** — aan/uit-schakelaars per organisatie voor de handigheden uit
+  de Gripp-ronde (zie de sectie "Functies-schakelaars"). Alleen voor beheerders.
+- **Meldingen** — per categorie kiezen of een melding in de app en als push komt,
+  plus push aanzetten op dit toestel. Per persoon.
 - **Visualizer** — instellingen en credits voor de visualizer.
 - **Beveiliging** — je actieve sessies en wachtwoord.
 - **Weergave** — voorkeuren voor hoe de app eruitziet en welke menu-items je
@@ -1156,6 +1160,105 @@ gaan van doen. naar Exact, niet andersom.
 **Gerelateerde modules:** Facturen, Instellingen.
 
 # Veelgestelde onderwerpen (niet aan één module gebonden)
+
+## Functies-schakelaars (sinds september 2026)
+
+**Waar in de app:** Instellingen > doen. > Functies (`/instellingen?tab=functies`).
+Alleen een beheerder kan schakelaars omzetten. Wat uit staat, is nergens in de
+app zichtbaar; omzetten verandert geen gegevens, alleen wat je ziet.
+
+**Wat er achter de schakelaars zit, per module:**
+
+Offertes
+- *Vervolg na de offerte* (offerte_vervolg): knop "Vervolg" op een verstuurde of
+  goedgekeurde offerte. Drie keuzes: naar project, direct factureren, of
+  afgewezen met reden (te duur, te late levering, iets anders). De reden staat
+  daarna op de offerte en op de deal.
+- *Markeer als verzonden* (altijd aan): status verzonden zonder mail, voor wie
+  buiten de app mailt of print.
+- *Interne notitie op de regel* (offerte_interne_notitie): geel veld dat nooit
+  op de PDF of in het portaal komt.
+- *Condities als set* (offerte_condities): Standaard of Spoed kiest geldigheid,
+  betaaltermijn, levertijd, betalingsconditie en voorwaarden in één keer. Spoed
+  geeft het project bij akkoord prioriteit. Beheer in Instellingen > Offertes >
+  Calculatie, blok Condities.
+- *Staffelprijzen* (offerte_staffel): vanaf een aantal een andere inkoop- en
+  verkoopprijs op een calculatieproduct; de editor neemt de juiste staffel over.
+- *Grote offerte alleen na collega-check* (offerte_check_verplicht, met
+  drempelbedrag): boven het bedrag gaat de offerte pas de deur uit na een check.
+- *Handtekening bij online akkoord*: de klant tekent op het scherm; naam, datum
+  en handtekening staan daarna bij de offerte.
+- *Referentie klant*: veld op offerte en factuur, op de PDF als "Uw
+  referentie". Bij klanten met "PO-nummer verplicht" is verzenden zonder
+  referentie geblokkeerd.
+- *Nettowinst-indicatie* in de zijbalk van de editor (alleen beheerder): marge
+  min uren maal de kostprijs per uur uit Instellingen > Calculatie.
+
+Klanten
+- *Vaste notitie als waarschuwing* (klant_waarschuwing): de gepinde notitie op
+  de klant verschijnt bovenaan offerte, project, werkbon, bestelbon en
+  inkoopfactuur als het vinkje "toon als waarschuwing" aan staat.
+- *Standaardwaarden per klant*: verzendvoorkeur (e-mail, post, portaal), btw
+  verlegd, PO-nummer verplicht, geen betalingsherinneringen. Te vinden op de
+  klantkaart, blok Facturatie.
+- *Tags* (klant_tags): vrije labels op de klant, filter in de klantenlijst; de
+  nieuwsbrief gebruikt dezelfde labels.
+- *Prospect wordt klant* (prospect_wordt_klant): bij een geaccepteerde offerte
+  gaat de status van prospect naar actief.
+
+Projecten
+- *Kolommen per fase* (project_kanban): weergave-schakelaar Lijst/Kolommen in
+  de projectenlijst, met per fase het aantal en de som van de projectwaarde.
+- *Projectsjablonen* (project_sjablonen): "Opslaan als sjabloon" in het
+  projectmenu; bij een nieuw project "Beginnen vanuit een sjabloon".
+- *Geschiedenis* (geschiedenis): menu-item op offerte, project en factuur met
+  wie wat wanneer deed.
+
+Planning
+- *Opgeslagen weergaven* (planning_weergaven): keuzelijst "Weergave" bovenin
+  het montagebord; "Huidige weergave opslaan" bewaart scope, week/maand,
+  groepering en statusfilter, gedeeld of alleen voor jezelf.
+- *Herhaald inplannen* (planning_herhalen): blok "Herhalen" in de
+  afspraakdialoog: wekelijks, elke twee weken of maandelijks tot een datum.
+  Verwijderen kan "alleen deze" of "deze en volgende".
+- *Herinnering als er nog geen uren staan* (uren_herinnering, met tijdstip):
+  melding en push voor wie die dag niets schreef; een getekende werkbon telt mee.
+
+Facturen en inkoop
+- *Opvolgstappen bovenin de factuur* (factuur_stepper): factuur, herinnering 1,
+  herinnering 2, aanmaning als stepper met de actieve stap gemarkeerd.
+- *Tabblad "Vanavond de deur uit"* (factuur_actie_tab): welke herinneringen de
+  nachtploeg vanavond verstuurt, met pauzeknop per factuur.
+- *Vergrendeld na Exact-sync* (factuur_vergrendeling): bedragen en regels van
+  een gesynchroniseerde factuur zijn alleen-lezen; corrigeren via creditfactuur.
+- *Deelfactuur en aanbetaling* (factuur_deelfactuur): knop Factureren op het
+  project opent "Wat wil je factureren?": per regel een vinkje en aantal, betaald
+  voorschot automatisch verrekend, nieuwe factuur of toevoegen aan een concept.
+- *Conceptfacturen samenvoegen* (factuur_samenvoegen): selectie van concepten
+  van dezelfde klant samenvoegen tot één factuur.
+- *Concepten op de eerste werkdag* (conceptfacturen_maandelijks): melding op de
+  eerste werkdag van de maand met het aantal conceptfacturen dat klaarstaat.
+- *Ouderdom per klant* (rapport_ouderdom): kaart in Rapportages met openstaand
+  in 0-30, 31-60, 61-90 en 91+ dagen.
+- *Leverancier onthouden* (inkoop_leverancier_defaults): inkoopfactuur koppelen
+  aan een leverancier; betaaltermijn en grootboek onthouden voor de volgende.
+
+Team en meldingen
+- *Meldingsvoorkeuren* (meldingen_voorkeuren): Instellingen > Meldingen, per
+  categorie in-app en push aan of uit, per persoon.
+- *Collega noemen met @* (noemen): typ @ in een notitie op project of klant; de
+  collega krijgt een melding met link.
+
+**Veelvoorkomende vragen:**
+- *Ik zie een functie niet die in de kennisbank staat.* Vraag een beheerder de
+  schakelaar aan te zetten onder Instellingen > doen. > Functies.
+- *Kan ik een functie uitzetten zonder gegevens te verliezen?* Ja. Schakelaars
+  bepalen alleen wat zichtbaar is.
+
+**Gerelateerde modules:** Offertes, Klanten, Projecten, Planning, Facturen,
+Inkoopfacturen, Instellingen.
+
+---
 
 ## Hoe maak ik mijn eerste offerte?
 
