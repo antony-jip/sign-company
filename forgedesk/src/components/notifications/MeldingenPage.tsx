@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
@@ -20,6 +20,9 @@ import {
 import { getCached, fetchQuery } from '@/lib/queryCache'
 import type { Notificatie } from '@/types'
 import { cn } from '@/lib/utils'
+import { useAppSettings } from '@/contexts/AppSettingsContext'
+import { useFunctie } from '@/hooks/useFunctie'
+import { meldingToegestaan } from '@/lib/meldingsvoorkeuren'
 
 // --- Type config (zelfde als NotificatieCenter) ---
 
@@ -90,11 +93,19 @@ function getDagGroep(dateString: string): string {
 }
 
 export function MeldingenPage() {
-  const [notificaties, setNotificaties] = useState<Notificatie[]>(() => getCached<Notificatie[]>('notificaties') ?? [])
+  const [alleNotificaties, setNotificaties] = useState<Notificatie[]>(() => getCached<Notificatie[]>('notificaties') ?? [])
   const [laden, setLaden] = useState(() => getCached('notificaties') === undefined)
   const [filter, setFilter] = useState<FilterType>('alle')
   const [zoekterm, setZoekterm] = useState('')
   const navigate = useNavigate()
+  // Meldingsvoorkeuren (migratie 239): wat iemand voor de app uitzette blijft
+  // wel bestaan in de tabel, maar komt hier niet in beeld.
+  const voorkeurenAan = useFunctie('meldingen_voorkeuren')
+  const { profile } = useAppSettings()
+  const notificaties = useMemo(
+    () => (voorkeurenAan ? alleNotificaties.filter((n) => meldingToegestaan(profile?.meldingsvoorkeuren, n.type, 'app')) : alleNotificaties),
+    [alleNotificaties, voorkeurenAan, profile?.meldingsvoorkeuren],
+  )
 
   const laadNotificaties = useCallback(async () => {
     try {

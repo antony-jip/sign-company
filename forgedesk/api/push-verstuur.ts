@@ -34,7 +34,7 @@ function vapidGereed(): boolean {
   return true
 }
 
-async function bepaalUser(req: VercelRequest): Promise<string> {
+async function bepaalUser(req: VercelRequest): Promise<{ userId: string; service: boolean }> {
   const authHeader = req.headers.authorization
   if (!authHeader?.startsWith('Bearer ')) throw new Error('Niet geautoriseerd')
   const token = authHeader.split(' ')[1]
@@ -43,12 +43,12 @@ async function bepaalUser(req: VercelRequest): Promise<string> {
   if (cronSecret && token === cronSecret) {
     const serviceUser = req.body?.service_user_id
     if (typeof serviceUser !== 'string' || !serviceUser) throw new Error('Niet geautoriseerd')
-    return serviceUser
+    return { userId: serviceUser, service: true }
   }
 
   const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
   if (error || !user) throw new Error('Ongeldige sessie')
-  return user.id
+  return { userId: user.id, service: false }
 }
 
 interface PushLading {
@@ -56,6 +56,33 @@ interface PushLading {
   tekst: string
   url?: string
   tag?: string
+  /** Categorie uit src/lib/meldingsvoorkeuren.ts; zonder categorie gaat de push altijd door. */
+  categorie?: string
+}
+
+/**
+ * Meldingsvoorkeuren (migratie 239, profiles.meldingsvoorkeuren): heeft de
+ * ontvanger push voor deze categorie uitgezet, dan slaan we over. Staat de
+ * schakelaar meldingen_voorkeuren voor de organisatie uit, dan tellen de
+ * voorkeuren niet. Leest inline omdat api/ niets uit src importeert.
+ */
+async function pushToegestaan(userId: string, categorie: string | undefined): Promise<boolean> {
+  if (!categorie) return true
+  const { data: profiel } = await supabaseAdmin
+    .from('profiles')
+    .select('organisatie_id, meldingsvoorkeuren')
+    .eq('id', userId)
+    .maybeSingle()
+  const voorkeuren = (profiel?.meldingsvoorkeuren ?? {}) as Record<string, { push?: boolean } | undefined>
+  if (voorkeuren[categorie]?.push !== false) return true
+  if (!profiel?.organisatie_id) return false
+  const { data: instellingen } = await supabaseAdmin
+    .from('app_settings')
+    .select('functies')
+    .eq('organisatie_id', profiel.organisatie_id)
+    .maybeSingle()
+  const functies = (instellingen?.functies ?? {}) as Record<string, unknown>
+  return functies.meldingen_voorkeuren === false
 }
 
 // Niet geëxporteerd: api/-bestanden staan op zichzelf (zie CLAUDE.md). De cron
@@ -133,13 +160,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const userId = await bepaalUser(req)
+    const { userId, service } = await bepaalUser(req)
     if (!(await enforceRateLimit(userId, res))) return
     const lading: PushLading = {
       titel: String(req.body?.titel || 'doen.').slice(0, 80),
       tekst: String(req.body?.tekst || '').slice(0, 200),
       url: typeof req.body?.url === 'string' ? req.body.url : '/',
       tag: typeof req.body?.tag === 'string' ? req.body.tag : undefined,
+      categorie: typeof req.body?.categorie === 'string' ? req.body.categorie.slice(0, 40) : undefined,
+    }
+
+    if (service && !(await pushToegestaan(userId, lading.categorie))) {
+      return res.status(200).json({ bezorgd: 0, overgeslagen: 'voorkeur' })
     }
 
     const bezorgd = await stuurNaarGebruiker(userId, lading)

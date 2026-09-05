@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useId } from "react";
+import { useState, useEffect, useRef, useCallback, useId, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -34,6 +34,9 @@ import {
 import supabase from "@/services/supabaseClient";
 import type { Notificatie } from "@/types";
 import { cn } from "@/lib/utils";
+import { useAppSettings } from "@/contexts/AppSettingsContext";
+import { useFunctie } from "@/hooks/useFunctie";
+import { meldingToegestaan } from "@/lib/meldingsvoorkeuren";
 
 const POLL_INTERVAL_MS = 30_000; // Fallback polling elke 30s
 
@@ -283,7 +286,7 @@ interface NotificatieCenterProps {
 
 export function NotificatieCenter({ variant = 'bell', userInitial }: NotificatieCenterProps = {}) {
   const { user } = useAuth();
-  const [notificaties, setNotificaties] = useState<Notificatie[]>([]);
+  const [alleNotificaties, setNotificaties] = useState<Notificatie[]>([]);
   const [open, setOpen] = useState(false);
   const [laden, setLaden] = useState(false);
   const [toast, setToast] = useState<Notificatie | null>(null);
@@ -291,6 +294,18 @@ export function NotificatieCenter({ variant = 'bell', userInitial }: Notificatie
   const paneelRef = useRef<HTMLDivElement>(null);
   const [paneelStijl, setPaneelStijl] = useState<React.CSSProperties | null>(null);
   const navigate = useNavigate();
+  // Meldingsvoorkeuren (migratie 239): uitgezette categorieën tellen niet mee
+  // in het belletje en staan niet in het paneel.
+  const voorkeurenAan = useFunctie('meldingen_voorkeuren');
+  const { profile } = useAppSettings();
+  const notificaties = useMemo(
+    () => (voorkeurenAan ? alleNotificaties.filter((n) => meldingToegestaan(profile?.meldingsvoorkeuren, n.type, 'app')) : alleNotificaties),
+    [alleNotificaties, voorkeurenAan, profile?.meldingsvoorkeuren],
+  );
+  // De realtime-subscription hieronder draait één keer; via een ref ziet hij
+  // toch de actuele voorkeuren.
+  const meldingZichtbaarRef = useRef<(type: string) => boolean>(() => true);
+  meldingZichtbaarRef.current = (type) => !voorkeurenAan || meldingToegestaan(profile?.meldingsvoorkeuren, type, 'app');
 
   const aantalOngelezen = notificaties.filter((n) => !n.gelezen).length;
 
@@ -393,6 +408,7 @@ export function NotificatieCenter({ variant = 'bell', userInitial }: Notificatie
             // website-meldingen krijgen de grote popup rechtsonder
             // (WebsiteMeldingPopup) incl. geluid; hier dempen tegen dubbel
             if (nieuw.type === 'website_chat' || nieuw.type === 'website_aanvraag') return;
+            if (!meldingZichtbaarRef.current(nieuw.type)) return;
             setToast(nieuw);
             try {
               const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU' +

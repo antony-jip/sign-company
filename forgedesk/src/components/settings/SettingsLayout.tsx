@@ -15,6 +15,7 @@ import {
   Palette,
   Puzzle,
   Shield,
+  Bell,
   Mail,
   Monitor,
   Sliders,
@@ -77,6 +78,8 @@ import { EmailTab } from './EmailTab'
 import { IntegratiesTab } from './IntegratiesTab'
 import { BeveiligingTab } from './BeveiligingTab'
 import { WeergaveTab } from './WeergaveTab'
+import { PushMeldingenKaart } from './PushMeldingenKaart'
+import { MeldingenVoorkeurenKaart } from './MeldingenVoorkeurenKaart'
 import { InkoopfactuurInboxSetup } from '../inkoopfacturen/InkoopfactuurInboxSetup'
 
 // Communicatie supertab (achter feature flag doen_communicatie_tab_enabled)
@@ -117,6 +120,9 @@ const settingsGroups: SettingsGroup[] = [
     ]},
     { id: 'mijn-facturen', label: 'Mijn facturen', icon: Receipt, tabs: [
       { id: 'mijn-facturen', label: 'Mijn facturen', icon: Receipt },
+    ]},
+    { id: 'meldingen', label: 'Meldingen', icon: Bell, tabs: [
+      { id: 'meldingen', label: 'Meldingen', icon: Bell },
     ]},
     { id: 'apparaten', label: 'Beveiliging', icon: Shield, tabs: [
       { id: 'beveiliging', label: 'Beveiliging', icon: Shield },
@@ -213,6 +219,7 @@ const MOBIELE_INGANGEN: MobieleIngang[] = [
   { sectie: 'algemeen', subTab: 'profiel', label: 'Profiel', hint: 'Je naam, foto en handtekening' },
   { sectie: 'algemeen', subTab: 'weergave', label: 'Voorkeuren', hint: 'Mobiel menu, thema, navigatie' },
   { sectie: 'email-settings', label: 'E-mail', hint: 'Verbinding en afzender' },
+  { sectie: 'meldingen', label: 'Meldingen', hint: 'Wat je in de app en op je toestel krijgt' },
   { sectie: 'apparaten', label: 'Beveiliging', hint: 'Wachtwoord en sessies' },
   { sectie: 'financieel', label: 'Abonnement', hint: 'Je pakket en betaling' },
 ]
@@ -240,6 +247,12 @@ function renderTabContent(tabId: string) {
     case 'integraties': return <IntegratiesTab />
     case 'beveiliging': return <BeveiligingTab />
     case 'weergave': return <WeergaveTab />
+    case 'meldingen': return (
+      <div className="space-y-6">
+        <PushMeldingenKaart />
+        <MeldingenVoorkeurenKaart />
+      </div>
+    )
     case 'sidebar': return <SidebarTab />
     case 'portaal': return <PortaalTab />
     case 'forgie': return <ForgieTab />
