@@ -5,6 +5,7 @@ import {
   withUserId, getOrgId, sanitizeDates, round2, getMaxNummer, fetchAllPages,
 } from './supabaseHelpers'
 import { logger } from '@/utils/logger'
+import { functieAan, type FunctieInstellingen } from '@/lib/functies'
 import type { Factuur, FactuurItem, HerinneringTemplate, Klant } from '@/types'
 
 export class FactuurConflictError extends Error {
@@ -76,9 +77,44 @@ export async function createFactuur(factuur: Omit<Factuur, 'id' | 'created_at' |
   return newFactuur
 }
 
+// Velden die na een Exact-sync niet meer mogen veranderen (schakelaar
+// factuur_vergrendeling). Statusovergangen, betaalstand, opvolgvlaggen en
+// teksten blijven vrij; alleen wat de boeking in Exact zou laten afwijken
+// wordt geweigerd. De UI blokkeert dit al; dit is het slot op de deur.
+const VERGRENDELDE_VELDEN: (keyof Factuur)[] = ['klant_id', 'factuurdatum', 'vervaldatum', 'subtotaal', 'btw_bedrag', 'totaal']
+
+export class FactuurVergrendeldError extends Error {
+  constructor(datum: string) {
+    super(`Deze factuur staat sinds ${new Date(datum).toLocaleDateString('nl-NL')} in Exact en is vergrendeld. Wijzigen kan via een creditfactuur.`)
+    this.name = 'FactuurVergrendeldError'
+  }
+}
+
+async function weigerAlsVergrendeld(id: string, updates: Partial<Factuur>): Promise<void> {
+  if (!supabase) return
+  if (!VERGRENDELDE_VELDEN.some((veld) => veld in updates)) return
+  const { data: rij } = await supabase
+    .from('facturen')
+    .select('exact_synced_at, organisatie_id')
+    .eq('id', id)
+    .maybeSingle()
+  if (!rij?.exact_synced_at) return
+  const { data: instellingen } = await supabase
+    .from('app_settings')
+    .select('functies')
+    .eq('organisatie_id', rij.organisatie_id)
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (functieAan(instellingen?.functies as FunctieInstellingen | null, 'factuur_vergrendeling')) {
+    throw new FactuurVergrendeldError(rij.exact_synced_at)
+  }
+}
+
 export async function updateFactuur(id: string, updates: Partial<Factuur>, expectedUpdatedAt?: string): Promise<Factuur> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
+    await weigerAlsVergrendeld(id, updates)
     // Optimistic locking, zelfde constructie als updateOfferte: de voorwaarde
     // zit in de UPDATE zelf, dus de database beslist wie wint.
     if (expectedUpdatedAt) {

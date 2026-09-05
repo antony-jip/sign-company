@@ -68,6 +68,7 @@ import {
   RefreshCw,
   ClipboardCheck,
   Paperclip,
+  Lock,
 } from 'lucide-react'
 import {
   getKlanten,
@@ -670,6 +671,7 @@ export function FactuurEditor() {
   // Ladder uit Instellingen (migratie 212); leeg = standaardladder van de cron
   const [opvolgStappen, setOpvolgStappen] = useState<FactuurOpvolgStap[]>([])
   const stepperAan = useFunctie('factuur_stepper')
+  const vergrendelingAan = useFunctie('factuur_vergrendeling')
   const [herinneringType, setHerinneringType] = useState<HerinneringType>('herinnering_1')
   const [herinneringPreview, setHerinneringPreview] = useState('')
   // Ontvanger volgens dezelfde volgorde als de cron (migratie 101)
@@ -1271,6 +1273,10 @@ export function FactuurEditor() {
   const currentStatus = existingFactuur?.status || 'concept'
   const isVervallen = existingFactuur ? existingFactuur.vervaldatum < getTodayString() && currentStatus !== 'betaald' && currentStatus !== 'gecrediteerd' : false
   const isReadOnly = !!(existingFactuur && (currentStatus === 'betaald' || currentStatus === 'gecrediteerd'))
+  // Na een Exact-sync staan regels, bedragen, datums en klant vast; teksten en
+  // bijlagen blijven bewerkbaar. Corrigeren gaat via een creditfactuur.
+  const isVergrendeld = vergrendelingAan && !isReadOnly && !!existingFactuur?.exact_synced_at
+  const regelsVast = isReadOnly || isVergrendeld
 
   const dagenVervallen = useMemo(() => {
     if (!existingFactuur) return 0
@@ -1494,21 +1500,26 @@ export function FactuurEditor() {
           ? { pdf_storage_path: null, exact_bijlage_gesynced_op: null }
           : {}) as unknown as Partial<Factuur>
 
-        const updates: Partial<Factuur> = {
-          ...adresOverride,
+        // Vergrendeld na Exact-sync: klant, datums, bedragen en regels blijven
+        // zoals ze in Exact staan; teksten en bijlagen mogen nog mee.
+        const vasteVelden: Partial<Factuur> = isVergrendeld ? {} : {
           klant_id: klantId,
           klant_naam: selectedKlant?.bedrijfsnaam || '',
-          contactpersoon_id: contactpersoonId || undefined,
-          titel,
           factuurdatum,
           vervaldatum,
+          subtotaal,
+          btw_bedrag: btwBedrag,
+          totaal,
+        }
+        const updates: Partial<Factuur> = {
+          ...adresOverride,
+          ...vasteVelden,
+          contactpersoon_id: contactpersoonId || undefined,
+          titel,
           voorwaarden,
           notities,
           intro_tekst: introTekst || undefined,
           outro_tekst: outroTekst || undefined,
-          subtotaal,
-          btw_bedrag: btwBedrag,
-          totaal,
           kostenplaats_id: kostenplaatsId || undefined,
           werkbon_id: werkbonId || undefined,
           ...pdfInvalidatie,
@@ -1526,7 +1537,7 @@ export function FactuurEditor() {
         let eindstand: Factuur = { ...existingFactuur, ...updated }
 
         try {
-          await replaceFactuurItems(existingFactuur.id, validItems.map((item, i) => ({
+          if (!isVergrendeld) await replaceFactuurItems(existingFactuur.id, validItems.map((item, i) => ({
             user_id: user?.id || '',
             beschrijving: item.beschrijving,
             aantal: item.aantal,
@@ -1731,7 +1742,7 @@ export function FactuurEditor() {
     kostenplaatsId, isCreditFactuur, creditVoorFactuurId,
     isTrialBlocked, setShowTrialDialog, factuurPrefix, factuurStartNummer,
     adresBedrijfsnaam, adresTav, adresRegel, adresPostcode, adresPlaats,
-    adresOokOpKlant, werkbonId,
+    adresOokOpKlant, werkbonId, isVergrendeld,
   ])
 
   // Verwerken en direct verzenden: opslaan + nummer toekennen, dan de gedeelde
@@ -3181,6 +3192,27 @@ export function FactuurEditor() {
         </div>
       </div>
 
+      {isVergrendeld && existingFactuur?.exact_synced_at && (
+        <div className="px-8 pt-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-petrol/20 bg-petrol/[0.04] px-3 py-2 text-xs text-foreground/80">
+            <span className="inline-flex items-center gap-2">
+              <Lock className="h-3.5 w-3.5 text-petrol dark:text-[#5AABB5]" />
+              Naar Exact op {new Date(existingFactuur.exact_synced_at).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}. Wijzigen kan via een creditfactuur.
+            </span>
+            {!isCreditFactuur && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8"
+                onClick={() => { setCreditReden(''); setCreditnotaDialogOpen(true) }}
+              >
+                Creditfactuur maken
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
       {stepperAan && isEditMode && existingFactuur && toonOpvolgStepper(existingFactuur) && (
         <div className="px-8 pt-3">
           <FactuurOpvolgStepper factuur={existingFactuur} stappen={opvolgStappen} klant={selectedKlant} />
@@ -3240,6 +3272,7 @@ export function FactuurEditor() {
               <KlantContactSelector
                 klantId={klantId}
                 onKlantChange={(id) => {
+                  if (isVergrendeld) return
                   setKlantId(id)
                   setContactpersoonId('')
                 }}
@@ -3360,8 +3393,9 @@ export function FactuurEditor() {
                     }}
                     asInput
                     className="text-sm"
+                    disabled={isVergrendeld}
                   />
-                  {!isReadOnly && factuurdatum !== getTodayString() && (
+                  {!regelsVast && factuurdatum !== getTodayString() && (
                     <button
                       type="button"
                       onClick={() => {
@@ -3382,8 +3416,9 @@ export function FactuurEditor() {
                     onChange={setVervaldatum}
                     asInput
                     className="text-sm"
+                    disabled={isVergrendeld}
                   />
-                  {!isReadOnly && (
+                  {!regelsVast && (
                     <div className="mt-1 flex items-center gap-2">
                       {[14, 30].map((dagen) => (
                         <button
@@ -3644,13 +3679,13 @@ export function FactuurEditor() {
                   Factuurregels ({items.length})
                 </CardTitle>
                 <div className="flex items-center gap-2">
-                  {!isReadOnly && heeftKlembord && (
+                  {!regelsVast && heeftKlembord && (
                     <Button size="sm" variant="ghost" onClick={handlePlakFactuur} title="Regels en teksten van een gekopieerde factuur overnemen">
                       <Copy className="h-4 w-4 mr-1" />
                       Plak gekopieerde factuur
                     </Button>
                   )}
-                  {!isReadOnly && (
+                  {!regelsVast && (
                     <Button size="sm" variant="outline" onClick={handleAddItem}>
                       <Plus className="h-4 w-4 mr-1" />
                       Regel
@@ -3688,7 +3723,7 @@ export function FactuurEditor() {
                       onChange={(e) => handleUpdateItem(item.id, 'beschrijving', e.target.value)}
                       placeholder="Omschrijving..."
                       className="text-sm"
-                      disabled={isReadOnly}
+                      disabled={regelsVast}
                     />
                     <Input
                       type="number"
@@ -3697,7 +3732,7 @@ export function FactuurEditor() {
                       className="text-sm text-right"
                       min={0}
                       step="0.01"
-                      disabled={isReadOnly}
+                      disabled={regelsVast}
                     />
                     <Input
                       type="number"
@@ -3706,7 +3741,7 @@ export function FactuurEditor() {
                       className="text-sm text-right"
                       step="0.01"
                       title="Negatief bedrag (-) = creditregel"
-                      disabled={isReadOnly}
+                      disabled={regelsVast}
                     />
                     <Input
                       type="number"
@@ -3718,7 +3753,7 @@ export function FactuurEditor() {
                       // :invalid worden of door de spinner naar een heel
                       // getal springen, dat verandert stil het bedrag.
                       step="any"
-                      disabled={isReadOnly}
+                      disabled={regelsVast}
                     />
                     <Input
                       type="number"
@@ -3728,13 +3763,13 @@ export function FactuurEditor() {
                       min={0}
                       max={100}
                       step="1"
-                      disabled={isReadOnly}
+                      disabled={regelsVast}
                     />
                     {grootboekrekeningen.length > 0 ? (
                       <Select
                         value={item.grootboek_code || '_leeg'}
                         onValueChange={(val) => handleUpdateItem(item.id, 'grootboek_code', val === '_leeg' ? '' : val)}
-                        disabled={isReadOnly}
+                        disabled={regelsVast}
                       >
                         <SelectTrigger className="h-9 text-xs font-mono px-1.5 truncate">
                           <SelectValue placeholder="—" />
@@ -3755,7 +3790,7 @@ export function FactuurEditor() {
                       {formatCurrency(calcLineTotal(item))}
                     </div>
                     <div className="flex items-center gap-1">
-                      {!isReadOnly && (
+                      {!regelsVast && (
                         <>
                           <Button
                             variant="ghost"
@@ -3781,7 +3816,7 @@ export function FactuurEditor() {
                       )}
                     </div>
                   </div>
-                  {((item.detail_regels && item.detail_regels.length > 0) || !isReadOnly) && (
+                  {((item.detail_regels && item.detail_regels.length > 0) || !regelsVast) && (
                     <div className="px-3 pb-3 md:pl-6 space-y-1.5">
                       {(item.detail_regels || []).map((d) => (
                         <div key={d.id} className="flex items-center gap-2">
@@ -3790,16 +3825,16 @@ export function FactuurEditor() {
                             onChange={(e) => handleUpdateDetailRegel(item.id, d.id, 'label', e.target.value)}
                             placeholder="Label (bijv. Afmeting)"
                             className="h-8 text-xs max-w-[200px]"
-                            disabled={isReadOnly}
+                            disabled={regelsVast}
                           />
                           <Input
                             value={d.waarde}
                             onChange={(e) => handleUpdateDetailRegel(item.id, d.id, 'waarde', e.target.value)}
                             placeholder="Waarde (bijv. 200 × 100 cm)"
                             className="h-8 text-xs flex-1"
-                            disabled={isReadOnly}
+                            disabled={regelsVast}
                           />
-                          {!isReadOnly && (
+                          {!regelsVast && (
                             <Button
                               variant="ghost"
                               size="icon"
@@ -3812,7 +3847,7 @@ export function FactuurEditor() {
                           )}
                         </div>
                       ))}
-                      {!isReadOnly && (
+                      {!regelsVast && (
                         <button
                           type="button"
                           onClick={() => handleAddDetailRegel(item.id)}
@@ -3841,7 +3876,7 @@ export function FactuurEditor() {
                 </div>
               )}
 
-              {!isReadOnly && (
+              {!regelsVast && (
                 <button
                   type="button"
                   onClick={handleAddItem}
