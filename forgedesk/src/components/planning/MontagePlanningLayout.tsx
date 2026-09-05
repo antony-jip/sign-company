@@ -72,8 +72,8 @@ import {
   getTaken,
   updateTaak,
 } from "@/services/supabaseService";
-import { getDagNotities, upsertDagNotitie, deleteDagNotitie, getVrijPatronen, createVrijPatroon, updateVrijPatroon, deleteVrijPatroon, getAfwezigheid, createAfwezigheid, deleteAfwezigheid, getPlanningWeergaven, createPlanningWeergave, deletePlanningWeergave } from "@/services/planningService";
-import type { MontageAfspraak, MontageBijlage, Project, Medewerker, Klant, Offerte, Werkbon, Taak, DagNotitie, VrijPatroon, Afwezigheid, AfwezigheidType, PlanningWeergave } from "@/types";
+import { getDagNotities, upsertDagNotitie, deleteDagNotitie, getVrijPatronen, createVrijPatroon, updateVrijPatroon, deleteVrijPatroon, getAfwezigheid, createAfwezigheid, deleteAfwezigheid, getPlanningWeergaven, createPlanningWeergave, deletePlanningWeergave, createMontageAfspraakReeks, maakHerhalingenVoor, deleteMontageAfspraakReeksVanaf, herhaalDatums } from "@/services/planningService";
+import type { MontageAfspraak, MontageBijlage, MontageHerhaling, Project, Medewerker, Klant, Offerte, Werkbon, Taak, DagNotitie, VrijPatroon, Afwezigheid, AfwezigheidType, PlanningWeergave } from "@/types";
 import { useFunctie } from "@/hooks/useFunctie";
 import { Checkbox } from "@/components/ui/checkbox";
 import { buildAfwezigheidIndex, resolveAfwezig } from "@/utils/afwezigheid";
@@ -306,7 +306,15 @@ interface MontageFormData {
   notities: string;
   bijlagen: MontageBijlage[];
   werkbon_id: string;
+  herhaling_frequentie: 'niet' | MontageHerhaling['frequentie'];
+  herhaling_tot: string;
 }
+
+const HERHALING_LABELS: Record<MontageHerhaling['frequentie'], string> = {
+  wekelijks: 'wekelijks',
+  tweewekelijks: 'elke twee weken',
+  maandelijks: 'maandelijks',
+};
 
 const EMPTY_FORM: MontageFormData = {
   project_id: "",
@@ -323,6 +331,8 @@ const EMPTY_FORM: MontageFormData = {
   notities: "",
   bijlagen: [],
   werkbon_id: "",
+  herhaling_frequentie: 'niet',
+  herhaling_tot: '',
 };
 
 // Org-brede dagnotitie onder de dag-header. Toont de notitie als subtiel
@@ -680,6 +690,7 @@ export function MontagePlanningLayout() {
   // bord. Welke weergave actief is wordt afgeleid door de huidige stand te
   // vergelijken, zodat handmatig doorklikken hem vanzelf loslaat.
   const weergavenAan = useFunctie('planning_weergaven');
+  const herhalenAan = useFunctie('planning_herhalen');
   const [weergaven, setWeergaven] = useState<PlanningWeergave[]>([]);
   const [weergaveDialogOpen, setWeergaveDialogOpen] = useState(false);
   const [weergaveNaam, setWeergaveNaam] = useState('');
@@ -1292,6 +1303,8 @@ export function MontagePlanningLayout() {
       notities: '',
       bijlagen: afspraak.bijlagen ? [...afspraak.bijlagen] : [],
       werkbon_id: afspraak.werkbon_id || "",
+      herhaling_frequentie: 'niet',
+      herhaling_tot: '',
     });
     // Fetch werkbonnen for this project so dropdown is populated
     if (afspraak.project_id) {
@@ -1379,19 +1392,37 @@ export function MontagePlanningLayout() {
       status: editingAfspraak ? editingAfspraak.status : ("gepland" as const),
     };
 
+    const herhaling: MontageHerhaling | null =
+      herhalenAan && formData.herhaling_frequentie !== 'niet' && !editingAfspraak?.herhaling_bron_id
+        ? { frequentie: formData.herhaling_frequentie, tot: formData.herhaling_tot }
+        : null;
+    if (herhaling && (!herhaling.tot || herhaling.tot <= formData.datum)) {
+      toast.error("Kies een einddatum na de eerste afspraak");
+      return;
+    }
+
     try {
       if (editingAfspraak) {
         const updated = await updateMontageAfspraak(editingAfspraak.id, payload);
+        const bijgewerkt = { ...editingAfspraak, ...payload, ...updated } as MontageAfspraak;
         setAfspraken((prev) =>
           prev.map((a) =>
             a.id === editingAfspraak.id ? { ...a, ...payload, ...updated } : a
           )
         );
-        toast.success("Montage afspraak bijgewerkt");
+        if (herhaling) {
+          const [eerste, ...herhalingen] = await maakHerhalingenVoor(bijgewerkt, herhaling);
+          setAfspraken((prev) => [...prev.map((a) => (a.id === eerste.id ? { ...a, ...eerste } : a)), ...herhalingen]);
+          toast.success(`Afspraak bijgewerkt, ${herhalingen.length} herhaling${herhalingen.length === 1 ? '' : 'en'} ingepland`);
+        } else {
+          toast.success("Montage afspraak bijgewerkt");
+        }
       } else {
-        const created = await createMontageAfspraak(payload);
+        const [created, ...herhalingen] = herhaling
+          ? await createMontageAfspraakReeks(payload, herhaling)
+          : [await createMontageAfspraak(payload)];
         logCreate({ user, medewerkers, entityType: 'montage', entityId: created.id });
-        setAfspraken((prev) => [...prev, created]);
+        setAfspraken((prev) => [...prev, created, ...herhalingen]);
         // Montage aangemaakt -> project automatisch op "ingepland" (alleen vooruit)
         if (formData.project_id) {
           const project = projecten.find((p) => p.id === formData.project_id);
@@ -1425,6 +1456,21 @@ export function MontagePlanningLayout() {
       toast.success("Montage afspraak verwijderd");
     } catch (err) {
       logger.error('Montage afspraak verwijderen mislukt:', err)
+      toast.error("Er ging iets mis bij het verwijderen");
+    }
+  }
+
+  async function handleDeleteReeksVanaf(afspraak: MontageAfspraak) {
+    if (!afspraak.herhaling_bron_id) return handleDelete(afspraak.id);
+    const confirmed = await confirm({ message: 'Deze en alle volgende afspraken uit de reeks verwijderen?', variant: 'destructive', confirmLabel: 'Verwijderen' })
+    if (!confirmed) return
+    try {
+      const weg = new Set(await deleteMontageAfspraakReeksVanaf(afspraak.herhaling_bron_id, afspraak.datum));
+      weg.add(afspraak.id);
+      setAfspraken((prev) => prev.filter((a) => !weg.has(a.id)));
+      toast.success(`${weg.size} afspra${weg.size === 1 ? 'ak' : 'ken'} verwijderd`);
+    } catch (err) {
+      logger.error('Reeks verwijderen mislukt:', err)
       toast.error("Er ging iets mis bij het verwijderen");
     }
   }
@@ -2220,6 +2266,54 @@ export function MontagePlanningLayout() {
               </div>
             </div>
 
+            {/* Herhalen (migratie 238) · een afspraak uit een reeks toont alleen waar hij bij hoort */}
+            {editingAfspraak?.herhaling_bron_id && editingAfspraak.herhaling ? (
+              <p className="text-[12px] text-muted-foreground">
+                Onderdeel van een reeks ({HERHALING_LABELS[editingAfspraak.herhaling.frequentie]} tot{' '}
+                {new Date(editingAfspraak.herhaling.tot + 'T00:00:00').toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })})
+              </p>
+            ) : herhalenAan && (
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Herhalen</Label>
+                    <Select
+                      value={formData.herhaling_frequentie}
+                      onValueChange={(v) => setFormData((prev) => ({ ...prev, herhaling_frequentie: v as MontageFormData['herhaling_frequentie'] }))}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="niet">Niet</SelectItem>
+                        <SelectItem value="wekelijks">Wekelijks</SelectItem>
+                        <SelectItem value="tweewekelijks">Elke twee weken</SelectItem>
+                        <SelectItem value="maandelijks">Maandelijks</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {formData.herhaling_frequentie !== 'niet' && (
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Tot en met</Label>
+                      <DatePicker
+                        value={formData.herhaling_tot}
+                        onChange={(v) => setFormData((prev) => ({ ...prev, herhaling_tot: v }))}
+                        asInput
+                      />
+                    </div>
+                  )}
+                </div>
+                {formData.herhaling_frequentie !== 'niet' && formData.datum && formData.herhaling_tot && (() => {
+                  const aantal = herhaalDatums(formData.datum, { frequentie: formData.herhaling_frequentie, tot: formData.herhaling_tot }).length;
+                  return (
+                    <p className="text-[12px] text-muted-foreground">
+                      {aantal === 0
+                        ? 'Geen herhalingen binnen deze periode.'
+                        : `${aantal} herhaling${aantal === 1 ? '' : 'en'} erbij, elk als losse afspraak.`}
+                    </p>
+                  );
+                })()}
+              </div>
+            )}
+
             {/* Locatie */}
             <div className="space-y-1.5">
               <Label htmlFor="locatie" className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Locatie</Label>
@@ -2474,7 +2568,28 @@ export function MontagePlanningLayout() {
           </div>
 
           <DialogFooter className="gap-2">
-            {editingAfspraak && (
+            {editingAfspraak && editingAfspraak.herhaling_bron_id ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-[#C03A18] transition-colors"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Verwijderen
+                    <ChevronDown className="h-3 w-3 opacity-60" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-[200px]">
+                  <DropdownMenuItem onClick={() => { void handleDelete(editingAfspraak.id); setDialogOpen(false); }}>
+                    Alleen deze
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => { void handleDeleteReeksVanaf(editingAfspraak); setDialogOpen(false); }}>
+                    Deze en volgende
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : editingAfspraak && (
               <button
                 type="button"
                 onClick={() => {

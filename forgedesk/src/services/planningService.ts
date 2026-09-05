@@ -3,7 +3,7 @@ import {
   assertId, getLocalData, setLocalData, generateId, now,
   withUserId, getOrgId, sanitizeDates, fetchAllPages,
 } from './supabaseHelpers'
-import type { CalendarEvent, MontageAfspraak, Verlof, Bedrijfssluitingsdag, DagNotitie, VrijPatroon, Afwezigheid, PlanningWeergave } from '@/types'
+import type { CalendarEvent, MontageAfspraak, MontageHerhaling, Verlof, Bedrijfssluitingsdag, DagNotitie, VrijPatroon, Afwezigheid, PlanningWeergave } from '@/types'
 
 // ============ EVENTS (CALENDAR) ============
 
@@ -86,6 +86,104 @@ export async function deleteMontageAfspraak(id: string): Promise<void> {
   }
   const items = getLocalData<MontageAfspraak>('montage_afspraken')
   setLocalData('montage_afspraken', items.filter((a) => a.id !== id))
+}
+
+// ============ HERHAALD INPLANNEN (migratie 238) ============
+
+/** Meer dan dit vooruit plannen is geen reeks meer maar een vergissing. */
+export const MAX_HERHALINGEN = 26
+
+function isoDatum(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+function volgendeDatum(datum: string, frequentie: MontageHerhaling['frequentie'], stap: number, startDag: number): string {
+  const [j, m, d] = datum.split('-').map(Number)
+  if (frequentie === 'maandelijks') {
+    const eerste = new Date(j, m - 1 + stap, 1)
+    const laatsteDag = new Date(eerste.getFullYear(), eerste.getMonth() + 1, 0).getDate()
+    return isoDatum(new Date(eerste.getFullYear(), eerste.getMonth(), Math.min(startDag, laatsteDag)))
+  }
+  const dagen = frequentie === 'wekelijks' ? 7 : 14
+  return isoDatum(new Date(j, m - 1, d + dagen * stap))
+}
+
+/** Alle datums van de herhalingen ná de eerste, tot en met `tot`, gemaximeerd. */
+export function herhaalDatums(eersteDatum: string, herhaling: MontageHerhaling): string[] {
+  if (!eersteDatum || !herhaling.tot || herhaling.tot <= eersteDatum) return []
+  const startDag = Number(eersteDatum.split('-')[2])
+  const datums: string[] = []
+  for (let stap = 1; stap <= MAX_HERHALINGEN; stap++) {
+    const volgende = volgendeDatum(eersteDatum, herhaling.frequentie, stap, startDag)
+    if (volgende > herhaling.tot) break
+    datums.push(volgende)
+  }
+  return datums
+}
+
+/**
+ * Hangt een reeks aan een bestaande eerste afspraak: de eerste krijgt zichzelf
+ * als bron, de herhalingen zijn losse rijen met dezelfde velden. Werkbon en
+ * bijlagen gaan niet mee; die horen bij één bezoek.
+ */
+export async function maakHerhalingenVoor(eerste: MontageAfspraak, herhaling: MontageHerhaling): Promise<MontageAfspraak[]> {
+  const datums = herhaalDatums(eerste.datum, herhaling)
+  const { id: _id, created_at: _c, updated_at: _u, werkbon_id: _w, werkbon_nummer: _wn, bijlagen: _b, ...velden } = eerste
+  const bijgewerkteEerste = await updateMontageAfspraak(eerste.id, { herhaling_bron_id: eerste.id, herhaling })
+  if (datums.length === 0) return [bijgewerkteEerste]
+
+  const rijen: MontageAfspraak[] = datums.map((datum) => ({
+    ...velden,
+    id: generateId(),
+    datum,
+    status: 'gepland',
+    herhaling_bron_id: eerste.id,
+    herhaling,
+    created_at: now(),
+    updated_at: now(),
+  } as MontageAfspraak))
+
+  if (isSupabaseConfigured() && supabase) {
+    const _orgId = await getOrgId()
+    const { data, error } = await supabase
+      .from('montage_afspraken')
+      .insert(rijen.map((r) => ({ ...sanitizeDates(r), organisatie_id: _orgId })))
+      .select()
+    if (error) throw error
+    return [bijgewerkteEerste, ...((data || []) as MontageAfspraak[])]
+  }
+  const items = getLocalData<MontageAfspraak>('montage_afspraken')
+  items.push(...rijen)
+  setLocalData('montage_afspraken', items)
+  return [bijgewerkteEerste, ...rijen]
+}
+
+/** Maakt de eerste afspraak en meteen de herhalingen. Geeft alle rijen terug, de eerste voorop. */
+export async function createMontageAfspraakReeks(
+  afspraak: Omit<MontageAfspraak, 'id' | 'created_at' | 'updated_at'>,
+  herhaling: MontageHerhaling,
+): Promise<MontageAfspraak[]> {
+  const eerste = await createMontageAfspraak({ ...afspraak, herhaling })
+  return maakHerhalingenVoor(eerste, herhaling)
+}
+
+/** "Deze en volgende": alle rijen van de reeks vanaf deze datum, inclusief deze. Geeft de verwijderde id's terug. */
+export async function deleteMontageAfspraakReeksVanaf(bronId: string, vanafDatum: string): Promise<string[]> {
+  assertId(bronId, 'herhaling_bron_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('montage_afspraken')
+      .delete()
+      .eq('herhaling_bron_id', bronId)
+      .gte('datum', vanafDatum)
+      .select('id')
+    if (error) throw error
+    return (data || []).map((r) => r.id as string)
+  }
+  const items = getLocalData<MontageAfspraak>('montage_afspraken')
+  const weg = items.filter((a) => a.herhaling_bron_id === bronId && a.datum >= vanafDatum).map((a) => a.id)
+  setLocalData('montage_afspraken', items.filter((a) => !weg.includes(a.id)))
+  return weg
 }
 
 export async function getMontageAfsprakenByProject(projectId: string): Promise<MontageAfspraak[]> {
