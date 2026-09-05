@@ -41,7 +41,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { getOffertes, updateOfferte, deleteOfferte, getKlant, getOfferteItems, getProject, createTaak, getMedewerkers } from '@/services/supabaseService'
+import { getOffertes, updateOfferte, deleteOfferte, getKlant, getOfferteItems, getProject, createTaak, getMedewerkers, updateKlant, updateProject } from '@/services/supabaseService'
+import { useFunctie } from '@/hooks/useFunctie'
 import { getCached, fetchQuery } from '@/lib/queryCache'
 import { vierEenmalig, MIJLPAAL_COPY } from '@/lib/mijlpaal'
 import { ModuleIntro } from '@/components/shared/ModuleIntro'
@@ -434,6 +435,22 @@ export function QuotesPipeline() {
 
   const handleDragLeave = useCallback(() => { setDragOverColumn(null) }, [])
 
+  // Bij akkoord: prospect wordt klant (schakelaar prospect_wordt_klant) en een
+  // spoed-offerte zet het gekoppelde project op prioriteit kritiek. Stil en
+  // los van de statuswijziging zelf, die is dan al gelukt.
+  const prospectWordtKlant = useFunctie('prospect_wordt_klant')
+  const naAkkoord = useCallback((offerte: Offerte) => {
+    if (prospectWordtKlant && offerte.klant_id) {
+      getKlant(offerte.klant_id)
+        .then((k) => (k?.status === 'prospect' ? updateKlant(k.id, { status: 'actief' }) : null))
+        .catch((err) => logger.error('Prospect naar klant mislukt:', err))
+    }
+    if (offerte.spoed && offerte.project_id) {
+      updateProject(offerte.project_id, { prioriteit: 'kritiek' })
+        .catch((err) => logger.error('Spoed-prioriteit zetten mislukt:', err))
+    }
+  }, [prospectWordtKlant])
+
   const vierAkkoordAlsEerste = useCallback((offerteId: string) => {
     const anderAkkoord = offertes.some(o => o.id !== offerteId && (o.status === 'goedgekeurd' || o.status === 'gefactureerd'))
     return vierEenmalig('eerste_offerte_akkoord', !anderAkkoord, MIJLPAAL_COPY.eerste_offerte_akkoord)
@@ -462,10 +479,11 @@ export function QuotesPipeline() {
       logger.error('Drag & drop status update failed')
       return
     }
+    if (newStatus === 'goedgekeurd') naAkkoord(offerte)
     if (!(newStatus === 'goedgekeurd' && vierAkkoordAlsEerste(offerteId))) {
       toast.success(`${offerte.nummer} → ${STATUS_LABELS[newStatus] || newStatus}`)
     }
-  }, [offertes, runOptimistic, vierAkkoordAlsEerste])
+  }, [offertes, runOptimistic, vierAkkoordAlsEerste, naAkkoord])
 
   const handleOpenMail = useCallback(async (offerte: Offerte) => {
     try {
@@ -693,10 +711,14 @@ export function QuotesPipeline() {
       logger.error('Fout bij statuswijziging')
       return
     }
+    if (newStatus === 'goedgekeurd') {
+      const offerte = offertes.find(o => o.id === offerteId)
+      if (offerte) naAkkoord(offerte)
+    }
     if (!(newStatus === 'goedgekeurd' && vierAkkoordAlsEerste(offerteId))) {
       toast.success(`Status gewijzigd naar ${STATUS_LABELS[newStatus] || newStatus}`)
     }
-  }, [offertes, runOptimistic, vierAkkoordAlsEerste])
+  }, [offertes, runOptimistic, vierAkkoordAlsEerste, naAkkoord])
 
   function toggleSelect(id: string) {
     setSelectedIds(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next })

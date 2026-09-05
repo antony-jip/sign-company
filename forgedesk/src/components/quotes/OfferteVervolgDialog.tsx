@@ -7,6 +7,8 @@ import { toast } from 'sonner'
 import { useAuth } from '@/contexts/AuthContext'
 import { useMedewerkers } from '@/contexts/MedewerkersContext'
 import { getOfferte, updateOfferte, converteerOfferteNaarProject, wijsOfferteAf } from '@/services/offerteService'
+import { getKlant, updateKlant, updateProject } from '@/services/supabaseService'
+import { useFunctie } from '@/hooks/useFunctie'
 import { logCreate } from '@/utils/auditLogger'
 import { logger } from '@/utils/logger'
 import { cn } from '@/lib/utils'
@@ -31,6 +33,7 @@ export function OfferteVervolgDialog({ open, onOpenChange, offerteId, onBijgewer
   const navigate = useNavigate()
   const { user } = useAuth()
   const { medewerkers } = useMedewerkers()
+  const prospectWordtKlant = useFunctie('prospect_wordt_klant')
   const [offerte, setOfferte] = useState<Offerte | null>(null)
   const [bezig, setBezig] = useState<'project' | 'factuur' | 'afwijzen' | null>(null)
   const [afwijzenOpen, setAfwijzenOpen] = useState(false)
@@ -61,8 +64,16 @@ export function OfferteVervolgDialog({ open, onOpenChange, offerteId, onBijgewer
       let huidig = offerte
       if (huidig.status !== 'goedgekeurd' && huidig.status !== 'gefactureerd') {
         huidig = await updateOfferte(huidig.id, { status: 'goedgekeurd', akkoord_op: new Date().toISOString() })
+        if (prospectWordtKlant && huidig.klant_id) {
+          getKlant(huidig.klant_id)
+            .then((k) => (k?.status === 'prospect' ? updateKlant(k.id, { status: 'actief' }) : null))
+            .catch((err) => logger.error('Prospect naar klant mislukt:', err))
+        }
       }
       if (huidig.project_id) {
+        if (huidig.spoed) {
+          updateProject(huidig.project_id, { prioriteit: 'kritiek' }).catch((err) => logger.error('Spoed-prioriteit zetten mislukt:', err))
+        }
         onBijgewerkt?.(huidig)
         onOpenChange(false)
         navigate(`/projecten/${huidig.project_id}`)

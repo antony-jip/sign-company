@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
-import { getOfferte, getOfferteItems, getKlant, updateOfferte, updateProject, getProject, createProject } from '@/services/supabaseService'
+import { getOfferte, getOfferteItems, getKlant, updateOfferte, updateProject, getProject, createProject, updateKlant } from '@/services/supabaseService'
 import { converteerOfferteNaarProject } from '@/services/offerteService'
 import { OfferteVervolgDialog } from './OfferteVervolgDialog'
 import { useFunctie } from '@/hooks/useFunctie'
@@ -76,6 +76,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
   const [fetchedItems, setFetchedItems] = useState<OfferteItem[]>([])
   const [isLoading, setIsLoading] = useState(!propOfferte && !!id)
   const vervolgAan = useFunctie('offerte_vervolg')
+  const prospectWordtKlant = useFunctie('prospect_wordt_klant')
   const [showVervolg, setShowVervolg] = useState(false)
 
   // Fetch data from service layer when accessed via route (no props provided)
@@ -167,6 +168,13 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
 
       // Auto-activate or create project when quote is approved
       if (newStatus === 'goedgekeurd') {
+        // Prospect wordt klant (schakelaar prospect_wordt_klant); de klantrij
+        // hier is al geladen, dus geen extra rondje.
+        if (prospectWordtKlant && fetchedKlant?.status === 'prospect') {
+          updateKlant(fetchedKlant.id, { status: 'actief' })
+            .then((k) => setFetchedKlant(k))
+            .catch((err) => logger.error('Prospect naar klant mislukt:', err))
+        }
         try {
           if (fetchedOfferte.project_id) {
             // Activate existing project
@@ -178,6 +186,10 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
                 logWijziging({ userId: user.id, entityType: 'project', entityId: project.id, actie: 'status_gewijzigd', medewerkerNaam: naam, veld: 'status', oudeWaarde: project.status, nieuweWaarde: 'akkoord-klant' })
               }
               toast.success(`Project "${project.naam}" staat nu op Akkoord klant`)
+            }
+            // Spoed-conditie: project krijgt prioriteit kritiek
+            if (fetchedOfferte.spoed && project && project.prioriteit !== 'kritiek') {
+              await updateProject(project.id, { prioriteit: 'kritiek' })
             }
           } else {
             // Auto-create project from approved quote

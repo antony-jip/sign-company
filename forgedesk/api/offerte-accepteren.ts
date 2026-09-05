@@ -310,6 +310,46 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (proj && ['gepland', 'in-review', 'te-plannen'].includes(proj.status)) {
         await supabaseAdmin.from('projecten').update({ status: 'akkoord-klant' }).eq('id', projIdVoorStatus)
       }
+      // Spoed-conditie (migratie 235): het project krijgt bij akkoord prioriteit kritiek.
+      if (offerte.spoed) {
+        await supabaseAdmin.from('projecten').update({ prioriteit: 'kritiek' }).eq('id', projIdVoorStatus)
+      }
+    }
+
+    // Prospect wordt klant bij akkoord (schakelaar prospect_wordt_klant, standaard aan).
+    // app_settings.functies is JSONB; de standaarden staan in src/lib/functies.ts,
+    // maar api/ importeert niets uit src, dus hier inline.
+    try {
+      if (offerte.klant_id) {
+        let functies: Record<string, unknown> | null = null
+        if (offerte.organisatie_id) {
+          const { data: inst } = await supabaseAdmin
+            .from('app_settings')
+            .select('functies')
+            .eq('organisatie_id', offerte.organisatie_id)
+            .order('updated_at', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+          functies = (inst?.functies as Record<string, unknown> | null) ?? null
+        }
+        if (!functies) {
+          const { data: inst } = await supabaseAdmin
+            .from('app_settings')
+            .select('functies')
+            .eq('user_id', offerte.user_id)
+            .maybeSingle()
+          functies = (inst?.functies as Record<string, unknown> | null) ?? null
+        }
+        const prospectWordtKlant = typeof functies?.prospect_wordt_klant === 'boolean' ? functies.prospect_wordt_klant : true
+        if (prospectWordtKlant) {
+          const { data: klantRij } = await supabaseAdmin.from('klanten').select('status').eq('id', offerte.klant_id).maybeSingle()
+          if (klantRij?.status === 'prospect') {
+            await supabaseAdmin.from('klanten').update({ status: 'actief', updated_at: nu }).eq('id', offerte.klant_id)
+          }
+        }
+      }
+    } catch (prospectErr) {
+      console.error('[offerte-accepteren] prospect naar klant mislukt:', prospectErr)
     }
 
     // Fan-out naar maker + alle org-admins: een klant-akkoord mag in een team
