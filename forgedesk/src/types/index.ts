@@ -1,3 +1,4 @@
+import type { FunctieInstellingen } from '@/lib/functies'
 export type TeamRol = 'admin' | 'medewerker' | 'monteur'
 export type TeamStatus = 'actief' | 'uitgenodigd' | 'gedeactiveerd'
 
@@ -838,6 +839,8 @@ export interface AppSettings {
   standaard_kostprijs_uur?: number | null;
   /** Werkbon-uren verdelen over de monteurs van de montageafspraak i.p.v. op de afronder (migratie 233). */
   werkbon_uren_verdelen?: boolean;
+  /** Aan/uit-schakelaars per organisatie (migratie 234). Sleutels en standaarden in src/lib/functies.ts. */
+  functies?: FunctieInstellingen;
   // Offerte teksten
   offerte_intro_tekst: string;
   offerte_outro_tekst: string;

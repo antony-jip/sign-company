@@ -50,6 +50,7 @@ import { DEFAULT_OFFERTE_VOORWAARDEN, DEFAULT_OFFERTE_LEVERTIJD, DEFAULT_OFFERTE
 import { HuisstijlTab } from './HuisstijlTab'
 import { BedrijfsprofielenTab } from './BedrijfsprofielenTab'
 import { CalculatieTab } from './CalculatieTab'
+import { FunctiesTab } from './FunctiesTab'
 import { ForgieTab } from './ForgieTab'
 import { confirm } from '@/components/shared/ConfirmDialog'
 import { PortaalTab } from './PortaalTab'
@@ -188,6 +189,9 @@ const settingsGroups: SettingsGroup[] = [
     { id: 'daan-ai', label: 'Daan AI', icon: Sparkles, tabs: [
       { id: 'forgie', label: 'Daan AI', icon: Sparkles },
     ]},
+    { id: 'functies', label: 'Functies', icon: Sliders, tabs: [
+      { id: 'functies', label: 'Functies', icon: Sliders },
+    ]},
     { id: 'whats-new', label: "What's new", icon: Sparkles, tabs: [
       { id: 'changelog', label: "What's new", icon: Sparkles },
     ]},
@@ -239,6 +243,7 @@ function renderTabContent(tabId: string) {
     case 'sidebar': return <SidebarTab />
     case 'portaal': return <PortaalTab />
     case 'forgie': return <ForgieTab />
+    case 'functies': return <FunctiesTab />
     case 'teamleden': return <TeamledenTab />
     case 'abonnement': return <AbonnementTab />
     case 'mijn-facturen': return <MijnFacturenTab />
