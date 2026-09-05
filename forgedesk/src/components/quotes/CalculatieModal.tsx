@@ -47,7 +47,9 @@ import { berekenMarkupPercentage, berekenVerkoopVanMarkup } from '@/utils/margeB
 import { berekenCalculatieTotalen, berekenRegeltotaal } from '@/utils/calculatieBerekening'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { getCalculatieProducten, getCalculatieTemplates } from '@/services/supabaseService'
-import type { CalculatieRegel, CalculatieProduct, CalculatieTemplate } from '@/types'
+import { getCalculatieProductStaffels, kiesStaffel, volgendeStaffel } from '@/services/offerteService'
+import { useFunctie } from '@/hooks/useFunctie'
+import type { CalculatieRegel, CalculatieProduct, CalculatieTemplate, CalculatieProductStaffel } from '@/types'
 import { logger } from '../../utils/logger'
 import { confirm } from '@/components/shared/ConfirmDialog'
 import { ProductCatalogusCombobox } from '@/components/shared/ProductCatalogusCombobox'
@@ -256,6 +258,8 @@ export function CalculatieModal({
   const [beschrijving, setBeschrijving] = useState(itemBeschrijving || '')
   const [producten, setProducten] = useState<CalculatieProduct[]>([])
   const [templates, setTemplates] = useState<CalculatieTemplate[]>([])
+  const staffelAan = useFunctie('offerte_staffel')
+  const [staffels, setStaffels] = useState<CalculatieProductStaffel[]>([])
   const [showTemplates, setShowTemplates] = useState(false)
   // Laden bij openen
   useEffect(() => {
@@ -274,8 +278,9 @@ export function CalculatieModal({
     // Laad catalogus producten en templates
     getCalculatieProducten().then(p => { if (!cancelled) setProducten(p) }).catch(logger.error)
     getCalculatieTemplates().then(t => { if (!cancelled) setTemplates(t) }).catch(logger.error)
+    if (staffelAan) getCalculatieProductStaffels().then(st => { if (!cancelled) setStaffels(st) }).catch(logger.error)
     return () => { cancelled = true }
-  }, [open, initialRegels, itemBeschrijving, standaardMarge, standaardBtw, isEersteItem])
+  }, [open, initialRegels, itemBeschrijving, standaardMarge, standaardBtw, isEersteItem, staffelAan])
 
   // ---- Regel CRUD ----
 
@@ -353,18 +358,39 @@ export function CalculatieModal({
   // ---- Product uit catalogus kiezen ----
 
   const vulRegelMetProduct = useCallback((regelId: string, product: CalculatieProduct) => {
+    const aantal = regels.find((r) => r.id === regelId)?.aantal ?? 1
+    const staffel = staffelAan ? kiesStaffel(staffels, product.id, aantal) : null
+    const inkoop = staffel?.inkoop_prijs ?? product.inkoop_prijs
+    const verkoop = staffel ? staffel.verkoop_prijs : product.verkoop_prijs
     updateRegel(regelId, {
       product_id: product.id,
       product_naam: product.naam,
       categorie: product.categorie,
       urenveld: product.urenveld ?? null,
       eenheid: product.eenheid,
-      inkoop_prijs: product.inkoop_prijs,
-      verkoop_prijs: product.verkoop_prijs,
-      marge_percentage: product.standaard_marge,
+      inkoop_prijs: inkoop,
+      verkoop_prijs: verkoop,
+      marge_percentage: staffel ? berekenMarge(inkoop, verkoop) : product.standaard_marge,
       btw_percentage: product.btw_percentage,
     })
-  }, [updateRegel])
+  }, [updateRegel, regels, staffels, staffelAan])
+
+  // Aantal wijzigen: met een catalogusproduct en staffels schuiven inkoop en
+  // verkoop mee naar de staffel die bij het nieuwe aantal hoort.
+  const updateAantal = useCallback((regel: CalculatieRegel, aantal: number) => {
+    const staffel = staffelAan ? kiesStaffel(staffels, regel.product_id, aantal) : null
+    if (!staffel) { updateRegel(regel.id, { aantal }); return }
+    const inkoop = staffel.inkoop_prijs ?? regel.inkoop_prijs
+    updateRegel(regel.id, { aantal, inkoop_prijs: inkoop, verkoop_prijs: staffel.verkoop_prijs, marge_percentage: berekenMarge(inkoop, staffel.verkoop_prijs) })
+  }, [updateRegel, staffels, staffelAan])
+
+  const staffelHint = useCallback((regel: CalculatieRegel): string | null => {
+    if (!staffelAan) return null
+    const volgende = volgendeStaffel(staffels, regel.product_id, regel.aantal)
+    if (!volgende) return null
+    const eenheid = regel.eenheid === 'stuks' ? 'st' : regel.eenheid
+    return `vanaf ${volgende.vanaf_aantal} ${eenheid}: ${formatCurrency(volgende.verkoop_prijs)}`
+  }, [staffels, staffelAan])
 
   // ---- Template laden ----
 
@@ -611,7 +637,7 @@ export function CalculatieModal({
                     <label className="flex flex-col gap-1 min-w-0">
                       <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Aantal</span>
                       <div className="rounded-lg border border-border/60 bg-background">
-                        <AantalCel value={regel.aantal} onChange={(v) => updateRegel(regel.id, { aantal: v })} />
+                        <AantalCel value={regel.aantal} onChange={(v) => updateAantal(regel, v)} />
                       </div>
                     </label>
                     <label className="flex flex-col gap-1 min-w-0">
@@ -677,6 +703,9 @@ export function CalculatieModal({
                       </Button>
                     </div>
                   </div>
+                  {staffelHint(regel) && (
+                    <p className="text-[11px] text-muted-foreground">{staffelHint(regel)}</p>
+                  )}
                 </div>
               )
             })}
@@ -787,7 +816,7 @@ export function CalculatieModal({
 
                       {/* Aantal */}
                       <td className="px-2 py-1.5">
-                        <AantalCel value={regel.aantal} onChange={(v) => updateRegel(regel.id, { aantal: v })} />
+                        <AantalCel value={regel.aantal} onChange={(v) => updateAantal(regel, v)} />
                       </td>
 
                       {/* Eenheid */}
@@ -870,6 +899,11 @@ export function CalculatieModal({
                         </div>
                       </td>
                     </tr>
+                    {staffelHint(regel) && (
+                      <tr className="border-b border-border/40 dark:border-border/40 bg-card">
+                        <td colSpan={8} className="px-3 pb-1.5 pt-0 text-[11px] text-muted-foreground">{staffelHint(regel)}</td>
+                      </tr>
+                    )}
                   </React.Fragment>
                   )
                 })}

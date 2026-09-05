@@ -40,8 +40,8 @@ import { isAdminUser } from '@/utils/authHelpers'
 import { urenVeldenUitInstellingen } from '@/utils/offerteUren'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useFunctie } from '@/hooks/useFunctie'
-import { getOfferteCondities, createOfferteConditie, updateOfferteConditie, deleteOfferteConditie } from '@/services/offerteService'
-import type { AppSettings, CalculatieProduct, CalculatieTemplate, CalculatieRegel, OfferteTemplate, OfferteTemplateRegel, OfferteConditie } from '@/types'
+import { getOfferteCondities, createOfferteConditie, updateOfferteConditie, deleteOfferteConditie, getCalculatieProductStaffels, upsertCalculatieProductStaffel, deleteCalculatieProductStaffel } from '@/services/offerteService'
+import type { AppSettings, CalculatieProduct, CalculatieTemplate, CalculatieRegel, OfferteTemplate, OfferteTemplateRegel, OfferteConditie, CalculatieProductStaffel } from '@/types'
 import {
   getCalculatieProducten,
   createCalculatieProduct,
@@ -619,6 +619,41 @@ function ProductenSection({
   const [productMarge, setProductMarge] = useState(standaardMarge)
   const [productBtw, setProductBtw] = useState(21)
   const [productNotitie, setProductNotitie] = useState('')
+  // Staffels (schakelaar offerte_staffel): alleen bij een bestaand product,
+  // want de rijen hangen aan product_id.
+  const staffelAan = useFunctie('offerte_staffel')
+  const [staffels, setStaffels] = useState<CalculatieProductStaffel[]>([])
+  const [nieuweStaffel, setNieuweStaffel] = useState<{ vanaf: string; inkoop: string; verkoop: string }>({ vanaf: '', inkoop: '', verkoop: '' })
+  const [staffelBezig, setStaffelBezig] = useState(false)
+
+  const voegStaffelToe = async () => {
+    if (!editProductId) return
+    const vanaf = parseFloat(nieuweStaffel.vanaf.replace(',', '.'))
+    const verkoop = parseFloat(nieuweStaffel.verkoop.replace(',', '.'))
+    const inkoop = nieuweStaffel.inkoop.trim() ? parseFloat(nieuweStaffel.inkoop.replace(',', '.')) : null
+    if (!(vanaf > 0) || Number.isNaN(verkoop)) { toast.error('Vul een aantal en een verkoopprijs in'); return }
+    setStaffelBezig(true)
+    try {
+      const rij = await upsertCalculatieProductStaffel({ product_id: editProductId, vanaf_aantal: vanaf, inkoop_prijs: inkoop, verkoop_prijs: verkoop })
+      setStaffels((prev) => [...prev.filter((x) => x.id !== rij.id && x.vanaf_aantal !== rij.vanaf_aantal), rij].sort((a, b) => a.vanaf_aantal - b.vanaf_aantal))
+      setNieuweStaffel({ vanaf: '', inkoop: '', verkoop: '' })
+    } catch (err) {
+      logger.error(err)
+      toast.error('Kon staffel niet opslaan')
+    } finally {
+      setStaffelBezig(false)
+    }
+  }
+
+  const verwijderStaffel = async (id: string) => {
+    try {
+      await deleteCalculatieProductStaffel(id)
+      setStaffels((prev) => prev.filter((x) => x.id !== id))
+    } catch (err) {
+      logger.error(err)
+      toast.error('Kon staffel niet verwijderen')
+    }
+  }
 
   const resetForm = () => {
     setProductNaam('')
@@ -631,6 +666,8 @@ function ProductenSection({
     setProductBtw(21)
     setProductNotitie('')
     setEditProductId(null)
+    setStaffels([])
+    setNieuweStaffel({ vanaf: '', inkoop: '', verkoop: '' })
     setShowForm(false)
   }
 
@@ -645,6 +682,8 @@ function ProductenSection({
     setProductMarge(p.standaard_marge)
     setProductBtw(p.btw_percentage)
     setProductNotitie(p.notitie)
+    setStaffels([])
+    if (staffelAan) getCalculatieProductStaffels(p.id).then(setStaffels).catch(logger.error)
     setShowForm(true)
   }
 
@@ -925,6 +964,57 @@ function ProductenSection({
                 />
               </div>
             </div>
+
+            {staffelAan && editProductId && (
+              <div className="space-y-2">
+                <div>
+                  <Label className="text-xs font-medium">Staffels</Label>
+                  <p className="text-xs text-muted-foreground/60">Vanaf een aantal een andere inkoop- en verkoopprijs per eenheid. De calculatie kiest de staffel automatisch.</p>
+                </div>
+                <div className="rounded-xl border border-border overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-[11px] text-muted-foreground">
+                        <th className="text-left font-medium px-3 py-2">Vanaf aantal</th>
+                        <th className="text-right font-medium px-3 py-2">Inkoop</th>
+                        <th className="text-right font-medium px-3 py-2">Verkoop</th>
+                        <th className="w-10" />
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {staffels.map((st) => (
+                        <tr key={st.id}>
+                          <td className="px-3 py-1.5 tabular-nums">{st.vanaf_aantal} {productEenheid}</td>
+                          <td className="px-3 py-1.5 text-right tabular-nums text-muted-foreground">{st.inkoop_prijs != null ? formatCurrency(st.inkoop_prijs) : '—'}</td>
+                          <td className="px-3 py-1.5 text-right tabular-nums font-medium">{formatCurrency(st.verkoop_prijs)}</td>
+                          <td className="px-1 py-1 text-right">
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive" aria-label="Staffel verwijderen" onClick={() => verwijderStaffel(st.id)}>
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                      <tr>
+                        <td className="px-2 py-1.5">
+                          <Input inputMode="decimal" placeholder="25" value={nieuweStaffel.vanaf} onChange={(e) => setNieuweStaffel({ ...nieuweStaffel, vanaf: e.target.value })} className="h-9" />
+                        </td>
+                        <td className="px-2 py-1.5">
+                          <Input inputMode="decimal" placeholder={String(productInkoop || '')} value={nieuweStaffel.inkoop} onChange={(e) => setNieuweStaffel({ ...nieuweStaffel, inkoop: e.target.value })} className="h-9 text-right" />
+                        </td>
+                        <td className="px-2 py-1.5">
+                          <Input inputMode="decimal" placeholder={String(productVerkoop || '')} value={nieuweStaffel.verkoop} onChange={(e) => setNieuweStaffel({ ...nieuweStaffel, verkoop: e.target.value })} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); voegStaffelToe() } }} className="h-9 text-right" />
+                        </td>
+                        <td className="px-1 py-1 text-right">
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" aria-label="Staffel toevoegen" onClick={voegStaffelToe} disabled={staffelBezig || !nieuweStaffel.vanaf || !nieuweStaffel.verkoop}>
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
 
             <div className="flex gap-2 justify-end pt-2">
               <Button variant="outline" size="sm" onClick={resetForm}>

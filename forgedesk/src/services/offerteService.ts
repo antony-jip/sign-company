@@ -15,6 +15,7 @@ import type {
   CalculatieRegel,
   Project,
   OfferteConditie,
+  CalculatieProductStaffel,
 } from '@/types'
 import { berekenMarkupPercentage } from '@/utils/margeBerekening'
 import { partitionOfferteItemSync } from '@/utils/offerteItemSync'
@@ -877,6 +878,78 @@ export async function deleteCalculatieProduct(id: string): Promise<void> {
   }
   const producten = getLocalData<CalculatieProduct>('calculatie_producten')
   setLocalData('calculatie_producten', producten.filter((p) => p.id !== id))
+}
+
+// ============ STAFFELPRIJZEN (migratie 235, schakelaar offerte_staffel) ============
+
+export async function getCalculatieProductStaffels(productId?: string): Promise<CalculatieProductStaffel[]> {
+  if (isSupabaseConfigured() && supabase) {
+    let q = supabase.from('calculatie_product_staffels').select('*').order('vanaf_aantal')
+    if (productId) q = q.eq('product_id', productId)
+    const { data, error } = await q
+    if (error) throw error
+    return data || []
+  }
+  const alle = getLocalData<CalculatieProductStaffel>('calculatie_product_staffels')
+  return productId ? alle.filter((s) => s.product_id === productId) : alle
+}
+
+/** Eén rij per (product, vanaf_aantal): bestaat die al, dan worden de prijzen overschreven. */
+export async function upsertCalculatieProductStaffel(staffel: Omit<CalculatieProductStaffel, 'id' | 'organisatie_id' | 'created_at'>): Promise<CalculatieProductStaffel> {
+  if (isSupabaseConfigured() && supabase) {
+    const _orgId = await getOrgId()
+    const { data, error } = await supabase
+      .from('calculatie_product_staffels')
+      .upsert({ ...staffel, organisatie_id: _orgId }, { onConflict: 'product_id,vanaf_aantal' })
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const alle = getLocalData<CalculatieProductStaffel>('calculatie_product_staffels')
+  const index = alle.findIndex((s) => s.product_id === staffel.product_id && s.vanaf_aantal === staffel.vanaf_aantal)
+  if (index >= 0) {
+    alle[index] = { ...alle[index], ...staffel }
+    setLocalData('calculatie_product_staffels', alle)
+    return alle[index]
+  }
+  const nieuw: CalculatieProductStaffel = { ...staffel, id: generateId(), created_at: now() }
+  alle.push(nieuw)
+  setLocalData('calculatie_product_staffels', alle)
+  return nieuw
+}
+
+export async function deleteCalculatieProductStaffel(id: string): Promise<void> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('calculatie_product_staffels').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const alle = getLocalData<CalculatieProductStaffel>('calculatie_product_staffels')
+  setLocalData('calculatie_product_staffels', alle.filter((s) => s.id !== id))
+}
+
+/** Hoogste staffel waarvan vanaf_aantal <= aantal, of null als er geen past. */
+export function kiesStaffel(staffels: CalculatieProductStaffel[], productId: string | undefined, aantal: number): CalculatieProductStaffel | null {
+  if (!productId) return null
+  let beste: CalculatieProductStaffel | null = null
+  for (const s of staffels) {
+    if (s.product_id !== productId || s.vanaf_aantal > aantal) continue
+    if (!beste || s.vanaf_aantal > beste.vanaf_aantal) beste = s
+  }
+  return beste
+}
+
+/** Eerstvolgende staffel boven het huidige aantal, voor de hint onder de regel. */
+export function volgendeStaffel(staffels: CalculatieProductStaffel[], productId: string | undefined, aantal: number): CalculatieProductStaffel | null {
+  if (!productId) return null
+  let beste: CalculatieProductStaffel | null = null
+  for (const s of staffels) {
+    if (s.product_id !== productId || s.vanaf_aantal <= aantal) continue
+    if (!beste || s.vanaf_aantal < beste.vanaf_aantal) beste = s
+  }
+  return beste
 }
 
 // ============ CALCULATIE TEMPLATES ============
