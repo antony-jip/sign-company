@@ -72,8 +72,10 @@ import {
   getTaken,
   updateTaak,
 } from "@/services/supabaseService";
-import { getDagNotities, upsertDagNotitie, deleteDagNotitie, getVrijPatronen, createVrijPatroon, updateVrijPatroon, deleteVrijPatroon, getAfwezigheid, createAfwezigheid, deleteAfwezigheid } from "@/services/planningService";
-import type { MontageAfspraak, MontageBijlage, Project, Medewerker, Klant, Offerte, Werkbon, Taak, DagNotitie, VrijPatroon, Afwezigheid, AfwezigheidType } from "@/types";
+import { getDagNotities, upsertDagNotitie, deleteDagNotitie, getVrijPatronen, createVrijPatroon, updateVrijPatroon, deleteVrijPatroon, getAfwezigheid, createAfwezigheid, deleteAfwezigheid, getPlanningWeergaven, createPlanningWeergave, deletePlanningWeergave } from "@/services/planningService";
+import type { MontageAfspraak, MontageBijlage, Project, Medewerker, Klant, Offerte, Werkbon, Taak, DagNotitie, VrijPatroon, Afwezigheid, AfwezigheidType, PlanningWeergave } from "@/types";
+import { useFunctie } from "@/hooks/useFunctie";
+import { Checkbox } from "@/components/ui/checkbox";
 import { buildAfwezigheidIndex, resolveAfwezig } from "@/utils/afwezigheid";
 import { MontageTijdlijnView } from '@/components/planning/MontageTijdlijnView';
 import { ModuleToolbar } from '@/components/layouts/ModuleToolbar';
@@ -673,6 +675,97 @@ export function MontagePlanningLayout() {
       || medewerkers.find((m) => m.email?.toLowerCase() === user.email?.toLowerCase())
       || null;
   }, [user, medewerkers]);
+
+  // Opgeslagen weergaven (migratie 238): een naam voor de filterstand van het
+  // bord. Welke weergave actief is wordt afgeleid door de huidige stand te
+  // vergelijken, zodat handmatig doorklikken hem vanzelf loslaat.
+  const weergavenAan = useFunctie('planning_weergaven');
+  const [weergaven, setWeergaven] = useState<PlanningWeergave[]>([]);
+  const [weergaveDialogOpen, setWeergaveDialogOpen] = useState(false);
+  const [weergaveNaam, setWeergaveNaam] = useState('');
+  const [weergaveDelen, setWeergaveDelen] = useState(false);
+  const [weergaveBezig, setWeergaveBezig] = useState(false);
+  useEffect(() => {
+    if (!weergavenAan) return;
+    let cancelled = false;
+    getPlanningWeergaven()
+      .then((rows) => { if (!cancelled) setWeergaven(rows); })
+      .catch((err) => logger.warn('[planning] weergaven laden mislukt:', err));
+    return () => { cancelled = true; };
+  }, [weergavenAan]);
+  const huidigeInstellingen = useMemo((): PlanningWeergave['instellingen'] => ({
+    scopeMode,
+    selectedMonteur: scopeMode === 'medewerker' ? selectedMonteur : null,
+    viewMode,
+    laneGrouping,
+    hideEmptyLanes,
+    statusFilter: Array.from(statusFilter).sort(),
+  }), [scopeMode, selectedMonteur, viewMode, laneGrouping, hideEmptyLanes, statusFilter]);
+  const actieveWeergave = useMemo(() => {
+    const sleutel = JSON.stringify(huidigeInstellingen);
+    return weergaven.find((w) => {
+      const i = w.instellingen || {};
+      const genormaliseerd: PlanningWeergave['instellingen'] = {
+        scopeMode: i.scopeMode ?? 'alle',
+        selectedMonteur: i.scopeMode === 'medewerker' ? (i.selectedMonteur ?? null) : null,
+        viewMode: i.viewMode ?? 'week',
+        laneGrouping: i.laneGrouping ?? 'none',
+        hideEmptyLanes: i.hideEmptyLanes ?? true,
+        statusFilter: [...(i.statusFilter ?? [])].sort(),
+      };
+      return JSON.stringify(genormaliseerd) === sleutel;
+    }) ?? null;
+  }, [weergaven, huidigeInstellingen]);
+  const pasWeergaveToe = useCallback((w: PlanningWeergave) => {
+    const i = w.instellingen || {};
+    if (i.scopeMode === 'mijn') setScopeMijn(eigenMedewerker?.id ?? null);
+    else if (i.scopeMode === 'medewerker' && i.selectedMonteur) setSelectedMonteur(i.selectedMonteur);
+    else setScopeAlle();
+    if (i.viewMode) setViewMode(i.viewMode);
+    if (i.laneGrouping) handleLaneGroupingChange(i.laneGrouping);
+    if (typeof i.hideEmptyLanes === 'boolean') {
+      setHideEmptyLanes(i.hideEmptyLanes);
+      try { localStorage.setItem(HIDE_EMPTY_LANES_KEY, i.hideEmptyLanes ? '1' : '0'); } catch { /* ignore */ }
+    }
+    if (Array.isArray(i.statusFilter) && i.statusFilter.length > 0) {
+      setStatusFilter(new Set(i.statusFilter as MontageAfspraak['status'][]));
+    }
+  }, [eigenMedewerker, setScopeMijn, setSelectedMonteur, setScopeAlle, setViewMode, handleLaneGroupingChange]);
+  const openWeergaveOpslaan = useCallback(() => {
+    setWeergaveNaam('');
+    setWeergaveDelen(false);
+    setWeergaveDialogOpen(true);
+  }, []);
+  const handleWeergaveOpslaan = useCallback(async () => {
+    const naam = weergaveNaam.trim();
+    if (!naam) { toast.error('Geef de weergave een naam'); return; }
+    setWeergaveBezig(true);
+    try {
+      const created = await createPlanningWeergave({ naam, instellingen: huidigeInstellingen, gedeeld: weergaveDelen });
+      setWeergaven((prev) => [...prev, created].sort((a, b) => a.volgorde - b.volgorde || a.naam.localeCompare(b.naam)));
+      setWeergaveDialogOpen(false);
+      toast.success(<>Weergave opgeslagen<span style={{ color: '#F15025' }}>.</span></>);
+    } catch (err) {
+      logger.error('[planning] weergave opslaan mislukt:', err);
+      toast.error('Kon de weergave niet opslaan');
+    } finally {
+      setWeergaveBezig(false);
+    }
+  }, [weergaveNaam, weergaveDelen, huidigeInstellingen]);
+  const handleWeergaveVerwijderen = useCallback(async (w: PlanningWeergave) => {
+    const ok = await confirm({ message: `Weergave "${w.naam}" verwijderen?`, variant: 'destructive', confirmLabel: 'Verwijderen' });
+    if (!ok) return;
+    try {
+      await deletePlanningWeergave(w.id);
+      setWeergaven((prev) => prev.filter((x) => x.id !== w.id));
+    } catch (err) {
+      logger.error('[planning] weergave verwijderen mislukt:', err);
+      toast.error('Kon de weergave niet verwijderen');
+    }
+  }, []);
+  const magWeergaveVerwijderen = useCallback((w: PlanningWeergave) => (
+    w.user_id ? w.user_id === user?.id : isAdminUser(userRol)
+  ), [user?.id, userRol]);
 
   // Auto-default filter: monteur ziet eigen agenda bij eerste bezoek
   useEffect(() => {
@@ -2684,6 +2777,56 @@ export function MontagePlanningLayout() {
             hier een tweede balk met zijn eigen titel erin, boven een header die
             "Planning." al zei. */}
         <ModuleToolbar>
+          {/* Opgeslagen weergaven · zelfde vorm als de scope-dropdown ernaast */}
+          {weergavenAan && (
+            <>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    title="Opgeslagen weergaven"
+                    className={cn(
+                      "flex items-center gap-1 text-[13px] font-medium transition-opacity hover:opacity-75",
+                      actieveWeergave ? "text-petrol dark:text-foreground" : "text-muted-foreground"
+                    )}
+                  >
+                    <span className="max-w-[140px] truncate">{actieveWeergave?.naam ?? 'Weergave'}</span>
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-60">
+                  {weergaven.length === 0 && (
+                    <div className="px-2 py-1.5 text-[12px] text-muted-foreground">Nog geen weergaven opgeslagen.</div>
+                  )}
+                  {weergaven.map((w) => (
+                    <DropdownMenuItem key={w.id} onClick={() => pasWeergaveToe(w)} className="group flex items-center gap-2">
+                      <Check className={cn("h-3.5 w-3.5 shrink-0", actieveWeergave?.id === w.id ? "opacity-100 text-petrol" : "opacity-0")} />
+                      <span className="flex-1 min-w-0 truncate">{w.naam}</span>
+                      {!w.user_id && <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70">team</span>}
+                      {magWeergaveVerwijderen(w) && (
+                        <button
+                          type="button"
+                          title="Weergave verwijderen"
+                          aria-label={`Weergave ${w.naam} verwijderen`}
+                          onClick={(e) => { e.stopPropagation(); e.preventDefault(); void handleWeergaveVerwijderen(w); }}
+                          className="p-0.5 rounded text-muted-foreground/60 hover:text-[#C03A18] opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </DropdownMenuItem>
+                  ))}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={openWeergaveOpslaan}>
+                    <Plus className="h-4 w-4 mr-2 opacity-70" />
+                    Huidige weergave opslaan...
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <div className="h-4 w-px bg-[rgba(26,83,92,0.12)] dark:bg-white/10" />
+            </>
+          )}
+
           {/* Scope · één dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -2818,6 +2961,18 @@ export function MontagePlanningLayout() {
                   <DropdownMenuSeparator />
                 </>
               )}
+              <DropdownMenuLabel className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">Status</DropdownMenuLabel>
+              {(Object.keys(STATUS_CONFIG) as MontageAfspraak['status'][]).map((status) => (
+                <DropdownMenuCheckboxItem
+                  key={status}
+                  checked={statusFilter.has(status)}
+                  onCheckedChange={() => toggleStatusFilter(status)}
+                  onSelect={(e) => e.preventDefault()}
+                >
+                  {STATUS_CONFIG[status].label}
+                </DropdownMenuCheckboxItem>
+              ))}
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={printWeekplanning}>
                 <Printer className="h-4 w-4 mr-2 opacity-70" />
                 Print week
@@ -2825,6 +2980,40 @@ export function MontagePlanningLayout() {
             </DropdownMenuContent>
           </DropdownMenu>
         </ModuleToolbar>
+
+        {weergavenAan && (
+          <Dialog open={weergaveDialogOpen} onOpenChange={setWeergaveDialogOpen}>
+            <DialogContent className="max-w-sm rounded-2xl p-6">
+              <DialogHeader>
+                <DialogTitle>Weergave opslaan</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-1">
+                <div className="space-y-1.5">
+                  <Label htmlFor="weergave-naam" className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Naam</Label>
+                  <Input
+                    id="weergave-naam"
+                    autoFocus
+                    value={weergaveNaam}
+                    onChange={(e) => setWeergaveNaam(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void handleWeergaveOpslaan(); } }}
+                    placeholder="Ploeg Noord deze week"
+                    maxLength={60}
+                  />
+                </div>
+                <label className="flex items-center gap-2.5 min-h-[44px] cursor-pointer text-[13px] text-foreground">
+                  <Checkbox checked={weergaveDelen} onCheckedChange={(v) => setWeergaveDelen(v === true)} />
+                  Delen met het team
+                </label>
+              </div>
+              <DialogFooter className="gap-2">
+                <Button variant="outline" onClick={() => setWeergaveDialogOpen(false)}>Annuleren</Button>
+                <Button onClick={() => void handleWeergaveOpslaan()} disabled={weergaveBezig || !weergaveNaam.trim()}>
+                  {weergaveBezig ? 'Opslaan...' : 'Opslaan'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
         {/* Conflict banner */}
         {conflicts.length > 0 && (
           <div className="bg-[hsl(var(--status-flame-bg))] border-b border-[#F0C8BC] px-4 py-2 flex items-center gap-2">

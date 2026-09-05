@@ -3,7 +3,7 @@ import {
   assertId, getLocalData, setLocalData, generateId, now,
   withUserId, getOrgId, sanitizeDates, fetchAllPages,
 } from './supabaseHelpers'
-import type { CalendarEvent, MontageAfspraak, Verlof, Bedrijfssluitingsdag, DagNotitie, VrijPatroon, Afwezigheid } from '@/types'
+import type { CalendarEvent, MontageAfspraak, Verlof, Bedrijfssluitingsdag, DagNotitie, VrijPatroon, Afwezigheid, PlanningWeergave } from '@/types'
 
 // ============ EVENTS (CALENDAR) ============
 
@@ -96,6 +96,68 @@ export async function getMontageAfsprakenByProject(projectId: string): Promise<M
     return data || []
   }
   return getLocalData<MontageAfspraak>('montage_afspraken').filter((a) => a.project_id === projectId)
+}
+
+// ============ OPGESLAGEN WEERGAVEN (migratie 238) ============
+
+export async function getPlanningWeergaven(): Promise<PlanningWeergave[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('planning_weergaven')
+      .select('*')
+      .order('volgorde', { ascending: true })
+      .order('naam', { ascending: true })
+    if (error) throw error
+    return (data || []) as PlanningWeergave[]
+  }
+  return getLocalData<PlanningWeergave>('planning_weergaven')
+}
+
+/** user_id NULL is een gedeelde weergave voor de hele organisatie. */
+export async function createPlanningWeergave(input: { naam: string; instellingen: PlanningWeergave['instellingen']; gedeeld: boolean }): Promise<PlanningWeergave> {
+  const basis = { naam: input.naam.trim(), instellingen: input.instellingen, volgorde: 0 }
+  if (isSupabaseConfigured() && supabase) {
+    const metUser = await withUserId(basis)
+    const _orgId = await getOrgId()
+    const { data, error } = await supabase
+      .from('planning_weergaven')
+      .insert({ ...metUser, user_id: input.gedeeld ? null : metUser.user_id, organisatie_id: _orgId })
+      .select()
+      .single()
+    if (error) throw error
+    return data as PlanningWeergave
+  }
+  const nieuw: PlanningWeergave = { ...basis, id: generateId(), user_id: input.gedeeld ? null : 'lokaal', created_at: now(), updated_at: now() }
+  const items = getLocalData<PlanningWeergave>('planning_weergaven')
+  items.push(nieuw)
+  setLocalData('planning_weergaven', items)
+  return nieuw
+}
+
+export async function updatePlanningWeergave(id: string, updates: Partial<Pick<PlanningWeergave, 'naam' | 'instellingen' | 'volgorde' | 'user_id'>>): Promise<PlanningWeergave> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('planning_weergaven').update({ ...updates, updated_at: now() }).eq('id', id).select().single()
+    if (error) throw error
+    return data as PlanningWeergave
+  }
+  const items = getLocalData<PlanningWeergave>('planning_weergaven')
+  const index = items.findIndex((w) => w.id === id)
+  if (index === -1) throw new Error('Weergave niet gevonden')
+  items[index] = { ...items[index], ...updates, updated_at: now() }
+  setLocalData('planning_weergaven', items)
+  return items[index]
+}
+
+export async function deletePlanningWeergave(id: string): Promise<void> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('planning_weergaven').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const items = getLocalData<PlanningWeergave>('planning_weergaven')
+  setLocalData('planning_weergaven', items.filter((w) => w.id !== id))
 }
 
 // ============ VERLOF & BESCHIKBAARHEID ============
