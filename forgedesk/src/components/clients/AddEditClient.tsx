@@ -27,6 +27,8 @@ import type { Klant } from '@/types'
 import { klantStatusConfig } from '@/types'
 import { getAllKlantLabels } from '@/services/supabaseService'
 import supabase from '@/services/supabaseClient'
+import { Checkbox } from '@/components/ui/checkbox'
+import { useFunctie } from '@/hooks/useFunctie'
 
 interface AddEditClientProps {
   open: boolean
@@ -61,6 +63,7 @@ interface FormData {
   notities: string
   klant_labels: string[]
   gepinde_notitie: string
+  gepinde_notitie_waarschuwing: boolean
   klant_status: Klant['klant_status']
   labels: string[]
   label_input: string
@@ -84,6 +87,7 @@ const initialFormData: FormData = {
   notities: '',
   klant_labels: [],
   gepinde_notitie: '',
+  gepinde_notitie_waarschuwing: false,
   klant_status: 'normaal',
   labels: [],
   label_input: '',
@@ -95,6 +99,7 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({})
   const [saving, setSaving] = useState(false)
   const [labelSuggestions, setLabelSuggestions] = useState<string[]>([])
+  const waarschuwingAan = useFunctie('klant_waarschuwing')
 
   // KVK inline autocomplete
   const [kvkSuggesties, setKvkSuggesties] = useState<Array<{
@@ -217,6 +222,7 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
         notities: klant.notities,
         klant_labels: klant.klant_labels || [],
         gepinde_notitie: klant.gepinde_notitie || '',
+        gepinde_notitie_waarschuwing: klant.gepinde_notitie_waarschuwing === true,
         klant_status: klant.klant_status || 'normaal',
         labels: klant.labels || [],
         label_input: '',
@@ -293,11 +299,19 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
         labels: formData.labels,
       }
 
+      // Velden uit migratie 236 gaan alleen mee als ze afwijken van wat er
+      // stond, zodat een ongewijzigde klant ook opslaat als die kolommen er
+      // nog niet zijn.
+      const grippVelden: Partial<Klant> = {}
+      if (formData.gepinde_notitie_waarschuwing !== (klant?.gepinde_notitie_waarschuwing === true)) {
+        grippVelden.gepinde_notitie_waarschuwing = formData.gepinde_notitie_waarschuwing
+      }
+
       // Draait migratie 212 nog niet (kolom geen_betalingsherinneringen
       // ontbreekt), dan mag opslaan daar niet op stranden — maar de
       // gebruiker moet wel horen dat die ene instelling niet is bewaard.
       let killSwitchOvergeslagen = false
-      const opslaan = async (data: typeof klantData): Promise<Klant> => {
+      const opslaan = async (data: typeof klantData & Partial<Klant>): Promise<Klant> => {
         try {
           return isEditing && klant ? await updateKlant(klant.id, data) : await createKlant(data)
         } catch (err) {
@@ -309,7 +323,7 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
           throw err
         }
       }
-      const savedKlant = await opslaan(klantData)
+      const savedKlant = await opslaan({ ...klantData, ...grippVelden })
       if (killSwitchOvergeslagen && formData.geen_betalingsherinneringen) {
         toast.info('De instelling "geen betalingsherinneringen" is nog niet beschikbaar en is niet opgeslagen.')
       }
@@ -720,6 +734,19 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
             <p className="text-xs text-muted-foreground">
               Wordt als gele banner getoond op het klantprofiel
             </p>
+            {waarschuwingAan && (
+              <label htmlFor="gepinde_notitie_waarschuwing" className="flex items-start gap-2.5 min-h-[44px] pt-1 cursor-pointer">
+                <Checkbox
+                  id="gepinde_notitie_waarschuwing"
+                  checked={formData.gepinde_notitie_waarschuwing}
+                  onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, gepinde_notitie_waarschuwing: checked === true }))}
+                  className="mt-0.5"
+                />
+                <span className="text-sm leading-snug">
+                  Toon als waarschuwing op offerte, project, werkbon, bestelbon en inkoopfactuur
+                </span>
+              </label>
+            )}
           </div>
 
           {/* Row 9: Notities */}

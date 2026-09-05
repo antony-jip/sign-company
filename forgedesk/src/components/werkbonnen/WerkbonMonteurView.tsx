@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ClipboardCheck, FileText, Loader2 } from 'lucide-react'
 import { BackButton } from '@/components/shared/BackButton'
+import { KlantStatusWarning } from '@/components/shared/KlantStatusWarning'
 import { useTabDirtyState } from '@/hooks/useTabDirtyState'
 import { logger } from '@/utils/logger'
 import { useAuth } from '@/contexts/AuthContext'
@@ -642,6 +643,8 @@ export function WerkbonMonteurView() {
             </h1>
           </div>
         </div>
+
+        <KlantStatusWarning klant={klant} compact />
 
         {/* PDF bekijken */}
         <button

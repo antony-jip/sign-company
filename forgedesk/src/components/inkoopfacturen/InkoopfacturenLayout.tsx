@@ -21,6 +21,7 @@ import {
   koppelInkoopfactuurAanProject,
 } from '@/services/inkoopfactuurService'
 import { getProjecten, getKlanten } from '@/services/supabaseService'
+import { KlantStatusWarning } from '@/components/shared/KlantStatusWarning'
 import { getCached, fetchQuery } from '@/lib/queryCache'
 import { InkoopAILimietBanner } from '@/components/shared/InkoopAILimietBanner'
 import { stelProjectVoor, type InkoopProjectVoorstel } from '@/utils/inkoopProjectVoorstel'
@@ -912,6 +913,11 @@ export function InkoopfacturenLayout() {
                 {lightbox.factuur.factuur_nummer && (
                   <p className="text-[13px] font-mono text-muted-foreground mt-1">#{lightbox.factuur.factuur_nummer}</p>
                 )}
+                <KlantStatusWarning
+                  klant={gekoppeldProject ? klanten.find((k) => k.id === gekoppeldProject.klant_id) : undefined}
+                  compact
+                  className="mt-3"
+                />
               </div>
 
               {/* Bedragen card */}

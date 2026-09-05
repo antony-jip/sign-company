@@ -17,12 +17,13 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
 import { cn, formatCurrency } from '@/lib/utils'
-import type { Bestelbon, BestelbonRegel, Leverancier, Project } from '@/types'
+import type { Bestelbon, BestelbonRegel, Klant, Leverancier, Project } from '@/types'
 import {
   getBestelbon, createBestelbon, updateBestelbon,
   getBestelbonRegels, createBestelbonRegel, updateBestelbonRegel, deleteBestelbonRegel,
-  getLeveranciers, getProjecten, generateBestelbonNummer,
+  getLeveranciers, getProjecten, generateBestelbonNummer, getKlant,
 } from '@/services/supabaseService'
+import { KlantStatusWarning } from '@/components/shared/KlantStatusWarning'
 import { round2 } from '@/utils/budgetUtils'
 import { generateBestelbonPDF } from '@/services/pdfService'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
@@ -75,6 +76,16 @@ export function BestelbonDetail() {
   const [opmerkingen, setOpmerkingen] = useState('')
   const [regels, setRegels] = useState<RegelForm[]>([])
   const [bestelbonId, setBestelbonId] = useState<string | null>(null)
+  const [projectKlant, setProjectKlant] = useState<Klant | null>(null)
+
+  // De klant hangt aan het gekoppelde project; alleen nodig voor de waarschuwingsbalk.
+  useEffect(() => {
+    const klantId = projecten.find((p) => p.id === projectId)?.klant_id
+    if (!klantId) { setProjectKlant(null); return }
+    let cancelled = false
+    getKlant(klantId).then((k) => { if (!cancelled) setProjectKlant(k) }).catch(() => { if (!cancelled) setProjectKlant(null) })
+    return () => { cancelled = true }
+  }, [projectId, projecten])
 
   useEffect(() => {
     let cancelled = false
@@ -361,6 +372,8 @@ export function BestelbonDetail() {
           </Button>
         </div>
       </div>
+
+      <KlantStatusWarning klant={projectKlant} />
 
       {/* Form */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

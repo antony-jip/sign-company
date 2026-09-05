@@ -54,6 +54,7 @@ import { getEmailsVoorProject, type ProjectMail } from '@/services/emailProjectS
 import { sanitizeEmailHTML } from '@/lib/sanitize'
 import { callForgie } from '@/services/forgieService'
 import { DatePicker } from '@/components/ui/date-picker'
+import { KlantStatusWarning } from '@/components/shared/KlantStatusWarning'
 // Card/Badge removed · using DOEN text-based styling
 import { Button } from '@/components/ui/button'
 import {
@@ -1681,6 +1682,8 @@ export function ProjectDetail() {
             }
           />
         </div>
+
+        <KlantStatusWarning klant={klant} className="mt-3 max-w-2xl" />
 
       {/* ══════════ PROJECT-ACTIES ══════════
           Op mobiel loopt dit blok gewoon mee in de kop, onder de titel. Als
