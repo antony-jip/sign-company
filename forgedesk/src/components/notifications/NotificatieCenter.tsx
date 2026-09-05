@@ -66,6 +66,21 @@ const typeConfig: Record<
     colorClass: "text-petrol",
     bgClass: "bg-[hsl(var(--status-green-bg))]",
   },
+  genoemd: {
+    icon: MessageSquare,
+    colorClass: "text-petrol",
+    bgClass: "bg-[hsl(var(--status-green-bg))]",
+  },
+  uren_herinnering: {
+    icon: Clock,
+    colorClass: "text-[#8A6A2A]",
+    bgClass: "bg-[hsl(var(--status-amber-bg))]",
+  },
+  conceptfacturen_klaar: {
+    icon: Banknote,
+    colorClass: "text-petrol",
+    bgClass: "bg-[hsl(var(--status-green-bg))]",
+  },
   website_aanvraag: {
     icon: MessageSquare,
     colorClass: "text-[#C03A18]",

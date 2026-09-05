@@ -43,6 +43,8 @@ export interface Profile {
   // Meldingen bij nieuwe mail (migratie 171). Los van het bestaan van een
   // pushabonnement: uitzetten mag de toestemming niet weggooien.
   push_nieuwe_mail?: boolean;
+  /** Per categorie in-app/push aan of uit (migratie 239). Leeg = alles aan. Zie src/lib/meldingsvoorkeuren.ts. */
+  meldingsvoorkeuren?: Record<string, { app?: boolean; push?: boolean }> | null;
   created_at: string;
   updated_at: string;
 }
@@ -135,6 +137,13 @@ export interface Klant {
   // Klant labels + gepinde notitie
   klant_labels?: string[];
   gepinde_notitie?: string;
+  /** Toon gepinde_notitie als waarschuwing op offerte, project, werkbon, bestelbon en inkoopfactuur (migratie 236). */
+  gepinde_notitie_waarschuwing?: boolean;
+  /** Standaard verzendwijze voor offertes en facturen van deze klant (migratie 236). */
+  verzendvoorkeur?: 'email' | 'post' | 'portaal' | null;
+  btw_verlegd?: boolean;
+  /** Klant wil altijd een eigen referentie (PO-nummer) op offerte en factuur (migratie 236). */
+  po_verplicht?: boolean;
   /** Voorbeelddata uit de onboarding; met één actie te verwijderen. */
   is_demo_data?: boolean;
   // Klant status & vrije labels (Quick Win 1)
@@ -437,6 +446,17 @@ export interface Offerte {
   kostenplaats_id?: string;
   created_at: string;
   updated_at: string;
+  /** Reden van afwijzing op de offerte zelf (migratie 235). */
+  afgewezen_reden?: string | null;
+  afgewezen_op?: string | null;
+  /** Gekozen conditie-set (migratie 235). */
+  conditie_id?: string | null;
+  /** Spoed: project krijgt bij akkoord prioriteit (migratie 235). */
+  spoed?: boolean;
+  /** Handtekening van de klant bij online akkoord, data-URL (migratie 235). */
+  handtekening_data?: string | null;
+  /** Referentie of PO-nummer van de klant (migratie 237). */
+  klant_referentie?: string | null;
 }
 
 export interface OfferteActiviteit {
@@ -1184,6 +1204,8 @@ export interface Factuur {
   kostenplaats_id?: string;
   created_at: string;
   updated_at: string;
+  /** Referentie of PO-nummer van de klant (migratie 237). */
+  klant_referentie?: string | null;
 }
 
 export interface FactuurItem {
@@ -1204,6 +1226,8 @@ export interface FactuurItem {
   grootboek_code?: string;
   created_at: string;
   updated_at?: string;
+  /** Offerteregel waaruit deze factuurregel komt, voor deelfacturen (migratie 237). */
+  offerte_item_id?: string | null;
 }
 
 // ============ TIJDREGISTRATIE ============
@@ -1289,7 +1313,7 @@ export interface Notificatie {
   id: string;
   user_id?: string;
   organisatie_id?: string;
-  type: 'offerte_bekeken' | 'offerte_verlopen' | 'offerte_geaccepteerd' | 'offerte_wijziging' | 'factuur_vervallen' | 'deadline_nadert' | 'nieuwe_email' | 'taak_voltooid' | 'montage_gepland' | 'betaling_ontvangen' | 'budget_waarschuwing' | 'booking_nieuw' | 'algemeen' | 'goedkeuring' | 'herinnering' | 'portaal_goedkeuring' | 'portaal_revisie' | 'portaal_bericht' | 'portaal_bekeken' | 'portaal_herinnering' | 'website_chat' | 'website_aanvraag' | 'taak_toegewezen' | 'offerte_check_gevraagd' | 'offerte_check_afgehandeld' | 'offerte_check_wijzigingen';
+  type: 'offerte_bekeken' | 'offerte_verlopen' | 'offerte_geaccepteerd' | 'offerte_wijziging' | 'factuur_vervallen' | 'deadline_nadert' | 'nieuwe_email' | 'taak_voltooid' | 'montage_gepland' | 'betaling_ontvangen' | 'budget_waarschuwing' | 'booking_nieuw' | 'algemeen' | 'goedkeuring' | 'herinnering' | 'portaal_goedkeuring' | 'portaal_revisie' | 'portaal_bericht' | 'portaal_bekeken' | 'portaal_herinnering' | 'website_chat' | 'website_aanvraag' | 'taak_toegewezen' | 'offerte_check_gevraagd' | 'offerte_check_afgehandeld' | 'offerte_check_wijzigingen' | 'genoemd' | 'uren_herinnering' | 'conceptfacturen_klaar';
   titel: string;
   bericht: string;
   link?: string;
@@ -1328,6 +1352,9 @@ export interface MontageAfspraak {
   bijlagen?: MontageBijlage[];
   created_at: string;
   updated_at: string;
+  /** Eerste afspraak van een herhaalreeks (migratie 238). */
+  herhaling_bron_id?: string | null;
+  herhaling?: MontageHerhaling | null;
 }
 
 export interface MontageBijlage {
@@ -1708,6 +1735,9 @@ export interface Leverancier {
   actief: boolean;
   created_at: string;
   updated_at?: string;
+  /** Onthouden vanaf de eerste inkoopfactuur (migratie 237). */
+  betaaltermijn_dagen?: number | null;
+  grootboek_code?: string | null;
 }
 
 export interface Uitgave {
@@ -2562,6 +2592,8 @@ export interface InkoopFactuur {
   project_id: string | null
   created_at: string
   updated_at: string
+  /** Gekoppelde leverancier (migratie 237); leverancier_naam blijft de weergave. */
+  leverancier_id?: string | null
 }
 
 export interface InkoopFactuurRegel {
@@ -2575,3 +2607,59 @@ export interface InkoopFactuurRegel {
   regel_totaal: number
   created_at: string
 }
+
+// ── Gripp-ronde september 2026 ──
+
+/** Conditie-set voor offertes (migratie 235): Standaard of Spoed kiest alles in één keer. */
+export interface OfferteConditie {
+  id: string;
+  organisatie_id?: string;
+  naam: string;
+  geldigheid_dagen: number;
+  betaaltermijn_dagen?: number | null;
+  levertijd?: string | null;
+  betalingsconditie?: string | null;
+  voorwaarden?: string | null;
+  spoed: boolean;
+  volgorde: number;
+  actief: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/** Staffelprijs op een calculatieproduct (migratie 235). */
+export interface CalculatieProductStaffel {
+  id: string;
+  organisatie_id?: string;
+  product_id: string;
+  vanaf_aantal: number;
+  inkoop_prijs?: number | null;
+  verkoop_prijs: number;
+  created_at?: string;
+}
+
+/** Opgeslagen weergave van het montagebord (migratie 238). user_id leeg = gedeeld. */
+export interface PlanningWeergave {
+  id: string;
+  organisatie_id?: string;
+  user_id?: string | null;
+  naam: string;
+  instellingen: {
+    scopeMode?: 'alle' | 'mijn' | 'medewerker';
+    selectedMonteur?: string | null;
+    viewMode?: 'week' | 'maand';
+    laneGrouping?: 'none' | 'rol';
+    hideEmptyLanes?: boolean;
+    statusFilter?: string[];
+  };
+  volgorde: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/** Recept van een herhaalreeks (migratie 238). */
+export interface MontageHerhaling {
+  frequentie: 'wekelijks' | 'tweewekelijks' | 'maandelijks';
+  tot: string;
+}
+
