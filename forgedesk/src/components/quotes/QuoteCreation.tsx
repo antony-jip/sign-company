@@ -95,7 +95,7 @@ import { InkoopOffertePaneel } from './InkoopOffertePaneel'
 import { OfferteUitschrijvenDialog, type UitgeschrevenPost } from './OfferteUitschrijvenDialog'
 import { OfferteCheckDialog } from './OfferteCheckDialog'
 import { OfferteVervolgDialog } from './OfferteVervolgDialog'
-import { useFunctie } from '@/hooks/useFunctie'
+import { useFunctie, useFunctieGetal } from '@/hooks/useFunctie'
 import { getOfferteCondities } from '@/services/offerteService'
 import type { OfferteConditie } from '@/types'
 import { rondOfferteCheckAf } from '@/services/offerteCheckService'
@@ -358,6 +358,9 @@ export function QuoteCreation() {
   const checkInfoRef = useRef(checkInfo)
   const updateCheckInfo = (c: typeof checkInfo) => { checkInfoRef.current = c; setCheckInfoState(c) }
   const naamVoorUser = (uid?: string) => medewerkers.find((m) => m.user_id === uid)?.naam
+  // Grote offerte alleen na collega-check (schakelaar offerte_check_verplicht).
+  const checkVerplichtAan = useFunctie('offerte_check_verplicht')
+  const checkDrempel = useFunctieGetal('offerte_check_drempel')
 
   // ── Offerte status & linked factuur (for factureren workflow) ──
   const [offerteStatus, setOfferteStatus] = useState<string>('concept')
@@ -1697,11 +1700,27 @@ export function QuoteCreation() {
     return () => { afgebroken = true }
   }, [email.showEmailCompose])
 
+  // Eén poort voor alle verzendpaden (email, portaal, markeren als verzonden).
+  // Geeft true als versturen door mag; anders is de melding al getoond.
+  const magVersturen = (): boolean => {
+    const status = checkInfoRef.current.status
+    if (checkVerplichtAan && effectieveTotalen.subtotaal > checkDrempel && status !== 'akkoord' && status !== 'verstuurd') {
+      toast.error(`Boven ${formatCurrency(checkDrempel)} gaat een offerte pas de deur uit na een collega-check`, {
+        action: editOfferteId
+          ? { label: status === 'open' || status === 'wijzigingen' ? 'Check opnieuw vragen' : 'Laten checken', onClick: () => setShowCheckDialog(true) }
+          : undefined,
+      })
+      return false
+    }
+    return true
+  }
+
   const handleVerstuurOfferte = async () => {
     if (!user?.id || !selectedKlant) {
       toast.error('Selecteer eerst een klant')
       return
     }
+    if (!magVersturen()) return
     const quoteId = editOfferteId || autoSaveIdRef.current
     if (!quoteId) {
       toast.info('Offerte wordt eerst opgeslagen...')
@@ -1712,6 +1731,7 @@ export function QuoteCreation() {
 
   const handleKeuzeEmail = () => {
     email.setShowVerstuurKeuze(false)
+    if (!magVersturen()) return
     openEmailCompose()
   }
 
@@ -1723,6 +1743,7 @@ export function QuoteCreation() {
       handleKeuzeEmail()
       return
     }
+    if (!magVersturen()) { email.setShowVerstuurKeuze(false); return }
     email.setIsSendingPortaal(true)
     try {
       const savedQuoteId = editOfferteId || autoSaveIdRef.current
@@ -1802,6 +1823,7 @@ export function QuoteCreation() {
   }
 
   const handleSendEmailInline = async () => {
+    if (!magVersturen()) return
     if (!email.emailTo.trim() || !email.emailSubject.trim()) {
       toast.error('Vul een ontvanger en onderwerp in')
       return
@@ -2040,6 +2062,7 @@ export function QuoteCreation() {
   const handleMarkeerVerzonden = async () => {
     const quoteId = editOfferteId || autoSaveIdRef.current
     if (!quoteId) { toast.error('Offerte nog niet opgeslagen'); return }
+    if (!magVersturen()) return
     setIsMarkeerVerzondenBezig(true)
     try {
       const nu = new Date().toISOString()

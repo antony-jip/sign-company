@@ -33,6 +33,9 @@ import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { logWijziging } from '@/utils/auditLogger'
 import { logger } from '@/utils/logger'
 import { handtekeningBreedte } from '@/utils/handtekening'
+import { useFunctie, useFunctieGetal } from '@/hooks/useFunctie'
+import { OfferteCheckDialog } from './OfferteCheckDialog'
+import { UserCheck } from 'lucide-react'
 import type { Offerte, OfferteItem, Klant, Project, OfferteActiviteit } from '@/types'
 
 export type SendMode = 'eerste' | 'follow-up'
@@ -92,6 +95,19 @@ export function SendOfferteDialog({
   const [isGenerating, setIsGenerating] = useState(false)
   const [portaalToken, setPortaalToken] = useState<string | null>(null)
   const prefilledRef = useRef(false)
+
+  // Grote offerte alleen na collega-check (schakelaar offerte_check_verplicht).
+  // Een check die is afgerond met akkoord, of waarna al verstuurd is, telt.
+  const checkVerplichtAan = useFunctie('offerte_check_verplicht')
+  const checkDrempel = useFunctieGetal('offerte_check_drempel')
+  const [checkStatus, setCheckStatus] = useState(offerte.check_status ?? null)
+  useEffect(() => { setCheckStatus(offerte.check_status ?? null) }, [offerte.check_status])
+  const [showCheckDialog, setShowCheckDialog] = useState(false)
+  const checkBlokkade = mode === 'eerste'
+    && checkVerplichtAan
+    && (offerte.subtotaal ?? 0) > checkDrempel
+    && checkStatus !== 'akkoord'
+    && checkStatus !== 'verstuurd'
 
   const dagenOpen = offerte.verstuurd_op
     ? Math.floor((Date.now() - new Date(offerte.verstuurd_op).getTime()) / (1000 * 60 * 60 * 24))
@@ -184,6 +200,10 @@ export function SendOfferteDialog({
     if (isTrialBlocked) {
       onOpenChange(false)
       onTrialBlocked?.()
+      return
+    }
+    if (checkBlokkade) {
+      toast.error(`Boven ${formatCurrency(checkDrempel)} gaat een offerte pas de deur uit na een collega-check`)
       return
     }
     setIsSending(true)
@@ -347,7 +367,7 @@ export function SendOfferteDialog({
     bedrijfsnaam, primaireKleur, emailHandtekening, handtekeningAfbeelding,
     handtekeningAfbeeldingGrootte, handtekeningAfbeeldingLink, profile, documentStyle,
     isTrialBlocked, onTrialBlocked, onOpenChange, onPortaalCreated, onSent,
-    medewerkerNaam,
+    medewerkerNaam, checkBlokkade, checkDrempel,
   ])
 
   const publiekeLink = portaalToken
@@ -429,6 +449,18 @@ export function SendOfferteDialog({
             <FileText className="h-4 w-4 flex-shrink-0" />
             <span>Bijlage: {offerte.nummer}.pdf (wordt automatisch gegenereerd)</span>
           </div>
+          {checkBlokkade && (
+            <div className="flex flex-wrap items-center gap-3 rounded-lg border border-petrol/20 bg-petrol/5 px-3 py-2.5 text-[13px]">
+              <UserCheck className="h-4 w-4 text-petrol shrink-0" strokeWidth={1.75} />
+              <span className="min-w-0 flex-1 text-foreground/80">
+                Boven {formatCurrency(checkDrempel)} gaat een offerte pas de deur uit na een collega-check
+                {checkStatus === 'open' ? '. De check staat nog open.' : '.'}
+              </span>
+              <Button type="button" size="sm" variant="outline" className="h-9 sm:h-8" onClick={() => setShowCheckDialog(true)}>
+                {checkStatus === 'open' || checkStatus === 'wijzigingen' ? 'Check opnieuw vragen' : 'Laten checken'}
+              </Button>
+            </div>
+          )}
           {publiekeLink && (
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Publieke link</label>
@@ -459,12 +491,19 @@ export function SendOfferteDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSending}>
             Annuleren
           </Button>
-          <Button onClick={handleSend} disabled={isSending || isGenerating || !sendTo}>
+          <Button onClick={handleSend} disabled={isSending || isGenerating || !sendTo || checkBlokkade}>
             {isSending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Send className="h-4 w-4 mr-1" />}
             Versturen
           </Button>
         </DialogFooter>
       </DialogContent>
+      <OfferteCheckDialog
+        open={showCheckDialog}
+        onOpenChange={setShowCheckDialog}
+        offerteId={offerte.id}
+        offerteNummer={offerte.nummer}
+        onGevraagd={() => setCheckStatus('open')}
+      />
     </Dialog>
   )
 }
