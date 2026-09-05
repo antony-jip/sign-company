@@ -21,6 +21,8 @@ import {
   Copy,
   Archive,
   ListPlus,
+  LayoutList,
+  Columns3,
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -61,6 +63,9 @@ import { logger } from '../../utils/logger'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip'
 import { useOptimisticState } from '@/hooks/useOptimistic'
+import { useFunctie } from '@/hooks/useFunctie'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { ProjectKanban } from './ProjectKanban'
 
 const statusOpties = [
   { value: 'alle', label: 'Alle' },
@@ -267,6 +272,18 @@ export function ProjectsList() {
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
   const zoekInputRef = useRef<HTMLInputElement>(null)
   const runOptimistic = useOptimisticState(setProjecten)
+
+  // Weergave: lijst of kolommen per fase (schakelaar project_kanban).
+  const kanbanAan = useFunctie('project_kanban')
+  const isMobiel = useMediaQuery('(max-width: 767px)')
+  const [weergave, setWeergave] = useState<'lijst' | 'kolommen'>(() => {
+    if (typeof window === 'undefined') return 'lijst'
+    return window.localStorage.getItem('doen_projecten_weergave') === 'kolommen' ? 'kolommen' : 'lijst'
+  })
+  useEffect(() => {
+    if (typeof window !== 'undefined') window.localStorage.setItem('doen_projecten_weergave', weergave)
+  }, [weergave])
+  const toonKanban = kanbanAan && weergave === 'kolommen'
 
   // Pending deletes: project verdwijnt direct uit UI, daadwerkelijke server-delete pas na 5s
   // (binnen die tijd kan de gebruiker via toast undo'en). Bij unmount flushen.
@@ -1089,6 +1106,32 @@ export function ProjectsList() {
                 <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground bg-muted rounded border border-border">/</kbd>
               </div>
 
+              {kanbanAan && (
+                <div className="inline-flex items-center rounded-lg bg-background border border-border p-0.5 flex-shrink-0" role="group" aria-label="Weergave">
+                  {([
+                    { value: 'lijst', label: 'Lijst', Icon: LayoutList },
+                    { value: 'kolommen', label: 'Kolommen', Icon: Columns3 },
+                  ] as const).map((optie) => {
+                    const isActive = weergave === optie.value
+                    return (
+                      <button
+                        key={optie.value}
+                        type="button"
+                        onClick={() => setWeergave(optie.value)}
+                        title={optie.label}
+                        aria-pressed={isActive}
+                        className={cn(
+                          'h-9 w-11 sm:w-9 rounded-md flex items-center justify-center transition-colors',
+                          isActive ? 'bg-petrol/[0.09] dark:bg-white/[0.08] text-petrol dark:text-foreground' : 'text-muted-foreground hover:text-foreground/70'
+                        )}
+                      >
+                        <optie.Icon className="w-4 h-4" strokeWidth={1.75} />
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+
               {/* Export buttons */}
               <div className="hidden sm:flex items-center gap-1 ml-auto">
                 <button
@@ -1307,6 +1350,16 @@ export function ProjectsList() {
                 }
               />
             </div>
+          ) : toonKanban ? (
+            <ProjectKanban
+              projecten={gefilterdeProjecten}
+              klantNaam={(p) => p.klant_naam || getKlantNaam(p.klant_id)}
+              statusLabels={statusLabels}
+              workflow={STATUS_WORKFLOW}
+              onStatusChange={handleStatusChange}
+              onOpen={(p) => navigateWithTab({ path: `/projecten/${p.id}`, label: p.naam || 'Project', id: `/projecten/${p.id}` })}
+              mobiel={isMobiel}
+            />
           ) : (
             <>
               {/* Mobile view */}
@@ -1385,7 +1438,7 @@ export function ProjectsList() {
                             onDragOver={(e) => e.preventDefault()}
                             onDrop={() => {
                               if (dragColRef.current && dragColRef.current !== 'project') {
-                                setLeadColumns((prev) => [prev[1], prev[0]])
+                                setLeadColumns((prev) => [prev[1], prev[0]] as typeof prev)
                               }
                               dragColRef.current = null
                             }}
@@ -1411,7 +1464,7 @@ export function ProjectsList() {
                             onDragOver={(e) => e.preventDefault()}
                             onDrop={() => {
                               if (dragColRef.current && dragColRef.current !== 'klant') {
-                                setLeadColumns((prev) => [prev[1], prev[0]])
+                                setLeadColumns((prev) => [prev[1], prev[0]] as typeof prev)
                               }
                               dragColRef.current = null
                             }}
@@ -1831,14 +1884,16 @@ export function ProjectsList() {
             </>
           )}
 
-          {/* Paginatie */}
-          <PaginationControls
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={gefilterdeProjecten.length}
-            pageSize={PAGE_SIZE}
-            onPageChange={setCurrentPage}
-          />
+          {/* Paginatie · de kolommen tonen alles, dus daar niet */}
+          {!toonKanban && (
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={gefilterdeProjecten.length}
+              pageSize={PAGE_SIZE}
+              onPageChange={setCurrentPage}
+            />
+          )}
 
         </div>
       </div>
