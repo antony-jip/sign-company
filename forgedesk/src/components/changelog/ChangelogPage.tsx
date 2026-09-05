@@ -52,6 +52,23 @@ const APP_FEATURES = [
 
 const CHANGELOG: ChangelogEntry[] = [
   {
+    versie: '1.5.0',
+    datum: '5 september 2026',
+    label: 'Nieuw',
+    titel: 'Handigheden voor wie van Gripp of James Pro komt',
+    beschrijving: 'Achter schakelaars per organisatie (Instellingen > doen. > Functies), zodat de app rustig blijft voor wie ze niet gebruikt.',
+    features: [
+      { titel: 'Vervolg na de offerte', beschrijving: 'Naar project, direct factureren of afgewezen met reden in één scherm. Plus markeren als verzonden en een handtekening bij online akkoord.' },
+      { titel: 'Condities en staffels', beschrijving: 'Standaard of Spoed als set voor geldigheid, betaaltermijn en voorwaarden. Staffelprijzen per product, automatisch overgenomen.' },
+      { titel: 'Vaste klantnotitie als waarschuwing', beschrijving: 'Eén zin op de klant die opduikt op offerte, project, werkbon, bestelbon en inkoopfactuur. Met tags en standaardwaarden per klant.' },
+      { titel: 'Wat wil je factureren?', beschrijving: 'Deelfactuur per regel met de aanbetaling automatisch verrekend.' },
+      { titel: 'Opvolgstappen op de factuur', beschrijving: 'Stepper bovenin, tabblad Vanavond de deur uit, vergrendeld na Exact, conceptfacturen samenvoegen, ouderdom per klant.' },
+      { titel: 'Kolommen per fase en projectsjablonen', beschrijving: 'Kanban met bedrag per fase; een project opslaan als sjabloon.' },
+      { titel: 'Planning: weergaven en herhalen', beschrijving: 'Bewaar een filterstand als weergave; plan een montage wekelijks of maandelijks in.' },
+      { titel: 'Meldingen en @-noemen', beschrijving: 'Meldingsvoorkeuren per persoon, collega noemen in notities, herinnering als er nog geen uren staan.' },
+    ],
+  },
+  {
     versie: '1.4.0',
     datum: '26 maart 2025',
     label: 'Nieuw',
