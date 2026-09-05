@@ -106,6 +106,7 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
   const [saving, setSaving] = useState(false)
   const [labelSuggestions, setLabelSuggestions] = useState<string[]>([])
   const waarschuwingAan = useFunctie('klant_waarschuwing')
+  const tagsAan = useFunctie('klant_tags')
 
   // KVK inline autocomplete
   const [kvkSuggesties, setKvkSuggesties] = useState<Array<{
@@ -591,8 +592,8 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>Labels (vrij)</Label>
+            {tagsAan && <div className="space-y-2">
+              <Label>Tags</Label>
               <div className="flex flex-wrap gap-1.5 mb-2">
                 {formData.labels.map((label) => (
                   <span
@@ -602,6 +603,7 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
                     {label}
                     <button
                       type="button"
+                      aria-label={`Tag ${label} verwijderen`}
                       onClick={() =>
                         setFormData((prev) => ({
                           ...prev,
@@ -633,7 +635,7 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
                     }
                   }
                 }}
-                placeholder="Label toevoegen (Enter)"
+                placeholder="Tag toevoegen (Enter)"
                 list="label-suggestions"
               />
               {labelSuggestions.length > 0 && (
@@ -645,7 +647,7 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
                     ))}
                 </datalist>
               )}
-            </div>
+            </div>}
           </div>
 
           {/* Row 5: Debiteurennummer + BTW */}

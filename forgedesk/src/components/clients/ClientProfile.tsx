@@ -3,6 +3,7 @@ import { logger } from '../../utils/logger'
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 import { useTabs } from '@/contexts/TabsContext'
+import { useFunctie } from '@/hooks/useFunctie'
 import { useTabSnapshot } from '@/hooks/useTabSnapshot'
 import { BackButton } from '@/components/shared/BackButton'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -116,6 +117,7 @@ export function ClientProfile() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { navigateWithTab } = useNavigateWithTab()
+  const tagsAan = useFunctie('klant_tags')
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [contactDialogOpen, setContactDialogOpen] = useState(false)
   const [klant, setKlant] = useState<Klant | null>(null)
@@ -633,6 +635,15 @@ export function ClientProfile() {
           <p className="text-sm text-muted-foreground mt-0.5">
             Aangemaakt op: <span className="font-mono">{formatDate(klant.created_at)}</span>
           </p>
+          {tagsAan && (klant.labels || []).length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-2">
+              {(klant.labels || []).map((tag) => (
+                <span key={tag} className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-muted text-muted-foreground">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           {/* Toevoegen dropdown */}

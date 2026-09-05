@@ -34,7 +34,10 @@ import {
   Trash2,
   CheckSquare,
   X,
+  Tag,
+  ChevronDown,
 } from 'lucide-react'
+import { useFunctie } from '@/hooks/useFunctie'
 import { AlertCircle, Activity, Moon, Info } from 'lucide-react'
 import { ModuleIntro } from '@/components/shared/ModuleIntro'
 import { cn } from '@/lib/utils'
@@ -104,6 +107,8 @@ export function ClientsLayout() {
   const [sortDir, setSortDir] = useState<SortDir>('asc')
   const [labelFilter, setLabelFilter] = useState<string>('alle')
   const [klantStatusFilter, setKlantStatusFilter] = useState<string>('alle')
+  const tagsAan = useFunctie('klant_tags')
+  const [tagFilter, setTagFilter] = useState<string>('alle')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [currentPage, setCurrentPage] = useState(1)
   const PAGE_SIZE = 50
@@ -158,6 +163,11 @@ export function ClientsLayout() {
       result = result.filter((k) => (k.klant_status || 'normaal') === klantStatusFilter)
     }
 
+    // Tag filter (vrije labels, migratie 236)
+    if (tagsAan && tagFilter !== 'alle') {
+      result = result.filter((k) => (k.labels || []).includes(tagFilter))
+    }
+
     // Search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim()
@@ -197,10 +207,16 @@ export function ClientsLayout() {
     })
 
     return result
-  }, [klanten, searchQuery, statusFilter, labelFilter, klantStatusFilter, sortField, sortDir])
+  }, [klanten, searchQuery, statusFilter, labelFilter, klantStatusFilter, tagsAan, tagFilter, sortField, sortDir])
+
+  const alleTags = useMemo(() => {
+    const set = new Set<string>()
+    for (const k of klanten) for (const t of k.labels || []) set.add(t)
+    return [...set].sort((a, b) => a.localeCompare(b, 'nl'))
+  }, [klanten])
 
   // Reset page when filters change
-  useEffect(() => { setCurrentPage(1) }, [searchQuery, statusFilter, labelFilter, klantStatusFilter, sortField, sortDir])
+  useEffect(() => { setCurrentPage(1) }, [searchQuery, statusFilter, labelFilter, klantStatusFilter, tagFilter, sortField, sortDir])
 
   const totalPages = Math.ceil(filteredKlanten.length / PAGE_SIZE)
   const paginatedKlanten = useMemo(
@@ -292,7 +308,7 @@ export function ClientsLayout() {
       await updateKlant(klantId, { status: newStatus })
     } catch (err) {
       logger.error('Klantstatus wijzigen mislukt:', err)
-      setKlanten((prev) => prev.map((k) => (k.id === klantId ? { ...k, status: vorige } : k)))
+      setKlanten((prev) => prev.map((k) => (k.id === klantId ? { ...k, status: vorige ?? k.status } : k)))
       toast.error('Kon status niet wijzigen')
     }
   }
@@ -685,6 +701,40 @@ export function ClientsLayout() {
               {labelFilter === opt.value && <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-[2px] bg-petrol dark:bg-[#5AABB5] rounded-full" />}
             </button>
           ))}
+
+          {tagsAan && alleTags.length > 0 && (
+            <>
+              <span className="w-px h-4 bg-border mx-2 flex-shrink-0" />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className={cn(
+                      'inline-flex items-center gap-1.5 text-[13px] font-medium px-3 py-1.5 rounded-lg whitespace-nowrap transition-all flex-shrink-0',
+                      tagFilter !== 'alle'
+                        ? 'text-petrol dark:text-foreground font-semibold bg-petrol/[0.07] dark:bg-white/[0.06]'
+                        : 'text-muted-foreground hover:text-foreground/70'
+                    )}
+                  >
+                    <Tag className="w-3.5 h-3.5" strokeWidth={1.75} />
+                    {tagFilter === 'alle' ? 'Tag' : tagFilter}
+                    <ChevronDown className="w-3 h-3 opacity-60" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="max-h-72 overflow-y-auto">
+                  <DropdownMenuItem onClick={() => setTagFilter('alle')} className={cn(tagFilter === 'alle' && 'font-semibold')}>
+                    Alle tags
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  {alleTags.map((tag) => (
+                    <DropdownMenuItem key={tag} onClick={() => setTagFilter(tag)} className={cn(tagFilter === tag && 'font-semibold')}>
+                      {tag}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          )}
         </div>
       </div>
 
@@ -960,6 +1010,18 @@ export function ClientsLayout() {
                                   />
                                 )
                               })}
+                            </div>
+                          )}
+                          {tagsAan && (klant.labels || []).length > 0 && (
+                            <div className="flex items-center gap-1 mt-1 flex-wrap">
+                              {(klant.labels || []).map((tag) => (
+                                <span
+                                  key={tag}
+                                  className="inline-flex items-center px-1.5 py-px rounded-md text-[10px] font-medium bg-muted text-muted-foreground"
+                                >
+                                  {tag}
+                                </span>
+                              ))}
                             </div>
                           )}
                         </div>
