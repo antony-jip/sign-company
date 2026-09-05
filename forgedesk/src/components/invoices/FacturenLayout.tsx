@@ -577,6 +577,7 @@ export function FacturenLayout() {
   const { settings, profile, primaireKleur, emailHandtekening, bedrijfsnaam, factuurPrefix, factuurStartNummer, creditnotaDoornummeren, creditnotaPrefix, factuurBetaaltermijnDagen, factuurVoorwaarden } = useAppSettings()
   const exactConnected = settings.exact_online_connected ?? false
   const stepperAan = useFunctie('factuur_stepper')
+  const actieTabAan = useFunctie('factuur_actie_tab')
   const documentStyle = useDocumentStyle()
 
   // Data state
@@ -1693,6 +1694,57 @@ export function FacturenLayout() {
       .replace(/{betaal_link}/g, geldigeBetaalUrl(factuur) || '')
   }, [getDagenVerlopen, bedrijfsnaam])
 
+  // null = volg de org-instelling weer; false = deze factuur nooit manen.
+  const handleToggleOpvolging = useCallback(async (factuur: Factuur) => {
+    const pauzeren = factuur.opvolging_actief !== false
+    try {
+      await updateFactuur(factuur.id, { opvolging_actief: pauzeren ? false : null })
+      setFacturen((prev) => prev.map((f) => (f.id === factuur.id ? { ...f, opvolging_actief: pauzeren ? false : null } : f)))
+      toast.success(pauzeren ? `Opvolging van ${factuur.nummer || 'de factuur'} gepauzeerd` : `Opvolging van ${factuur.nummer || 'de factuur'} hervat`)
+    } catch (err) {
+      logger.error('Opvolging togglen:', err)
+      toast.error('Kon de opvolging niet aanpassen')
+    }
+  }, [])
+
+  // Eén stille regel per rij in "Vanavond de deur uit": welke stap er
+  // klaarstaat, sinds wanneer, en de pauzeknop.
+  const actieRegel = useCallback((factuur: Factuur) => {
+    const type = volgendeHerinneringVoor(factuur, opvolgStappen)
+    const gepauzeerd = factuur.opvolging_actief === false
+      || klanten.find((k) => k.id === factuur.klant_id)?.geen_betalingsherinneringen === true
+    const stap = type ? opvolgStappen.find((s) => s.stap_type === type) : null
+    const sinds = type ? new Date(factuur.vervaldatum) : null
+    if (sinds && type) sinds.setDate(sinds.getDate() + (stap?.dagen_na_vervaldatum ?? STANDAARD_HERINNERING_DAGEN[type]))
+    return (
+      <div className="flex items-center gap-2 text-[11px] whitespace-nowrap">
+        <span className={cn(gepauzeerd ? 'text-muted-foreground/60' : 'text-foreground/80')}>
+          {type ? STAP_LABEL[type] : 'Geen stap'}
+          {sinds && !isNaN(sinds.getTime()) ? ` · sinds ${sinds.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}` : ''}
+          {gepauzeerd ? ' · gepauzeerd' : ''}
+        </span>
+        {factuur.opvolging_actief === false ? (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); void handleToggleOpvolging(factuur) }}
+            className="font-semibold text-petrol dark:text-[#5AABB5] hover:underline min-h-[44px] md:min-h-0"
+          >
+            Hervat
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); void handleToggleOpvolging(factuur) }}
+            className="font-semibold text-muted-foreground hover:text-foreground hover:underline min-h-[44px] md:min-h-0"
+            title="Deze factuur voorlopig niet automatisch manen"
+          >
+            Pauzeer
+          </button>
+        )}
+      </div>
+    )
+  }, [opvolgStappen, klanten, handleToggleOpvolging])
+
   const openHerinneringDialog = useCallback((factuur: Factuur) => {
     const type = getVolgendeHerinnering(factuur) || 'herinnering_1'
     const tekst = herinneringTekst(type)
@@ -2440,7 +2492,7 @@ export function FacturenLayout() {
                       : 'text-muted-foreground hover:text-foreground/70'
                   )}
                 >
-                  {option.label}
+                  {option.value === 'te_herinneren' && actieTabAan ? 'Vanavond de deur uit' : option.label}
                   {count > 0 && <span className="ml-1 font-mono text-[11px] opacity-50">{count}</span>}
                   {isActive && <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-[2px] bg-petrol rounded-full" />}
                 </button>
@@ -2794,6 +2846,9 @@ export function FacturenLayout() {
                   )}>{formatCurrency(exBtw(factuur))}</span>
                 </div>
               </div>
+              {actieTabAan && filterStatus === 'te_herinneren' && (
+                <div className="px-4 pb-3">{actieRegel(factuur)}</div>
+              )}
             </div>
           )
         })}
@@ -3056,6 +3111,7 @@ export function FacturenLayout() {
                             </span>
                           )
                         })()}
+                        {actieTabAan && filterStatus === 'te_herinneren' && actieRegel(factuur)}
                       </div>
                     </td>
                     <td className="py-3.5 pr-4 text-right hidden lg:table-cell">
