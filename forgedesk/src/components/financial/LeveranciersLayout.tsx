@@ -43,6 +43,8 @@ interface FormData {
   categorie: string
   notitie: string
   actief: boolean
+  betaaltermijn_dagen: string
+  grootboek_code: string
 }
 
 const EMPTY_FORM: FormData = {
@@ -50,6 +52,7 @@ const EMPTY_FORM: FormData = {
   adres: '', postcode: '', stad: '', website: '',
   kvk_nummer: '', btw_nummer: '', iban: '', categorie: '', notitie: '',
   actief: true,
+  betaaltermijn_dagen: '', grootboek_code: '',
 }
 
 interface ContactForm {
@@ -167,6 +170,8 @@ export function LeveranciersLayout() {
       categorie: l.categorie || '',
       notitie: l.notitie || '',
       actief: l.actief,
+      betaaltermijn_dagen: l.betaaltermijn_dagen != null ? String(l.betaaltermijn_dagen) : '',
+      grootboek_code: l.grootboek_code || '',
     })
     setEditingId(l.id)
     setContacten([])
@@ -205,6 +210,8 @@ export function LeveranciersLayout() {
         categorie: formData.categorie.trim(),
         notitie: formData.notitie.trim(),
         actief: formData.actief,
+        betaaltermijn_dagen: formData.betaaltermijn_dagen.trim() === '' ? null : Math.max(0, Math.round(Number(formData.betaaltermijn_dagen)) || 0),
+        grootboek_code: formData.grootboek_code.trim() || null,
       }
       if (editingId) {
         const updated = await updateLeverancier(editingId, data)
@@ -362,6 +369,14 @@ export function LeveranciersLayout() {
                     {lev.email && <div className="flex items-center gap-1.5"><Mail className="h-3 w-3" /> {lev.email}</div>}
                     {lev.telefoon && <div className="flex items-center gap-1.5"><Phone className="h-3 w-3" /> {lev.telefoon}</div>}
                     {lev.website && <div className="flex items-center gap-1.5"><Globe className="h-3 w-3" /> {lev.website}</div>}
+                    {(lev.betaaltermijn_dagen != null || lev.grootboek_code) && (
+                      <div className="text-xs">
+                        {[
+                          lev.betaaltermijn_dagen != null ? `Betaaltermijn ${lev.betaaltermijn_dagen} dagen` : null,
+                          lev.grootboek_code ? `grootboek ${lev.grootboek_code}` : null,
+                        ].filter(Boolean).join(' · ')}
+                      </div>
+                    )}
                   </div>
                   <div className="mt-3 pt-3 border-t flex justify-between text-sm">
                     <span>{stats.count} uitgaven</span>
@@ -431,6 +446,16 @@ export function LeveranciersLayout() {
               </div>
               <div><Label>IBAN</Label><Input value={formData.iban} onChange={(e) => setFormData((p) => ({ ...p, iban: e.target.value }))} /></div>
               <div><Label>Notitie</Label><Input value={formData.notitie} onChange={(e) => setFormData((p) => ({ ...p, notitie: e.target.value }))} /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Betaaltermijn (dagen)</Label>
+                  <Input type="number" inputMode="numeric" min={0} value={formData.betaaltermijn_dagen} onChange={(e) => setFormData((p) => ({ ...p, betaaltermijn_dagen: e.target.value }))} placeholder="30" />
+                </div>
+                <div>
+                  <Label>Grootboek</Label>
+                  <Input value={formData.grootboek_code} onChange={(e) => setFormData((p) => ({ ...p, grootboek_code: e.target.value }))} placeholder="7000" />
+                </div>
+              </div>
               <label className="flex items-center gap-2 text-sm">
                 <input type="checkbox" checked={formData.actief} onChange={(e) => setFormData((p) => ({ ...p, actief: e.target.checked }))} className="rounded" />
                 Actief

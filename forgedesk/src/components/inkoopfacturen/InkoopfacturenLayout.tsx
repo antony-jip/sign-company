@@ -19,13 +19,17 @@ import {
   extractInkoopfactuur,
   getInkoopAIUsage,
   koppelInkoopfactuurAanProject,
+  updateInkoopfactuurVelden,
 } from '@/services/inkoopfactuurService'
 import { getProjecten, getKlanten } from '@/services/supabaseService'
+import { getLeveranciers, updateLeverancier } from '@/services/boekhoudingService'
+import { useFunctie } from '@/hooks/useFunctie'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { KlantStatusWarning } from '@/components/shared/KlantStatusWarning'
 import { getCached, fetchQuery } from '@/lib/queryCache'
 import { InkoopAILimietBanner } from '@/components/shared/InkoopAILimietBanner'
 import { stelProjectVoor, type InkoopProjectVoorstel } from '@/utils/inkoopProjectVoorstel'
-import type { InkoopFactuurInboxConfig, InkoopFactuur, InkoopFactuurStatus, Project, Klant } from '@/types'
+import type { InkoopFactuurInboxConfig, InkoopFactuur, InkoopFactuurStatus, Project, Klant, Leverancier } from '@/types'
 
 const STATUS_CONFIG: Record<InkoopFactuurStatus, { label: string; bg: string; text: string; dot: boolean }> = {
   nieuw: { label: 'Nieuw', bg: '#FDE8E2', text: '#C03A18', dot: true },
@@ -104,12 +108,21 @@ export function InkoopfacturenLayout() {
   const [projectPickerOpen, setProjectPickerOpen] = useState(false)
   const [projectQuery, setProjectQuery] = useState('')
   const [wisselAnim, setWisselAnim] = useState(false)
+  const leverancierDefaultsAan = useFunctie('inkoop_leverancier_defaults')
+  const [leveranciers, setLeveranciers] = useState<Leverancier[]>([])
+  const [onthoudTermijn, setOnthoudTermijn] = useState(false)
 
   useEffect(() => {
     setLightboxAction('idle')
     setProjectPickerOpen(false)
     setProjectQuery('')
+    setOnthoudTermijn(false)
   }, [lightbox?.factuur.id])
+
+  useEffect(() => {
+    if (!leverancierDefaultsAan) return
+    getLeveranciers().then((ls) => setLeveranciers(ls.filter((l) => l.actief))).catch(() => {})
+  }, [leverancierDefaultsAan])
 
   useEffect(() => {
     fetchQuery('projecten', getProjecten).then(setProjecten).catch(() => {})
@@ -387,6 +400,53 @@ export function InkoopfacturenLayout() {
     ? projecten.find(p => p.id === lightbox.factuur.project_id)
     : undefined
 
+  // Leverancier onthouden: gekoppelde leverancier, of een voorstel op naam.
+  const gekoppeldeLeverancier = lightbox?.factuur.leverancier_id
+    ? leveranciers.find((l) => l.id === lightbox.factuur.leverancier_id)
+    : undefined
+  const leverancierVoorstel = !gekoppeldeLeverancier && lightbox?.factuur.leverancier_naam
+    ? leveranciers.find((l) => l.bedrijfsnaam.trim().toLowerCase() === lightbox.factuur.leverancier_naam.trim().toLowerCase())
+    : undefined
+  const termijnDagen = (() => {
+    const f = lightbox?.factuur
+    if (!f?.factuur_datum || !f.vervaldatum) return null
+    const a = new Date(f.factuur_datum).getTime()
+    const b = new Date(f.vervaldatum).getTime()
+    if (isNaN(a) || isNaN(b) || b < a) return null
+    return Math.round((b - a) / 86400000)
+  })()
+  const vervaldatumVoorstel = (() => {
+    const f = lightbox?.factuur
+    const bron = gekoppeldeLeverancier ?? leverancierVoorstel
+    if (!f || f.vervaldatum || !f.factuur_datum || bron?.betaaltermijn_dagen == null) return null
+    const d = new Date(f.factuur_datum)
+    if (isNaN(d.getTime())) return null
+    d.setDate(d.getDate() + bron.betaaltermijn_dagen)
+    return d.toLocaleDateString('sv-SE')
+  })()
+
+  async function koppelLeverancier(leverancierId: string | null) {
+    if (!lightbox) return
+    try {
+      const updated = await updateInkoopfactuurVelden(lightbox.factuur.id, { leverancier_id: leverancierId })
+      setLightbox(lb => (lb ? { ...lb, factuur: updated } : lb))
+      setFacturen(prev => prev.map(f => (f.id === updated.id ? updated : f)))
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Leverancier koppelen mislukt')
+    }
+  }
+
+  async function neemVervaldatumOver() {
+    if (!lightbox || !vervaldatumVoorstel) return
+    try {
+      const updated = await updateInkoopfactuurVelden(lightbox.factuur.id, { vervaldatum: vervaldatumVoorstel })
+      setLightbox(lb => (lb ? { ...lb, factuur: updated } : lb))
+      setFacturen(prev => prev.map(f => (f.id === updated.id ? updated : f)))
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Vervaldatum zetten mislukt')
+    }
+  }
+
   async function koppelProject(projectId: string | null) {
     if (!lightbox) return
     try {
@@ -446,6 +506,11 @@ export function InkoopfacturenLayout() {
       const userId = (await sb?.auth.getUser())?.data?.user?.id
       if (!userId) { toast.error('Niet ingelogd'); setLightboxAction('idle'); return }
       await approveInkoopfactuur(lightbox.factuur.id, userId)
+      if (onthoudTermijn && gekoppeldeLeverancier && termijnDagen !== null) {
+        await updateLeverancier(gekoppeldeLeverancier.id, { betaaltermijn_dagen: termijnDagen })
+          .then((bijgewerkt) => setLeveranciers((prev) => prev.map((l) => (l.id === bijgewerkt.id ? { ...l, ...bijgewerkt } : l))))
+          .catch(() => toast.error('Betaaltermijn onthouden mislukt'))
+      }
       setLightboxAction('approved')
       await new Promise(resolve => setTimeout(resolve, 700))
       await goToNextOrClose()
@@ -950,6 +1015,47 @@ export function InkoopfacturenLayout() {
                     <span className="text-foreground/80">{formatDatum(lightbox.factuur.vervaldatum)}</span>
                   </div>
                 )}
+                {leverancierDefaultsAan && vervaldatumVoorstel && (
+                  <div className="flex justify-between items-center gap-2 text-[13px]">
+                    <span className="text-muted-foreground">Vervaldatum</span>
+                    <span className="text-foreground/80 inline-flex items-center gap-2">
+                      <span className="text-muted-foreground">voorstel {formatDatum(vervaldatumVoorstel)}</span>
+                      <button type="button" onClick={neemVervaldatumOver} className="font-semibold text-petrol dark:text-[#5AABB5] hover:underline">
+                        Overnemen
+                      </button>
+                    </span>
+                  </div>
+                )}
+                {leverancierDefaultsAan && (
+                  <div className="flex justify-between items-center gap-3 text-[13px]">
+                    <span className="text-muted-foreground flex-shrink-0">Leverancier</span>
+                    <span className="min-w-0 flex flex-col items-end gap-1">
+                      <Select
+                        value={lightbox.factuur.leverancier_id || 'geen'}
+                        onValueChange={(v) => koppelLeverancier(v === 'geen' ? null : v)}
+                      >
+                        <SelectTrigger className="h-8 w-[200px] text-[13px]">
+                          <SelectValue placeholder="Kies leverancier" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="geen">Geen koppeling</SelectItem>
+                          {leveranciers.map((l) => (
+                            <SelectItem key={l.id} value={l.id}>{l.bedrijfsnaam}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {leverancierVoorstel && (
+                        <button
+                          type="button"
+                          onClick={() => koppelLeverancier(leverancierVoorstel.id)}
+                          className="text-[11px] text-muted-foreground hover:text-foreground"
+                        >
+                          Voorstel: <span className="font-semibold text-petrol dark:text-[#5AABB5]">{leverancierVoorstel.bedrijfsnaam}</span> · koppel
+                        </button>
+                      )}
+                    </span>
+                  </div>
+                )}
                 {lightbox.factuur.referentie_kenmerk && (
                   <div className="flex justify-between text-[13px]">
                     <span className="text-muted-foreground">Referentie</span>
@@ -1118,6 +1224,12 @@ export function InkoopfacturenLayout() {
             {/* Footer */}
             {lightbox.factuur.status !== 'goedgekeurd' && lightbox.factuur.status !== 'afgewezen' ? (
               <div className="px-6 py-5 border-t border-border space-y-2.5">
+                {leverancierDefaultsAan && gekoppeldeLeverancier && termijnDagen !== null && gekoppeldeLeverancier.betaaltermijn_dagen !== termijnDagen && (
+                  <label className="flex items-center gap-2 text-[12px] text-muted-foreground cursor-pointer min-h-[44px] sm:min-h-0">
+                    <Checkbox checked={onthoudTermijn} onCheckedChange={(v) => setOnthoudTermijn(v === true)} />
+                    Onthoud betaaltermijn van {termijnDagen} dagen voor {gekoppeldeLeverancier.bedrijfsnaam}
+                  </label>
+                )}
                 <Button
                   onClick={handleLightboxApprove}
                   disabled={lightboxSaving}
