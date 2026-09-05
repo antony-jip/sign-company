@@ -26,7 +26,7 @@ interface OfferteVervolgDialogProps {
 }
 
 // Onder sm een lade van onderen in plaats van een dialoog in het midden.
-const SHEET_OP_MOBIEL =
+export const SHEET_OP_MOBIEL =
   'sm:max-w-md max-sm:top-auto max-sm:bottom-0 max-sm:left-0 max-sm:translate-x-0 max-sm:translate-y-0 max-sm:max-w-none max-sm:rounded-b-none max-sm:rounded-t-2xl max-sm:pb-[calc(env(safe-area-inset-bottom)+1.5rem)] max-sm:data-[state=open]:slide-in-from-bottom max-sm:data-[state=closed]:slide-out-to-bottom max-sm:data-[state=open]:slide-in-from-left-0 max-sm:data-[state=closed]:slide-out-to-left-0 max-sm:data-[state=open]:zoom-in-100 max-sm:data-[state=closed]:zoom-out-100'
 
 export function OfferteVervolgDialog({ open, onOpenChange, offerteId, onBijgewerkt }: OfferteVervolgDialogProps) {

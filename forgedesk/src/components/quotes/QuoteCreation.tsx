@@ -94,7 +94,9 @@ import { ForgeQuotePreview } from './ForgeQuotePreview'
 import { InkoopOffertePaneel } from './InkoopOffertePaneel'
 import { OfferteUitschrijvenDialog, type UitgeschrevenPost } from './OfferteUitschrijvenDialog'
 import { OfferteCheckDialog } from './OfferteCheckDialog'
-import { OfferteVervolgDialog } from './OfferteVervolgDialog'
+import { OfferteVervolgDialog, SHEET_OP_MOBIEL } from './OfferteVervolgDialog'
+import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { useFunctie, useFunctieGetal } from '@/hooks/useFunctie'
 import { getOfferteCondities } from '@/services/offerteService'
 import type { OfferteConditie } from '@/types'
@@ -368,6 +370,8 @@ export function QuoteCreation() {
   const [ondertekening, setOndertekening] = useState<{ door?: string; op?: string; handtekening?: string | null } | null>(null)
   const [showVervolgDialog, setShowVervolgDialog] = useState(false)
   const vervolgAan = useFunctie('offerte_vervolg')
+  const geschiedenisAan = useFunctie('geschiedenis')
+  const [showGeschiedenis, setShowGeschiedenis] = useState(false)
   const [geconverteerdNaarFactuurId, setGeconverteerdNaarFactuurId] = useState<string | null>(null)
   const [linkedFactuur, setLinkedFactuur] = useState<Factuur | null>(null)
 
@@ -2218,6 +2222,7 @@ export function QuoteCreation() {
         afgewezenReden={afgewezenReden}
         spoed={spoed}
         ondertekening={ondertekening}
+        onGeschiedenis={geschiedenisAan && isEditMode && editOfferteId ? () => setShowGeschiedenis(true) : undefined}
         onVervolg={vervolgAan && editOfferteId && ['verzonden', 'bekeken', 'goedgekeurd'].includes(offerteStatus) ? () => setShowVervolgDialog(true) : undefined}
         checkStatus={checkInfo.status}
         checkAanNaam={naamVoorUser(checkInfo.aan)}
@@ -2967,6 +2972,20 @@ export function QuoteCreation() {
         />
       )}
       <TrialGuardDialog open={showTrialDialog} onOpenChange={setShowTrialDialog} />
+
+      {editOfferteId && geschiedenisAan && (
+        <Dialog open={showGeschiedenis} onOpenChange={setShowGeschiedenis}>
+          <DialogContent className={SHEET_OP_MOBIEL}>
+            <DialogHeader>
+              <DialogTitle>Geschiedenis<span className="text-flame">.</span></DialogTitle>
+              <DialogDescription>Wie wat deed op offerte {offerteNummer}.</DialogDescription>
+            </DialogHeader>
+            <div className="max-h-[60vh] overflow-y-auto -mt-4">
+              <AuditLogPanel entityType="offerte" entityId={editOfferteId} maxItems={20} />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {editOfferteId && (
         <OfferteVervolgDialog

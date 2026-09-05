@@ -23,10 +23,12 @@ import {
   UserCheck,
   XCircle,
   Zap,
+  History,
 } from 'lucide-react'
 import type { Klant } from '@/types'
 import { cn } from '@/lib/utils'
 import { hapticLight, hapticMedium } from '@/utils/haptic'
+import { KlantStatusWarning } from '@/components/shared/KlantStatusWarning'
 
 export interface QuoteHeaderProps {
   isEditMode: boolean
@@ -74,6 +76,8 @@ export interface QuoteHeaderProps {
   spoed?: boolean
   /** Online akkoord van de klant (migratie 235): naam, datum en handtekening-PNG. */
   ondertekening?: { door?: string; op?: string; handtekening?: string | null } | null
+  // Geschiedenis (audit-log) in een lade, schakelaar geschiedenis
+  onGeschiedenis?: () => void
   checkStatus?: 'open' | 'akkoord' | 'verstuurd' | 'wijzigingen' | null
   checkAanNaam?: string
   // Kopieer naar andere klant
@@ -116,6 +120,7 @@ export function QuoteHeader({
   onVervolg,
   spoed,
   ondertekening,
+  onGeschiedenis,
   checkStatus,
   checkAanNaam,
   showKopieerNaarKlant,
@@ -275,6 +280,8 @@ export function QuoteHeader({
               </span>
             )}
           </div>
+
+          {selectedKlant && <KlantStatusWarning klant={selectedKlant} className="mt-2" />}
 
           {ondertekening?.door && (
             <div className="mt-2 flex items-center gap-3 text-[12px] text-[#2D6B48]">
@@ -474,6 +481,15 @@ export function QuoteHeader({
                       >
                         <FileCheck className="h-3.5 w-3.5 text-muted-foreground" />
                         Opdrachtbevestiging
+                      </button>
+                    )}
+                    {onGeschiedenis && (
+                      <button
+                        onClick={() => { onGeschiedenis(); setShowActionsMenu(false) }}
+                        className="w-full text-left px-3 py-2 text-[13px] hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] flex items-center gap-2 transition-colors"
+                      >
+                        <History className="h-3.5 w-3.5 text-muted-foreground" />
+                        Geschiedenis
                       </button>
                     )}
                   </div>
