@@ -116,6 +116,7 @@ import {
   type HerinneringOntvanger,
 } from '@/services/factuurService'
 import { FactuurOpvolgStepper, toonOpvolgStepper } from '@/components/invoices/FactuurOpvolgStepper'
+import { leesEnWisFactuurPrefill, type FactuurPrefill } from '@/components/invoices/factuurPrefill'
 import { useFunctie } from '@/hooks/useFunctie'
 import supabase from '@/services/supabaseClient'
 import { generateWerkbonInstructiePDF } from '@/services/werkbonPdfService'
@@ -170,6 +171,8 @@ interface LineItem {
   korting_percentage: number
   grootboek_code: string
   detail_regels?: OfferteItemDetailRegel[]
+  /** Offerteregel waaruit deze regel komt; de deelfactuur-dialoog telt hierop. */
+  offerte_item_id?: string | null
 }
 
 // Wat er van een openstaande factuur bewaard blijft als je van tabblad
@@ -285,7 +288,7 @@ function lineItemsUitTotalen(beschrijving: string, subtotaal: number, btwBedrag:
 // urencorrectie bundelen, zodat het factuur-subtotaal exact gelijk is aan het
 // opgeslagen offerte.subtotaal — anders wijkt de factuur af van wat de klant
 // op de offerte accepteerde.
-function offerteItemsNaarFactuurRegels(offerteItems: OfferteItem[], offerte: Offerte): LineItem[] {
+function offerteItemsNaarFactuurRegels(offerteItems: OfferteItem[], offerte: Offerte, metCorrectie = true): LineItem[] {
   const regels: LineItem[] = offerteItems
     .filter((oi) => (oi.soort || 'prijs') === 'prijs' && !oi.is_optioneel)
     .sort((a, b) => a.volgorde - b.volgorde)
@@ -296,6 +299,7 @@ function offerteItemsNaarFactuurRegels(offerteItems: OfferteItem[], offerte: Off
       const basis = {
         grootboek_code: oi.grootboek_code || '',
         detail_regels: oi.detail_regels || [],
+        offerte_item_id: oi.id,
       }
       if (meetellend.length === 0) {
         return [{
@@ -322,7 +326,7 @@ function offerteItemsNaarFactuurRegels(offerteItems: OfferteItem[], offerte: Off
     })
 
   const regelsNetto = round2(regels.reduce((sum, r) => sum + calcLineTotal(r), 0))
-  const correctie = round2((offerte.subtotaal || 0) - regelsNetto)
+  const correctie = metCorrectie ? round2((offerte.subtotaal || 0) - regelsNetto) : 0
   if (correctie !== 0) {
     // Eén correctieregel met een gewogen percentage (bv. 17%) is in Exact
     // onboekbaar. Verdeel de correctie daarom over de tarieven die de offerte
@@ -627,6 +631,9 @@ export function FactuurEditor() {
   const [isCreditFactuur, setIsCreditFactuur] = useState(false)
   const [creditVoorFactuurId, setCreditVoorFactuurId] = useState('')
   const [creditVoorNummer, setCreditVoorNummer] = useState('')
+  // Keuze uit "Wat wil je factureren?": welke offerteregels, en welke
+  // voorschotten er verrekend worden. null = gewone offerte-import.
+  const [prefill, setPrefill] = useState<FactuurPrefill | null>(null)
 
   // Factureerpercentage (DEEL 2)
   const [factureerPercentage, setFactureerPercentage] = useState(100)
@@ -753,6 +760,7 @@ export function FactuurEditor() {
                       korting_percentage: fi.korting_percentage,
                       grootboek_code: fi.grootboek_code || '',
                       detail_regels: fi.detail_regels || [],
+                      offerte_item_id: fi.offerte_item_id || null,
                     }))
                 )
               }
@@ -873,8 +881,12 @@ export function FactuurEditor() {
               const allOffertes = await getOffertes().catch(() => [])
               const offerte = allOffertes.find((o) => o.id === paramOfferteId)
               if (offerte) {
+                // De deelfactuur-dialoog heeft de keuze al gemaakt; dan geen
+                // dubbel-waarschuwing, die keuze was bewust.
+                const gekozen = searchParams.get('prefill') === '1' ? leesEnWisFactuurPrefill(offerte.id) : null
+                if (gekozen) setPrefill(gekozen)
                 // Waarschuwing bij dubbele facturatie
-                if (offerte.status === 'gefactureerd' || offerte.geconverteerd_naar_factuur_id) {
+                if (!gekozen && (offerte.status === 'gefactureerd' || offerte.geconverteerd_naar_factuur_id)) {
                   const doorgaan = await confirm({
                     message: `Let op: offerte ${offerte.nummer} is al eerder gefactureerd` +
                     (offerte.geconverteerd_naar_factuur_op ? ` op ${new Date(offerte.geconverteerd_naar_factuur_op).toLocaleDateString('nl-NL')}` : '') +
@@ -896,7 +908,39 @@ export function FactuurEditor() {
                 // Outro bewust NIET uit de offerte overnemen · de factuur houdt
                 // zijn eigen standaard-outro (factuurOutroTekst).
 
-                if (offerteItems.length > 0) {
+                if (gekozen && offerteItems.length > 0) {
+                  // Alleen de aangevinkte regels, met het gekozen aantal. Bij
+                  // één meetellende prijsoptie zit het aantal op die optie;
+                  // bij meerdere opties blijft de post heel (de dialoog laat
+                  // het aantal dan ook niet wijzigen).
+                  const perId = new Map(gekozen.regels.map((r) => [r.offerte_item_id, r.aantal]))
+                  const gekozenItems = offerteItems
+                    .filter((oi) => perId.has(oi.id))
+                    .map((oi) => {
+                      const aantal = perId.get(oi.id) as number
+                      const meetellend = getMeetellendeVarianten(oi.prijs_varianten, oi.actieve_variant_id)
+                      if (meetellend.length === 1) {
+                        return { ...oi, prijs_varianten: (oi.prijs_varianten || []).map((v) => (v.id === meetellend[0].id ? { ...v, aantal } : v)) }
+                      }
+                      return meetellend.length === 0 ? { ...oi, aantal } : oi
+                    })
+                  const mapped = [
+                    ...offerteItemsNaarFactuurRegels(gekozenItems, offerte, gekozen.volledig),
+                    ...gekozen.verrekenRegels.map((v) => ({
+                      id: crypto.randomUUID(),
+                      beschrijving: v.beschrijving,
+                      aantal: 1,
+                      eenheidsprijs: v.eenheidsprijs,
+                      btw_percentage: v.btw_percentage,
+                      korting_percentage: 0,
+                      grootboek_code: '',
+                      detail_regels: [],
+                    })),
+                  ]
+                  setItems(mapped)
+                  setOrigineleItems(mapped.map((item) => ({ ...item })))
+                  setHasOfferteItems(true)
+                } else if (offerteItems.length > 0) {
                   const mapped = offerteItemsNaarFactuurRegels(offerteItems, offerte)
                   setItems(mapped)
                   setOrigineleItems(mapped.map((item) => ({ ...item })))
@@ -1431,7 +1475,7 @@ export function FactuurEditor() {
       // klantkaart hieronder): de geladen offerte-status kan uren oud zijn, dus
       // een collega kan deze offerte intussen al gefactureerd hebben.
       // Deelfacturen blijven mogelijk, maar alleen als bewuste keuze.
-      if (!isEditMode && offerteId && !isCreditFactuur) {
+      if (!isEditMode && offerteId && !isCreditFactuur && !prefill) {
         const alBestaand = await getStandaardFacturenVoorOfferte(offerteId).catch(() => [])
         if (alBestaand.length > 0) {
           const nummers = alBestaand.map((f) => f.nummer || 'een concept zonder nummer').join(', ')
@@ -1548,6 +1592,7 @@ export function FactuurEditor() {
             volgorde: i + 1,
             grootboek_code: item.grootboek_code || '',
             detail_regels: (item.detail_regels || []).filter((r) => r.label || r.waarde),
+            offerte_item_id: item.offerte_item_id || null,
           })))
         } catch (itemsErr) {
           logger.error('Factuurregels opslaan mislukt na header-update:', itemsErr)
@@ -1603,7 +1648,8 @@ export function FactuurEditor() {
           betaal_token: betaalToken,
           betaal_token_verloopt_op: factuurBetaalTokenExpiry(),
           betaal_link: betaalLink,
-          factuur_type: isCredit ? 'creditnota' : 'standaard',
+          factuur_type: isCredit ? 'creditnota' : (prefill?.verrekende_voorschot_ids.length ? 'eindafrekening' : 'standaard'),
+          ...(prefill?.verrekende_voorschot_ids.length ? { verrekende_voorschot_ids: prefill.verrekende_voorschot_ids } : {}),
           kostenplaats_id: kostenplaatsId || undefined,
           werkbon_id: werkbonId || undefined,
           credit_voor_factuur_id: creditVoorFactuurId || undefined,
@@ -1625,6 +1671,7 @@ export function FactuurEditor() {
             volgorde: i + 1,
             grootboek_code: item.grootboek_code || '',
             detail_regels: (item.detail_regels || []).filter((r) => r.label || r.waarde),
+            offerte_item_id: item.offerte_item_id || null,
           })
         }
 
@@ -1637,17 +1684,30 @@ export function FactuurEditor() {
           }
         }
 
-        // Update offerte met factuur link (bidirectioneel) en zet status op gefactureerd
+        // Verrekende voorschotten afvinken, zoals de eindafrekening in de lijst doet.
+        for (const voorschotId of prefill?.verrekende_voorschot_ids || []) {
+          try {
+            await updateFactuur(voorschotId, { is_voorschot_verrekend: true })
+          } catch (err) {
+            logger.error('Voorschot als verrekend markeren mislukt:', err)
+          }
+        }
+
+        // Update offerte met factuur link (bidirectioneel) en zet status op gefactureerd.
+        // Een deelfactuur (prefill zonder "volledig") koppelt alleen; de offerte
+        // is dan pas gefactureerd als de laatste regel de deur uit is.
         if (offerteId) {
           try {
             // Haal bestaande offerte op voor factuur_ids array
             const bestaandeOfferte = allOffertes.find((o) => o.id === offerteId)
             const bestaandeFactuurIds = bestaandeOfferte?.factuur_ids || []
             await updateOfferte(offerteId, {
-              geconverteerd_naar_factuur_id: newFactuur.id,
-              status: 'gefactureerd',
               factuur_ids: [...bestaandeFactuurIds, newFactuur.id],
-              geconverteerd_naar_factuur_op: bestaandeOfferte?.geconverteerd_naar_factuur_op || new Date().toISOString(),
+              ...(prefill && !prefill.volledig ? {} : {
+                geconverteerd_naar_factuur_id: newFactuur.id,
+                status: 'gefactureerd',
+                geconverteerd_naar_factuur_op: bestaandeOfferte?.geconverteerd_naar_factuur_op || new Date().toISOString(),
+              }),
             })
           } catch (err) {
             logger.error('Kon offerte status niet bijwerken:', err)
@@ -1742,7 +1802,7 @@ export function FactuurEditor() {
     kostenplaatsId, isCreditFactuur, creditVoorFactuurId,
     isTrialBlocked, setShowTrialDialog, factuurPrefix, factuurStartNummer,
     adresBedrijfsnaam, adresTav, adresRegel, adresPostcode, adresPlaats,
-    adresOokOpKlant, werkbonId, isVergrendeld,
+    adresOokOpKlant, werkbonId, isVergrendeld, prefill,
   ])
 
   // Verwerken en direct verzenden: opslaan + nummer toekennen, dan de gedeelde

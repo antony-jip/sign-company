@@ -167,6 +167,7 @@ import { confirm } from '@/components/shared/ConfirmDialog'
 import { TaskChecklistView } from './cockpit/TaskChecklistView'
 import { BriefingCard } from './cockpit/BriefingCard'
 import { TakenOfferteGrid } from './cockpit/TakenOfferteGrid'
+import { WatFacturerenDialog } from '@/components/invoices/WatFacturerenDialog'
 import { getProjectUrenBudget } from '@/services/projectUrenService'
 import { maakTakenUitBewerkingen } from '@/services/projectTakenService'
 import { urenVeldenUitInstellingen } from '@/utils/offerteUren'
@@ -487,6 +488,8 @@ export function ProjectDetail() {
   const [projectDocumenten, setProjectDocumenten] = useState<Document[]>([])
   const [projectOffertes, setProjectOffertes] = useState<Offerte[]>([])
   const [offerteFactuurMap, setOfferteFactuurMap] = useState<Record<string, Factuur>>({})
+  const deelfactuurAan = useFunctie('factuur_deelfactuur')
+  const [watFacturerenOfferte, setWatFacturerenOfferte] = useState<Offerte | null>(null)
   const [goedkeuringen, setGoedkeuringen] = useState<TekeningGoedkeuring[]>([])
   const [obPreviewOfferte, setObPreviewOfferte] = useState<Offerte | null>(null)
   const [showObOfferteSelect, setShowObOfferteSelect] = useState(false)
@@ -945,6 +948,13 @@ export function ProjectDetail() {
 
   const handleCreateFactuurFromOfferte = (offerte: Offerte) => {
     if (!project) return
+
+    // Met deelfacturen aan kiest de dialoog wat er de deur uit gaat; een
+    // eerdere factuur is dan geen reden om weg te navigeren.
+    if (deelfactuurAan) {
+      setWatFacturerenOfferte(offerte)
+      return
+    }
 
     // Duplicate check: als offerte al een factuur heeft, navigeer daarheen
     if (offerte.geconverteerd_naar_factuur_id) {
@@ -3162,6 +3172,18 @@ export function ProjectDetail() {
 
 
 
+
+      {watFacturerenOfferte && (
+        <WatFacturerenDialog
+          open={!!watFacturerenOfferte}
+          onOpenChange={(open) => { if (!open) setWatFacturerenOfferte(null) }}
+          offerte={watFacturerenOfferte}
+          project={project}
+          projectTaken={projectTaken}
+          onProjectBijgewerkt={(p) => setProject((prev) => (prev ? { ...prev, ...p } : p))}
+          onTakenAfgerond={() => { void fetchTaken() }}
+        />
+      )}
 
       {/* ── AI Analyse dialog ── */}
       <Dialog open={aiAnalysisOpen} onOpenChange={setAiAnalysisOpen}>

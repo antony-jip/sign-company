@@ -320,6 +320,94 @@ export async function getVoorschottenVoorOfferte(offerteId: string): Promise<Arr
   )
 }
 
+// Per offerteregel het aantal dat al op een factuur staat (niet-gecrediteerde
+// standaard- en eindafrekeningen). Regels zonder offerte_item_id (van vóór
+// migratie 237) tellen niet mee; de dialoog zegt dat er eerlijk bij.
+export async function getGefactureerdeAantallenVoorOfferte(offerteId: string): Promise<Record<string, number>> {
+  assertId(offerteId, 'offerte_id')
+  if (!(isSupabaseConfigured() && supabase)) return {}
+  const { data: facturen, error } = await supabase
+    .from('facturen')
+    .select('id, status, factuur_type')
+    .eq('offerte_id', offerteId)
+    .neq('status', 'gecrediteerd')
+  if (error) throw error
+  const ids = (facturen || [])
+    .filter((f) => !f.factuur_type || f.factuur_type === 'standaard' || f.factuur_type === 'eindafrekening')
+    .map((f) => f.id)
+  if (ids.length === 0) return {}
+  const { data: regels, error: regelError } = await supabase
+    .from('factuur_items')
+    .select('offerte_item_id, aantal')
+    .in('factuur_id', ids)
+    .not('offerte_item_id', 'is', null)
+  if (regelError) throw regelError
+  const som: Record<string, number> = {}
+  for (const r of regels || []) {
+    som[r.offerte_item_id] = round2((som[r.offerte_item_id] || 0) + Number(r.aantal || 0))
+  }
+  return som
+}
+
+export async function getConceptFacturenVoorKlant(klantId: string): Promise<Factuur[]> {
+  assertId(klantId, 'klant_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('facturen')
+      .select('*')
+      .eq('klant_id', klantId)
+      .eq('status', 'concept')
+      .or('factuur_type.is.null,factuur_type.eq.standaard,factuur_type.eq.eindafrekening')
+      .order('created_at', { ascending: true })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Factuur>('facturen').filter((f) => f.klant_id === klantId && f.status === 'concept')
+}
+
+export type NieuweFactuurRegel = Pick<FactuurItem, 'beschrijving' | 'aantal' | 'eenheidsprijs' | 'btw_percentage' | 'korting_percentage' | 'grootboek_code' | 'detail_regels' | 'offerte_item_id'>
+
+function regelTotaal(r: Pick<FactuurItem, 'aantal' | 'eenheidsprijs' | 'korting_percentage'>): number {
+  const bruto = round2(r.aantal * r.eenheidsprijs)
+  return round2(bruto - round2(bruto * ((r.korting_percentage || 0) / 100)))
+}
+
+// Zet regels achter de bestaande regels van een concept en rekent de
+// bedragen opnieuw uit. Alleen voor concepten: een genummerde factuur groeit
+// niet meer.
+export async function voegRegelsToeAanConcept(
+  factuurId: string,
+  nieuweRegels: NieuweFactuurRegel[],
+  userId: string,
+  extra: Partial<Factuur> = {}
+): Promise<Factuur> {
+  assertId(factuurId, 'factuur_id')
+  const factuur = await getFactuur(factuurId)
+  if (!factuur) throw new Error('Factuur niet gevonden')
+  if (factuur.status !== 'concept') throw new Error(`Factuur ${factuur.nummer || ''} is geen concept meer`)
+  const bestaand = await getFactuurItems(factuurId)
+  const alle = [
+    ...bestaand.sort((a, b) => a.volgorde - b.volgorde),
+    ...nieuweRegels.map((r) => ({ ...r, totaal: regelTotaal(r) })),
+  ].map((r, i) => ({
+    user_id: userId,
+    beschrijving: r.beschrijving,
+    aantal: r.aantal,
+    eenheidsprijs: r.eenheidsprijs,
+    btw_percentage: r.btw_percentage,
+    korting_percentage: r.korting_percentage || 0,
+    totaal: regelTotaal(r),
+    volgorde: i + 1,
+    grootboek_code: r.grootboek_code || '',
+    detail_regels: r.detail_regels || [],
+    offerte_item_id: r.offerte_item_id || null,
+  }))
+  await replaceFactuurItems(factuurId, alle)
+  const subtotaal = round2(alle.reduce((s, r) => s + r.totaal, 0))
+  const btw_bedrag = round2(alle.reduce((s, r) => s + round2(r.totaal * (r.btw_percentage / 100)), 0))
+  return updateFactuur(factuurId, { ...extra, subtotaal, btw_bedrag, totaal: round2(subtotaal + btw_bedrag) })
+}
+
 export async function deleteFactuur(id: string): Promise<void> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
@@ -381,7 +469,28 @@ export async function replaceFactuurItems(
         detail_regels: item.detail_regels || [],
       })),
     })
-    if (!rpcError) return (viaRpc as FactuurItem[]) || []
+    if (!rpcError) {
+      const nieuw = (viaRpc as FactuurItem[]) || []
+      // De RPC uit migratie 206 kent offerte_item_id (migratie 237) niet; de
+      // koppeling wordt daarom na het vervangen per rij bijgezet, op volgorde.
+      const koppelingen = items
+        .map((item, i) => ({ offerte_item_id: item.offerte_item_id, volgorde: item.volgorde ?? i + 1 }))
+        .filter((k) => !!k.offerte_item_id)
+      if (koppelingen.length > 0 && nieuw.length > 0) {
+        const perVolgorde = new Map(nieuw.map((rij) => [rij.volgorde, rij.id]))
+        await Promise.all(koppelingen.map((k) => {
+          const rijId = perVolgorde.get(k.volgorde)
+          if (!rijId || !supabase) return Promise.resolve()
+          return supabase.from('factuur_items').update({ offerte_item_id: k.offerte_item_id }).eq('id', rijId)
+            .then(({ error }) => { if (error) logger.warn('offerte_item_id bijzetten mislukt:', error.message) })
+        }))
+        return nieuw.map((rij) => {
+          const k = koppelingen.find((x) => x.volgorde === rij.volgorde)
+          return k ? { ...rij, offerte_item_id: k.offerte_item_id } : rij
+        })
+      }
+      return nieuw
+    }
     // Alleen terugvallen als de functie echt ontbreekt (migratie 206 nog niet
     // gedraaid): PGRST202 = PostgREST kent hem niet, 42883 = Postgres kent hem
     // niet. Andere fouten (bv. 42501 permission denied) mogen niet stil naar
