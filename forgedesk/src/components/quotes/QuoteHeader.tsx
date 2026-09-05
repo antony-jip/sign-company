@@ -21,6 +21,7 @@ import {
   MailCheck,
   Globe,
   UserCheck,
+  XCircle,
 } from 'lucide-react'
 import type { Klant } from '@/types'
 import { cn } from '@/lib/utils'
@@ -65,6 +66,10 @@ export interface QuoteHeaderProps {
   // Verzonden buiten de app om (print, eigen mail); zelfde stand, geen mail
   onMarkeerVerzonden?: () => void
   isMarkeerVerzondenBezig?: boolean
+  // Vervolg na de offerte (schakelaar offerte_vervolg)
+  offerteStatus?: string
+  afgewezenReden?: string | null
+  onVervolg?: () => void
   checkStatus?: 'open' | 'akkoord' | 'verstuurd' | 'wijzigingen' | null
   checkAanNaam?: string
   // Kopieer naar andere klant
@@ -102,6 +107,9 @@ export function QuoteHeader({
   onLatenChecken,
   onMarkeerVerzonden,
   isMarkeerVerzondenBezig,
+  offerteStatus,
+  afgewezenReden,
+  onVervolg,
   checkStatus,
   checkAanNaam,
   showKopieerNaarKlant,
@@ -183,6 +191,13 @@ export function QuoteHeader({
               <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#3A5A9A] bg-[hsl(var(--status-blue-bg))] border border-[#3A5A9A]/20 px-2 py-0.5 rounded-md">
                 <Send className="h-3 w-3" strokeWidth={1.75} />
                 Verstuurd{verstuurdNaar ? ` · ${verstuurdNaar}` : ''} · {new Date(verstuurdOp).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}
+              </span>
+            )}
+
+            {offerteStatus === 'afgewezen' && (
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#C0451A] bg-[hsl(var(--status-flame-bg))] border border-[#C0451A]/20 px-2 py-0.5 rounded-md max-w-full">
+                <XCircle className="h-3 w-3 shrink-0" strokeWidth={1.75} />
+                <span className="truncate">Afgewezen{afgewezenReden ? ` · ${afgewezenReden}` : ''}</span>
               </span>
             )}
 
@@ -336,6 +351,17 @@ export function QuoteHeader({
               </>
             )}
           </div>
+
+          {onVervolg && (
+            <button
+              onClick={() => { hapticLight(); onVervolg() }}
+              className="inline-flex items-center justify-center gap-1.5 h-10 md:h-9 w-10 md:w-auto md:px-3.5 text-[13px] font-medium rounded-xl border border-petrol/30 bg-white dark:bg-card text-petrol dark:text-petrol-light hover:bg-petrol/5 hover:border-petrol/50 transition-all"
+              aria-label="Vervolg"
+            >
+              <ArrowRight className="h-4 w-4 md:h-3.5 md:w-3.5" strokeWidth={1.75} />
+              <span className="hidden md:inline">Vervolg</span>
+            </button>
+          )}
 
           {/* Actions dropdown */}
           {isEditMode && (

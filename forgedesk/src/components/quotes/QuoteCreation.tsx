@@ -94,6 +94,8 @@ import { ForgeQuotePreview } from './ForgeQuotePreview'
 import { InkoopOffertePaneel } from './InkoopOffertePaneel'
 import { OfferteUitschrijvenDialog, type UitgeschrevenPost } from './OfferteUitschrijvenDialog'
 import { OfferteCheckDialog } from './OfferteCheckDialog'
+import { OfferteVervolgDialog } from './OfferteVervolgDialog'
+import { useFunctie } from '@/hooks/useFunctie'
 import { rondOfferteCheckAf } from '@/services/offerteCheckService'
 import { useMedewerkers } from '@/contexts/MedewerkersContext'
 import { vulDetailRegels } from '@/utils/offerteSpecs'
@@ -357,6 +359,9 @@ export function QuoteCreation() {
 
   // ── Offerte status & linked factuur (for factureren workflow) ──
   const [offerteStatus, setOfferteStatus] = useState<string>('concept')
+  const [afgewezenReden, setAfgewezenReden] = useState<string | null>(null)
+  const [showVervolgDialog, setShowVervolgDialog] = useState(false)
+  const vervolgAan = useFunctie('offerte_vervolg')
   const [geconverteerdNaarFactuurId, setGeconverteerdNaarFactuurId] = useState<string | null>(null)
   const [linkedFactuur, setLinkedFactuur] = useState<Factuur | null>(null)
 
@@ -740,6 +745,7 @@ export function QuoteCreation() {
         if (offerte.uren_correctie) setUrenCorrectie(offerte.uren_correctie)
         // Track status for factureren workflow
         setOfferteStatus(offerte.status)
+        setAfgewezenReden(offerte.afgewezen_reden || null)
         // Optimistic locking: track server timestamp
         lastKnownUpdatedAtRef.current = offerte.updated_at
         if (offerte.geconverteerd_naar_factuur_id) {
@@ -2130,6 +2136,9 @@ export function QuoteCreation() {
         onLatenChecken={isEditMode && editOfferteId ? () => setShowCheckDialog(true) : undefined}
         onMarkeerVerzonden={isEditMode && offerteStatus === 'concept' ? handleMarkeerVerzonden : undefined}
         isMarkeerVerzondenBezig={isMarkeerVerzondenBezig}
+        offerteStatus={offerteStatus}
+        afgewezenReden={afgewezenReden}
+        onVervolg={vervolgAan && editOfferteId && ['verzonden', 'bekeken', 'goedgekeurd'].includes(offerteStatus) ? () => setShowVervolgDialog(true) : undefined}
         checkStatus={checkInfo.status}
         checkAanNaam={naamVoorUser(checkInfo.aan)}
         showKopieerNaarKlant={showKopieerNaarKlant}
@@ -2846,6 +2855,20 @@ export function QuoteCreation() {
         />
       )}
       <TrialGuardDialog open={showTrialDialog} onOpenChange={setShowTrialDialog} />
+
+      {editOfferteId && (
+        <OfferteVervolgDialog
+          open={showVervolgDialog}
+          onOpenChange={setShowVervolgDialog}
+          offerteId={editOfferteId}
+          onBijgewerkt={(o) => {
+            lastKnownUpdatedAtRef.current = o.updated_at
+            setOfferteStatus(o.status)
+            setAfgewezenReden(o.afgewezen_reden || null)
+            if (o.project_id) setSelectedProjectId(o.project_id)
+          }}
+        />
+      )}
 
       {/* Laten checken door collega */}
       {editOfferteId && (

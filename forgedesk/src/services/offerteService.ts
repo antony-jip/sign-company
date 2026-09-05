@@ -13,9 +13,12 @@ import type {
   CalculatieTemplate,
   TekeningGoedkeuring,
   CalculatieRegel,
+  Project,
 } from '@/types'
 import { berekenMarkupPercentage } from '@/utils/margeBerekening'
 import { partitionOfferteItemSync } from '@/utils/offerteItemSync'
+import { createProject } from './projectService'
+import { updateDeal } from './crmService'
 import * as Sentry from '@sentry/react'
 
 export { partitionOfferteItemSync }
@@ -310,6 +313,49 @@ export async function updateOfferte(id: string, updates: Partial<Offerte>, expec
   offertes[index] = { ...offertes[index], ...updates, updated_at: now() }
   setLocalData('offertes', offertes)
   return offertes[index]
+}
+
+// ============ VERVOLG NA DE OFFERTE (Gripp-ronde, migratie 235) ============
+
+/** Maakt een project uit de offerte en koppelt beide. De audit-log en de melding blijven bij de aanroeper. */
+export async function converteerOfferteNaarProject(offerte: Offerte, userId?: string): Promise<{ project: Project; offerte: Offerte }> {
+  const project = await createProject({
+    user_id: offerte.user_id ?? userId,
+    klant_id: offerte.klant_id,
+    naam: offerte.titel,
+    beschrijving: `Aangemaakt vanuit offerte ${offerte.nummer}`,
+    status: 'actief',
+    prioriteit: offerte.spoed ? 'kritiek' : 'medium',
+    start_datum: new Date().toISOString().split('T')[0],
+    eind_datum: new Date(Date.now() + 90 * 86400000).toISOString().split('T')[0],
+    budget: offerte.totaal || 0,
+    besteed: 0,
+    voortgang: 0,
+    team_leden: [],
+    bron_offerte_id: offerte.id,
+  })
+  const bijgewerkt = await updateOfferte(offerte.id, {
+    project_id: project.id,
+    geconverteerd_naar_project_id: project.id,
+  })
+  return { project, offerte: bijgewerkt }
+}
+
+/** Wijst de offerte af met reden; de deal (als die er is) krijgt dezelfde verloren-reden. */
+export async function wijsOfferteAf(offerte: Offerte, reden: string): Promise<Offerte> {
+  const bijgewerkt = await updateOfferte(offerte.id, {
+    status: 'afgewezen',
+    afgewezen_reden: reden,
+    afgewezen_op: now(),
+  })
+  if (offerte.deal_id) {
+    // De deal is bijzaak: de offerte staat al op afgewezen, dus een mislukte
+    // deal-update mag dat niet als fout terugmelden.
+    await updateDeal(offerte.deal_id, { verloren_reden: reden }).catch((err) => {
+      Sentry.captureException(err, { tags: { bron: 'wijsOfferteAf' } })
+    })
+  }
+  return bijgewerkt
 }
 
 export async function deleteOfferte(id: string): Promise<void> {

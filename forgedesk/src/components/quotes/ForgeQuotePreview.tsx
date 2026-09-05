@@ -3,6 +3,9 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { getOfferte, getOfferteItems, getKlant, updateOfferte, updateProject, getProject, createProject } from '@/services/supabaseService'
+import { converteerOfferteNaarProject } from '@/services/offerteService'
+import { OfferteVervolgDialog } from './OfferteVervolgDialog'
+import { useFunctie } from '@/hooks/useFunctie'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { generateOffertePDF } from '@/services/pdfService'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
@@ -72,6 +75,8 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
   const [fetchedKlant, setFetchedKlant] = useState<Klant | null>(null)
   const [fetchedItems, setFetchedItems] = useState<OfferteItem[]>([])
   const [isLoading, setIsLoading] = useState(!propOfferte && !!id)
+  const vervolgAan = useFunctie('offerte_vervolg')
+  const [showVervolg, setShowVervolg] = useState(false)
 
   // Fetch data from service layer when accessed via route (no props provided)
   useEffect(() => {
@@ -230,28 +235,8 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
   async function handleMaakProject() {
     if (!fetchedOfferte) return
     try {
-      const project = await createProject({
-        user_id: fetchedOfferte.user_id,
-        klant_id: fetchedOfferte.klant_id,
-        naam: fetchedOfferte.titel,
-        beschrijving: `Aangemaakt vanuit offerte ${fetchedOfferte.nummer}`,
-        status: 'actief',
-        prioriteit: 'medium',
-        start_datum: new Date().toISOString().split('T')[0],
-        eind_datum: new Date(Date.now() + 90 * 86400000).toISOString().split('T')[0],
-        budget: fetchedOfferte.totaal || 0,
-        besteed: 0,
-        voortgang: 0,
-        team_leden: [],
-        bron_offerte_id: fetchedOfferte.id,
-      })
+      const { project, offerte: updatedOfferte } = await converteerOfferteNaarProject(fetchedOfferte, user?.id)
       logCreate({ user, entityType: 'project', entityId: project.id, omschrijving: 'Aangemaakt via Daan' })
-
-      // Update offerte met project link
-      const updatedOfferte = await updateOfferte(fetchedOfferte.id, {
-        project_id: project.id,
-        geconverteerd_naar_project_id: project.id,
-      })
       setFetchedOfferte(updatedOfferte)
       toast.success(`Project "${project.naam}" aangemaakt`)
       navigate(`/projecten/${project.id}`)
@@ -403,6 +388,11 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
                       <option key={stap.key} value={stap.key}>{stap.label}</option>
                     ))}
                   </select>
+                  {fetchedOfferte.status === 'afgewezen' && fetchedOfferte.afgewezen_reden && (
+                    <span className="text-xs text-[#C0451A] truncate max-w-[240px]" title={fetchedOfferte.afgewezen_reden}>
+                      · {fetchedOfferte.afgewezen_reden}
+                    </span>
+                  )}
                   {fetchedOfferte.status === 'concept' && (
                     <button
                       type="button"
@@ -439,6 +429,15 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
 
             {/* Action buttons */}
             <div className="flex items-center gap-2 flex-shrink-0">
+              {vervolgAan && ['verzonden', 'bekeken', 'goedgekeurd'].includes(fetchedOfferte.status) && (
+                <button
+                  onClick={() => setShowVervolg(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-petrol dark:text-petrol-light bg-card dark:bg-muted border border-petrol/30 rounded-lg hover:bg-petrol/5 transition-colors"
+                >
+                  <ArrowRight className="h-3.5 w-3.5" />
+                  Vervolg
+                </button>
+              )}
               <button
                 onClick={() => navigate(`/offertes/${fetchedOfferte.id}/bewerken`, { state: { from: location.pathname } })}
                 className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-foreground/70 dark:text-muted-foreground/50 bg-card dark:bg-muted border border-border rounded-lg hover:bg-bg-hover transition-colors"
@@ -857,6 +856,14 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
           </div>
         </div>
       </div>
+      {fetchedOfferte && (
+        <OfferteVervolgDialog
+          open={showVervolg}
+          onOpenChange={setShowVervolg}
+          offerteId={fetchedOfferte.id}
+          onBijgewerkt={setFetchedOfferte}
+        />
+      )}
     </div>
   )
 }
