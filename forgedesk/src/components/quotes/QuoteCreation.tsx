@@ -407,6 +407,8 @@ export function QuoteCreation() {
   const [condities, setCondities] = useState<OfferteConditie[]>([])
   const [conditieId, setConditieId] = useState<string | null>(null)
   const [spoed, setSpoed] = useState(false)
+  // Referentie of PO-nummer van de klant (migratie 237); staat als "Uw referentie" op de PDF.
+  const [klantReferentie, setKlantReferentie] = useState('')
   useEffect(() => {
     if (!conditiesAan) return
     let afgebroken = false
@@ -727,6 +729,7 @@ export function QuoteCreation() {
         setBedrijfsprofielId(offerte.bedrijfsprofiel_id || null)
         setConditieId(offerte.conditie_id || null)
         setSpoed(!!offerte.spoed)
+        setKlantReferentie(offerte.klant_referentie || '')
 
         // Map OfferteItem[] → QuoteLineItem[]
         const mappedItems: QuoteLineItem[] = offerteItems
@@ -1200,6 +1203,7 @@ export function QuoteCreation() {
           betalingsconditie,
           bedrijfsprofiel_id: bedrijfsprofielId,
           conditie_id: conditieId,
+          klant_referentie: klantReferentie.trim() || null,
           spoed,
           // Altijd meesturen: conditioneel weglaten betekende dat terugzetten
           // naar 0 nooit werd opgeslagen en de oude waarde bleef staan.
@@ -1233,6 +1237,7 @@ export function QuoteCreation() {
           betalingsconditie,
           bedrijfsprofiel_id: bedrijfsprofielId,
           conditie_id: conditieId,
+          klant_referentie: klantReferentie.trim() || null,
           spoed,
           afrondingskorting_excl_btw: afrondingskorting,
           uren_correctie: urenCorrectie,
@@ -1269,7 +1274,7 @@ export function QuoteCreation() {
     } finally {
       saveLockRef.current = false
     }
-  }, [user?.id, selectedKlantId, selectedProjectId, selectedContactId, offerteTitel, items, geldigTot, notities, voorwaarden, introTekst, outroTekst, levertijd, betalingsconditie, bedrijfsprofielId, conditieId, spoed, editOfferteId, offerteNummer, isSaving, klanten, afrondingskorting, urenCorrectie, urenCorrectieBedrag, isTrialBlocked, versioning.versieNummer])
+  }, [user?.id, selectedKlantId, selectedProjectId, selectedContactId, offerteTitel, items, geldigTot, notities, voorwaarden, introTekst, outroTekst, levertijd, betalingsconditie, bedrijfsprofielId, conditieId, spoed, klantReferentie, editOfferteId, offerteNummer, isSaving, klanten, afrondingskorting, urenCorrectie, urenCorrectieBedrag, isTrialBlocked, versioning.versieNummer])
 
   // Keep ref in sync so unmount handler can call latest version
   useEffect(() => {
@@ -1299,7 +1304,7 @@ export function QuoteCreation() {
     return () => {
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
     }
-  }, [items, offerteTitel, notities, voorwaarden, introTekst, outroTekst, levertijd, betalingsconditie, bedrijfsprofielId, conditieId, spoed, geldigTot, selectedKlantId, selectedProjectId, selectedContactId, showKlantSelector, afrondingskorting, urenCorrectie])
+  }, [items, offerteTitel, notities, voorwaarden, introTekst, outroTekst, levertijd, betalingsconditie, bedrijfsprofielId, conditieId, spoed, klantReferentie, geldigTot, selectedKlantId, selectedProjectId, selectedContactId, showKlantSelector, afrondingskorting, urenCorrectie])
 
   // Save on unmount (navigating away) · fire-and-forget
   useEffect(() => {
@@ -1458,6 +1463,7 @@ export function QuoteCreation() {
           betalingsconditie,
           bedrijfsprofiel_id: bedrijfsprofielId,
           conditie_id: conditieId,
+          klant_referentie: klantReferentie.trim() || null,
           spoed,
           // Altijd meesturen zodat terugzetten naar 0 ook opgeslagen wordt
           afrondingskorting_excl_btw: afrondingskorting,
@@ -1493,6 +1499,7 @@ export function QuoteCreation() {
           betalingsconditie,
           bedrijfsprofiel_id: bedrijfsprofielId,
           conditie_id: conditieId,
+          klant_referentie: klantReferentie.trim() || null,
           spoed,
           afrondingskorting_excl_btw: afrondingskorting,
           uren_correctie: urenCorrectie,
@@ -1644,6 +1651,7 @@ export function QuoteCreation() {
         levertijd,
         betalingsconditie,
         bedrijfsprofiel_id: bedrijfsprofielId,
+        klant_referentie: klantReferentie.trim() || null,
         versie: versioning.versieNummer,
         ...(afrondingskorting !== 0 ? { afrondingskorting_excl_btw: afrondingskorting } : {}),
         created_at: new Date().toISOString(),
@@ -1703,6 +1711,10 @@ export function QuoteCreation() {
   // Eén poort voor alle verzendpaden (email, portaal, markeren als verzonden).
   // Geeft true als versturen door mag; anders is de melding al getoond.
   const magVersturen = (): boolean => {
+    if (selectedKlant?.po_verplicht && !klantReferentie.trim()) {
+      toast.error('Deze klant wil altijd een referentie op de offerte')
+      return false
+    }
     const status = checkInfoRef.current.status
     if (checkVerplichtAan && effectieveTotalen.subtotaal > checkDrempel && status !== 'akkoord' && status !== 'verstuurd') {
       toast.error(`Boven ${formatCurrency(checkDrempel)} gaat een offerte pas de deur uit na een collega-check`, {
@@ -1916,6 +1928,7 @@ export function QuoteCreation() {
             betalingsconditie,
             bedrijfsprofiel_id: bedrijfsprofielId,
             conditie_id: conditieId,
+            klant_referentie: klantReferentie.trim() || null,
             spoed,
             ...(afrondingskorting !== 0 ? { afrondingskorting_excl_btw: afrondingskorting } : {}),
           } as Parameters<typeof generateOffertePDF>[0]
@@ -2457,6 +2470,19 @@ export function QuoteCreation() {
                 Levering &amp; betaling<span className="text-flame">.</span>
               </h3>
               <span className="text-[12px] text-muted-foreground">Staat op de offerte en de opdrachtbevestiging</span>
+            </div>
+            <div className="mb-4 sm:w-64 space-y-1.5">
+              <label className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70">
+                Referentie klant
+                {selectedKlant?.po_verplicht && <span className="ml-1 text-flame normal-case tracking-normal font-medium">verplicht</span>}
+              </label>
+              <Input
+                value={klantReferentie}
+                onChange={(e) => setKlantReferentie(e.target.value)}
+                placeholder="PO-nummer of kenmerk van de klant"
+                maxLength={120}
+                className="h-10"
+              />
             </div>
             {conditiesAan && condities.length > 0 && (
               <div className="mb-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">

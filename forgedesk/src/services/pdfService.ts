@@ -647,8 +647,7 @@ export async function generateOffertePDF(
     y += 12
   }
 
-  // 3-koloms metadata: Offertenummer | Offertedatum | Geldig tot
-  const colWidth = (pageWidth - margins.left - margins.right) / 3
+  // Metadata-kolommen: Offertenummer | Offertedatum | Geldig tot | Uw referentie
   const cols = [
     { label: titel === 'Opdrachtbevestiging' ? 'Bevestigingsnummer' : 'Offertenummer', value: offerte.nummer },
     { label: titel === 'Opdrachtbevestiging' ? 'Bevestigingsdatum' : 'Offertedatum', value: formatDate(offerte.datum || new Date().toISOString()) },
@@ -656,13 +655,18 @@ export async function generateOffertePDF(
   if (offerte.geldig_tot && titel === 'Offerte') {
     cols.push({ label: 'Geldig tot', value: formatDate(offerte.geldig_tot) })
   }
-  if (options?.referentieNummer) {
-    cols.push({ label: 'Uw referentie', value: options.referentieNummer })
+  // De referentie van de klant (PO-nummer, migratie 237) gaat voor; zonder die
+  // valt de opdrachtbevestiging terug op het offertenummer als referentie.
+  const uwReferentie = offerte.klant_referentie?.trim() || options?.referentieNummer
+  if (uwReferentie) {
+    cols.push({ label: 'Uw referentie', value: uwReferentie })
   }
+  // Vier kolommen passen niet in drie derden; verdeel over het echte aantal.
+  const metaColWidth = (pageWidth - margins.left - margins.right) / Math.max(3, cols.length)
 
   doc.setFontSize(baseFontSize - 1)
   cols.forEach((col, i) => {
-    const x = margins.left + i * colWidth
+    const x = margins.left + i * metaColWidth
     doc.setFont(bodyFont, 'bold')
     doc.text(col.label, x, y)
     doc.setFont(bodyFont, 'normal')
