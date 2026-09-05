@@ -18,6 +18,7 @@ import {
   X,
   Send,
   Mail,
+  MailCheck,
   Globe,
   UserCheck,
 } from 'lucide-react'
@@ -61,6 +62,9 @@ export interface QuoteHeaderProps {
   onOpdrachtbevestiging?: () => void
   // Interne check door collega
   onLatenChecken?: () => void
+  // Verzonden buiten de app om (print, eigen mail); zelfde stand, geen mail
+  onMarkeerVerzonden?: () => void
+  isMarkeerVerzondenBezig?: boolean
   checkStatus?: 'open' | 'akkoord' | 'verstuurd' | 'wijzigingen' | null
   checkAanNaam?: string
   // Kopieer naar andere klant
@@ -96,6 +100,8 @@ export function QuoteHeader({
   onWerkbon,
   onOpdrachtbevestiging,
   onLatenChecken,
+  onMarkeerVerzonden,
+  isMarkeerVerzondenBezig,
   checkStatus,
   checkAanNaam,
   showKopieerNaarKlant,
@@ -385,6 +391,16 @@ export function QuoteHeader({
                       >
                         <UserCheck className="h-3.5 w-3.5 text-muted-foreground" />
                         {checkStatus === 'open' || checkStatus === 'wijzigingen' ? 'Check opnieuw vragen' : 'Laten checken'}
+                      </button>
+                    )}
+                    {onMarkeerVerzonden && (
+                      <button
+                        onClick={() => { onMarkeerVerzonden(); setShowActionsMenu(false) }}
+                        disabled={isMarkeerVerzondenBezig}
+                        className="w-full text-left px-3 py-2 text-[13px] hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] flex items-center gap-2 disabled:opacity-50 transition-colors"
+                      >
+                        <MailCheck className="h-3.5 w-3.5 text-muted-foreground" />
+                        {isMarkeerVerzondenBezig ? 'Bezig…' : 'Markeer als verzonden'}
                       </button>
                     )}
                     {onWerkbon && (

@@ -7,7 +7,7 @@ import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { generateOffertePDF } from '@/services/pdfService'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { formatCurrency, formatDate, getStatusColor } from '@/lib/utils'
-import { Receipt, ArrowLeft, ExternalLink, FolderPlus, ArrowRight, Pencil, Download, ChevronRight, Image as ImageIcon, Paperclip } from 'lucide-react'
+import { Receipt, ArrowLeft, ExternalLink, FolderPlus, ArrowRight, Pencil, Download, ChevronRight, Image as ImageIcon, Paperclip, MailCheck } from 'lucide-react'
 import { BackButton } from '@/components/shared/BackButton'
 import { downloadFile } from '@/services/storageService'
 import type { Offerte, OfferteItem, Klant } from '@/types'
@@ -209,6 +209,23 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
     }
   }
 
+  // Verzonden buiten de app om (print, eigen mail): zelfde stand, geen mail.
+  async function handleMarkeerVerzonden() {
+    if (!fetchedOfferte?.id) return
+    try {
+      const updated = await updateOfferte(fetchedOfferte.id, {
+        status: 'verzonden',
+        verstuurd_op: new Date().toISOString(),
+        verzendwijze: 'via_handmatig',
+      })
+      setFetchedOfferte(updated)
+      toast.success('Gemarkeerd als verzonden')
+    } catch (err) {
+      logger.error('Markeren als verzonden mislukt:', err)
+      toast.error('Kon offerte niet als verzonden markeren')
+    }
+  }
+
   // Maak project van goedgekeurde offerte
   async function handleMaakProject() {
     if (!fetchedOfferte) return
@@ -386,6 +403,17 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
                       <option key={stap.key} value={stap.key}>{stap.label}</option>
                     ))}
                   </select>
+                  {fetchedOfferte.status === 'concept' && (
+                    <button
+                      type="button"
+                      onClick={handleMarkeerVerzonden}
+                      className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-petrol dark:hover:text-petrol-light hover:underline"
+                      title="Voor een offerte die je buiten doen. om hebt gemaild of geprint"
+                    >
+                      <MailCheck className="h-3 w-3" />
+                      Markeer als verzonden
+                    </button>
+                  )}
                   {/* Conversieketen */}
                   {fetchedOfferte.project_id && (
                     <button

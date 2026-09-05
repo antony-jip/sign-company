@@ -1986,6 +1986,33 @@ export function QuoteCreation() {
     }
   }
 
+  // Voor wie de offerte buiten de app mailt of print: zelfde stand als na
+  // versturen, alleen zonder mail.
+  const [isMarkeerVerzondenBezig, setIsMarkeerVerzondenBezig] = useState(false)
+  const handleMarkeerVerzonden = async () => {
+    const quoteId = editOfferteId || autoSaveIdRef.current
+    if (!quoteId) { toast.error('Offerte nog niet opgeslagen'); return }
+    setIsMarkeerVerzondenBezig(true)
+    try {
+      const nu = new Date().toISOString()
+      const saved = await updateOfferte(quoteId, {
+        status: 'verzonden',
+        verstuurd_op: nu,
+        verzendwijze: 'via_handmatig',
+      })
+      lastKnownUpdatedAtRef.current = saved.updated_at
+      setVerstuurdOp(nu)
+      setOfferteStatus('verzonden')
+      voltooiCheckNaVersturen(quoteId)
+      toast.success(<>Gemarkeerd als verzonden<span style={{ color: '#F15025' }}>.</span></>)
+    } catch (err) {
+      logger.error('Markeren als verzonden mislukt:', err)
+      toast.error('Kon offerte niet als verzonden markeren')
+    } finally {
+      setIsMarkeerVerzondenBezig(false)
+    }
+  }
+
   // ── Helper: markup color for sidebar (≥90% green, 60-89% orange, <60% red) ──
   const getMargeColorSidebar = (pct: number) => {
     if (pct >= 90) return { text: 'text-[#2D6B48] dark:text-[#66BC85]', bg: 'bg-[rgba(45,107,72,0.10)] dark:bg-[rgba(102,188,133,0.16)]', bar: 'bg-[#2D6B48] dark:bg-[#66BC85]' }
@@ -2101,6 +2128,8 @@ export function QuoteCreation() {
         onWerkbon={isEditMode ? () => setShowWerkbonDialog(true) : undefined}
         onOpdrachtbevestiging={isEditMode ? () => setShowObPreview(true) : undefined}
         onLatenChecken={isEditMode && editOfferteId ? () => setShowCheckDialog(true) : undefined}
+        onMarkeerVerzonden={isEditMode && offerteStatus === 'concept' ? handleMarkeerVerzonden : undefined}
+        isMarkeerVerzondenBezig={isMarkeerVerzondenBezig}
         checkStatus={checkInfo.status}
         checkAanNaam={naamVoorUser(checkInfo.aan)}
         showKopieerNaarKlant={showKopieerNaarKlant}
