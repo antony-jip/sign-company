@@ -136,6 +136,8 @@ import { useTrialGuard } from '@/hooks/useTrialGuard'
 import { useStilleRefresh } from '@/hooks/useStilleRefresh'
 import { TrialGuardDialog } from '@/components/shared/TrialGuardDialog'
 import { confirm } from '@/components/shared/ConfirmDialog'
+import { FactuurOpvolgStepper, toonOpvolgStepper } from '@/components/invoices/FactuurOpvolgStepper'
+import { useFunctie } from '@/hooks/useFunctie'
 
 // ============ TYPES ============
 
@@ -574,6 +576,7 @@ export function FacturenLayout() {
   // App settings (bedrijfsprofiel for PDF generation)
   const { settings, profile, primaireKleur, emailHandtekening, bedrijfsnaam, factuurPrefix, factuurStartNummer, creditnotaDoornummeren, creditnotaPrefix, factuurBetaaltermijnDagen, factuurVoorwaarden } = useAppSettings()
   const exactConnected = settings.exact_online_connected ?? false
+  const stepperAan = useFunctie('factuur_stepper')
   const documentStyle = useDocumentStyle()
 
   // Data state
@@ -3070,12 +3073,21 @@ export function FacturenLayout() {
                               {isOverdue && (
                                 <span className="text-[11px] font-semibold font-mono text-[#C03A18]">{getDagenVerlopen(factuur)}d</span>
                               )}
-                              <div className="flex gap-0.5">
-                                {factuur.herinnering_1_verstuurd && <span className="w-1.5 h-1.5 rounded-full bg-[#FEA060] dark:bg-[#FFB380]" title="Herinnering 1" />}
-                                {factuur.herinnering_2_verstuurd && <span className="w-1.5 h-1.5 rounded-full bg-flame" title="Herinnering 2" />}
-                                {factuur.herinnering_3_verstuurd && <span className="w-1.5 h-1.5 rounded-full bg-[#C03A18] dark:bg-[#DA7B70]" title="Herinnering 3" />}
-                                {factuur.aanmaning_verstuurd && <span className="w-1.5 h-1.5 rounded-full bg-[#8A1A0A] dark:bg-[#C0451A]" title="Aanmaning" />}
-                              </div>
+                              {stepperAan && toonOpvolgStepper(factuur) ? (
+                                <FactuurOpvolgStepper
+                                  compact
+                                  factuur={factuur}
+                                  stappen={opvolgStappen}
+                                  klant={klanten.find((k) => k.id === factuur.klant_id)}
+                                />
+                              ) : (
+                                <div className="flex gap-0.5">
+                                  {factuur.herinnering_1_verstuurd && <span className="w-1.5 h-1.5 rounded-full bg-[#FEA060] dark:bg-[#FFB380]" title="Herinnering 1" />}
+                                  {factuur.herinnering_2_verstuurd && <span className="w-1.5 h-1.5 rounded-full bg-flame" title="Herinnering 2" />}
+                                  {factuur.herinnering_3_verstuurd && <span className="w-1.5 h-1.5 rounded-full bg-[#C03A18] dark:bg-[#DA7B70]" title="Herinnering 3" />}
+                                  {factuur.aanmaning_verstuurd && <span className="w-1.5 h-1.5 rounded-full bg-[#8A1A0A] dark:bg-[#C0451A]" title="Aanmaning" />}
+                                </div>
+                              )}
                             </div>
                             {klaarStaand ? (
                               <button

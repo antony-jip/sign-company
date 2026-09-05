@@ -114,6 +114,8 @@ import {
   type FactuurOpvolgStap,
   type HerinneringOntvanger,
 } from '@/services/factuurService'
+import { FactuurOpvolgStepper, toonOpvolgStepper } from '@/components/invoices/FactuurOpvolgStepper'
+import { useFunctie } from '@/hooks/useFunctie'
 import supabase from '@/services/supabaseClient'
 import { generateWerkbonInstructiePDF } from '@/services/werkbonPdfService'
 import { useAuth } from '@/contexts/AuthContext'
@@ -667,6 +669,7 @@ export function FactuurEditor() {
   const [herinneringTemplates, setHerinneringTemplates] = useState<HerinneringTemplate[]>([])
   // Ladder uit Instellingen (migratie 212); leeg = standaardladder van de cron
   const [opvolgStappen, setOpvolgStappen] = useState<FactuurOpvolgStap[]>([])
+  const stepperAan = useFunctie('factuur_stepper')
   const [herinneringType, setHerinneringType] = useState<HerinneringType>('herinnering_1')
   const [herinneringPreview, setHerinneringPreview] = useState('')
   // Ontvanger volgens dezelfde volgorde als de cron (migratie 101)
@@ -3177,6 +3180,12 @@ export function FactuurEditor() {
           </div>
         </div>
       </div>
+
+      {stepperAan && isEditMode && existingFactuur && toonOpvolgStepper(existingFactuur) && (
+        <div className="px-8 pt-3">
+          <FactuurOpvolgStepper factuur={existingFactuur} stappen={opvolgStappen} klant={selectedKlant} />
+        </div>
+      )}
 
       {/* Status bar for existing invoices · tekst + Flame punt, geen kleurig vlak */}
       {isEditMode && existingFactuur && (
