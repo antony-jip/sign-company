@@ -284,6 +284,8 @@ export function ProjectsList() {
     if (typeof window !== 'undefined') window.localStorage.setItem('doen_projecten_weergave', weergave)
   }, [weergave])
   const toonKanban = kanbanAan && weergave === 'kolommen'
+  // Op de telefoon staan de cijfertegels onderaan, ingeklapt achter één regel.
+  const [cijfersOpen, setCijfersOpen] = useState(false)
 
   // Pending deletes: project verdwijnt direct uit UI, daadwerkelijke server-delete pas na 5s
   // (binnen die tijd kan de gebruiker via toast undo'en). Bij unmount flushen.
@@ -1002,7 +1004,7 @@ export function ProjectsList() {
 
       {/* Page content · scrollt mee met de pagina zelf, geen eigen scrollgebied */}
       <div>
-        <div className="px-4 py-4 md:px-8 md:py-8 space-y-6">
+        <div className="px-4 py-4 md:px-8 md:py-8 flex flex-col gap-6 md:block md:space-y-6">
 
           <ModuleIntro
             id="projecten"
@@ -1044,9 +1046,21 @@ export function ProjectsList() {
                 </Link>
               </div>
             </div>
+          </div>
 
-            {/* KPI tiles · triage entry-points, clickable filter targets */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {/* KPI tiles · triage entry-points, clickable filter targets.
+              Op mobiel onderaan, achter één regel "Cijfers". */}
+          <div className="order-last md:order-none space-y-3">
+            <button
+              type="button"
+              onClick={() => setCijfersOpen((v) => !v)}
+              aria-expanded={cijfersOpen}
+              className="md:hidden flex items-center justify-between w-full min-h-[44px] px-1 text-[14px] font-bold text-[#1A4A52] dark:text-foreground"
+            >
+              <span>Cijfers<span className="text-flame">.</span></span>
+              <ChevronDown className={cn('w-4 h-4 text-muted-foreground transition-transform', cijfersOpen && 'rotate-180')} />
+            </button>
+            <div className={cn('grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3', !cijfersOpen && 'hidden md:grid')}>
               {([
                 { key: 'met-aandacht',  label: 'Met aandacht',  sub: 'blijft te lang liggen',  count: stats.metAandacht,   Icon: AlertCircle, accent: '#F15025' },
                 { key: 'actief',        label: 'Actief',        sub: 'hier wordt aan gewerkt',           count: stats.actief,        Icon: Activity,    accent: '#3A5A9A' },
