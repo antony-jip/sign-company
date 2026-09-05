@@ -18,10 +18,13 @@ import { sanitizeStorageFilename } from '@/utils/storageHelpers'
 export async function getProjecten(limit = 50000): Promise<Project[]> {
   const sb = supabase
   if (isSupabaseConfigured() && sb) {
+    // Sjablonen (is_template) horen niet in lijsten, dashboards en planning;
+    // die komen alleen via getProjectSjablonen.
     const rijen = await fetchAllPages<Project & { klanten?: { bedrijfsnaam?: string } }>((van, tot) =>
       sb
         .from('projecten')
         .select('*, klanten(bedrijfsnaam)')
+        .or('is_template.is.null,is_template.eq.false')
         .order('created_at', { ascending: false })
         .order('id', { ascending: true })
         .range(van, tot), limit)
@@ -29,10 +32,72 @@ export async function getProjecten(limit = 50000): Promise<Project[]> {
   }
   const projecten = getLocalData<Project>('projecten')
   const klanten = getLocalData<Klant>('klanten')
-  return projecten.map((p) => ({
+  return projecten.filter((p) => !p.is_template).map((p) => ({
     ...p,
     klant_naam: klanten.find((k) => k.id === p.klant_id)?.bedrijfsnaam || '',
   }))
+}
+
+export async function getProjectSjablonen(): Promise<Project[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('projecten')
+      .select('*')
+      .eq('is_template', true)
+      .order('naam', { ascending: true })
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<Project>('projecten').filter((p) => p.is_template)
+}
+
+/**
+ * Kopieert een project met zijn taken (status todo, zonder datums en
+ * bestede tijd). Overrides winnen van de bron; klant_id '' wordt door
+ * sanitizeDates weggelaten en levert dus een project zonder klant op,
+ * wat een sjabloon nodig heeft.
+ */
+export async function kopieerProject(
+  bronId: string,
+  overrides: Partial<Project> & { user_id: string },
+): Promise<{ project: Project; taken: Taak[] }> {
+  const bron = await getProject(bronId)
+  if (!bron) throw new Error('Bronproject niet gevonden')
+  const bronTaken = await getTakenByProject(bronId)
+
+  const project = await createProject({
+    naam: bron.naam,
+    klant_id: bron.klant_id,
+    beschrijving: bron.beschrijving,
+    status: 'gepland',
+    prioriteit: bron.prioriteit,
+    start_datum: undefined,
+    eind_datum: undefined,
+    budget: bron.budget,
+    besteed: 0,
+    voortgang: 0,
+    team_leden: [...(bron.team_leden || [])],
+    budget_waarschuwing_pct: bron.budget_waarschuwing_pct,
+    bron_project_id: bronId,
+    ...overrides,
+  })
+
+  const taken: Taak[] = []
+  for (const taak of bronTaken) {
+    taken.push(await createTaak({
+      user_id: overrides.user_id,
+      project_id: project.id,
+      titel: taak.titel,
+      beschrijving: taak.beschrijving,
+      status: 'todo',
+      prioriteit: taak.prioriteit,
+      toegewezen_aan: taak.toegewezen_aan,
+      deadline: undefined,
+      geschatte_tijd: taak.geschatte_tijd,
+      bestede_tijd: 0,
+    }))
+  }
+  return { project, taken }
 }
 
 /**

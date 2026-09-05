@@ -1,10 +1,12 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { createProject, getKlanten, generateProjectNummer, getAppSettings } from '@/services/supabaseService'
+import { getProjectSjablonen, kopieerProject } from '@/services/projectService'
+import { useFunctie } from '@/hooks/useFunctie'
 import { useAuth } from '@/contexts/AuthContext'
-import type { Klant } from '@/types'
+import type { Klant, Project } from '@/types'
 import { toast } from 'sonner'
-import { ArrowLeft, Save, FolderKanban } from 'lucide-react'
+import { ArrowLeft, Save, FolderKanban, LayoutTemplate } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Label } from '@/components/ui/label'
@@ -38,6 +40,29 @@ export function ProjectCreate() {
   const [status, setStatus] = useState<'gepland' | 'actief' | 'in-review' | 'afgerond' | 'on-hold' | 'te-factureren' | 'te-plannen' | 'akkoord-klant' | 'ingepland'>('gepland')
   const [startDatum, setStartDatum] = useState(() => new Date().toISOString().split('T')[0])
   const [eindDatum, setEindDatum] = useState('')
+
+  const sjablonenAan = useFunctie('project_sjablonen')
+  const [sjablonen, setSjablonen] = useState<Project[]>([])
+  const [sjabloonId, setSjabloonId] = useState('')
+
+  useEffect(() => {
+    if (!sjablonenAan) return
+    let cancelled = false
+    getProjectSjablonen()
+      .then((lijst) => { if (!cancelled) setSjablonen(lijst) })
+      .catch((error) => logger.error('Fout bij ophalen sjablonen:', error))
+    return () => { cancelled = true }
+  }, [sjablonenAan])
+
+  const kiesSjabloon = (id: string) => {
+    const gekozen = id === 'geen' ? '' : id
+    setSjabloonId(gekozen)
+    const sjabloon = sjablonen.find((s) => s.id === gekozen)
+    if (sjabloon) {
+      setNaam(sjabloon.naam)
+      setBeschrijving(sjabloon.beschrijving || '')
+    }
+  }
 
   async function fetchKlanten() {
     try {
@@ -91,24 +116,36 @@ export function ProjectCreate() {
       const settings = await getAppSettings(user.id)
       const projectNummer = await generateProjectNummer(settings?.project_prefix || 'P')
 
-      const nieuwProject = await createProject({
+      const gemeenschappelijk = {
         user_id: user.id,
         klant_id: klantId,
         project_nummer: projectNummer,
         naam: naam.trim(),
         beschrijving: beschrijving.trim(),
         status,
-        prioriteit: 'medium',
         start_datum: startDatum || undefined,
         eind_datum: eindDatum || undefined,
-        budget: 0,
-        besteed: 0,
-        voortgang: 0,
-        team_leden: [],
         contactpersoon_id: contactpersoonId || undefined,
         vestiging_id: vestigingId || undefined,
         vestiging_naam: vestigingId ? vestigingen.find((v) => v.id === vestigingId)?.naam : undefined,
-      })
+      }
+
+      let nieuwProject: Project
+      if (sjablonenAan && sjabloonId) {
+        // Vanuit sjabloon: taken, budget, prioriteit en team komen uit het sjabloon mee.
+        const kopie = await kopieerProject(sjabloonId, { ...gemeenschappelijk, is_template: false })
+        nieuwProject = kopie.project
+        for (const taak of kopie.taken) logCreate({ user, entityType: 'taak', entityId: taak.id })
+      } else {
+        nieuwProject = await createProject({
+          ...gemeenschappelijk,
+          prioriteit: 'medium',
+          budget: 0,
+          besteed: 0,
+          voortgang: 0,
+          team_leden: [],
+        })
+      }
 
       logCreate({ user, entityType: 'project', entityId: nieuwProject.id })
 
@@ -145,6 +182,29 @@ export function ProjectCreate() {
       </div>
 
       <form id="project-create-form" onSubmit={handleSubmit} className="space-y-4">
+        {sjablonenAan && sjablonen.length > 0 && (
+          <div className="rounded-xl px-4 md:px-5 py-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4" style={{ backgroundColor: '#FFFFFE', border: '0.5px solid #E6E4E0' }}>
+            <div className="flex items-center gap-2 min-w-0 sm:flex-1">
+              <LayoutTemplate className="h-4 w-4 flex-shrink-0" style={{ color: '#1A535C' }} strokeWidth={1.75} />
+              <div className="min-w-0">
+                <span className="text-[13px] font-semibold block" style={{ color: 'hsl(var(--foreground))' }}>Beginnen vanuit een sjabloon</span>
+                <p className="text-[11px]" style={{ color: '#A0A098' }}>Naam, beschrijving en taken worden overgenomen</p>
+              </div>
+            </div>
+            <Select value={sjabloonId || 'geen'} onValueChange={kiesSjabloon}>
+              <SelectTrigger className="h-11 sm:h-10 rounded-lg text-[13px] sm:w-64" style={{ backgroundColor: 'hsl(var(--background))', border: '0.5px solid #E6E4E0' }}>
+                <SelectValue placeholder="Kies een sjabloon" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="geen">Leeg project</SelectItem>
+                {sjablonen.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>{s.naam}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
         {/* Section 1: Project + Planning · merged */}
         <div className="rounded-xl" style={{ backgroundColor: '#FFFFFE', border: '0.5px solid #E6E4E0' }}>
           <div className="h-[3px] rounded-t-xl" style={{ background: 'linear-gradient(90deg, #F15025, #F1502560)' }} />

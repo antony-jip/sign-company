@@ -55,6 +55,9 @@ import { sanitizeEmailHTML } from '@/lib/sanitize'
 import { callForgie } from '@/services/forgieService'
 import { DatePicker } from '@/components/ui/date-picker'
 import { KlantStatusWarning } from '@/components/shared/KlantStatusWarning'
+import { ProjectSjabloonDialog } from './ProjectSjabloonDialog'
+import { useFunctie } from '@/hooks/useFunctie'
+import { LayoutTemplate } from 'lucide-react'
 // Card/Badge removed · using DOEN text-based styling
 import { Button } from '@/components/ui/button'
 import {
@@ -718,6 +721,8 @@ export function ProjectDetail() {
   const [kopieStartDatum, setKopieStartDatum] = useState(new Date().toISOString().split('T')[0])
   const [alleKlanten, setAlleKlanten] = useState<Klant[]>([])
   const [kopieBezig, setKopieBezig] = useState(false)
+  const sjablonenAan = useFunctie('project_sjablonen')
+  const [sjabloonDialogOpen, setSjabloonDialogOpen] = useState(false)
 
   // Project overzetten naar andere klant
   const [wisselKlantOpen, setWisselKlantOpen] = useState(false)
@@ -1591,6 +1596,12 @@ export function ProjectDetail() {
           <span className="font-mono text-[11px] font-medium text-foreground/70 bg-[rgba(26,83,92,0.05)] dark:bg-white/[0.05] border border-[rgba(26,83,92,0.08)] dark:border-white/10 rounded-md px-1.5 py-0.5">
             {project.project_nummer || `PRJ-${id?.slice(0, 8).toUpperCase()}`}
           </span>
+          {project.is_template && (
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-petrol dark:text-petrol-light bg-petrol/[0.07] dark:bg-white/[0.06] rounded-md px-1.5 py-0.5">
+              <LayoutTemplate className="h-3 w-3" strokeWidth={1.75} />
+              Sjabloon
+            </span>
+          )}
         </div>
 
         {/* Row 1: H1 + status pill */}
@@ -1759,6 +1770,12 @@ export function ProjectDetail() {
               <Copy className="mr-2 h-3.5 w-3.5" />
               Kopiëren
             </DropdownMenuItem>
+            {sjablonenAan && !project.is_template && (
+              <DropdownMenuItem onClick={() => setSjabloonDialogOpen(true)}>
+                <LayoutTemplate className="mr-2 h-3.5 w-3.5" />
+                Opslaan als sjabloon
+              </DropdownMenuItem>
+            )}
             {takenUitOfferteMogelijk && (
               <DropdownMenuItem onClick={() => void handleTakenUitOfferte()}>
                 <ListPlus className="mr-2 h-3.5 w-3.5" />
@@ -1787,6 +1804,16 @@ export function ProjectDetail() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+        {sjablonenAan && user && (
+          <ProjectSjabloonDialog
+            open={sjabloonDialogOpen}
+            onOpenChange={setSjabloonDialogOpen}
+            project={project}
+            userId={user.id}
+            aantalTaken={projectTaken.length}
+          />
+        )}
 
         {/* TAB BAR · flame underline, duotone icoon per tab */}
         <div className="flex items-center gap-1 border-b border-border mt-4 sticky top-0 z-10 bg-background">
