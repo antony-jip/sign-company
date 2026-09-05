@@ -218,6 +218,11 @@ function PriceHero() {
               <p className="mt-3 text-[13px]" style={{ color: 'rgba(226,240,241,0.55)' }}>
                 Gepubliceerd tarief per gebruiker, ex btw, augustus 2026. Opzetkosten niet meegerekend.
               </p>
+              <p className="mt-2 text-[13px]" style={{ color: 'rgba(226,240,241,0.55)' }}>
+                <Link href="/vergelijk" className="transition-colors hover:text-white">
+                  Zie de vergelijking met Gripp en James Pro →
+                </Link>
+              </p>
             </div>
           </div>
         </div>

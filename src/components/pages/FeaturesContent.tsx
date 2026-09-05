@@ -736,6 +736,13 @@ function FeaturesOverview() {
               </li>
             ))}
           </ul>
+          <p className="mt-8 text-[15px] text-muted">
+            Benieuwd hoe dit naast Gripp en James Pro staat?{' '}
+            <Link href="/vergelijk" className="font-semibold text-petrol hover:text-flame transition-colors">
+              Zie de vergelijking
+            </Link>
+            .
+          </p>
         </div>
       </section>
 
