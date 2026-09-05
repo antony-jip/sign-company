@@ -64,6 +64,9 @@ interface FormData {
   klant_labels: string[]
   gepinde_notitie: string
   gepinde_notitie_waarschuwing: boolean
+  verzendvoorkeur: '' | 'email' | 'post' | 'portaal'
+  btw_verlegd: boolean
+  po_verplicht: boolean
   klant_status: Klant['klant_status']
   labels: string[]
   label_input: string
@@ -88,6 +91,9 @@ const initialFormData: FormData = {
   klant_labels: [],
   gepinde_notitie: '',
   gepinde_notitie_waarschuwing: false,
+  verzendvoorkeur: '',
+  btw_verlegd: false,
+  po_verplicht: false,
   klant_status: 'normaal',
   labels: [],
   label_input: '',
@@ -223,6 +229,9 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
         klant_labels: klant.klant_labels || [],
         gepinde_notitie: klant.gepinde_notitie || '',
         gepinde_notitie_waarschuwing: klant.gepinde_notitie_waarschuwing === true,
+        verzendvoorkeur: klant.verzendvoorkeur || '',
+        btw_verlegd: klant.btw_verlegd === true,
+        po_verplicht: klant.po_verplicht === true,
         klant_status: klant.klant_status || 'normaal',
         labels: klant.labels || [],
         label_input: '',
@@ -305,6 +314,15 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
       const grippVelden: Partial<Klant> = {}
       if (formData.gepinde_notitie_waarschuwing !== (klant?.gepinde_notitie_waarschuwing === true)) {
         grippVelden.gepinde_notitie_waarschuwing = formData.gepinde_notitie_waarschuwing
+      }
+      if (formData.verzendvoorkeur !== (klant?.verzendvoorkeur || '')) {
+        grippVelden.verzendvoorkeur = formData.verzendvoorkeur || null
+      }
+      if (formData.btw_verlegd !== (klant?.btw_verlegd === true)) {
+        grippVelden.btw_verlegd = formData.btw_verlegd
+      }
+      if (formData.po_verplicht !== (klant?.po_verplicht === true)) {
+        grippVelden.po_verplicht = formData.po_verplicht
       }
 
       // Draait migratie 212 nog niet (kolom geen_betalingsherinneringen
@@ -658,21 +676,64 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
             </div>
           </div>
 
-          {/* Betalingsherinneringen kill-switch */}
-          <div className="flex items-start justify-between gap-4 p-3 rounded-lg border border-border/50 bg-muted/20">
-            <div className="space-y-1">
-              <Label htmlFor="geen_betalingsherinneringen" className="text-sm font-medium">
-                Geen automatische betalingsherinneringen
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                Deze klant ontvangt nooit automatische herinneringen of aanmaningen. Handmatig versturen blijft mogelijk.
-              </p>
+          {/* Facturatie · standaardwaarden per klant (migratie 236) + kill-switch herinneringen */}
+          <div className="rounded-lg border border-border/50 bg-muted/20 divide-y divide-border/50">
+            <div className="px-3 pt-3 pb-2">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Facturatie</span>
             </div>
-            <Switch
-              id="geen_betalingsherinneringen"
-              checked={formData.geen_betalingsherinneringen}
-              onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, geen_betalingsherinneringen: checked }))}
-            />
+            <div className="flex items-center justify-between gap-4 p-3">
+              <Label htmlFor="verzendvoorkeur" className="text-sm font-medium">Verzendvoorkeur</Label>
+              <Select
+                value={formData.verzendvoorkeur || 'geen'}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, verzendvoorkeur: value === 'geen' ? '' : (value as FormData['verzendvoorkeur']) }))
+                }
+              >
+                <SelectTrigger id="verzendvoorkeur" className="w-[170px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="geen">Geen voorkeur</SelectItem>
+                  <SelectItem value="email">E-mail</SelectItem>
+                  <SelectItem value="post">Post</SelectItem>
+                  <SelectItem value="portaal">Portaal</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center justify-between gap-4 p-3 min-h-[44px]">
+              <Label htmlFor="btw_verlegd" className="text-sm font-medium">BTW verlegd</Label>
+              <Switch
+                id="btw_verlegd"
+                checked={formData.btw_verlegd}
+                onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, btw_verlegd: checked }))}
+              />
+            </div>
+            <div className="flex items-start justify-between gap-4 p-3">
+              <div className="space-y-1">
+                <Label htmlFor="po_verplicht" className="text-sm font-medium">PO-nummer verplicht</Label>
+                <p className="text-xs text-muted-foreground">Aannemers betalen niet zonder hun inkoopordernummer.</p>
+              </div>
+              <Switch
+                id="po_verplicht"
+                checked={formData.po_verplicht}
+                onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, po_verplicht: checked }))}
+              />
+            </div>
+            <div className="flex items-start justify-between gap-4 p-3">
+              <div className="space-y-1">
+                <Label htmlFor="geen_betalingsherinneringen" className="text-sm font-medium">
+                  Geen automatische betalingsherinneringen
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Deze klant ontvangt nooit automatische herinneringen of aanmaningen. Handmatig versturen blijft mogelijk.
+                </p>
+              </div>
+              <Switch
+                id="geen_betalingsherinneringen"
+                checked={formData.geen_betalingsherinneringen}
+                onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, geen_betalingsherinneringen: checked }))}
+              />
+            </div>
           </div>
 
           {/* Row 6: Tags */}

@@ -608,6 +608,20 @@ export function ClientProfile() {
               {klant.bedrijfsnaam}
             </h1>
             <StatusBadge status={klant.status} label={statusLabels[klant.status] || klant.status} className="capitalize" />
+            {/* Stille badges · standaardwaarden voor facturatie (migratie 236) */}
+            {([
+              klant.verzendvoorkeur === 'post' ? 'Post' : null,
+              klant.verzendvoorkeur === 'portaal' ? 'Portaal' : null,
+              klant.btw_verlegd ? 'BTW verlegd' : null,
+              klant.po_verplicht ? 'PO verplicht' : null,
+            ].filter(Boolean) as string[]).map((badge) => (
+              <span
+                key={badge}
+                className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[11px] font-medium bg-petrol/[0.07] dark:bg-white/[0.06] text-petrol dark:text-petrol-light"
+              >
+                {badge}
+              </span>
+            ))}
             <button
               onClick={() => setEditDialogOpen(true)}
               className="p-1 rounded hover:bg-muted dark:hover:bg-muted transition-colors duration-150"
