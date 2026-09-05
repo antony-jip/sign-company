@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { toast, Toaster } from 'sonner'
 import { logger } from '@/utils/logger'
+import { HandtekeningVeld } from '@/components/shared/HandtekeningVeld'
 import { getMeetellendeVarianten } from '@/utils/offerteTotalen'
 
 // ============ TYPES ============
@@ -237,6 +238,7 @@ export function OffertePubliekPagina() {
   // Accept form
   const [acceptNaam, setAcceptNaam] = useState('')
   const [acceptAkkoord, setAcceptAkkoord] = useState(false)
+  const [acceptHandtekening, setAcceptHandtekening] = useState<string | undefined>()
   const [acceptLoading, setAcceptLoading] = useState(false)
 
   // Wijziging form
@@ -318,7 +320,7 @@ export function OffertePubliekPagina() {
 
   // Accepteren
   const handleAccepteren = useCallback(async () => {
-    if (!token || acceptNaam.trim().length < 2 || !acceptAkkoord) return
+    if (!token || acceptNaam.trim().length < 2 || !acceptAkkoord || !acceptHandtekening) return
     setAcceptLoading(true)
     try {
       const resp = await fetch('/api/offerte-accepteren', {
@@ -327,6 +329,7 @@ export function OffertePubliekPagina() {
         body: JSON.stringify({
           token,
           naam: acceptNaam.trim(),
+          handtekening: acceptHandtekening,
           gekozen_items: hasOptionalItems ? Array.from(selectedItems) : undefined,
           gekozen_varianten: Object.keys(selectedVariants).length > 0 ? selectedVariants : undefined,
         }),
@@ -352,7 +355,7 @@ export function OffertePubliekPagina() {
     } finally {
       setAcceptLoading(false)
     }
-  }, [token, acceptNaam, acceptAkkoord, selectedItems, selectedVariants, hasOptionalItems])
+  }, [token, acceptNaam, acceptAkkoord, acceptHandtekening, selectedItems, selectedVariants, hasOptionalItems])
 
   // Wijziging aanvragen
   const handleWijziging = useCallback(async () => {
@@ -1090,6 +1093,12 @@ export function OffertePubliekPagina() {
                 />
               </div>
 
+              {/* Handtekening */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-[#1A1A1A]">Uw handtekening *</label>
+                <HandtekeningVeld onChange={setAcceptHandtekening} />
+              </div>
+
               {/* Checkbox */}
               <label className="flex items-start gap-3 cursor-pointer">
                 <Checkbox
@@ -1103,7 +1112,7 @@ export function OffertePubliekPagina() {
               {/* Bevestig knop */}
               <Button
                 onClick={handleAccepteren}
-                disabled={acceptLoading || acceptNaam.trim().length < 2 || !acceptAkkoord}
+                disabled={acceptLoading || acceptNaam.trim().length < 2 || !acceptAkkoord || !acceptHandtekening}
                 className="w-full h-12 text-base font-semibold bg-[#F15025] hover:bg-[#D9481F] text-white rounded-xl disabled:opacity-40"
               >
                 {acceptLoading ? (

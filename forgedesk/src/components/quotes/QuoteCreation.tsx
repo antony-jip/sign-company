@@ -362,6 +362,7 @@ export function QuoteCreation() {
   // ── Offerte status & linked factuur (for factureren workflow) ──
   const [offerteStatus, setOfferteStatus] = useState<string>('concept')
   const [afgewezenReden, setAfgewezenReden] = useState<string | null>(null)
+  const [ondertekening, setOndertekening] = useState<{ door?: string; op?: string; handtekening?: string | null } | null>(null)
   const [showVervolgDialog, setShowVervolgDialog] = useState(false)
   const vervolgAan = useFunctie('offerte_vervolg')
   const [geconverteerdNaarFactuurId, setGeconverteerdNaarFactuurId] = useState<string | null>(null)
@@ -774,6 +775,9 @@ export function QuoteCreation() {
         // Track status for factureren workflow
         setOfferteStatus(offerte.status)
         setAfgewezenReden(offerte.afgewezen_reden || null)
+        setOndertekening(offerte.geaccepteerd_door || offerte.handtekening_data
+          ? { door: offerte.geaccepteerd_door, op: offerte.geaccepteerd_op || offerte.akkoord_op, handtekening: offerte.handtekening_data }
+          : null)
         // Optimistic locking: track server timestamp
         lastKnownUpdatedAtRef.current = offerte.updated_at
         if (offerte.geconverteerd_naar_factuur_id) {
@@ -2177,6 +2181,7 @@ export function QuoteCreation() {
         offerteStatus={offerteStatus}
         afgewezenReden={afgewezenReden}
         spoed={spoed}
+        ondertekening={ondertekening}
         onVervolg={vervolgAan && editOfferteId && ['verzonden', 'bekeken', 'goedgekeurd'].includes(offerteStatus) ? () => setShowVervolgDialog(true) : undefined}
         checkStatus={checkInfo.status}
         checkAanNaam={naamVoorUser(checkInfo.aan)}

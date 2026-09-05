@@ -72,6 +72,8 @@ export interface QuoteHeaderProps {
   afgewezenReden?: string | null
   onVervolg?: () => void
   spoed?: boolean
+  /** Online akkoord van de klant (migratie 235): naam, datum en handtekening-PNG. */
+  ondertekening?: { door?: string; op?: string; handtekening?: string | null } | null
   checkStatus?: 'open' | 'akkoord' | 'verstuurd' | 'wijzigingen' | null
   checkAanNaam?: string
   // Kopieer naar andere klant
@@ -113,6 +115,7 @@ export function QuoteHeader({
   afgewezenReden,
   onVervolg,
   spoed,
+  ondertekening,
   checkStatus,
   checkAanNaam,
   showKopieerNaarKlant,
@@ -272,6 +275,22 @@ export function QuoteHeader({
               </span>
             )}
           </div>
+
+          {ondertekening?.door && (
+            <div className="mt-2 flex items-center gap-3 text-[12px] text-[#2D6B48]">
+              {ondertekening.handtekening && (
+                <img
+                  src={ondertekening.handtekening}
+                  alt={`Handtekening ${ondertekening.door}`}
+                  className="h-8 w-auto max-w-[120px] rounded border border-[#2D6B48]/15 bg-white object-contain"
+                />
+              )}
+              <span>
+                Getekend door <span className="font-semibold">{ondertekening.door}</span>
+                {ondertekening.op ? ` op ${new Date(ondertekening.op).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Right: actions */}

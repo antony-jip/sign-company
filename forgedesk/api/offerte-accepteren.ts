@@ -172,16 +172,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!(await enforceRateLimit(getClientIp(req), res))) return
 
   try {
-    const { token, naam, gekozen_items, gekozen_varianten } = req.body as {
+    const { token, naam, gekozen_items, gekozen_varianten, handtekening } = req.body as {
       token: string
       naam: string
       gekozen_items?: string[]
       gekozen_varianten?: Record<string, string>
+      handtekening?: string
     }
 
     if (!token) return res.status(400).json({ error: 'Token is verplicht' })
     if (!naam || naam.trim().length < 2) {
       return res.status(400).json({ error: 'Naam is verplicht (minimaal 2 tekens)' })
+    }
+    // Handtekening (migratie 235): PNG als data-URL, max 200 kB. De publieke
+    // pagina maakt hem verplicht; hier alleen de vorm en de grootte bewaken.
+    const MAX_HANDTEKENING_BYTES = 200 * 1024
+    if (handtekening !== undefined) {
+      if (typeof handtekening !== 'string' || !handtekening.startsWith('data:image/png;base64,')) {
+        return res.status(400).json({ error: 'Handtekening moet een PNG data-URL zijn' })
+      }
+      if (Buffer.byteLength(handtekening, 'utf8') > MAX_HANDTEKENING_BYTES) {
+        return res.status(400).json({ error: 'Handtekening is te groot (max 200 kB)' })
+      }
     }
 
     const { data: offerte, error } = await supabaseAdmin
@@ -221,6 +233,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     if (gekozen_items) updateData.gekozen_items = gekozen_items
     if (gekozen_varianten) updateData.gekozen_varianten = gekozen_varianten
+    if (handtekening) updateData.handtekening_data = handtekening
 
     // Bij keuzes (optionele items en/of prijsvarianten): materialiseer de door
     // de klant gekozen configuratie op de items en herbereken de offerte-
@@ -470,6 +483,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           itemTitel: `${offerte.nummer}${offerte.titel ? ` — ${offerte.titel}` : ''}`,
           beschrijving: `Geaccepteerd door ${naam.trim()} op ${formatDate(new Date())}${offerte.totaal ? ` · ${formatCurrency(offerte.subtotaal ?? offerte.totaal)} excl. btw` : ''}`,
           quote: 'We nemen zo snel mogelijk contact met u op over de vervolgstappen.',
+          extraHtml: handtekening
+            ? `<p style="margin: 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 13px; color: #5A5A55;">Digitaal ondertekend door ${escapeHtml(naam.trim())} op ${escapeHtml(formatDate(new Date()))}</p>`
+            : undefined,
           bedrijfsnaam: bedrijfsnaam || undefined,
           logoUrl: bedrijfsProfiel?.logo_url || undefined,
         })
