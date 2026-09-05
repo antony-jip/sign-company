@@ -14,6 +14,7 @@ import type {
   TekeningGoedkeuring,
   CalculatieRegel,
   Project,
+  OfferteConditie,
 } from '@/types'
 import { berekenMarkupPercentage } from '@/utils/margeBerekening'
 import { partitionOfferteItemSync } from '@/utils/offerteItemSync'
@@ -744,6 +745,70 @@ export async function createOfferteVersie(versie: Omit<OfferteVersie, 'id' | 'cr
   versies.push(record)
   setLocalData('offerte_versies', versies)
   return record
+}
+
+// ============ OFFERTE CONDITIES (migratie 235) ============
+
+export async function getOfferteCondities(): Promise<OfferteConditie[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('offerte_condities')
+      .select('*')
+      .order('volgorde')
+      .order('naam')
+    if (error) throw error
+    return data || []
+  }
+  return getLocalData<OfferteConditie>('offerte_condities')
+}
+
+export async function createOfferteConditie(conditie: Omit<OfferteConditie, 'id' | 'organisatie_id' | 'created_at' | 'updated_at'>): Promise<OfferteConditie> {
+  if (isSupabaseConfigured() && supabase) {
+    const _orgId = await getOrgId()
+    const { data, error } = await supabase
+      .from('offerte_condities')
+      .insert({ ...conditie, organisatie_id: _orgId })
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const condities = getLocalData<OfferteConditie>('offerte_condities')
+  const nieuw: OfferteConditie = { ...conditie, id: generateId(), created_at: now(), updated_at: now() }
+  condities.push(nieuw)
+  setLocalData('offerte_condities', condities)
+  return nieuw
+}
+
+export async function updateOfferteConditie(id: string, updates: Partial<OfferteConditie>): Promise<OfferteConditie> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('offerte_condities')
+      .update({ ...updates, updated_at: now() })
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+  const condities = getLocalData<OfferteConditie>('offerte_condities')
+  const index = condities.findIndex((c) => c.id === id)
+  if (index === -1) throw new Error('Conditie niet gevonden')
+  condities[index] = { ...condities[index], ...updates, updated_at: now() }
+  setLocalData('offerte_condities', condities)
+  return condities[index]
+}
+
+export async function deleteOfferteConditie(id: string): Promise<void> {
+  assertId(id)
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('offerte_condities').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const condities = getLocalData<OfferteConditie>('offerte_condities')
+  setLocalData('offerte_condities', condities.filter((c) => c.id !== id))
 }
 
 // ============ CALCULATIE PRODUCTEN ============

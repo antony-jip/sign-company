@@ -39,7 +39,9 @@ import { useAuth } from '@/contexts/AuthContext'
 import { isAdminUser } from '@/utils/authHelpers'
 import { urenVeldenUitInstellingen } from '@/utils/offerteUren'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
-import type { AppSettings, CalculatieProduct, CalculatieTemplate, CalculatieRegel, OfferteTemplate, OfferteTemplateRegel } from '@/types'
+import { useFunctie } from '@/hooks/useFunctie'
+import { getOfferteCondities, createOfferteConditie, updateOfferteConditie, deleteOfferteConditie } from '@/services/offerteService'
+import type { AppSettings, CalculatieProduct, CalculatieTemplate, CalculatieRegel, OfferteTemplate, OfferteTemplateRegel, OfferteConditie } from '@/types'
 import {
   getCalculatieProducten,
   createCalculatieProduct,
@@ -1976,6 +1978,7 @@ function OfferteTemplatesSubSection({
 function InstellingenSection() {
   const { settings, updateSettings } = useAppSettings()
   const [isSaving, setIsSaving] = useState(false)
+  const conditiesAan = useFunctie('offerte_condities')
 
   const [standaardMarge, setStandaardMarge] = useState(settings.calculatie_standaard_marge ?? 35)
   // Kostprijs is wat een uur kost, niet wat het oplevert: alleen admin ziet en zet dit.
@@ -2390,6 +2393,8 @@ function InstellingenSection() {
         </CardContent>
       </Card>
 
+      {conditiesAan && <ConditiesBlok />}
+
       {/* Save */}
       <div className="flex justify-end">
         <Button onClick={handleSave} disabled={isSaving}>
@@ -2398,5 +2403,206 @@ function InstellingenSection() {
         </Button>
       </div>
     </div>
+  )
+}
+
+// ============ CONDITIES (schakelaar offerte_condities, migratie 235) ============
+
+type ConditieForm = Omit<OfferteConditie, 'id' | 'organisatie_id' | 'created_at' | 'updated_at'>
+
+function ConditiesBlok() {
+  const { settings } = useAppSettings()
+  const [condities, setCondities] = useState<OfferteConditie[]>([])
+  const [laden, setLaden] = useState(true)
+  const [bezig, setBezig] = useState(false)
+  const [editId, setEditId] = useState<string | null>(null)
+  const [form, setForm] = useState<ConditieForm | null>(null)
+
+  useEffect(() => {
+    getOfferteCondities()
+      .then(setCondities)
+      .catch((err) => { logger.error(err); toast.error('Kon condities niet laden') })
+      .finally(() => setLaden(false))
+  }, [])
+
+  const leegForm = (): ConditieForm => ({
+    naam: '',
+    geldigheid_dagen: settings.offerte_geldigheid_dagen || 30,
+    betaaltermijn_dagen: settings.factuur_betaaltermijn_dagen ?? null,
+    levertijd: settings.offerte_levertijd || '',
+    betalingsconditie: settings.offerte_betalingsconditie || '',
+    voorwaarden: settings.offerte_voorwaarden || '',
+    spoed: false,
+    volgorde: condities.length,
+    actief: true,
+  })
+
+  const voorgesteld: ConditieForm[] = [
+    { ...leegForm(), naam: 'Standaard (30 dagen)', geldigheid_dagen: 30, volgorde: 0 },
+    { ...leegForm(), naam: 'Spoed (5 dagen)', geldigheid_dagen: 5, spoed: true, levertijd: 'Spoed, in overleg', volgorde: 1 },
+  ]
+
+  const maakVoorgesteld = async () => {
+    setBezig(true)
+    try {
+      const aangemaakt: OfferteConditie[] = []
+      for (const c of voorgesteld) aangemaakt.push(await createOfferteConditie(c))
+      setCondities(aangemaakt)
+      toast.success('Twee condities aangemaakt')
+    } catch (err) {
+      logger.error(err)
+      toast.error('Kon condities niet aanmaken')
+    } finally {
+      setBezig(false)
+    }
+  }
+
+  const bewaar = async () => {
+    if (!form || !form.naam.trim()) { toast.error('Geef de conditie een naam'); return }
+    setBezig(true)
+    try {
+      const payload: ConditieForm = {
+        ...form,
+        naam: form.naam.trim(),
+        geldigheid_dagen: Math.max(1, Math.round(form.geldigheid_dagen || 30)),
+        betaaltermijn_dagen: form.betaaltermijn_dagen == null || Number.isNaN(form.betaaltermijn_dagen) ? null : Math.max(0, Math.round(form.betaaltermijn_dagen)),
+        levertijd: form.levertijd?.trim() || null,
+        betalingsconditie: form.betalingsconditie?.trim() || null,
+        voorwaarden: form.voorwaarden?.trim() || null,
+      }
+      if (editId) {
+        const updated = await updateOfferteConditie(editId, payload)
+        setCondities((prev) => prev.map((c) => (c.id === editId ? updated : c)))
+      } else {
+        const nieuw = await createOfferteConditie(payload)
+        setCondities((prev) => [...prev, nieuw])
+      }
+      setForm(null)
+      setEditId(null)
+      toast.success('Conditie opgeslagen')
+    } catch (err) {
+      logger.error(err)
+      toast.error('Kon conditie niet opslaan')
+    } finally {
+      setBezig(false)
+    }
+  }
+
+  const verwijder = async (c: OfferteConditie) => {
+    if (!await confirm({ message: `Conditie "${c.naam}" verwijderen? Bestaande offertes houden hun ingevulde waarden.`, variant: 'destructive', confirmLabel: 'Verwijderen' })) return
+    try {
+      await deleteOfferteConditie(c.id)
+      setCondities((prev) => prev.filter((x) => x.id !== c.id))
+    } catch (err) {
+      logger.error(err)
+      toast.error('Kon conditie niet verwijderen')
+    }
+  }
+
+  return (
+    <Card>
+      <CardContent className="p-5 space-y-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-semibold text-foreground dark:text-white">Condities</h3>
+            <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
+              Eén keuze op de offerte zet geldigheid, betaaltermijn, levertijd, betalingsconditie en voorwaarden in één keer.
+            </p>
+          </div>
+          {!form && (
+            <Button variant="outline" size="sm" onClick={() => { setEditId(null); setForm(leegForm()) }}>
+              <Plus className="h-4 w-4 mr-1" /> Conditie
+            </Button>
+          )}
+        </div>
+
+        {laden ? (
+          <p className="text-sm text-muted-foreground">Laden...</p>
+        ) : condities.length === 0 && !form ? (
+          <div className="rounded-xl border border-dashed border-border p-4 space-y-3">
+            <p className="text-xs text-muted-foreground">Nog geen condities. Begin met deze twee, aanpassen kan altijd.</p>
+            <div className="space-y-1.5">
+              {voorgesteld.map((c) => (
+                <div key={c.naam} className="flex items-center justify-between text-sm">
+                  <span className="font-medium text-foreground">{c.naam}</span>
+                  <span className="text-xs text-muted-foreground tabular-nums">geldig {c.geldigheid_dagen} dagen{c.spoed ? ' · spoed' : ''}</span>
+                </div>
+              ))}
+            </div>
+            <Button size="sm" onClick={maakVoorgesteld} disabled={bezig}>
+              <Plus className="h-4 w-4 mr-1.5" /> Maak deze twee aan
+            </Button>
+          </div>
+        ) : (
+          <div className="divide-y divide-border rounded-xl border border-border">
+            {condities.map((c) => (
+              <div key={c.id} className="flex items-center gap-3 px-3 py-2.5 text-sm">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-foreground truncate">{c.naam}</span>
+                    {c.spoed && (
+                      <span className="text-2xs font-bold uppercase tracking-label text-flame bg-flame/10 px-1.5 py-0.5 rounded">Spoed</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground truncate">
+                    geldig {c.geldigheid_dagen} dagen
+                    {c.betaaltermijn_dagen != null ? ` · betaling ${c.betaaltermijn_dagen} dagen` : ''}
+                    {c.levertijd ? ` · ${c.levertijd}` : ''}
+                  </p>
+                </div>
+                <Button variant="ghost" size="sm" className="h-9 w-9 p-0" aria-label="Bewerken" onClick={() => { setEditId(c.id); setForm({ naam: c.naam, geldigheid_dagen: c.geldigheid_dagen, betaaltermijn_dagen: c.betaaltermijn_dagen ?? null, levertijd: c.levertijd ?? '', betalingsconditie: c.betalingsconditie ?? '', voorwaarden: c.voorwaarden ?? '', spoed: c.spoed, volgorde: c.volgorde, actief: c.actief }) }}>
+                  <Edit2 className="h-3.5 w-3.5" />
+                </Button>
+                <Button variant="ghost" size="sm" className="h-9 w-9 p-0 text-muted-foreground hover:text-destructive" aria-label="Verwijderen" onClick={() => verwijder(c)}>
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {form && (
+          <div className="rounded-xl border border-border p-4 space-y-3 bg-muted/20">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="space-y-1.5 sm:col-span-1">
+                <Label className="text-xs font-medium">Naam</Label>
+                <Input value={form.naam} onChange={(e) => setForm({ ...form, naam: e.target.value })} placeholder="Standaard" autoFocus />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Geldigheid (dagen)</Label>
+                <Input type="number" min={1} value={form.geldigheid_dagen || ''} onChange={(e) => setForm({ ...form, geldigheid_dagen: parseInt(e.target.value) || 0 })} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Betaaltermijn (dagen)</Label>
+                <Input type="number" min={0} value={form.betaaltermijn_dagen ?? ''} onChange={(e) => setForm({ ...form, betaaltermijn_dagen: e.target.value === '' ? null : parseInt(e.target.value) })} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Levertijd</Label>
+                <Input value={form.levertijd ?? ''} onChange={(e) => setForm({ ...form, levertijd: e.target.value })} placeholder="In overleg" />
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label className="text-xs font-medium">Betalingsconditie</Label>
+                <Input value={form.betalingsconditie ?? ''} onChange={(e) => setForm({ ...form, betalingsconditie: e.target.value })} placeholder="Betaling binnen 30 dagen na factuurdatum." />
+              </div>
+              <div className="space-y-1.5 sm:col-span-3">
+                <Label className="text-xs font-medium">Voorwaarden</Label>
+                <Textarea rows={3} value={form.voorwaarden ?? ''} onChange={(e) => setForm({ ...form, voorwaarden: e.target.value })} />
+              </div>
+            </div>
+            <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer min-h-[44px] sm:min-h-0">
+              <Switch checked={form.spoed} onCheckedChange={(v) => setForm({ ...form, spoed: v })} />
+              Spoed: het project krijgt bij akkoord prioriteit kritiek
+            </label>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" size="sm" onClick={() => { setForm(null); setEditId(null) }} disabled={bezig}>Annuleren</Button>
+              <Button size="sm" onClick={bewaar} disabled={bezig || !form.naam.trim()}>
+                <Save className="h-4 w-4 mr-1.5" />
+                {editId ? 'Bijwerken' : 'Toevoegen'}
+              </Button>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   )
 }

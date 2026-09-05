@@ -22,6 +22,7 @@ import {
   Globe,
   UserCheck,
   XCircle,
+  Zap,
 } from 'lucide-react'
 import type { Klant } from '@/types'
 import { cn } from '@/lib/utils'
@@ -70,6 +71,7 @@ export interface QuoteHeaderProps {
   offerteStatus?: string
   afgewezenReden?: string | null
   onVervolg?: () => void
+  spoed?: boolean
   checkStatus?: 'open' | 'akkoord' | 'verstuurd' | 'wijzigingen' | null
   checkAanNaam?: string
   // Kopieer naar andere klant
@@ -110,6 +112,7 @@ export function QuoteHeader({
   offerteStatus,
   afgewezenReden,
   onVervolg,
+  spoed,
   checkStatus,
   checkAanNaam,
   showKopieerNaarKlant,
@@ -191,6 +194,13 @@ export function QuoteHeader({
               <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#3A5A9A] bg-[hsl(var(--status-blue-bg))] border border-[#3A5A9A]/20 px-2 py-0.5 rounded-md">
                 <Send className="h-3 w-3" strokeWidth={1.75} />
                 Verstuurd{verstuurdNaar ? ` · ${verstuurdNaar}` : ''} · {new Date(verstuurdOp).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}
+              </span>
+            )}
+
+            {spoed && (
+              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-flame bg-flame/10 border border-flame/20 px-2 py-0.5 rounded-md">
+                <Zap className="h-3 w-3" strokeWidth={1.75} />
+                Spoed
               </span>
             )}
 

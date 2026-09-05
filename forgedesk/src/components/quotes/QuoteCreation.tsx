@@ -96,6 +96,8 @@ import { OfferteUitschrijvenDialog, type UitgeschrevenPost } from './OfferteUits
 import { OfferteCheckDialog } from './OfferteCheckDialog'
 import { OfferteVervolgDialog } from './OfferteVervolgDialog'
 import { useFunctie } from '@/hooks/useFunctie'
+import { getOfferteCondities } from '@/services/offerteService'
+import type { OfferteConditie } from '@/types'
 import { rondOfferteCheckAf } from '@/services/offerteCheckService'
 import { useMedewerkers } from '@/contexts/MedewerkersContext'
 import { vulDetailRegels } from '@/utils/offerteSpecs'
@@ -395,6 +397,30 @@ export function QuoteCreation() {
   // Levering & betaling — per offerte, voorgevuld met de organisatie-standaard.
   const [levertijd, setLevertijd] = useState(offerteLevertijd)
   const [betalingsconditie, setBetalingsconditie] = useState(offerteBetalingsconditie)
+  // Conditie-set (migratie 235, schakelaar offerte_condities): één keuze vult
+  // geldigheid, levertijd, betalingsconditie en voorwaarden; spoed reist mee.
+  const conditiesAan = useFunctie('offerte_condities')
+  const [condities, setCondities] = useState<OfferteConditie[]>([])
+  const [conditieId, setConditieId] = useState<string | null>(null)
+  const [spoed, setSpoed] = useState(false)
+  useEffect(() => {
+    if (!conditiesAan) return
+    let afgebroken = false
+    getOfferteCondities().then((c) => { if (!afgebroken) setCondities(c.filter((x) => x.actief)) }).catch(() => {/* stil: select blijft leeg */})
+    return () => { afgebroken = true }
+  }, [conditiesAan])
+  const kiesConditie = (id: string) => {
+    const c = condities.find((x) => x.id === id)
+    if (!c) { setConditieId(null); setSpoed(false); return }
+    setConditieId(c.id)
+    setSpoed(!!c.spoed)
+    const d = new Date()
+    d.setDate(d.getDate() + (c.geldigheid_dagen || offerteGeldigheidDagen))
+    setGeldigTot(d.toISOString().split('T')[0])
+    if (c.levertijd) setLevertijd(c.levertijd)
+    if (c.betalingsconditie) setBetalingsconditie(c.betalingsconditie)
+    if (c.voorwaarden) setVoorwaarden(c.voorwaarden)
+  }
   // Onder welk bedrijf de offerte uitgaat (migratie 189). Leeg = het eigen
   // bedrijf. De keuze staat op de offerte, want de PDF wordt elke keer opnieuw
   // gemaakt en moet ook over een jaar nog hetzelfde briefpapier pakken.
@@ -695,6 +721,8 @@ export function QuoteCreation() {
         setLevertijd(offerte.levertijd || offerteLevertijd)
         setBetalingsconditie(offerte.betalingsconditie || offerteBetalingsconditie)
         setBedrijfsprofielId(offerte.bedrijfsprofiel_id || null)
+        setConditieId(offerte.conditie_id || null)
+        setSpoed(!!offerte.spoed)
 
         // Map OfferteItem[] → QuoteLineItem[]
         const mappedItems: QuoteLineItem[] = offerteItems
@@ -1164,6 +1192,8 @@ export function QuoteCreation() {
           levertijd,
           betalingsconditie,
           bedrijfsprofiel_id: bedrijfsprofielId,
+          conditie_id: conditieId,
+          spoed,
           // Altijd meesturen: conditioneel weglaten betekende dat terugzetten
           // naar 0 nooit werd opgeslagen en de oude waarde bleef staan.
           afrondingskorting_excl_btw: afrondingskorting,
@@ -1195,6 +1225,8 @@ export function QuoteCreation() {
           levertijd,
           betalingsconditie,
           bedrijfsprofiel_id: bedrijfsprofielId,
+          conditie_id: conditieId,
+          spoed,
           afrondingskorting_excl_btw: afrondingskorting,
           uren_correctie: urenCorrectie,
           versie: versioning.versieNummer,
@@ -1230,7 +1262,7 @@ export function QuoteCreation() {
     } finally {
       saveLockRef.current = false
     }
-  }, [user?.id, selectedKlantId, selectedProjectId, selectedContactId, offerteTitel, items, geldigTot, notities, voorwaarden, introTekst, outroTekst, levertijd, betalingsconditie, bedrijfsprofielId, editOfferteId, offerteNummer, isSaving, klanten, afrondingskorting, urenCorrectie, urenCorrectieBedrag, isTrialBlocked, versioning.versieNummer])
+  }, [user?.id, selectedKlantId, selectedProjectId, selectedContactId, offerteTitel, items, geldigTot, notities, voorwaarden, introTekst, outroTekst, levertijd, betalingsconditie, bedrijfsprofielId, conditieId, spoed, editOfferteId, offerteNummer, isSaving, klanten, afrondingskorting, urenCorrectie, urenCorrectieBedrag, isTrialBlocked, versioning.versieNummer])
 
   // Keep ref in sync so unmount handler can call latest version
   useEffect(() => {
@@ -1260,7 +1292,7 @@ export function QuoteCreation() {
     return () => {
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
     }
-  }, [items, offerteTitel, notities, voorwaarden, introTekst, outroTekst, levertijd, betalingsconditie, bedrijfsprofielId, geldigTot, selectedKlantId, selectedProjectId, selectedContactId, showKlantSelector, afrondingskorting, urenCorrectie])
+  }, [items, offerteTitel, notities, voorwaarden, introTekst, outroTekst, levertijd, betalingsconditie, bedrijfsprofielId, conditieId, spoed, geldigTot, selectedKlantId, selectedProjectId, selectedContactId, showKlantSelector, afrondingskorting, urenCorrectie])
 
   // Save on unmount (navigating away) · fire-and-forget
   useEffect(() => {
@@ -1418,6 +1450,8 @@ export function QuoteCreation() {
           levertijd,
           betalingsconditie,
           bedrijfsprofiel_id: bedrijfsprofielId,
+          conditie_id: conditieId,
+          spoed,
           // Altijd meesturen zodat terugzetten naar 0 ook opgeslagen wordt
           afrondingskorting_excl_btw: afrondingskorting,
           uren_correctie: urenCorrectie,
@@ -1451,6 +1485,8 @@ export function QuoteCreation() {
           levertijd,
           betalingsconditie,
           bedrijfsprofiel_id: bedrijfsprofielId,
+          conditie_id: conditieId,
+          spoed,
           afrondingskorting_excl_btw: afrondingskorting,
           uren_correctie: urenCorrectie,
           versie: versioning.versieNummer,
@@ -1853,6 +1889,8 @@ export function QuoteCreation() {
             levertijd,
             betalingsconditie,
             bedrijfsprofiel_id: bedrijfsprofielId,
+            conditie_id: conditieId,
+            spoed,
             ...(afrondingskorting !== 0 ? { afrondingskorting_excl_btw: afrondingskorting } : {}),
           } as Parameters<typeof generateOffertePDF>[0]
           const pdfItems = items.map(toPdfItem)
@@ -2138,6 +2176,7 @@ export function QuoteCreation() {
         isMarkeerVerzondenBezig={isMarkeerVerzondenBezig}
         offerteStatus={offerteStatus}
         afgewezenReden={afgewezenReden}
+        spoed={spoed}
         onVervolg={vervolgAan && editOfferteId && ['verzonden', 'bekeken', 'goedgekeurd'].includes(offerteStatus) ? () => setShowVervolgDialog(true) : undefined}
         checkStatus={checkInfo.status}
         checkAanNaam={naamVoorUser(checkInfo.aan)}
@@ -2391,6 +2430,25 @@ export function QuoteCreation() {
               </h3>
               <span className="text-[12px] text-muted-foreground">Staat op de offerte en de opdrachtbevestiging</span>
             </div>
+            {conditiesAan && condities.length > 0 && (
+              <div className="mb-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                <div className="space-y-1.5 sm:w-64">
+                  <label className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70">Conditie</label>
+                  <Select value={conditieId || 'geen'} onValueChange={(v) => kiesConditie(v === 'geen' ? '' : v)}>
+                    <SelectTrigger className="h-10"><SelectValue placeholder="Kies een conditie" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="geen">Geen conditie</SelectItem>
+                      {condities.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>{c.naam}{c.spoed ? ' · spoed' : ''}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <p className="text-[12px] text-muted-foreground sm:pt-5">
+                  Vult geldigheid{geldigTot ? ` (t/m ${new Date(geldigTot).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })})` : ''}, levertijd, betalingsconditie en voorwaarden in één keer.
+                </p>
+              </div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70">Levertijd</label>
