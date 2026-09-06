@@ -2608,7 +2608,7 @@ export interface InkoopFactuurRegel {
   created_at: string
 }
 
-// ── Gripp-ronde september 2026 ──
+// ── Septemberronde 2026 ──
 
 /** Conditie-set voor offertes (migratie 235): Standaard of Spoed kiest alles in één keer. */
 export interface OfferteConditie {

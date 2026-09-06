@@ -1,6 +1,6 @@
 -- Functies-schakelaars per organisatie.
 --
--- De handigheden uit de Gripp-ronde (september 2026) komen achter losse
+-- De handigheden uit de septemberronde 2026 komen achter losse
 -- schakelaars zodat de app rustig blijft: wie ze niet gebruikt ziet ze niet.
 -- Eén JSONB-kolom in plaats van twintig booleans; de sleutels en hun
 -- standaardwaarden staan in src/lib/functies.ts. Ontbreekt een sleutel, dan

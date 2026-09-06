@@ -1,4 +1,4 @@
-// Functies-schakelaars: de handigheden uit de Gripp-ronde (sep 2026) staan
+// Functies-schakelaars: de handigheden uit de septemberronde 2026 staan
 // achter aan/uit-knoppen per organisatie, zodat de app rustig blijft voor wie
 // ze niet gebruikt. De stand leeft in app_settings.functies (JSONB, migratie
 // 234); dit bestand is de enige plek die weet welke sleutels bestaan en wat

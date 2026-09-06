@@ -1,7 +1,6 @@
--- Offertes, Gripp-ronde september 2026.
+-- Offertes, septemberronde 2026.
 --
--- 1. Afwijzen met reden op de offerte zelf (Gripp: Te duur / Te late levering /
---    Iets anders). Tot nu toe stond de verloren-reden alleen op de deal.
+-- 1. Afwijzen met reden op de offerte zelf (Te duur / Te late levering / Iets anders). Tot nu toe stond de verloren-reden alleen op de deal.
 -- 2. Condities als set: Standaard of Spoed kiest geldigheid, betaaltermijn,
 --    levertijd, betalingsconditie en voorwaarden in één keer. Spoed markeert
 --    de offerte zodat het project bij akkoord prioriteit krijgt.
@@ -77,4 +76,4 @@ COMMIT;
 
 NOTIFY pgrst, 'reload schema';
 
-INSERT INTO doen_migraties (bestand) VALUES ('235_offertes_gripp_ronde.sql') ON CONFLICT DO NOTHING;
+INSERT INTO doen_migraties (bestand) VALUES ('235_offertes_condities_staffels.sql') ON CONFLICT DO NOTHING;

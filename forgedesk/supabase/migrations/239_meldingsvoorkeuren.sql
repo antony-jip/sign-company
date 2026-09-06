@@ -1,4 +1,4 @@
--- Meldingen, Gripp-ronde september 2026.
+-- Meldingen, septemberronde 2026.
 --
 -- Meldingsvoorkeuren per persoon op profiles: per categorie of hij in de app
 -- en als push komt. Leeg object = alles aan, dus bestaande gebruikers merken
@@ -14,4 +14,4 @@ COMMIT;
 
 NOTIFY pgrst, 'reload schema';
 
-INSERT INTO doen_migraties (bestand) VALUES ('239_meldingen_gripp_ronde.sql') ON CONFLICT DO NOTHING;
+INSERT INTO doen_migraties (bestand) VALUES ('239_meldingsvoorkeuren.sql') ON CONFLICT DO NOTHING;

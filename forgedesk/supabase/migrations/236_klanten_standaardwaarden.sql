@@ -1,9 +1,9 @@
--- Klanten, Gripp-ronde september 2026.
+-- Klanten, septemberronde 2026.
 --
 -- gepinde_notitie bestond al; het vinkje maakt hem een waarschuwing die
 -- opduikt op offerte, project, werkbon, bestelbon en inkoopfactuur.
 -- verzendvoorkeur, btw_verlegd en po_verplicht zijn de standaardwaarden per
--- klant die Gripp op het tabblad Financieel heeft. labels bestond in de types
+-- klant per klant. labels bestond in de types
 -- maar niet overal in de database; hier voor de zekerheid idempotent erbij.
 
 BEGIN;
@@ -18,4 +18,4 @@ COMMIT;
 
 NOTIFY pgrst, 'reload schema';
 
-INSERT INTO doen_migraties (bestand) VALUES ('236_klanten_gripp_ronde.sql') ON CONFLICT DO NOTHING;
+INSERT INTO doen_migraties (bestand) VALUES ('236_klanten_standaardwaarden.sql') ON CONFLICT DO NOTHING;

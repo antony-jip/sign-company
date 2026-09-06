@@ -1,4 +1,4 @@
--- Facturen en inkoop, Gripp-ronde september 2026.
+-- Facturen en inkoop, septemberronde 2026.
 --
 -- 1. Deelfactuur: een factuurregel weet uit welke offerteregel hij komt, zodat
 --    "Wat wil je factureren?" per regel kan bijhouden wat al gefactureerd is.
@@ -26,4 +26,4 @@ COMMIT;
 
 NOTIFY pgrst, 'reload schema';
 
-INSERT INTO doen_migraties (bestand) VALUES ('237_facturen_gripp_ronde.sql') ON CONFLICT DO NOTHING;
+INSERT INTO doen_migraties (bestand) VALUES ('237_facturen_deelfactuur_leverancier.sql') ON CONFLICT DO NOTHING;

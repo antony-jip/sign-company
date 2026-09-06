@@ -1,4 +1,4 @@
--- Planning, Gripp-ronde september 2026.
+-- Planning, septemberronde 2026.
 --
 -- 1. Opgeslagen weergaven: een naam plus de filterstand van het montagebord
 --    (scope, week/maand, groepering, statusfilter) als JSONB. user_id NULL is
@@ -42,4 +42,4 @@ COMMIT;
 
 NOTIFY pgrst, 'reload schema';
 
-INSERT INTO doen_migraties (bestand) VALUES ('238_planning_gripp_ronde.sql') ON CONFLICT DO NOTHING;
+INSERT INTO doen_migraties (bestand) VALUES ('238_planning_weergaven_herhaling.sql') ON CONFLICT DO NOTHING;
