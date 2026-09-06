@@ -29,6 +29,41 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 )
 
+// ── GEDEELD-MET-API BEGIN: OAuth-geheimen ─────────────────────────────────
+// Letterlijke kopie in api/mail-oauth-start.ts, api/mail-oauth-callback.ts en
+// api/mail-oauth-token.ts. Zoek op "GEDEELD-MET-API: OAuth-geheimen".
+//
+// Twee geheimen met twee taken: EMAIL_ENCRYPTION_KEY versleutelt tokens en
+// wachtwoorden, MAIL_OAUTH_STATE_SECRET tekent de OAuth-state. Eén sleutel
+// voor twee primitieven is een ongeluk in wording, dus de terugval is
+// expliciet en waarschuwt hoorbaar. Onder de 32 tekens weigeren we te starten:
+// dat is te weinig voor een HMAC-sleutel en voor een scrypt-wachtwoord.
+
+const GEHEIM_MIN_LENGTE = 32
+let terugvalGemeld = false
+
+function geldigGeheim(waarde: string | undefined): string | null {
+  return waarde && waarde.length >= GEHEIM_MIN_LENGTE ? waarde : null
+}
+
+/** EMAIL_ENCRYPTION_KEY, alleen als hij lang genoeg is. */
+function versleutelGeheim(): string | null {
+  return geldigGeheim(process.env.EMAIL_ENCRYPTION_KEY)
+}
+
+/** MAIL_OAUTH_STATE_SECRET, met EMAIL_ENCRYPTION_KEY als expliciete terugval. */
+function stateGeheim(): string | null {
+  const eigen = process.env.MAIL_OAUTH_STATE_SECRET
+  if (eigen) return geldigGeheim(eigen)
+  const terugval = versleutelGeheim()
+  if (terugval && !terugvalGemeld) {
+    terugvalGemeld = true
+    console.warn('[mail-oauth] MAIL_OAUTH_STATE_SECRET ontbreekt; terugval op EMAIL_ENCRYPTION_KEY. Zet een eigen state-geheim van minstens 32 tekens.')
+  }
+  return terugval
+}
+// ── GEDEELD-MET-API EINDE: OAuth-geheimen ─────────────────────────────────
+
 // ── GEDEELD-MET-API BEGIN: OAuth-providers ────────────────────────────────
 // Letterlijke kopie in api/mail-oauth-start.ts en api/mail-oauth-callback.ts.
 // De scopes zijn het hele verhaal: Gmail geeft met https://mail.google.com/
@@ -75,10 +110,6 @@ function isProvider(waarde: unknown): waarde is Provider {
 
 function redirectUri(): string {
   return process.env.MAIL_OAUTH_REDIRECT || 'https://app.doen.team/api/mail-oauth-callback'
-}
-
-function stateGeheim(): string | null {
-  return process.env.MAIL_OAUTH_STATE_SECRET || process.env.EMAIL_ENCRYPTION_KEY || null
 }
 
 /**
@@ -266,7 +297,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const code = typeof req.query.code === 'string' ? req.query.code : null
   const state = typeof req.query.state === 'string' ? req.query.state : null
   const geheim = stateGeheim()
-  if (!code || !state || !geheim) return terug(res, { mail: 'fout', reden: 'onvolledig' })
+  if (!geheim || !versleutelGeheim()) return terug(res, { mail: 'fout', reden: 'niet_geconfigureerd' })
+  if (!code || !state) return terug(res, { mail: 'fout', reden: 'onvolledig' })
 
   const gelezen = leesState(state, geheim)
   if (!gelezen) return terug(res, { mail: 'fout', reden: 'state' })
