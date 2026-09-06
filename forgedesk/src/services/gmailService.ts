@@ -82,6 +82,13 @@ interface SendEmailOptions {
   keepalive?: boolean
 }
 
+/** 42703 bij een select, PGRST204 als de kolom in de lading van een insert staat. */
+function isOnbekendeKolomFout(fout: { code?: string; message?: string } | null): boolean {
+  if (!fout) return false
+  return fout.code === '42703' || fout.code === 'PGRST204'
+    || /column .* does not exist|could not find the .* column/i.test(fout.message || '')
+}
+
 /**
  * Outbox: zet een mail die niet verzonden kon worden in ingeplande_berichten
  * (bron 'outbox'); de verzend-cron probeert het automatisch opnieuw met
@@ -106,7 +113,7 @@ async function enqueueOutbox(to: string, subject: string, body: string, options?
       .limit(1)
     if (bestaand && bestaand.length > 0) return true
 
-    const { error } = await supabase.from('ingeplande_berichten').insert({
+    const rij: Record<string, unknown> = {
       user_id: session.user.id,
       ontvanger: to,
       cc: options?.cc || null,
@@ -122,8 +129,21 @@ async function enqueueOutbox(to: string, subject: string, body: string, options?
       in_reply_to: options?.in_reply_to || null,
       thread_id: options?.thread_id || null,
       wacht_op_reactie: options?.wacht_op_reactie ?? false,
-    })
-    return !error
+      // Uit welk postvak deze mail vertrok. Zonder dit veld verstuurt de
+      // verzend-cron hem een minuut later vanuit het standaardpostvak, met de
+      // verkeerde afzender en de kopie in het verkeerde archief.
+      ...(options?.account_id ? { account_id: options.account_id } : {}),
+    }
+    const { error } = await supabase.from('ingeplande_berichten').insert(rij)
+    if (!error) return true
+    // account_id komt uit migratie 245. Is die nog niet gedraaid, dan faalt de
+    // insert in zijn geheel; liever een mail in de outbox zonder postvak dan
+    // een mail die nergens meer staat.
+    if (!('account_id' in rij) || !isOnbekendeKolomFout(error)) return false
+    const zonder = { ...rij }
+    delete zonder.account_id
+    const tweede = await supabase.from('ingeplande_berichten').insert(zonder)
+    return !tweede.error
   } catch {
     return false
   }

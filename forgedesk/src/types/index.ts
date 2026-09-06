@@ -2520,6 +2520,8 @@ export interface IngeplandBericht {
   retry_count?: number
   /** 'ingepland' (door gebruiker gepland) of 'outbox' (mislukte directe verzending). */
   bron?: 'ingepland' | 'outbox'
+  /** Uit welk postvak dit bericht vertrekt (user_email_settings.id, migratie 245). */
+  account_id?: string | null
 }
 
 // ============ KENNISBANK ============
