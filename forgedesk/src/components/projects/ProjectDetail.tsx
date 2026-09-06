@@ -1837,7 +1837,7 @@ export function ProjectDetail() {
         )}
 
         {/* TAB BAR · flame underline, duotone icoon per tab */}
-        <div className="flex items-center gap-1 border-b border-border mt-4 sticky top-0 z-10 bg-background">
+        <div className="flex items-center gap-1 flex-nowrap overflow-x-auto [scrollbar-width:none] border-b border-border mt-4 sticky top-0 z-10 bg-background">
           {([
             { key: 'overzicht' as ProjectTab,  label: 'Overzicht',  count: 0,                          Icon: TabList    },
             { key: 'werkbon' as ProjectTab,    label: 'Werkbon',    count: projectWerkbonnen.length,   Icon: TabWrench  },

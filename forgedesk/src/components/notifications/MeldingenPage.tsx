@@ -193,7 +193,7 @@ export function MeldingenPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-6">
+    <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -229,7 +229,7 @@ export function MeldingenPage() {
             </button>
           )}
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 flex-nowrap overflow-x-auto -mx-4 px-4 [scrollbar-width:none] md:flex-wrap md:mx-0 md:px-0">
           <Filter className="h-4 w-4 text-muted-foreground" />
           {filters.map((f) => (
             <button

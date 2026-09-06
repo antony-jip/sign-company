@@ -923,7 +923,7 @@ export function QuotesPipeline() {
             </div>
 
             {/* KPI tiles · clickable status-filter shortcuts */}
-            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-3">
               {([
                 { key: 'wacht_op_reactie', label: 'Opvolgen',  sub: 'wacht op reactie',         count: offerteKpis.opvolgen, Icon: Timer,     accent: '#F15025' },
                 { key: 'concept',          label: 'Concept',   sub: 'nog niet verstuurd',       count: offerteKpis.concept,  Icon: PenLine,   accent: '#5A5A55' },

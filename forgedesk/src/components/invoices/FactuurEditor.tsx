@@ -2984,11 +2984,11 @@ export function FactuurEditor() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="px-8 pt-3">
+      <div className="px-4 md:px-8 pt-3">
         <BackButton fallbackPath="/facturen" />
       </div>
       {/* Header */}
-      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border px-8 py-3">
+      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border px-4 md:px-8 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div>
@@ -3266,7 +3266,7 @@ export function FactuurEditor() {
       </div>
 
       {isVergrendeld && existingFactuur?.exact_synced_at && (
-        <div className="px-8 pt-3">
+        <div className="px-4 md:px-8 pt-3">
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-petrol/20 bg-petrol/[0.04] px-3 py-2 text-xs text-foreground/80">
             <span className="inline-flex items-center gap-2">
               <Lock className="h-3.5 w-3.5 text-petrol dark:text-[#5AABB5]" />
@@ -3287,14 +3287,14 @@ export function FactuurEditor() {
       )}
 
       {stepperAan && isEditMode && existingFactuur && toonOpvolgStepper(existingFactuur) && (
-        <div className="px-8 pt-3">
+        <div className="px-4 md:px-8 pt-3">
           <FactuurOpvolgStepper factuur={existingFactuur} stappen={opvolgStappen} klant={selectedKlant} />
         </div>
       )}
 
       {/* Status bar for existing invoices · tekst + Flame punt, geen kleurig vlak */}
       {isEditMode && existingFactuur && (
-        <div className="px-8 pt-3">
+        <div className="px-4 md:px-8 pt-3">
           <div className="flex items-center gap-3 text-sm text-foreground/70">
             {(() => {
               const iconClass = cn(
@@ -3330,7 +3330,7 @@ export function FactuurEditor() {
       )}
 
       {/* Content: Two-column layout */}
-      <div className="px-8 py-6 grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6 lg:items-start">
+      <div className="px-4 py-4 md:px-8 md:py-6 grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6 lg:items-start">
         {/* LEFT PANEL: Klant & Meta · sticky met intern scroll bij lange inhoud */}
         <div className="space-y-4 lg:sticky lg:top-[88px] lg:self-start lg:max-h-[calc(100vh-104px)] lg:overflow-y-auto lg:pr-1">
           {/* Klant selectie */}
@@ -4424,12 +4424,12 @@ export function FactuurEditor() {
 function FactuurEditorSkeleton() {
   return (
     <div className="min-h-screen bg-background">
-      <div className="px-8 pt-3">
+      <div className="px-4 md:px-8 pt-3">
         <Skeleton className="h-8 w-24" />
       </div>
 
       {/* Header · mimic sticky top-bar */}
-      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border px-8 py-3">
+      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border px-4 md:px-8 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="space-y-1.5">
@@ -4448,7 +4448,7 @@ function FactuurEditorSkeleton() {
       </div>
 
       {/* Status bar */}
-      <div className="px-8 pt-3">
+      <div className="px-4 md:px-8 pt-3">
         <div className="flex items-center gap-3">
           <Skeleton className="h-3.5 w-3.5 rounded-full" />
           <Skeleton className="h-4 w-64" />
@@ -4456,7 +4456,7 @@ function FactuurEditorSkeleton() {
       </div>
 
       {/* Content: Two-column layout */}
-      <div className="px-8 py-6 grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6 lg:items-start">
+      <div className="px-4 py-4 md:px-8 md:py-6 grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6 lg:items-start">
         {/* LEFT PANEL */}
         <div className="space-y-4">
           {/* Klant card */}

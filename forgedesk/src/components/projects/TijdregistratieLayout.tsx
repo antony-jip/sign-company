@@ -751,7 +751,7 @@ export function TijdregistratieLayout() {
       </Card>
 
       {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="hidden md:grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Uren deze week</CardTitle>
@@ -901,7 +901,7 @@ export function TijdregistratieLayout() {
       </Card>
 
       {/* Filter Pills */}
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex items-center gap-2 flex-nowrap overflow-x-auto -mx-4 px-4 [scrollbar-width:none] md:flex-wrap md:mx-0 md:px-0">
         <Filter className="h-4 w-4 text-muted-foreground" />
         {(
           [

@@ -214,7 +214,7 @@ function FORGEdeskDashboardInner() {
               De kop krijgt de volle breedte (past op één regel), de weer-regel
               staat als strook onderlangs. */}
           <section className="doen-hero relative rounded-2xl overflow-hidden">
-            <div className="px-7 pt-7 pb-6 sm:px-9 sm:pt-8">
+            <div className="px-5 pt-5 pb-5 sm:px-9 sm:pt-8 sm:pb-6">
               <div className="flex items-center gap-2 mb-3.5">
                 <span className="inline-block w-1.5 h-1.5 rounded-full bg-flame" aria-hidden />
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-white/70 font-mono">
@@ -231,7 +231,7 @@ function FORGEdeskDashboardInner() {
                 </Link>
               </div>
               <h1
-                className="font-heading font-bold leading-[1.05] text-[28px] sm:text-[40px] text-white"
+                className="font-heading font-bold leading-[1.05] text-[24px] sm:text-[40px] text-white"
                 style={{ letterSpacing: '-1.5px', textWrap: 'balance' } as React.CSSProperties}
               >
                 Klaar om te{' '}

@@ -481,7 +481,7 @@ export function ClientsLayout() {
         </div>
 
         {/* KPI tiles · clickable triage entry-points */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-3">
           {([
             { key: 'met-aandacht' as StatusFilter, label: 'Met aandacht',  sub: 'hier is iets mee', count: kpiCounts.metAandacht, Icon: AlertCircle },
             { key: 'actief'       as StatusFilter, label: 'Actief',        sub: 'hier loopt werk',            count: kpiCounts.actief,      Icon: Activity    },

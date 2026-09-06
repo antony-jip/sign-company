@@ -772,7 +772,7 @@ export function ClientProfile() {
       )}
 
       {/* ── Info Cards Row ── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="hidden md:grid md:grid-cols-2 xl:grid-cols-4 gap-4">
         {/* Contactpersonen */}
         <Card className="doen-panel border-0 shadow-none rounded-xl">
           <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
@@ -1034,7 +1034,7 @@ export function ClientProfile() {
         {/* Left: Tabs + Content */}
         <div className="flex-1 min-w-0 space-y-4">
           {/* Tab bar */}
-          <div className="flex items-center gap-1 flex-wrap border-b border-border">
+          <div className="flex items-center gap-1 flex-nowrap overflow-x-auto [scrollbar-width:none] border-b border-border">
             {tabs.map((tab) => {
               const Icon = tab.icon
               const isActive = activeTab === tab.key

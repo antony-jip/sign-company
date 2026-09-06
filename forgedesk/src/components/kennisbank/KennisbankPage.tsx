@@ -605,11 +605,11 @@ export function KennisbankPage() {
           <div className="absolute top-[18%] right-[9.5%] w-[60px] h-[60px] rounded-full animate-pulse" style={{ backgroundColor: '#F15025', opacity: 0.08, animationDelay: '0.5s' }} />
         </div>
 
-        <div className="relative px-8 md:px-12 pt-12 pb-10">
+        <div className="relative px-5 pt-8 pb-6 md:px-12 md:pt-12 md:pb-10">
           {/* Title + mission */}
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-10">
             <div className="max-w-2xl">
-              <h1 className="font-heading text-[44px] md:text-[56px] font-bold tracking-[-2.5px] leading-[0.95] text-white mb-4">
+              <h1 className="font-heading text-[32px] md:text-[56px] font-bold tracking-[-2.5px] leading-[0.95] text-white mb-4">
                 Doen<span style={{ color: '#F15025' }}>.</span><br />
                 <span className="text-white/40">de kracht achter</span><br />
                 doeners.

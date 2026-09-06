@@ -2396,7 +2396,7 @@ export function FacturenLayout() {
         </div>
 
         {/* KPI tiles · clickable triage entry-points */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-3">
           {([
             { key: 'verlopen' as FilterStatus,      label: 'Vervallen',        sub: 'te laat betaald',         count: verlopenCount,                              isMoney: false, dot: '#F15025', pulse: true },
             { key: 'verzonden' as FilterStatus,     label: 'Openstaand',       sub: 'wacht op betaling, ex btw',     count: statistics.totaalOpenstaand,                isMoney: true,  dot: '#3A5A9A', pulse: false },

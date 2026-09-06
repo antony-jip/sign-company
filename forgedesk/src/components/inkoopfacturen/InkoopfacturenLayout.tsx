@@ -623,7 +623,7 @@ export function InkoopfacturenLayout() {
         </div>
 
         {/* KPI tiles · clickable triage entry-points */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-3">
           {([
             { key: 'verwerkt' as FilterStatus,    label: 'Te reviewen',    sub: 'wacht op goedkeuring',   count: wachtendCount,                          isMoney: false, dot: '#F15025', pulse: true },
             { key: 'nieuw' as FilterStatus,       label: 'Open',           sub: 'nog te betalen',      count: statistics.totaalOpen,                  isMoney: true,  dot: '#D4621A', pulse: false },
@@ -948,15 +948,15 @@ export function InkoopfacturenLayout() {
             {/* Nav + Close */}
             <div className="flex items-center justify-between px-6 py-3 border-b border-border">
               <div className="flex items-center gap-2">
-                <button onClick={() => navigateLightbox('prev')} disabled={lightboxIndex <= 0} className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center disabled:opacity-20 transition-colors">
+                <button onClick={() => navigateLightbox('prev')} disabled={lightboxIndex <= 0} className="w-10 h-10 rounded-lg hover:bg-muted flex items-center justify-center disabled:opacity-20 transition-colors">
                   <ChevronLeft className="w-4 h-4 text-foreground/70" />
                 </button>
                 <span className="text-[12px] font-mono text-muted-foreground min-w-[32px] text-center">{lightboxIndex >= 0 ? lightboxIndex + 1 : '–'}/{filtered.length}</span>
-                <button onClick={() => navigateLightbox('next')} disabled={lightboxIndex < 0 || lightboxIndex >= filtered.length - 1} className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center disabled:opacity-20 transition-colors">
+                <button onClick={() => navigateLightbox('next')} disabled={lightboxIndex < 0 || lightboxIndex >= filtered.length - 1} className="w-10 h-10 rounded-lg hover:bg-muted flex items-center justify-center disabled:opacity-20 transition-colors">
                   <ChevronRight className="w-4 h-4 text-foreground/70" />
                 </button>
               </div>
-              <button onClick={() => setLightbox(null)} className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center transition-colors">
+              <button onClick={() => setLightbox(null)} className="w-10 h-10 rounded-lg hover:bg-muted flex items-center justify-center transition-colors">
                 <X className="w-4 h-4 text-muted-foreground" />
               </button>
             </div>
@@ -1132,14 +1132,14 @@ export function InkoopfacturenLayout() {
                       <button
                         onClick={() => { setProjectPickerOpen(true); setProjectQuery('') }}
                         title="Ander project kiezen"
-                        className="w-7 h-7 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                        className="w-9 h-9 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => koppelProject(null)}
                         title="Koppeling verwijderen"
-                        className="w-7 h-7 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                        className="w-9 h-9 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
