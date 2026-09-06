@@ -10,6 +10,8 @@
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import nodemailer from 'nodemailer'
+import MailComposer from 'nodemailer/lib/mail-composer'
+import { ImapFlow } from 'imapflow'
 import crypto from 'crypto'
 import { createClient } from '@supabase/supabase-js'
 import * as Sentry from '@sentry/node'
@@ -96,13 +98,15 @@ interface UserCreds {
   password: string
   smtp_host: string
   smtp_port: number
+  imap_host: string
+  imap_port: number
   fromName?: string
 }
 
 async function getUserCreds(userId: string): Promise<UserCreds | null> {
   const { data: settings } = await supabaseAdmin
     .from('user_email_settings')
-    .select('gmail_address, encrypted_app_password, smtp_host, smtp_port')
+    .select('gmail_address, encrypted_app_password, smtp_host, smtp_port, imap_host, imap_port')
     .eq('user_id', userId)
     .maybeSingle()
 
@@ -123,7 +127,104 @@ async function getUserCreds(userId: string): Promise<UserCreds | null> {
     password: decryptPassword(settings.encrypted_app_password),
     smtp_host: settings.smtp_host || 'smtp.gmail.com',
     smtp_port: settings.smtp_port || 587,
+    imap_host: settings.imap_host || 'imap.gmail.com',
+    imap_port: settings.imap_port || 993,
     fromName,
+  }
+}
+
+// ── Verzonden naar de server (kopie van api/send-email.ts) ────────────────
+// Gmail bewaart bij verzenden via smtp.gmail.com zelf een kopie; daar zou een
+// APPEND een dubbel opleveren en haalt de Verzonden-sync de uid op.
+interface ImapMailbox {
+  path: string
+  name?: string
+  specialUse?: string
+}
+
+const VERZONDEN_KANDIDATEN = ['[Gmail]/Verzonden berichten', '[Gmail]/Sent Mail', 'Sent', 'Sent Items', 'Verzonden items', 'INBOX.Sent']
+const VERZONDEN_PATROON = /sent|verzonden|gesendet|envoy/i
+
+async function zoekVerzondenMap(client: ImapFlow): Promise<string | null> {
+  try {
+    const mailboxen = (await client.list()) as ImapMailbox[]
+    const opSpecialUse = mailboxen.find((m) => m.specialUse === '\\Sent')
+    if (opSpecialUse) return opSpecialUse.path
+    for (const kandidaat of VERZONDEN_KANDIDATEN) {
+      if (mailboxen.some((m) => m.path === kandidaat)) return kandidaat
+    }
+    const opNaam = mailboxen.filter((m) => VERZONDEN_PATROON.test(m.path) || VERZONDEN_PATROON.test(m.name || ''))
+    if (opNaam.length > 0) {
+      const gmailVariant = opNaam.find((m) => m.path.startsWith('[Gmail]/'))
+      return (gmailVariant || opNaam[0]).path
+    }
+  } catch (err) {
+    console.warn('[cron-verzend] mappenlijst ophalen mislukt:', err instanceof Error ? err.message : err)
+  }
+  return null
+}
+
+function isGmailHost(host: string): boolean {
+  return /gmail\.com$|googlemail\.com$/i.test(host)
+}
+
+async function verzondenNaarServerAan(userId: string): Promise<boolean> {
+  try {
+    const { data: profiel } = await supabaseAdmin
+      .from('profiles')
+      .select('organisatie_id')
+      .eq('id', userId)
+      .maybeSingle()
+    const orgId = (profiel?.organisatie_id as string | null) ?? null
+    if (!orgId) return true
+    const { data } = await supabaseAdmin
+      .from('app_settings')
+      .select('functies')
+      .eq('organisatie_id', orgId)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    const functies = (data?.functies ?? {}) as Record<string, unknown>
+    return functies.mail_verzonden_naar_server !== false
+  } catch {
+    return true
+  }
+}
+
+async function bewaarInVerzonden(opts: {
+  raw: Buffer
+  gmail_address: string
+  app_password: string
+  imap_host: string
+  imap_port: number
+}): Promise<{ uid: number | null; imapFolder: string | null }> {
+  if (isGmailHost(opts.imap_host)) return { uid: null, imapFolder: null }
+  const client = new ImapFlow({
+    host: opts.imap_host,
+    port: opts.imap_port,
+    secure: opts.imap_port === 993,
+    auth: { user: opts.gmail_address, pass: opts.app_password },
+    logger: false,
+    emitLogs: false,
+    greetingTimeout: 8000,
+    socketTimeout: 20000,
+  })
+  try {
+    await client.connect()
+    const map = await zoekVerzondenMap(client)
+    if (!map) {
+      console.warn('[cron-verzend] geen Verzonden-map gevonden, APPEND overgeslagen')
+      return { uid: null, imapFolder: null }
+    }
+    const uitkomst = await client.append(map, opts.raw, ['\\Seen'], new Date())
+    if (!uitkomst) return { uid: null, imapFolder: map }
+    return { uid: uitkomst.uid ?? null, imapFolder: uitkomst.destination || map }
+  } catch (err) {
+    console.error('[cron-verzend] APPEND in Verzonden mislukt:', err instanceof Error ? err.message : err)
+    Sentry.captureException(err, { tags: { phase: 'imap-append-sent' } })
+    return { uid: null, imapFolder: null }
+  } finally {
+    try { await client.logout() } catch { /* al gesloten */ }
   }
 }
 
@@ -340,8 +441,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
         if (built.length) mailOptions.attachments = built
 
+        mailOptions.date = new Date()
         const sendResult = await transporter.sendMail(mailOptions)
         const sentMessageId = (sendResult as { messageId?: string }).messageId || null
+
+        let verzondenUid: number | null = null
+        let verzondenMap: string | null = null
+        if (await verzondenNaarServerAan(bericht.user_id)) {
+          try {
+            if (sentMessageId) mailOptions.messageId = sentMessageId
+            const raw = await new MailComposer(mailOptions).compile().build()
+            const bewaard = await bewaarInVerzonden({
+              raw, gmail_address: creds.gmail_address, app_password: creds.password,
+              imap_host: creds.imap_host, imap_port: creds.imap_port,
+            })
+            verzondenUid = bewaard.uid
+            verzondenMap = bewaard.imapFolder
+          } catch (appendErr) {
+            console.error('[cron-verzend] MIME voor Verzonden opbouwen mislukt:', appendErr)
+            Sentry.captureException(appendErr, { tags: { phase: 'imap-append-sent' } })
+          }
+        }
 
         await supabaseAdmin
           .from('ingeplande_berichten')
@@ -389,7 +509,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             in_reply_to: bericht.in_reply_to || null,
             thread_id: effectiveThreadId,
             map: 'verzonden',
-            imap_folder: 'SENT',
+            uid: verzondenUid,
+            imap_folder: verzondenMap || 'SENT',
             from_address: creds.gmail_address,
             from_name: creds.fromName || '',
             van: fromAddress,
@@ -402,7 +523,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             gelezen: true,
             bijlagen: bijlagen.length,
             has_attachments: bijlagen.length > 0,
-            gmail_id: '',
+            gmail_id: verzondenUid ? String(verzondenUid) : '',
             cached_at: new Date().toISOString(),
             wacht_op_reactie: wachtOpReactie,
             beantwoord: false,
