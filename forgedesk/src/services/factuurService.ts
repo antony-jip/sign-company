@@ -321,29 +321,35 @@ export async function getVoorschottenVoorOfferte(offerteId: string): Promise<Arr
 }
 
 // Per offerteregel het aantal dat al op een factuur staat (niet-gecrediteerde
-// standaard- en eindafrekeningen). Regels zonder offerte_item_id (van vóór
-// migratie 237) tellen niet mee; de dialoog zegt dat er eerlijk bij.
+// standaard- en eindafrekeningen). Telt via factuur_items.offerte_item_id en
+// niet via facturen.offerte_id: na samenvoegen van concepten staan regels van
+// deze offerte op een factuur die aan een andere offerte hangt. Regels zonder
+// offerte_item_id (van vóór migratie 237) tellen niet mee; de dialoog zegt dat
+// er eerlijk bij.
 export async function getGefactureerdeAantallenVoorOfferte(offerteId: string): Promise<Record<string, number>> {
   assertId(offerteId, 'offerte_id')
   if (!(isSupabaseConfigured() && supabase)) return {}
-  const { data: facturen, error } = await supabase
-    .from('facturen')
-    .select('id, status, factuur_type')
+  const { data: offerteItems, error: itemError } = await supabase
+    .from('offerte_items')
+    .select('id')
     .eq('offerte_id', offerteId)
-    .neq('status', 'gecrediteerd')
-  if (error) throw error
-  const ids = (facturen || [])
-    .filter((f) => !f.factuur_type || f.factuur_type === 'standaard' || f.factuur_type === 'eindafrekening')
-    .map((f) => f.id)
-  if (ids.length === 0) return {}
+  if (itemError) throw itemError
+  const itemIds = (offerteItems || []).map((r) => r.id as string)
+  if (itemIds.length === 0) return {}
   const { data: regels, error: regelError } = await supabase
     .from('factuur_items')
-    .select('offerte_item_id, aantal')
-    .in('factuur_id', ids)
-    .not('offerte_item_id', 'is', null)
+    .select('offerte_item_id, aantal, facturen!inner(status, factuur_type)')
+    .in('offerte_item_id', itemIds)
   if (regelError) throw regelError
+  type FactuurKop = { status: string; factuur_type?: string | null }
+  type Regel = { offerte_item_id: string; aantal: number; facturen: FactuurKop | FactuurKop[] | null }
   const som: Record<string, number> = {}
-  for (const r of regels || []) {
+  for (const r of (regels || []) as unknown as Regel[]) {
+    // Zonder gegenereerde types weet supabase-js niet dat dit een n:1-embed is;
+    // op de draad is het één object.
+    const f = Array.isArray(r.facturen) ? r.facturen[0] : r.facturen
+    if (!f || f.status === 'gecrediteerd') continue
+    if (f.factuur_type && f.factuur_type !== 'standaard' && f.factuur_type !== 'eindafrekening') continue
     som[r.offerte_item_id] = round2((som[r.offerte_item_id] || 0) + Number(r.aantal || 0))
   }
   return som
@@ -408,9 +414,36 @@ export async function voegRegelsToeAanConcept(
   return updateFactuur(factuurId, { ...extra, subtotaal, btw_bedrag, totaal: round2(subtotaal + btw_bedrag) })
 }
 
+// Offertes die naar een weggehaald bron-concept wezen, wijzen daarna naar het
+// doel: geconverteerd_naar_factuur_id en factuur_ids. De koppelingen van het
+// doel zelf (offerte_id, bron_offerte_id) blijven zoals ze zijn.
+async function wijsOffertesOm(bronId: string, doelId: string): Promise<void> {
+  if (!supabase) return
+  const { data: offertes, error } = await supabase
+    .from('offertes')
+    .select('id, geconverteerd_naar_factuur_id, factuur_ids')
+    .or(`geconverteerd_naar_factuur_id.eq.${bronId},factuur_ids.cs.{${bronId}}`)
+  if (error) throw error
+  for (const o of offertes || []) {
+    const factuurIds = [...new Set(((o.factuur_ids as string[] | null) || []).map((id) => (id === bronId ? doelId : id)))]
+    const { error: updateError } = await supabase
+      .from('offertes')
+      .update({
+        factuur_ids: factuurIds,
+        ...(o.geconverteerd_naar_factuur_id === bronId ? { geconverteerd_naar_factuur_id: doelId } : {}),
+        updated_at: now(),
+      })
+      .eq('id', o.id)
+    if (updateError) throw updateError
+  }
+}
+
 // Concepten van dezelfde klant op één factuur: de regels van de rest komen
 // achter die van het doel (het oudste concept), daarna verdwijnen de andere
 // concepten. Alleen concepten: een genummerde factuur is een boekstuk.
+// Volgorde is bewust: eerst het doel schrijven met optimistic lock op
+// updated_at, dan de regels, dan de offertes ompointen, en pas als dat alles
+// gelukt is de bronnen weg. Gaat het halverwege mis, dan is er niets verwijderd.
 export async function voegConceptfacturenSamen(doelId: string, bronIds: string[], userId: string): Promise<Factuur> {
   assertId(doelId, 'factuur_id')
   const bronnen = (await Promise.all(bronIds.map((id) => getFactuur(id)))).filter((f): f is Factuur => !!f)
@@ -419,6 +452,8 @@ export async function voegConceptfacturenSamen(doelId: string, bronIds: string[]
   const alle = [doel, ...bronnen]
   if (alle.some((f) => f.status !== 'concept')) throw new Error('Alleen conceptfacturen kunnen samengevoegd worden')
   if (alle.some((f) => f.klant_id !== doel.klant_id)) throw new Error('Samenvoegen kan alleen voor dezelfde klant')
+
+  const bestaand = await getFactuurItems(doelId)
   const regels: NieuweFactuurRegel[] = []
   for (const bron of bronnen) {
     const items = await getFactuurItems(bron.id)
@@ -435,7 +470,30 @@ export async function voegConceptfacturenSamen(doelId: string, bronIds: string[]
       })
     }
   }
-  const bijgewerkt = await voegRegelsToeAanConcept(doelId, regels, userId)
+  const nieuweRegels = [
+    ...bestaand.sort((a, b) => a.volgorde - b.volgorde),
+    ...regels.map((r) => ({ ...r, totaal: regelTotaal(r) })),
+  ].map((r, i) => ({
+    user_id: userId,
+    beschrijving: r.beschrijving,
+    aantal: r.aantal,
+    eenheidsprijs: r.eenheidsprijs,
+    btw_percentage: r.btw_percentage,
+    korting_percentage: r.korting_percentage || 0,
+    totaal: regelTotaal(r),
+    volgorde: i + 1,
+    grootboek_code: r.grootboek_code || '',
+    detail_regels: r.detail_regels || [],
+    offerte_item_id: r.offerte_item_id || null,
+  }))
+  const subtotaal = round2(nieuweRegels.reduce((s, r) => s + r.totaal, 0))
+  const btw_bedrag = round2(nieuweRegels.reduce((s, r) => s + round2(r.totaal * (r.btw_percentage / 100)), 0))
+
+  const bijgewerkt = await updateFactuur(doelId, { subtotaal, btw_bedrag, totaal: round2(subtotaal + btw_bedrag) }, doel.updated_at)
+  await replaceFactuurItems(doelId, nieuweRegels)
+  for (const bron of bronnen) {
+    await wijsOffertesOm(bron.id, doelId)
+  }
   for (const bron of bronnen) {
     await deleteFactuur(bron.id)
   }
