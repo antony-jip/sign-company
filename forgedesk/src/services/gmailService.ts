@@ -130,6 +130,27 @@ async function enqueueOutbox(to: string, subject: string, body: string, options?
 }
 
 /**
+ * Fout van een mail die in de outbox beland is. De verzend-cron levert hem af,
+ * dus de UI mag hier geen 'Opnieuw' bij aanbieden: slaagt die tweede poging,
+ * dan staat de outbox-rij nog op 'wachtend' en bezorgt de cron een minuut later
+ * dezelfde mail nog eens bij de klant.
+ *
+ * De rij vooraf annuleren is de onveiligere variant: tussen het lezen en het
+ * annuleren kan de cron hem al op 'verwerken' hebben gezet en aan het versturen
+ * zijn. Dan is de mail al weg en zou de retry hem alsnog verdubbelen. Wachten
+ * op de cron kost hooguit een minuut en levert nooit twee mails.
+ */
+function outboxFout(boodschap: string): Error {
+  const fout = new Error(boodschap) as Error & { outboxQueued?: boolean }
+  fout.outboxQueued = true
+  return fout
+}
+
+export function isOutboxFout(err: unknown): boolean {
+  return !!err && typeof err === 'object' && (err as { outboxQueued?: boolean }).outboxQueued === true
+}
+
+/**
  * Alleen 502 gaat de outbox in: send-email geeft die bij een tijdelijke
  * SMTP-storing en schrijft zelf al een outbox-rij op 'mislukt'. Een 401
  * (wachtwoord geweigerd) of 500 (definitief afgewezen) herhalen heeft geen zin
@@ -175,7 +196,7 @@ export async function sendEmail(
   } catch (netErr) {
     // Netwerk weg — in de outbox, cron levert af zodra het weer kan
     if (await enqueueOutbox(to, subject, body, options)) {
-      throw new Error('Geen verbinding — de mail staat in de outbox en wordt automatisch opnieuw verstuurd')
+      throw outboxFout('Geen verbinding — de mail staat in de outbox en wordt automatisch opnieuw verstuurd')
     }
     throw netErr
   }
@@ -183,7 +204,7 @@ export async function sendEmail(
   if (!response.ok) {
     const error: { error?: string } = await response.json().catch(() => ({}))
     if (isQueueableStatus(response.status) && await enqueueOutbox(to, subject, body, options)) {
-      throw new Error('Verzenden mislukt — de mail staat in de outbox en wordt automatisch opnieuw verstuurd')
+      throw outboxFout('Verzenden mislukt — de mail staat in de outbox en wordt automatisch opnieuw verstuurd')
     }
     throw new Error(error?.error || `Email verzenden mislukt: ${response.status}`)
   }
