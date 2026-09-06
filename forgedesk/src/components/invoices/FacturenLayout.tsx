@@ -604,6 +604,7 @@ export function FacturenLayout() {
   // Filter & sort state
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('alle')
+  const vanavondTabLeeg = actieTabAan && filterStatus === 'te_herinneren' && !searchQuery
   const [dagenOpenFilter, setDagenOpenFilter] = useState<DagenOpenFilter>('alle')
   const [sortField, setSortField] = useState<SortField>('datum')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
@@ -1756,7 +1757,7 @@ export function FacturenLayout() {
     const sinds = type ? new Date(factuur.vervaldatum) : null
     if (sinds && type) sinds.setDate(sinds.getDate() + (stap?.dagen_na_vervaldatum ?? STANDAARD_HERINNERING_DAGEN[type]))
     return (
-      <div className="flex items-center gap-2 text-[11px] whitespace-nowrap">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px]">
         <span className={cn(gepauzeerd ? 'text-muted-foreground/60' : 'text-foreground/80')}>
           {type ? STAP_LABEL[type] : 'Geen stap'}
           {sinds && !isNaN(sinds.getTime()) ? ` · sinds ${sinds.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}` : ''}
@@ -2840,8 +2841,14 @@ export function FacturenLayout() {
       <div className="md:hidden space-y-2 -mx-1">
         {filteredFacturen.length === 0 && (
           <div className="flex flex-col items-center gap-2 py-12 text-muted-foreground">
-            <p className="text-sm font-medium">Geen facturen gevonden</p>
-            <p className="text-xs text-muted-foreground/60">Pas je filters aan of maak een nieuwe factuur.</p>
+            {vanavondTabLeeg ? (
+              <p className="text-sm font-medium">Vanavond gaat er niets de deur uit.</p>
+            ) : (
+              <>
+                <p className="text-sm font-medium">Geen facturen gevonden</p>
+                <p className="text-xs text-muted-foreground/60">Pas je filters aan of maak een nieuwe factuur.</p>
+              </>
+            )}
           </div>
         )}
         {paginatedFacturen.map((factuur) => {
@@ -2981,10 +2988,12 @@ export function FacturenLayout() {
                   <td colSpan={13}>
                     <EmptyState
                       module="facturen"
-                      title="Nog geen facturen"
-                      description={searchQuery || filterStatus !== 'alle'
-                        ? 'Probeer een ander filter of zoekterm.'
-                        : 'Keur een offerte goed en factureer je eerste sign-opdracht.'}
+                      title={vanavondTabLeeg ? 'Vanavond gaat er niets de deur uit' : 'Nog geen facturen'}
+                      description={vanavondTabLeeg
+                        ? undefined
+                        : searchQuery || filterStatus !== 'alle'
+                          ? 'Probeer een ander filter of zoekterm.'
+                          : 'Keur een offerte goed en factureer je eerste sign-opdracht.'}
                       action={!searchQuery && filterStatus === 'alle' ? (
                         <div className="flex flex-wrap items-center justify-center gap-2">
                           <Button

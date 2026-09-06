@@ -90,15 +90,30 @@ export class FactuurVergrendeldError extends Error {
   }
 }
 
+function vergrendeldVeldWijktAf(veld: keyof Factuur, nieuw: unknown, huidig: unknown): boolean {
+  if (typeof nieuw === 'number' || typeof huidig === 'number') {
+    return Math.abs(Number(nieuw ?? 0) - Number(huidig ?? 0)) > 0.005
+  }
+  const isDatum = veld === 'factuurdatum' || veld === 'vervaldatum'
+  const norm = (w: unknown) => (isDatum ? String(w ?? '').slice(0, 10) : String(w ?? ''))
+  return norm(nieuw) !== norm(huidig)
+}
+
+// Alleen weigeren als een vergrendeld veld écht van waarde verandert. De
+// inline-editor stuurt altijd alle velden mee, dus op sleutel-aanwezigheid
+// toetsen zou ook een tekstwijziging blokkeren.
 async function weigerAlsVergrendeld(id: string, updates: Partial<Factuur>): Promise<void> {
   if (!supabase) return
-  if (!VERGRENDELDE_VELDEN.some((veld) => veld in updates)) return
+  const meegestuurd = VERGRENDELDE_VELDEN.filter((veld) => veld in updates)
+  if (meegestuurd.length === 0) return
   const { data: rij } = await supabase
     .from('facturen')
-    .select('exact_synced_at, organisatie_id')
+    .select('exact_synced_at, organisatie_id, klant_id, factuurdatum, vervaldatum, subtotaal, btw_bedrag, totaal')
     .eq('id', id)
     .maybeSingle()
   if (!rij?.exact_synced_at) return
+  const huidig = rij as unknown as Record<string, unknown>
+  if (!meegestuurd.some((veld) => vergrendeldVeldWijktAf(veld, updates[veld], huidig[veld]))) return
   const { data: instellingen } = await supabase
     .from('app_settings')
     .select('functies')
