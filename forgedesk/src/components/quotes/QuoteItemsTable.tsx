@@ -1,5 +1,6 @@
 import { berekenRegelInkoop, berekenRegelVerkoopUitCalculatie } from '@/utils/calculatieBerekening'
 import React, { useState, useRef, useCallback, useEffect } from 'react'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -9,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Trash2, Plus, Calculator, ChevronDown, ChevronUp, Copy, Check, X, ToggleLeft, ToggleRight, Lock, AlertTriangle, Paperclip, Clipboard, Upload, Image as ImageIcon, GripVertical } from 'lucide-react'
+import { Trash2, Pencil, Plus, Calculator, ChevronDown, ChevronUp, Copy, Check, X, ToggleLeft, ToggleRight, Lock, AlertTriangle, Paperclip, Clipboard, Upload, Image as ImageIcon, GripVertical } from 'lucide-react'
 import { cn, formatCurrency } from '@/lib/utils'
 import { CalculatieModal } from './CalculatieModal'
 import { AutofillInput } from './AutofillInput'
@@ -625,6 +626,7 @@ export function QuoteItemsTable({
     ? sanitizedTemplateLabels
     : DEFAULT_DETAIL_LABELS
   const interneNotitieAan = useFunctie('offerte_interne_notitie')
+  const isMobiel = useMediaQuery('(max-width: 767px)')
   // Calculatie modal
   const [calculatieOpen, setCalculatieOpen] = useState(false)
   const [activeItemId, setActiveItemId] = useState<string | null>(null)
@@ -1054,6 +1056,60 @@ export function QuoteItemsTable({
             key={item.id}
             className="rounded-xl border border-border dark:border-border bg-card overflow-hidden shadow-sm"
           >
+            {/* Op een telefoon is een ingeklapt item een compacte kaart; Bewerken
+                klapt hetzelfde blok open dat op desktop altijd zichtbaar is. */}
+            {isMobiel && isCollapsed ? (
+              <div className={cn('px-3 py-3', item.is_optioneel && 'bg-amber-50/60 dark:bg-amber-900/10')}>
+                <div className="flex items-start gap-2.5">
+                  <div className={cn(
+                    "h-7 w-7 rounded-full flex items-center justify-center flex-shrink-0",
+                    item.is_optioneel ? "bg-amber-200 dark:bg-amber-800/50" : "bg-gradient-to-br from-accent to-primary"
+                  )}>
+                    <span className={cn("text-xs font-bold", item.is_optioneel ? "text-amber-700 dark:text-amber-300" : "text-white")}>{index + 1}</span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className={cn('text-sm font-semibold truncate', item.beschrijving ? 'text-foreground' : 'text-muted-foreground font-normal')}>
+                      {item.beschrijving || 'Zonder omschrijving'}
+                    </p>
+                    <p className="text-xs text-muted-foreground font-mono tabular-nums mt-0.5">
+                      {item.prijs_varianten && item.prijs_varianten.length > 0
+                        ? `${item.prijs_varianten.length} prijsvarianten`
+                        : `${item.aantal} × ${formatCurrency(item.eenheidsprijs)}${item.korting_percentage > 0 ? ` · ${item.korting_percentage}% korting` : ''}`}
+                    </p>
+                  </div>
+                  <span className={cn(
+                    "text-base font-bold font-mono flex-shrink-0 text-right tabular-nums",
+                    item.is_optioneel ? "text-muted-foreground" : "text-foreground"
+                  )}>
+                    {formatCurrency(lineTotaal)}
+                  </span>
+                </div>
+                <div className="mt-1.5 flex items-center justify-end gap-1 -mr-2">
+                  {item.is_optioneel && (
+                    <span className="mr-auto text-2xs font-bold uppercase tracking-label text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 px-1.5 py-0.5 rounded">
+                      Optioneel
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => toggleCollapse(item.id)}
+                    className="inline-flex items-center gap-1.5 h-11 px-3 rounded-lg text-[13px] font-semibold text-petrol dark:text-petrol-light hover:bg-petrol/[0.06] transition-colors"
+                  >
+                    <Pencil className="h-4 w-4" />
+                    Bewerken
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onRemoveItem(item.id)}
+                    className="h-11 w-11 inline-flex items-center justify-center rounded-lg text-muted-foreground/60 hover:text-red-500 transition-colors"
+                    aria-label="Verwijderen"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            ) : (
+            <>
             {/* ──── HEADER: nummer + item naam + optioneel badge + totaal + acties ──── */}
             {/* flex-wrap: op een telefoon werd de naam-input tussen bedrag en
                 vier icoonknoppen tot één letter geknepen. Met een minimum­breedte
@@ -1727,6 +1783,8 @@ export function QuoteItemsTable({
                   })()}
                 </div>
               </>
+            )}
+            </>
             )}
           </div>
         )
