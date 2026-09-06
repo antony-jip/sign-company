@@ -329,14 +329,48 @@ async function meldToegangIngetrokken(userId: string): Promise<void> {
 }
 // ── GEDEELD-MET-API EINDE: OAuth-toegangstoken ────────────────────────────
 
-async function getEmailCredentials(userId: string): Promise<EmailCredentials> {
-  const { data, error } = await supabaseAdmin
-    .from('user_email_settings')
-    .select('gmail_address, encrypted_app_password, smtp_host, smtp_port, imap_host, imap_port, auth_type, oauth_refresh_token_enc, oauth_access_token_enc, oauth_token_verloopt_op')
-    .eq('user_id', userId)
-    .single()
+/**
+ * Het postvak waarmee verzonden wordt. `.single()` op user_id klapte zodra er
+ * een tweede postvak bijkwam (migratie 245 en 246 laten dat toe), en gaf dan
+ * de misleidende melding dat er geen instellingen zijn. Volgorde: het
+ * meegestuurde account_id, anders het postvak met `is_standaard`, anders de
+ * enige rij.
+ */
+async function getEmailCredentials(userId: string, accountId?: string | null): Promise<EmailCredentials> {
+  const kolommen = 'gmail_address, encrypted_app_password, smtp_host, smtp_port, imap_host, imap_port, auth_type, oauth_refresh_token_enc, oauth_access_token_enc, oauth_token_verloopt_op'
+  type Rij = Record<string, unknown>
 
-  if (error || !data?.gmail_address) {
+  async function haalRij(keuze: 'account' | 'standaard' | 'enige') {
+    let vraag = supabaseAdmin.from('user_email_settings').select(kolommen).eq('user_id', userId)
+    if (keuze === 'account') vraag = vraag.eq('id', accountId as string)
+    if (keuze === 'standaard') vraag = vraag.eq('is_standaard', true)
+    const { data, error } = await vraag.maybeSingle()
+    return { rij: (data as Rij | null) ?? null, fout: error }
+  }
+
+  let data: Rij | null = null
+  if (accountId) {
+    const uitkomst = await haalRij('account')
+    if (uitkomst.fout || !uitkomst.rij) {
+      throw new Error('Dit postvak bestaat niet of hoort niet bij jou. Kies een ander postvak onder Instellingen > E-mail.')
+    }
+    data = uitkomst.rij
+  }
+  if (!data) {
+    // is_standaard bestaat pas sinds migratie 245; ontbreekt de kolom of staan
+    // er meer standaard-rijen, dan beslist de volgende poging.
+    const uitkomst = await haalRij('standaard')
+    if (!uitkomst.fout) data = uitkomst.rij
+  }
+  if (!data) {
+    const uitkomst = await haalRij('enige')
+    if (uitkomst.fout) {
+      throw new Error('Er zijn meer postvakken gekoppeld en geen ervan is de standaard. Kies een postvak onder Instellingen > E-mail.')
+    }
+    data = uitkomst.rij
+  }
+
+  if (!data?.gmail_address) {
     throw new Error('Geen email instellingen gevonden. Koppel je mailbox onder Instellingen > Koppelingen > E-mail.')
   }
   // Een OAuth-mailbox heeft geen app-wachtwoord: de tokens staan in
@@ -350,17 +384,17 @@ async function getEmailCredentials(userId: string): Promise<EmailCredentials> {
   }
 
   return {
-    gmail_address: data.gmail_address,
-    app_password: data.encrypted_app_password ? decryptPassword(data.encrypted_app_password) : '',
+    gmail_address: data.gmail_address as string,
+    app_password: data.encrypted_app_password ? decryptPassword(data.encrypted_app_password as string) : '',
     user_id: userId,
     auth_type: (data.auth_type as string) || 'wachtwoord',
     oauth_refresh_token_enc: (data.oauth_refresh_token_enc as string) ?? null,
     oauth_access_token_enc: (data.oauth_access_token_enc as string) ?? null,
     oauth_token_verloopt_op: (data.oauth_token_verloopt_op as string) ?? null,
-    smtp_host: data.smtp_host || 'smtp.gmail.com',
-    smtp_port: data.smtp_port || 587,
-    imap_host: data.imap_host || 'imap.gmail.com',
-    imap_port: data.imap_port || 993,
+    smtp_host: (data.smtp_host as string) || 'smtp.gmail.com',
+    smtp_port: (data.smtp_port as number) || 587,
+    imap_host: (data.imap_host as string) || 'imap.gmail.com',
+    imap_port: (data.imap_port as number) || 993,
   }
 }
 
@@ -565,9 +599,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let oauthCreds: EmailCredentials | null = null
     let access_token: string | undefined
     let creds: EmailCredentials | null = null
+    let credsFout: string | null = null
     try {
-      creds = await getEmailCredentials(user_id)
-    } catch {
+      creds = await getEmailCredentials(user_id, typeof req.body?.account_id === 'string' ? req.body.account_id : null)
+    } catch (err) {
+      credsFout = err instanceof Error ? err.message : null
       creds = null
     }
     if (creds) {
@@ -589,7 +625,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       imap_host = req.body.imap_host || 'imap.gmail.com'
       imap_port = req.body.imap_port || 993
       if (!gmail_address || !app_password) {
-        return res.status(400).json({ error: 'Geen email instellingen gevonden. Koppel je mailbox onder Instellingen > Koppelingen > E-mail.' })
+        return res.status(400).json({ error: credsFout || 'Geen email instellingen gevonden. Koppel je mailbox onder Instellingen > Koppelingen > E-mail.' })
       }
     }
 

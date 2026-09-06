@@ -239,6 +239,66 @@ function terug(res: VercelResponse, params: Record<string, string>) {
   return res.status(302).end()
 }
 
+interface PostvakRij {
+  id: string | null
+  gmail_address: string | null
+  oauth_refresh_token_enc: string | null
+}
+
+/**
+ * Welke rij in user_email_settings dit postvak is. Migratie 246 laat
+ * UNIQUE (user_id) vallen, dus vanaf dan kan één gebruiker meer postvakken
+ * hebben en is het adres wat ze uit elkaar houdt. Staat er precies één rij en
+ * wijkt het adres af, dan is dat de rij die opnieuw gekoppeld wordt (het
+ * gedrag van vóór 246). Meer rijen zonder adres-treffer is een nieuw postvak.
+ */
+async function zoekPostvakRij(userId: string, adres: string): Promise<{ rij: PostvakRij | null; aantal: number }> {
+  for (const kolommen of ['id, gmail_address, oauth_refresh_token_enc', 'gmail_address, oauth_refresh_token_enc']) {
+    const { data, error } = await supabaseAdmin
+      .from('user_email_settings')
+      .select(kolommen)
+      .eq('user_id', userId)
+    if (error) {
+      if (error.code === '42703' || /column .* does not exist/i.test(error.message)) continue
+      console.warn('[mail-oauth-callback] postvakken opvragen mislukt:', error.message)
+      return { rij: null, aantal: 0 }
+    }
+    const rijen = ((data || []) as unknown as Array<Record<string, unknown>>).map((r) => ({
+      id: (r.id as string) ?? null,
+      gmail_address: (r.gmail_address as string) ?? null,
+      oauth_refresh_token_enc: (r.oauth_refresh_token_enc as string) ?? null,
+    }))
+    const opAdres = rijen.find((r) => (r.gmail_address || '').toLowerCase() === adres)
+    if (opAdres) return { rij: opAdres, aantal: rijen.length }
+    return { rij: rijen.length === 1 ? rijen[0] : null, aantal: rijen.length }
+  }
+  return { rij: null, aantal: 0 }
+}
+
+/**
+ * Bewaren op de primaire sleutel zodra we die kennen, met de oude upsert op
+ * user_id als terugval voor een database waar `id` nog niet uit de API komt.
+ */
+async function bewaarPostvak(rij: PostvakRij | null, aantal: number, velden: Record<string, unknown>): Promise<string | null> {
+  if (rij?.id) {
+    const { error } = await supabaseAdmin.from('user_email_settings').update(velden).eq('id', rij.id)
+    return error ? error.message : null
+  }
+  if (rij) {
+    const { error } = await supabaseAdmin.from('user_email_settings').upsert(velden, { onConflict: 'user_id' })
+    return error ? error.message : null
+  }
+  // Een tweede postvak mag niet ook standaard zijn: migratie 246 legt daar een
+  // unieke index op. Ontbreekt de kolom nog, dan invoegen zonder.
+  for (const nieuw of aantal > 0 ? [{ ...velden, is_standaard: false }, velden] : [velden]) {
+    const { error } = await supabaseAdmin.from('user_email_settings').insert(nieuw)
+    if (!error) return null
+    if (error.code === '42703' || /column .* does not exist/i.test(error.message)) continue
+    return error.message
+  }
+  return 'invoegen mislukt'
+}
+
 /**
  * Kopie van herstelSyncStatus uit api/email-settings.ts: een nieuwe koppeling
  * is het herstelpad na een uitgezette mailbox. Mag het koppelen zelf nooit
@@ -367,25 +427,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       encrypted_app_password: null,
       updated_at: nu,
     }
+    const { rij: bestaandeRij, aantal } = await zoekPostvakRij(userId, adres)
     if (antwoord.refresh_token) {
       velden.oauth_refresh_token_enc = versleutelToken(antwoord.refresh_token)
-    } else {
+    } else if (!bestaandeRij?.oauth_refresh_token_enc) {
       // Google geeft zonder prompt=consent geen nieuwe refresh-token. Is er al
       // één van een eerdere koppeling, dan blijft die staan; zo niet, dan valt
       // de mailbox na een uur stil en is opnieuw koppelen het enige juiste.
-      const { data: bestaand } = await supabaseAdmin
-        .from('user_email_settings')
-        .select('oauth_refresh_token_enc')
-        .eq('user_id', userId)
-        .maybeSingle()
-      if (!bestaand?.oauth_refresh_token_enc) return terug(res, { mail: 'fout', reden: 'geen_refresh_token' })
+      return terug(res, { mail: 'fout', reden: 'geen_refresh_token' })
     }
 
-    const { error } = await supabaseAdmin
-      .from('user_email_settings')
-      .upsert(velden, { onConflict: 'user_id' })
-    if (error) {
-      console.error('[mail-oauth-callback] opslaan mislukt:', error.message)
+    const opslagFout = await bewaarPostvak(bestaandeRij, aantal, velden)
+    if (opslagFout) {
+      console.error('[mail-oauth-callback] opslaan mislukt:', opslagFout)
       return terug(res, { mail: 'fout', reden: 'opslaan' })
     }
 

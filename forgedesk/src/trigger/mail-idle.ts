@@ -213,36 +213,61 @@ function leesFoutTeller(laatsteFout: string | null | undefined): number {
   return m ? Number(m[1]) : 0
 }
 
-async function schrijfIdleFout(supabase: SupabaseClient, userId: string, melding: string, vorigeTeller: number): Promise<void> {
-  const nu = new Date().toISOString()
-  const teller = vorigeTeller + 1
-  const { error } = await supabase
-    .from('email_sync_state')
-    .upsert({
-      user_id: userId,
-      folder: 'idle',
-      status: 'fout',
-      laatste_fout: `${teller}x ${melding.slice(0, 160)}`,
-      laatste_fout_op: nu,
-      updated_at: nu,
-    }, { onConflict: 'user_id,folder' })
-  if (error) logger.warn('IDLE-fout niet vastgelegd', { userId, fout: error.message })
+/**
+ * Migratie 245 zet (account_id, folder) naast (user_id, folder); migratie 246
+ * laat de oude sleutel vallen. Zolang beide werelden kunnen bestaan proberen
+ * we de nieuwe sleutel eerst en vallen we terug op de oude. PostgREST geeft
+ * 42703 als de kolom er nog niet is en 42P10 als er geen unieke index bij de
+ * opgegeven kolommen te vinden is.
+ */
+function isOnbekendeSleutel(error: { code?: string; message: string }): boolean {
+  return error.code === '42703' || error.code === '42P10'
+    || /column .* does not exist|no unique or exclusion constraint/i.test(error.message)
 }
 
-async function schrijfIdleSucces(supabase: SupabaseClient, userId: string): Promise<void> {
+async function upsertIdleStaat(supabase: SupabaseClient, postvak: Postvak, velden: Record<string, unknown>): Promise<string | null> {
+  const pogingen: Array<{ onConflict: string; metAccount: boolean }> = postvak.id
+    ? [
+        { onConflict: 'account_id,folder', metAccount: true },
+        { onConflict: 'user_id,folder', metAccount: true },
+        { onConflict: 'user_id,folder', metAccount: false },
+      ]
+    : [{ onConflict: 'user_id,folder', metAccount: false }]
+
+  let laatste = 'onbekend'
+  for (const poging of pogingen) {
+    const rij: Record<string, unknown> = { user_id: postvak.user_id, folder: 'idle', ...velden }
+    if (poging.metAccount) rij.account_id = postvak.id
+    const { error } = await supabase.from('email_sync_state').upsert(rij, { onConflict: poging.onConflict })
+    if (!error) return null
+    laatste = error.message
+    if (!isOnbekendeSleutel(error)) return error.message
+  }
+  return laatste
+}
+
+async function schrijfIdleFout(supabase: SupabaseClient, postvak: Postvak, melding: string, vorigeTeller: number): Promise<void> {
   const nu = new Date().toISOString()
-  const { error } = await supabase
-    .from('email_sync_state')
-    .upsert({
-      user_id: userId,
-      folder: 'idle',
-      status: 'ok',
-      laatste_fout: null,
-      laatste_fout_op: null,
-      laatste_succes_op: nu,
-      updated_at: nu,
-    }, { onConflict: 'user_id,folder' })
-  if (error) logger.warn('IDLE-succes niet vastgelegd', { userId, fout: error.message })
+  const teller = vorigeTeller + 1
+  const fout = await upsertIdleStaat(supabase, postvak, {
+    status: 'fout',
+    laatste_fout: `${teller}x ${melding.slice(0, 160)}`,
+    laatste_fout_op: nu,
+    updated_at: nu,
+  })
+  if (fout) logger.warn('IDLE-fout niet vastgelegd', { userId: postvak.user_id, fout })
+}
+
+async function schrijfIdleSucces(supabase: SupabaseClient, postvak: Postvak): Promise<void> {
+  const nu = new Date().toISOString()
+  const fout = await upsertIdleStaat(supabase, postvak, {
+    status: 'ok',
+    laatste_fout: null,
+    laatste_fout_op: null,
+    laatste_succes_op: nu,
+    updated_at: nu,
+  })
+  if (fout) logger.warn('IDLE-succes niet vastgelegd', { userId: postvak.user_id, fout })
 }
 
 type MailIdleTaak = Task<typeof TAAK_ID, IdleLading, IdleUitkomst>
@@ -293,7 +318,7 @@ export const mailIdleWerker: MailIdleTaak = task({
       }
     } catch (err) {
       const melding = err instanceof Error ? err.message : String(err)
-      await schrijfIdleFout(supabase, lading.userId, melding, vorigeTeller)
+      await schrijfIdleFout(supabase, postvak, melding, vorigeTeller)
       logger.error('IDLE: inloggegevens niet bruikbaar', { userId: lading.userId, melding })
       return { reden: 'geen-toegang' }
     }
@@ -360,13 +385,13 @@ export const mailIdleWerker: MailIdleTaak = task({
       await client.mailboxOpen('INBOX')
     } catch (err) {
       verbindingsFout = err instanceof Error ? err.message : String(err)
-      await schrijfIdleFout(supabase, lading.userId, verbindingsFout, vorigeTeller)
+      await schrijfIdleFout(supabase, postvak, verbindingsFout, vorigeTeller)
       logger.error('IDLE: verbinden mislukt', { userId: lading.userId, melding: verbindingsFout })
       try { await client.logout() } catch { /* verbinding was er al niet */ }
       return { reden: 'verbinden-mislukt' }
     }
 
-    await schrijfIdleSucces(supabase, lading.userId)
+    await schrijfIdleSucces(supabase, postvak)
     logger.info('IDLE open', { userId: lading.userId, ronde: lading.ronde ?? 1, host: postvak.imap_host })
 
     await new Promise<void>((klaar) => {
@@ -402,7 +427,7 @@ export const mailIdleWerker: MailIdleTaak = task({
     const teKort = duurMs < KORTE_RONDE_MS
     if (verbindingsFout || teKort) {
       const melding = verbindingsFout || `verbinding viel na ${Math.round(duurMs / 1000)} s weg`
-      await schrijfIdleFout(supabase, lading.userId, melding, vorigeTeller)
+      await schrijfIdleFout(supabase, postvak, melding, vorigeTeller)
       if (teKort) logger.warn('IDLE-ronde te kort, niet opnieuw ingepland', { userId: lading.userId, duurMs, melding })
     }
 
