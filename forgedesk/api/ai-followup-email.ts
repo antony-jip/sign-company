@@ -245,7 +245,7 @@ async function checkUsageLimit(userId: string, organisatieId: string | null): Pr
 
 async function updateUsage(userId: string, inputTokens: number, outputTokens: number): Promise<void> {
   const maand = getCurrentMonth()
-  const kosten = ((inputTokens / 1_000_000 * 3) + (outputTokens / 1_000_000 * 15)) * USD_NAAR_EUR
+  const kosten = ((inputTokens / 1_000_000 * 2) + (outputTokens / 1_000_000 * 10)) * USD_NAAR_EUR
   // Atomair bijschrijven via de RPC (migratie 178), zelfde reden als bij de
   // org-teller: een read-modify-write laat twee gelijktijdige calls over elkaar
   // heen schrijven en de teller loopt structureel achter.
@@ -555,7 +555,7 @@ Afzender naam: ${context.afzender_naam}`
 
     if (orgIdForBudget) {
       try {
-        await logOrgUsage(orgIdForBudget, 'ai-followup-email', data.usage.input_tokens, data.usage.output_tokens, 3, 15)
+        await logOrgUsage(orgIdForBudget, 'ai-followup-email', data.usage.input_tokens, data.usage.output_tokens, 2, 10)
       } catch {
         // Org-usage tracking is niet-kritiek
       }

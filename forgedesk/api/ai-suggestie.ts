@@ -18,7 +18,7 @@ const supabase = createClient(
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || ''
 const USD_NAAR_EUR = 0.92
-const STANDAARD_MAANDLIMIET_EUR = 25
+const STANDAARD_MAANDLIMIET_EUR = 15
 
 // Grenzen op wat de client mag meesturen; een suggestie hoeft geen halve
 // mailbox als context en een grote prompt kost alleen maar tijd.
