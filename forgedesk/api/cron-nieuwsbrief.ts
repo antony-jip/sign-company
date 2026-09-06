@@ -2,6 +2,34 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 import { createHmac } from 'node:crypto'
+import * as Sentry from '@sentry/node'
+
+// ── Sentry init (inline; Vercel bundelt geen lokale modules in api/) ──
+if (process.env.SENTRY_DSN && !Sentry.getClient()) {
+  const SENS = /password|app_password|encrypted_app_password|betaal_token|payment_token|access_token|refresh_token|mollie_api_key|authorization|cookie|secret|api_key|to|cc|bcc|email/i
+  const scrub = (v: unknown, d = 0): unknown => {
+    if (d > 6 || v == null) return v
+    if (Array.isArray(v)) return v.map(x => scrub(x, d + 1))
+    if (typeof v === 'object') {
+      const o: Record<string, unknown> = {}
+      for (const [k, val] of Object.entries(v as Record<string, unknown>)) o[k] = SENS.test(k) ? '[Filtered]' : scrub(val, d + 1)
+      return o
+    }
+    return v
+  }
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.VERCEL_ENV || process.env.NODE_ENV || 'development',
+    tracesSampleRate: 0.1,
+    sendDefaultPii: false,
+    beforeSend(event) {
+      if (event.request?.headers) for (const k of Object.keys(event.request.headers)) if (/authorization|cookie/i.test(k)) (event.request.headers as Record<string, string>)[k] = '[Filtered]'
+      if (event.request?.data) event.request.data = scrub(event.request.data) as typeof event.request.data
+      if (event.user) { delete event.user.ip_address; delete event.user.email }
+      return event
+    },
+  })
+}
 
 // Maakt A/B-tests af. Een test verstuurt bij het verzenden alleen de testgroep;
 // zodra de wachttijd om is kiest deze cron de winnaar op unieke opens en stuurt
@@ -335,20 +363,34 @@ async function verwerkTest(rij: Record<string, unknown>, orgId: string): Promise
       tags,
     })
     for (let i = 0; i < rest.length; i += BATCH_GROOTTE) {
-      const deel = rest.slice(i, i + BATCH_GROOTTE)
-      const { data, error } = await resend.batch.send(deel.map(maak))
-      if (error) {
-        console.error('[cron-nieuwsbrief] batch mislukt:', error)
-        break
-      }
-      verstuurd += data?.data?.length ?? deel.length
-      await supabase.from('nieuwsbrief_ontvangers').upsert(
-        deel.map(o => ({
+      const kandidaten = rest.slice(i, i + BATCH_GROOTTE)
+      // Eerst claimen, dan pas mailen: de unieke sleutel (nieuwsbrief_id,
+      // email) geeft alleen de rijen terug die deze run echt heeft ingevoegd.
+      // Een overlappende run krijgt voor dezelfde adressen niets terug en
+      // mailt ze dus niet nog een keer. De tabel kent geen status-kolom, dus
+      // de rij zelf is de claim; mislukt de batch, dan gaat hij weer weg.
+      const { data: geclaimd, error: claimFout } = await supabase.from('nieuwsbrief_ontvangers').upsert(
+        kandidaten.map(o => ({
           nieuwsbrief_id: id, email: o.email, klant_id: o.klantId, contactpersoon_id: o.contactpersoonId,
           naam: o.naam || null, bedrijfsnaam: o.bedrijfsnaam || null, bron: o.bron, variant: 'rest',
         })),
         { onConflict: 'nieuwsbrief_id,email', ignoreDuplicates: true },
-      )
+      ).select('email')
+      if (claimFout) {
+        console.error('[cron-nieuwsbrief] claim mislukt:', claimFout)
+        break
+      }
+      const geclaimdeAdressen = new Set((geclaimd ?? []).map(r => r.email as string))
+      const deel = kandidaten.filter(o => geclaimdeAdressen.has(o.email))
+      if (deel.length === 0) continue
+      const { data, error } = await resend.batch.send(deel.map(maak))
+      if (error) {
+        console.error('[cron-nieuwsbrief] batch mislukt:', error)
+        await supabase.from('nieuwsbrief_ontvangers').delete()
+          .eq('nieuwsbrief_id', id).eq('variant', 'rest').in('email', deel.map(o => o.email))
+        break
+      }
+      verstuurd += data?.data?.length ?? deel.length
       await supabase.from('nieuwsbrief_events').upsert(
         deel.map(o => ({ nieuwsbrief_id: id, email: o.email, type: 'sent' })),
         { onConflict: 'nieuwsbrief_id,email,type', ignoreDuplicates: true },
@@ -374,7 +416,7 @@ async function verwerkTest(rij: Record<string, unknown>, orgId: string): Promise
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const geheim = process.env.CRON_SECRET
-  const bevoegd = !geheim || req.headers.authorization === `Bearer ${geheim}`
+  const bevoegd = !!geheim && req.headers.authorization === `Bearer ${geheim}`
   if (!bevoegd) return res.status(401).json({ error: 'Unauthorized' })
   if (!resend) return res.status(200).json({ ok: true, overgeslagen: 'Resend niet geconfigureerd' })
   if (!AFMELD_GEHEIM) return res.status(200).json({ ok: true, overgeslagen: 'afmeldsleutel ontbreekt' })
@@ -399,13 +441,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const verzonden = rij.verzonden_op ? new Date(String(rij.verzonden_op)).getTime() : 0
       const wachttijd = Number(rij.ab_wachttijd_uren || 4) * 3600_000
       if (!verzonden || Date.now() < verzonden + wachttijd) continue
-      meldingen.push(await verwerkTest(rij, orgId))
+      try {
+        meldingen.push(await verwerkTest(rij, orgId))
+      } catch (err) {
+        console.error('[cron-nieuwsbrief] test verwerken mislukt:', rij.id, err)
+        Sentry.captureException(err, { extra: { nieuwsbriefId: rij.id } })
+        meldingen.push(`${rij.id}: mislukt (${err instanceof Error ? err.message : String(err)})`)
+      }
     }
 
     if (meldingen.length > 0) console.log('[cron-nieuwsbrief]', meldingen.join(' | '))
     return res.status(200).json({ ok: true, afgehandeld: meldingen.length, meldingen })
   } catch (err) {
     console.error('[cron-nieuwsbrief] fout:', err)
+    Sentry.captureException(err)
     return res.status(500).json({ error: (err as Error).message })
   }
 }
