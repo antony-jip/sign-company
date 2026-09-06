@@ -323,27 +323,45 @@ async function bewaarPostvak(rij: PostvakRij | null, aantal: number, velden: Rec
 }
 
 /**
- * Kopie van herstelSyncStatus uit api/email-settings.ts: een nieuwe koppeling
- * is het herstelpad na een uitgezette mailbox. Mag het koppelen zelf nooit
- * laten falen.
+ * Kopie van herstelSyncStatus uit api/email-settings.ts, inclusief het filter
+ * per postvak: een nieuwe koppeling is het herstelpad na een uitgezette
+ * mailbox. Zonder dat filter zet postvak 2 herkoppelen ook de storingsmelding
+ * van postvak 1 op 'ok'. Mag het koppelen zelf nooit laten falen.
  */
-async function herstelSyncStatus(userId: string): Promise<void> {
+async function herstelSyncStatus(userId: string, accountId?: string | null): Promise<void> {
   const nu = new Date().toISOString()
   try {
-    const { error: stateErr } = await supabaseAdmin
-      .from('email_sync_state')
-      .update({ status: 'ok', laatste_fout: null, laatste_fout_op: null })
-      .eq('user_id', userId)
+    // Per postvak: zonder dit filter zet het opslaan van postvak A ook de
+    // storingsmelding van postvak B op 'ok' en verdwijnt die uit beeld zonder
+    // dat er iets aan verholpen is. account_id komt uit migratie 245; ontbreekt
+    // de kolom, dan is er per definitie één postvak en klopt het oude filter.
+    const staatFilter = () => {
+      const vraag = supabaseAdmin.from('email_sync_state').update({ status: 'ok', laatste_fout: null, laatste_fout_op: null })
+      return accountId ? vraag.eq('account_id', accountId) : vraag.eq('user_id', userId)
+    }
+    let stateErr = (await staatFilter()).error
+    if (stateErr && accountId && isOnbekendeSleutel(stateErr)) {
+      stateErr = (await supabaseAdmin
+        .from('email_sync_state')
+        .update({ status: 'ok', laatste_fout: null, laatste_fout_op: null })
+        .eq('user_id', userId)).error
+    }
     if (stateErr) console.warn('[mail-oauth-callback] sync-status herstellen mislukt:', stateErr.message)
 
-    const { data: mislukt } = await supabaseAdmin
+    // Eén 'mislukt'-taak terugzetten: de partiele unieke index laat maar één
+    // open taak per mailbox toe, dus niet blind alle rijen tegelijk.
+    const misluktVraag = supabaseAdmin
       .from('mailsync_taken')
       .select('id')
       .eq('user_id', userId)
       .eq('status', 'mislukt')
       .order('updated_at', { ascending: false })
       .limit(1)
-      .maybeSingle()
+    const { data: mislukt } = await (accountId
+      ? misluktVraag.eq('account_id', accountId).maybeSingle().then(async (uit) => (uit.error && isOnbekendeSleutel(uit.error)
+        ? await supabaseAdmin.from('mailsync_taken').select('id').eq('user_id', userId).eq('status', 'mislukt').order('updated_at', { ascending: false }).limit(1).maybeSingle()
+        : uit))
+      : misluktVraag.maybeSingle())
     if (mislukt?.id) {
       const { error: taakErr } = await supabaseAdmin
         .from('mailsync_taken')
@@ -356,6 +374,7 @@ async function herstelSyncStatus(userId: string): Promise<void> {
         .eq('status', 'mislukt')
       if (taakErr && taakErr.code !== '23505') console.warn('[mail-oauth-callback] mailsync-taak terugzetten mislukt:', taakErr.message)
     }
+    // Een wachtende taak meteen aan de beurt, niet pas over drie minuten.
     await supabaseAdmin
       .from('mailsync_taken')
       .update({ scheduled_at: nu, updated_at: nu })
@@ -466,7 +485,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return terug(res, { mail: 'fout', reden: 'opslaan' })
     }
 
-    await herstelSyncStatus(userId)
+    // Welk postvak net gekoppeld is: bij een bestaande rij weten we het al,
+    // bij een nieuwe zoeken we hem op adres terug.
+    const { data: gekoppeld } = await supabaseAdmin
+      .from('user_email_settings')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('gmail_address', velden.gmail_address as string)
+      .limit(1)
+      .maybeSingle()
+    await herstelSyncStatus(userId, (gekoppeld?.id as string) ?? bestaandeRij?.id ?? null)
     return terug(res, { mail: 'gekoppeld' })
   } catch (err) {
     console.error('[mail-oauth-callback] onverwachte fout:', err)
