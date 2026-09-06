@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -33,9 +34,17 @@ import {
   Plus,
   UserCircle,
   Trash2,
+  AlertTriangle,
+  RefreshCw,
+  Bell,
+  ArrowRight,
+  KeyRound,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
+import { useFunctie } from '@/hooks/useFunctie'
+import { useSyncStatus } from '@/lib/mail/hooks'
+import { mailStore } from '@/lib/mail/mailStore'
 import { getBackfillTarget, setBackfillTarget, type BackfillTarget } from '@/services/emailService'
 import { getProfile, getProfielenVoorTeam, getAppSettings, updateAppSettings, getMedewerkers, getEmailTemplates, createEmailTemplate, updateEmailTemplate, deleteEmailTemplate, type EmailTemplate } from '@/services/supabaseService'
 import { isSupabaseConfigured } from '@/services/supabaseClient'
@@ -58,12 +67,137 @@ import { EmailSettings, DEFAULT_EMAIL_SETTINGS, EMAIL_PROVIDER_DEFAULTS } from '
 import type { EmailProvider } from './settingsShared'
 
 const EMAIL_TABS: SubTab[] = [
+  { id: 'verbinding', label: 'Verbinding', icon: Server },
   { id: 'handtekening', label: 'Handtekening', icon: FileText },
   { id: 'templates', label: 'Templates', icon: Mail },
   { id: 'teamleden', label: 'Team Handtekeningen', icon: Users },
-  { id: 'verbinding', label: 'Verbinding', icon: Server },
   { id: 'algemeen', label: 'Algemeen', icon: Mail },
 ]
+
+/* OAuth-knoppen gaan pas aan als de app-registratie bij Google of Microsoft
+   rond is (golf 3). Tot die tijd staat de knop er wel, met "Binnenkort". */
+function oauthAan(sleutel: 'VITE_MAIL_OAUTH_GOOGLE' | 'VITE_MAIL_OAUTH_MICROSOFT'): boolean {
+  const env = import.meta.env as unknown as Record<string, string | undefined>
+  return env[sleutel] === 'aan'
+}
+
+function afleidProvider(smtpHost: string): EmailProvider | null {
+  if (!smtpHost) return null
+  if (smtpHost.includes('office365') || smtpHost.includes('outlook')) return 'outlook'
+  if (smtpHost.includes('gmail')) return 'gmail'
+  return 'overig'
+}
+
+const PROVIDER_KAARTEN: { id: EmailProvider; naam: string; sub: string }[] = [
+  { id: 'gmail', naam: 'Google', sub: 'Gmail en Google Workspace' },
+  { id: 'outlook', naam: 'Microsoft 365 / Outlook.com', sub: 'Exchange Online, Outlook.com, Hotmail' },
+  { id: 'overig', naam: 'Overig', sub: 'Eigen hosting, IMAP en SMTP' },
+]
+
+function OAuthKnop({ label, aan }: { label: string; aan: boolean }) {
+  return (
+    <div className="flex items-center gap-2">
+      <Button type="button" variant="outline" disabled={!aan} className="gap-2" title={aan ? undefined : 'Koppelen met één klik komt binnenkort'}>
+        <KeyRound className="w-4 h-4" />
+        {label}
+      </Button>
+      {!aan && <span className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground">Binnenkort</span>}
+    </div>
+  )
+}
+
+export function relatieveTijd(iso: string, nu: number = Date.now()): string {
+  const verschil = Math.max(0, nu - new Date(iso).getTime())
+  const min = Math.floor(verschil / 60_000)
+  if (min < 1) return 'zojuist'
+  if (min < 60) return `${min} min geleden`
+  const uur = Math.floor(min / 60)
+  if (uur < 24) return `${uur} uur geleden`
+  const dag = Math.floor(uur / 24)
+  if (dag === 1) return 'gisteren'
+  if (dag < 7) return `${dag} dagen geleden`
+  return `op ${new Date(iso).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}`
+}
+
+function MailboxGezondheidKaart({ settings, isConnected }: { settings: EmailSettings; isConnected: boolean }) {
+  const sync = useSyncStatus()
+  const verzondenNaarServer = useFunctie('mail_verzonden_naar_server')
+  const [herstelt, setHerstelt] = useState(false)
+
+  const opnieuwVerbinden = async () => {
+    if (!settings.has_password) {
+      toast.error('Vul hieronder eerst je wachtwoord in en sla op')
+      return
+    }
+    setHerstelt(true)
+    try {
+      const { saveEmailSettingsToDb } = await import('@/services/gmailService')
+      await saveEmailSettingsToDb({
+        gmail_address: settings.gmail_address,
+        app_password: '',
+        smtp_host: settings.smtp_host,
+        smtp_port: settings.smtp_port,
+        imap_host: settings.imap_host,
+        imap_port: settings.imap_port,
+      })
+      await mailStore.laadSyncStatus()
+      toast.success(<>Opnieuw verbonden<span style={{ color: '#F15025' }}>.</span> De volgende synchronisatie start direct.</>)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Opnieuw verbinden mislukt')
+    } finally {
+      setHerstelt(false)
+    }
+  }
+
+  const laatst = sync.laatsteSucces ? relatieveTijd(sync.laatsteSucces) : null
+  const toon = !isConnected
+    ? { kleur: 'neutraal' as const, kop: 'Nog geen mailbox gekoppeld', regel: 'Kies hieronder hoe je koppelt. Daarna lees en verstuur je mail vanuit doen.' }
+    : sync.status === 'uitgezet'
+      ? { kleur: 'rood' as const, kop: 'Synchronisatie uitgezet', regel: sync.laatsteFout || 'De mailserver weigerde te vaak. Controleer je wachtwoord en verbind opnieuw.' }
+      : sync.status === 'fout'
+        ? { kleur: 'oranje' as const, kop: 'Synchronisatie hapert', regel: `${sync.laatsteFout || 'Onbekende fout'}${laatst ? ` · laatst gelukt ${laatst}` : ''}` }
+        : laatst
+          ? { kleur: 'groen' as const, kop: `Gesynchroniseerd · laatst ${laatst}`, regel: 'Nieuwe mail komt binnen zonder dat je iets hoeft te doen.' }
+          : { kleur: 'neutraal' as const, kop: 'Gekoppeld · eerste synchronisatie loopt', regel: 'De eerste ronde haalt je inbox op. Dat duurt een paar minuten.' }
+
+  const stijl = {
+    groen: 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300',
+    oranje: 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300',
+    rood: 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800 text-red-700 dark:text-red-300',
+    neutraal: 'bg-muted/40 border-border text-foreground/80',
+  }[toon.kleur]
+  const Icoon = toon.kleur === 'groen' ? CheckCircle2 : toon.kleur === 'neutraal' ? Info : AlertTriangle
+
+  return (
+    <Card>
+      <CardContent className="p-4 space-y-3">
+        <div className={`flex items-start gap-3 rounded-lg border p-3 ${stijl}`}>
+          <Icoon className="w-4 h-4 mt-0.5 shrink-0" />
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-medium">{toon.kop}</div>
+            <p className="text-xs mt-0.5 opacity-90 break-words">{toon.regel}</p>
+          </div>
+          {(toon.kleur === 'oranje' || toon.kleur === 'rood') && (
+            <Button size="sm" variant="outline" onClick={opnieuwVerbinden} disabled={herstelt} className="gap-1.5 shrink-0 bg-background">
+              <RefreshCw className={`w-3.5 h-3.5 ${herstelt ? 'animate-spin' : ''}`} />
+              {herstelt ? 'Bezig' : 'Opnieuw verbinden'}
+            </Button>
+          )}
+        </div>
+        {isConnected && (
+          <p className="text-xs text-muted-foreground px-1">
+            {verzondenNaarServer
+              ? 'Wat je via doen. verstuurt komt ook in je Verzonden-map. '
+              : 'Wat je via doen. verstuurt blijft nu alleen in doen.; de Verzonden-map van je mailbox krijgt geen kopie. '}
+            <Link to="/instellingen?tab=functies#functie-mail_verzonden_naar_server" className="font-medium text-petrol hover:underline">
+              Schakelaar: Verzonden mail ook in je mailbox
+            </Link>
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
 
 
 const STANDAARD_TEMPLATES = [
@@ -468,7 +602,7 @@ function SignaturePreview({
 export function EmailTab() {
   const { user, isAdmin, session } = useAuth()
   const { refreshSettings, refreshProfile, profile, emailFetchLimit: currentFetchLimit } = useAppSettings()
-  const initialSub = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('sub') || 'handtekening' : 'handtekening'
+  const initialSub = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('sub') || 'verbinding' : 'verbinding'
   const [subTab, setSubTab] = useState(initialSub)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -881,6 +1015,7 @@ export function EmailTab() {
 
       {subTab === 'verbinding' && (
         <div className="space-y-6">
+          <MailboxGezondheidKaart settings={emailSettings} isConnected={emailConnected} />
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -889,18 +1024,11 @@ export function EmailTab() {
               </CardTitle>
               <CardDescription>
                 {emailConnected
-                  ? 'E-mail is verbonden en geconfigureerd'
-                  : 'Configureer SMTP en IMAP om e-mails te verzenden en ontvangen vanuit doen.'}
+                  ? `Gekoppeld als ${emailSettings.gmail_address}`
+                  : 'Koppel je mailbox om e-mail te lezen en te versturen vanuit doen.'}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {emailConnected && (
-                <div className="flex items-center gap-2 p-3 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
-                  <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" />
-                  <span className="text-sm text-green-700 dark:text-green-300">E-mail verbinding actief</span>
-                </div>
-              )}
-
               <div className="p-3 rounded-lg border border-border dark:border-border bg-background dark:bg-muted/30">
                 <div className="flex items-start gap-2">
                   <UserCircle className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
@@ -1022,17 +1150,23 @@ function EmailSettingsInline({
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-  const [provider, setProvider] = useState<EmailProvider>(
-    settings.smtp_host.includes('office365') || settings.smtp_host.includes('outlook') ? 'outlook'
-    : settings.smtp_host.includes('gmail') || !settings.smtp_host ? 'gmail'
-    : 'overig'
-  )
+  const [provider, setProvider] = useState<EmailProvider>(afleidProvider(settings.smtp_host) ?? 'gmail')
+
+  // De instellingen komen na de mount uit de database; dan pas weten we
+  // welke provider hoort bij de opgeslagen server. Een lege host zegt niets.
+  useEffect(() => {
+    const p = afleidProvider(settings.smtp_host)
+    if (p) setProvider(p)
+  }, [settings.smtp_host])
 
   const handleProviderChange = (p: EmailProvider) => {
     setProvider(p)
     const defaults = EMAIL_PROVIDER_DEFAULTS[p]
     setSettings({ ...settings, ...defaults })
   }
+
+  const metServerDefaults = (): EmailSettings =>
+    provider === 'overig' || settings.smtp_host ? settings : { ...settings, ...EMAIL_PROVIDER_DEFAULTS[provider] }
 
   const handleSave = async () => {
     setError('')
@@ -1048,7 +1182,8 @@ function EmailSettingsInline({
       setError('Vul een app-wachtwoord in')
       return
     }
-    if (!settings.smtp_host) {
+    const teBewaren = metServerDefaults()
+    if (!teBewaren.smtp_host) {
       setError('Vul een SMTP server in')
       return
     }
@@ -1058,20 +1193,21 @@ function EmailSettingsInline({
       // Save via API endpoint (server-side encryptie, supabaseAdmin bypass RLS)
       const { saveEmailSettingsToDb, clearEmailCache } = await import('@/services/gmailService')
       await saveEmailSettingsToDb({
-        gmail_address: settings.gmail_address,
-        app_password: settings.app_password,
-        smtp_host: settings.smtp_host,
-        smtp_port: settings.smtp_port,
-        imap_host: settings.imap_host,
-        imap_port: settings.imap_port,
+        gmail_address: teBewaren.gmail_address,
+        app_password: teBewaren.app_password,
+        smtp_host: teBewaren.smtp_host,
+        smtp_port: teBewaren.smtp_port,
+        imap_host: teBewaren.imap_host,
+        imap_port: teBewaren.imap_port,
       })
 
       // Wis de cache van de vorige mailbox zodat de inbox-view alleen nog
       // mails van het zojuist gekoppelde adres toont.
       await clearEmailCache()
+      void mailStore.laadSyncStatus()
 
       // Na opslaan is er een wachtwoord bekend; wachtwoord zelf niet in state/cache houden.
-      const opgeslagen = { ...settings, app_password: '', has_password: true }
+      const opgeslagen = { ...teBewaren, app_password: '', has_password: true }
       setSettings(opgeslagen)
       // Cache in sessionStorage for quick loads · zonder wachtwoord.
       sessionStorage.setItem('doen_email_settings', JSON.stringify(opgeslagen))
@@ -1098,14 +1234,15 @@ function EmailSettingsInline({
 
     try {
       const { testEmailConnection } = await import('@/services/gmailService')
+      const teTesten = metServerDefaults()
       const result = await testEmailConnection(
-        settings.gmail_address,
-        settings.app_password,
+        teTesten.gmail_address,
+        teTesten.app_password,
         {
-          smtp_host: settings.smtp_host,
-          smtp_port: settings.smtp_port,
-          imap_host: settings.imap_host,
-          imap_port: settings.imap_port,
+          smtp_host: teTesten.smtp_host,
+          smtp_port: teTesten.smtp_port,
+          imap_host: teTesten.imap_host,
+          imap_port: teTesten.imap_port,
         }
       )
 
@@ -1148,89 +1285,112 @@ function EmailSettingsInline({
           <div className="w-8 h-8 bg-flame/10 dark:bg-flame/20 rounded-lg flex items-center justify-center">
             <Mail className="w-4 h-4 text-flame" />
           </div>
-          E-mail Instellingen
+          Mailbox koppelen
         </CardTitle>
         <CardDescription>
-          Configureer SMTP (verzenden) en IMAP (ontvangen) om e-mails te beheren vanuit doen.
+          Kies waar je mail staat. Google en Microsoft vullen de servers zelf in; bij Overig vul je IMAP en SMTP in.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {/* Provider keuze */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">E-mail provider</Label>
-            <div className="flex gap-2">
-              {([['gmail', 'Gmail'], ['outlook', 'Outlook / Microsoft 365'], ['overig', 'Overig']] as const).map(([key, label]) => (
+          <div className="grid gap-3 sm:grid-cols-3">
+            {PROVIDER_KAARTEN.map((k) => {
+              const actief = provider === k.id
+              return (
                 <button
-                  key={key}
-                  onClick={() => handleProviderChange(key)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${provider === key ? 'bg-petrol text-white border-petrol' : 'bg-card text-foreground/70 border-border hover:border-petrol/30'}`}
+                  key={k.id}
+                  type="button"
+                  onClick={() => handleProviderChange(k.id)}
+                  aria-pressed={actief}
+                  className={`text-left rounded-xl border p-3.5 transition-colors ${actief ? 'border-petrol bg-petrol/[0.06] ring-1 ring-petrol' : 'border-border bg-card hover:border-petrol/40'}`}
                 >
-                  {label}
+                  <div className={`text-sm font-semibold ${actief ? 'text-petrol' : 'text-foreground'}`}>{k.naam}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{k.sub}</div>
                 </button>
-              ))}
+              )
+            })}
+          </div>
+
+          {provider === 'gmail' && (
+            <div className="rounded-lg border border-border bg-muted/30 p-3.5 space-y-3">
+              <OAuthKnop label="Aanmelden met Google" aan={oauthAan('VITE_MAIL_OAUTH_GOOGLE')} />
+              <div className="text-xs text-foreground/80 space-y-1.5">
+                <p className="font-medium text-foreground">Nu koppelen met een app-wachtwoord</p>
+                <ol className="list-decimal pl-4 space-y-1">
+                  <li>Zet <strong>2-stapsverificatie</strong> aan op je Google-account.</li>
+                  <li>
+                    Maak een app-wachtwoord op{' '}
+                    <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener noreferrer" className="underline inline-flex items-center gap-0.5 text-petrol">
+                      Google App-wachtwoorden <ExternalLink className="w-3 h-3" />
+                    </a>
+                    .
+                  </li>
+                  <li>Plak de 16 tekens hieronder bij Wachtwoord en sla op.</li>
+                </ol>
+              </div>
             </div>
-          </div>
-
-          <Separator />
-
-          {/* SMTP Server */}
-          <div className="space-y-2">
-            <Label htmlFor="smtp_host" className="flex items-center gap-2 text-sm font-medium">
-              <Server className="w-3.5 h-3.5 text-muted-foreground" />
-              SMTP Serveradres
-            </Label>
-            <Input
-              id="smtp_host"
-              placeholder={provider === 'outlook' ? 'smtp.office365.com' : 'smtp.gmail.com'}
-              value={settings.smtp_host}
-              onChange={(e) => setSettings({ ...settings, smtp_host: e.target.value })}
-            />
-          </div>
-
-          {/* Port + Encryption row */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="smtp_port" className="text-sm font-medium">
-                Poort
-              </Label>
-              <Input
-                id="smtp_port"
-                type="number"
-                placeholder="587"
-                value={settings.smtp_port}
-                onChange={(e) => setSettings({ ...settings, smtp_port: parseInt(e.target.value) || 587 })}
-              />
+          )}
+          {provider === 'outlook' && (
+            <div className="rounded-lg border border-border bg-muted/30 p-3.5 space-y-3">
+              <OAuthKnop label="Aanmelden met Microsoft" aan={oauthAan('VITE_MAIL_OAUTH_MICROSOFT')} />
+              <p className="text-xs text-foreground/80">
+                Microsoft staat wachtwoord-login niet meer toe; zodra de knop actief is, koppel je in twee klikken.
+                Heeft je beheerder SMTP AUTH en IMAP nog aanstaan, dan werkt een app-wachtwoord hieronder soms nog.
+              </p>
             </div>
-          </div>
+          )}
 
-          {/* IMAP Server */}
-          <div className="space-y-2">
-            <Label htmlFor="imap_host" className="flex items-center gap-2 text-sm font-medium">
-              <Server className="w-3.5 h-3.5 text-muted-foreground" />
-              IMAP Serveradres (inbox ontvangen)
-            </Label>
-            <Input
-              id="imap_host"
-              placeholder={provider === 'outlook' ? 'outlook.office365.com' : 'imap.gmail.com'}
-              value={settings.imap_host}
-              onChange={(e) => setSettings({ ...settings, imap_host: e.target.value })}
-            />
-          </div>
-
-          {/* IMAP Port */}
-          <div className="space-y-2">
-            <Label htmlFor="imap_port" className="text-sm font-medium">
-              IMAP Poort
-            </Label>
-            <Input
-              id="imap_port"
-              type="number"
-              placeholder="993"
-              value={settings.imap_port}
-              onChange={(e) => setSettings({ ...settings, imap_port: parseInt(e.target.value) || 993 })}
-            />
-          </div>
+          {provider === 'overig' && (
+            <>
+              <Separator />
+              <div className="space-y-2">
+                <Label htmlFor="smtp_host" className="flex items-center gap-2 text-sm font-medium">
+                  <Server className="w-3.5 h-3.5 text-muted-foreground" />
+                  SMTP Serveradres (verzenden)
+                </Label>
+                <Input
+                  id="smtp_host"
+                  placeholder="smtp.jouwhosting.nl"
+                  value={settings.smtp_host}
+                  onChange={(e) => setSettings({ ...settings, smtp_host: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="smtp_port" className="text-sm font-medium">Poort</Label>
+                  <Input
+                    id="smtp_port"
+                    type="number"
+                    placeholder="587"
+                    value={settings.smtp_port}
+                    onChange={(e) => setSettings({ ...settings, smtp_port: parseInt(e.target.value) || 587 })}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="imap_host" className="flex items-center gap-2 text-sm font-medium">
+                  <Server className="w-3.5 h-3.5 text-muted-foreground" />
+                  IMAP Serveradres (ontvangen)
+                </Label>
+                <Input
+                  id="imap_host"
+                  placeholder="imap.jouwhosting.nl"
+                  value={settings.imap_host}
+                  onChange={(e) => setSettings({ ...settings, imap_host: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="imap_port" className="text-sm font-medium">IMAP Poort</Label>
+                <Input
+                  id="imap_port"
+                  type="number"
+                  placeholder="993"
+                  value={settings.imap_port}
+                  onChange={(e) => setSettings({ ...settings, imap_port: parseInt(e.target.value) || 993 })}
+                />
+              </div>
+            </>
+          )}
 
           <Separator />
 
@@ -1255,7 +1415,7 @@ function EmailSettingsInline({
               <Lock className="w-3.5 h-3.5 text-muted-foreground" />
               Wachtwoord / App Wachtwoord
               {settings.has_password && !settings.app_password && (
-                <span className="text-xs font-normal text-muted-foreground">— ingesteld, laat leeg om ongewijzigd te laten</span>
+                <span className="text-xs font-normal text-muted-foreground">ingesteld, laat leeg om ongewijzigd te laten</span>
               )}
             </Label>
             <div className="relative">
@@ -1276,61 +1436,28 @@ function EmailSettingsInline({
             </div>
           </div>
 
-          {/* Provider-specifieke instructies */}
           {provider === 'gmail' && (
-            <div className="rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 p-3">
+            <div className="rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-3">
               <div className="flex gap-2">
-                <Info className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
-                  <p className="font-medium">Gmail instellen</p>
+                <Info className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                <div className="text-xs text-amber-700 dark:text-amber-300 space-y-1">
+                  <p className="font-medium">SPF-record</p>
                   <p>
-                    Gebruik een <strong>App Wachtwoord</strong> in plaats van je gewone wachtwoord.
-                    Ga naar{' '}
-                    <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener noreferrer" className="underline inline-flex items-center gap-0.5">
-                      Google App Wachtwoorden <ExternalLink className="w-3 h-3" />
-                    </a>{' '}
-                    om er een aan te maken. 2FA moet ingeschakeld zijn.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-          {provider === 'outlook' && (
-            <div className="rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 p-3">
-              <div className="flex gap-2">
-                <Info className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
-                  <p className="font-medium">Outlook / Microsoft 365 instellen</p>
-                  <p>
-                    Gebruik een <strong>App Wachtwoord</strong>. Ga naar{' '}
-                    <a href="https://account.live.com/proofs/AppPassword" target="_blank" rel="noopener noreferrer" className="underline inline-flex items-center gap-0.5">
-                      Microsoft App Wachtwoorden <ExternalLink className="w-3 h-3" />
-                    </a>{' '}
-                    om er een aan te maken. 2FA moet ingeschakeld zijn.
-                  </p>
-                  <p>
-                    Voor <strong>Microsoft 365 zakelijk</strong>: je beheerder moet SMTP AUTH inschakelen.
-                    Ga naar Admin Center &rarr; Users &rarr; Mail &rarr; "Authenticated SMTP".
+                    Mail je vanaf een eigen domein via Google, zet dan <code className="bg-amber-100 dark:bg-amber-900 px-1 rounded">include:_spf.google.com</code> in
+                    het SPF-record van je domein. Anders belandt je offerte bij de klant in de spam.
                   </p>
                 </div>
               </div>
             </div>
           )}
 
-          {/* SPF Record info */}
-          <div className="rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-3">
-            <div className="flex gap-2">
-              <Info className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
-              <div className="text-xs text-amber-700 dark:text-amber-300 space-y-1">
-                <p className="font-medium">SPF Record</p>
-                <p>
-                  Zorg dat je domein een geldig SPF record heeft om te voorkomen dat e-mails
-                  als spam worden gemarkeerd. Voeg <code className="bg-amber-100 dark:bg-amber-900 px-1 rounded">include:_spf.google.com</code> toe
-                  aan je DNS SPF record.
-                </p>
-              </div>
-            </div>
-          </div>
+          <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Bell className="w-3.5 h-3.5" />
+            Meldingen bij nieuwe mail regel je onder{' '}
+            <Link to="/instellingen?tab=meldingen" className="font-medium text-petrol hover:underline inline-flex items-center gap-0.5">
+              Account, Meldingen <ArrowRight className="w-3 h-3" />
+            </Link>
+          </p>
 
           {/* Error/Success messages */}
           {error && (
