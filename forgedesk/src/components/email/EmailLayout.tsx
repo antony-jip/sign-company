@@ -537,7 +537,14 @@ export function EmailLayout() {
           {/* De lijst houdt altijd dezelfde breedte en het leesvenster staat er
               altijd naast. Een lijst die over de volle breedte uitrekt leest
               als een muur tekst. */}
-          <div className="flex w-[470px] max-w-[46%] flex-shrink-0 flex-col border-r border-border/70">
+          <div
+            className={cn(
+              'flex max-w-[46%] flex-shrink-0 flex-col border-r border-border/70 transition-[width] duration-200',
+              // Staat de klantkaart open, dan levert de lijst ruimte in; anders
+              // houdt de mail zelf te weinig breedte over.
+              klantkaartAan && geselecteerd ? 'w-[330px]' : 'w-[470px]',
+            )}
+          >
             <div className="px-3 pt-3 pb-2 border-b border-border/60 flex-shrink-0">
               <Zoekbalk
                 tekst={zoektekst}
@@ -588,7 +595,11 @@ export function EmailLayout() {
               <div className="flex flex-1 min-h-0 flex-col">{composerNode}</div>
             ) : geselecteerdId ? (
               <>
-                {leesvenster}
+                {/* De kaart schuift over het leesvenster; de mail houdt zijn
+                    eigen ruimte zodat de titel er niet onder verdwijnt. */}
+                <div className={cn('flex flex-1 min-h-0 flex-col', klantkaartAan && geselecteerd && 'lg:pr-[340px]')}>
+                  {leesvenster}
+                </div>
                 {klantkaartAan && geselecteerd && (
                   <Klantkaart
                     mail={geselecteerd}
