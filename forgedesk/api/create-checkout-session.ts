@@ -35,6 +35,12 @@ const PAKKET_PRIJZEN: Record<string, { amount: number; credits: number; naam: st
   enterprise: { amount: 11900, credits: 200, naam: 'Enterprise · 200 credits' },
 }
 
+async function isRateLimited(key: string, maxCount: number, windowSeconds: number): Promise<boolean> {
+  const { data, error } = await supabaseAdmin.rpc('check_rate_limit', { p_key: key, p_max_count: maxCount, p_window_seconds: windowSeconds })
+  if (error) console.error('[create-checkout-session] check_rate_limit faalde:', error)
+  return data === true
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
@@ -47,6 +53,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const user = await verifyUser(req)
+
+    if (await isRateLimited(`create-checkout-session:${user.id}`, 10, 3600)) {
+      return res.status(429).json({ error: 'Te veel verzoeken. Probeer het later opnieuw.' })
+    }
 
     const { pakket_id, success_url } = req.body as {
       pakket_id: string
