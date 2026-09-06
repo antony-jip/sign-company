@@ -184,6 +184,10 @@ export async function getPostvakGezondheid(postvakken: Postvak[]): Promise<Recor
 export interface PostvakInvoer {
   /** Bestaand postvak bijwerken. Leeg laten koppelt er een nieuwe. */
   accountId?: string
+  /** Expliciet een postvak toevoegen. Zonder dit werkt de server het bestaande
+   *  postvak bij, ook als het adres in het formulier gewijzigd is (van mailbox
+   *  wisselen). Alleen de UI weet welke van de twee bedoeld is. */
+  nieuw?: boolean
   adres: string
   /** Leeg = wachtwoord ongewijzigd; de server houdt de opgeslagen versie. */
   wachtwoord: string
@@ -213,13 +217,14 @@ async function sessieToken(): Promise<string> {
  */
 export async function slaPostvakOp(invoer: PostvakInvoer): Promise<void> {
   const token = await sessieToken()
-  const vooraf = invoer.accountId ? [] : await getPostvakken().catch(() => [])
+  const vooraf = invoer.nieuw ? await getPostvakken().catch(() => []) : []
 
   const res = await fetch('/api/email-settings', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     body: JSON.stringify({
       ...(invoer.accountId ? { account_id: invoer.accountId } : {}),
+      ...(invoer.nieuw ? { nieuw: true } : {}),
       gmail_address: invoer.adres,
       app_password: invoer.wachtwoord || 'UNCHANGED',
       smtp_host: invoer.smtpHost || 'smtp.gmail.com',
@@ -231,7 +236,7 @@ export async function slaPostvakOp(invoer: PostvakInvoer): Promise<void> {
   const antwoord: { error?: string; account_id?: string | null } = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(antwoord?.error || `Opslaan mislukt: ${res.status}`)
 
-  if (invoer.accountId || vooraf.length === 0) return
+  if (!invoer.nieuw || vooraf.length === 0) return
   const bekend = new Set(vooraf.map((p) => p.id))
   if (antwoord.account_id && bekend.has(antwoord.account_id)) {
     throw new Error('De server heeft je bestaande postvak bijgewerkt in plaats van er een toe te voegen. Een tweede postvak kan pas nadat migratie 246 gedraaid is; controleer het adres van je postvak hierboven.')

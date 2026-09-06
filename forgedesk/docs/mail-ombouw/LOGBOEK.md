@@ -328,3 +328,9 @@ Op Trigger.dev (dashboard, environment prod) voor de IDLE-werker:
 - Mijn kant vangt het op in plaats van het stil te laten gebeuren: `slaPostvakOp` vergelijkt het `account_id` uit het antwoord met de ids die er vóór de POST al waren, en meldt in het formulier dat de server het bestaande postvak heeft bijgewerkt. Een tweede controle telt de postvakken vóór en na.
 - Op te lossen door de regie, niet door mij (het bestand is niet van mij): laat POST een nieuw postvak maken zodra de client dat vraagt. Een expliciet signaal in de body is het schoonst; zonder afspraak daarover blijft 1 → 2 hangen op de melding hierboven.
 - Poorten na dit werk: `npx tsc --noEmit` = 28 (ongewijzigd), `npm run build` groen, `npm run test:run` 683 groen (674 + 9 van de sync-agent).
+
+## Postvak 2: de naad tussen client en api (regie)
+
+- De api-agent liet POST zonder `account_id` het bestaande postvak bijwerken, want zonder signaal is "één postvak bijwerken" niet te onderscheiden van "postvak toevoegen". De instellingen-agent zag dat en meldde het. Opgelost met een expliciete `nieuw`-vlag: alleen het formulier weet of je een postvak toevoegt of een adres wijzigt (dat laatste is van mailbox wisselen). Bestaat het adres al, dan geeft de api 409 in plaats van een duplicaat.
+- Migratie 247 geschreven: `mailsync_taken_open_unique` wordt `(user_id, COALESCE(account_id, user_id), folder, soort)`. Zonder die wijziging krijgt postvak 2 nooit een sync-taak, want postvak 1 bezet de enige plek. De COALESCE houdt taken zonder `account_id` op user_id ontdubbeld; NULL is in een unieke index anders distinct.
+- Volgorde voor de uitrol: deployen, dan 245, dan 247, dan pas 246. 246 haalt de oude sleutels weg waar de terugval-ladder op leunt; die ladder moet eerst bewezen draaien.

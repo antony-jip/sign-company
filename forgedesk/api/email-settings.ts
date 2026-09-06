@@ -371,6 +371,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const userId = await verifyUser(req)
     const { gmail_address, app_password, smtp_host, smtp_port, imap_host, imap_port, auth_type } = req.body
     const gevraagdAccountId = typeof req.body?.account_id === 'string' && req.body.account_id ? req.body.account_id : null
+    // De client zegt expliciet of dit een nieuw postvak is. Zonder dat signaal
+    // is "één bestaand postvak" niet te onderscheiden van "postvak toevoegen",
+    // en zou toevoegen het eerste postvak overschrijven.
+    const wilNieuw = req.body?.nieuw === true
 
     if (!gmail_address) {
       return res.status(400).json({ error: 'Email adres is verplicht' })
@@ -392,12 +396,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(404).json({ error: 'Dit postvak bestaat niet of hoort niet bij jou.' })
       }
       doelPostvakId = gevraagdAccountId
+    } else if (wilNieuw) {
+      if (opAdres) {
+        return res.status(409).json({ error: 'Dit adres is al gekoppeld als postvak.' })
+      }
+      doelPostvakId = null
     } else if (bestaandeRijen.length === 1) {
       doelPostvakId = (bestaandeRijen[0].id as string) ?? null
     } else if (opAdres) {
       doelPostvakId = (opAdres.id as string) ?? null
     }
-    const wordtNieuwPostvak = !doelPostvakId && bestaandeRijen.length > 0
+    const wordtNieuwPostvak = !doelPostvakId && (bestaandeRijen.length > 0 || wilNieuw)
 
     const gevraagdAuthType = auth_type === 'google' || auth_type === 'microsoft' || auth_type === 'wachtwoord'
       ? (auth_type as string)

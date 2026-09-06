@@ -1477,6 +1477,7 @@ function EmailSettingsInline({
       const { clearEmailCache } = await import('@/services/gmailService')
       await slaPostvakOp({
         accountId: nieuw ? undefined : accountId,
+        nieuw,
         adres: teBewaren.gmail_address,
         wachtwoord: teBewaren.app_password,
         smtpHost: teBewaren.smtp_host,
