@@ -311,6 +311,77 @@ async function bewaarInVerzonden(opts: {
   }
 }
 
+// ── Outbox (contract sectie 5) ───────────────────────────────────────────
+type SmtpFoutSoort = 'auth' | 'tijdelijk' | 'definitief'
+
+// nodemailer zet code EAUTH bij een geweigerde login en responseCode op de
+// SMTP-statuscode. 4xx is per RFC 5321 tijdelijk, 5xx definitief; 535 is de
+// uitzondering die auth betekent.
+function classificeerSmtpFout(err: unknown): SmtpFoutSoort {
+  const e = (err ?? {}) as { code?: string; responseCode?: number; message?: string }
+  const melding = e.message || ''
+  if (e.responseCode === 535 || e.code === 'EAUTH' || /invalid credentials|username and password not accepted|authentication failed|invalid login/i.test(melding)) {
+    return 'auth'
+  }
+  if (e.code === 'ECONNECTION' || e.code === 'ETIMEDOUT' || e.code === 'ESOCKET' || e.code === 'EDNS' || e.code === 'ECONNRESET') {
+    return 'tijdelijk'
+  }
+  if (typeof e.responseCode === 'number' && e.responseCode >= 400 && e.responseCode < 500) return 'tijdelijk'
+  if (/timeout|timed out|econnrefused|enotfound|econnreset|socket|greeting/i.test(melding)) return 'tijdelijk'
+  return 'definitief'
+}
+
+async function schrijfOutboxRij(rij: {
+  user_id: string
+  to: string
+  cc?: string
+  bcc?: string
+  subject: string
+  body?: string
+  html?: string
+  bijlagen: unknown[]
+  in_reply_to?: string
+  thread_id?: string
+  wacht_op_reactie: boolean
+}): Promise<string | null> {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('ingeplande_berichten')
+      .insert({
+        user_id: rij.user_id,
+        ontvanger: rij.to,
+        cc: rij.cc || null,
+        bcc: rij.bcc || null,
+        onderwerp: rij.subject,
+        body: rij.body || null,
+        html: rij.html || null,
+        bijlagen: rij.bijlagen,
+        scheduled_at: new Date().toISOString(),
+        status: 'verwerken',
+        bron: 'outbox',
+        in_reply_to: rij.in_reply_to || null,
+        thread_id: rij.thread_id || null,
+        wacht_op_reactie: rij.wacht_op_reactie,
+      })
+      .select('id')
+      .single()
+    if (error) {
+      console.warn('[send-email] outbox-rij schrijven mislukt:', error.message)
+      return null
+    }
+    return (data?.id as string) || null
+  } catch (err) {
+    console.warn('[send-email] outbox-rij schrijven gooide:', err instanceof Error ? err.message : err)
+    return null
+  }
+}
+
+async function werkOutboxBij(id: string | null, patch: Record<string, unknown>): Promise<void> {
+  if (!id) return
+  const { error } = await supabaseAdmin.from('ingeplande_berichten').update(patch).eq('id', id)
+  if (error) console.warn('[send-email] outbox-rij bijwerken mislukt:', error.message)
+}
+
 export const config = { maxDuration: 30 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -528,12 +599,56 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       mailOptions.attachments = allAttachments
     }
 
+    // ─── Outbox: de verzending zichtbaar maken vóór hij begint ───
+    // Een rij in ingeplande_berichten met bron 'outbox'. Status 'verwerken'
+    // (de check-constraint van migratie 120 kent geen 'verzenden'); blijft
+    // hij hangen, dan zet cron-verzend-geplande-berichten hem na tien minuten
+    // op 'mislukt' met een melding. Bijlage-inhoud gaat niet mee: deze rij
+    // wordt nooit door de cron opnieuw verstuurd, hij is administratie.
+    const outboxId = await schrijfOutboxRij({
+      user_id, to, cc, bcc, subject, body, html,
+      bijlagen: (attachments || []).map(({ content: _content, ...rest }) => rest),
+      in_reply_to, thread_id, wacht_op_reactie,
+    })
+
     // Vaste datum en, na verzending, hetzelfde Message-ID: de MIME voor de
     // Verzonden-map wordt apart opgebouwd en moet byte voor byte dezelfde
     // headers dragen als wat de ontvanger kreeg.
     mailOptions.date = new Date()
-    const sendResult = await transporter.sendMail(mailOptions)
+    let sendResult: Awaited<ReturnType<typeof transporter.sendMail>>
+    try {
+      sendResult = await transporter.sendMail(mailOptions)
+    } catch (smtpErr) {
+      const soort = classificeerSmtpFout(smtpErr)
+      const melding = smtpErr instanceof Error ? smtpErr.message : String(smtpErr)
+      const foutmelding = soort === 'auth' ? 'Wachtwoord geweigerd door de mailserver'
+        : soort === 'tijdelijk' ? `Mailserver tijdelijk niet bereikbaar: ${melding.slice(0, 200)}`
+        : melding.slice(0, 300)
+      await werkOutboxBij(outboxId, { status: 'mislukt', foutmelding })
+      console.error('[send-email] SMTP mislukt:', soort, melding)
+      Sentry.captureException(smtpErr, { tags: { phase: 'smtp-send', soort } })
+
+      if (soort === 'auth') {
+        // Niet opnieuw proberen: elke poging met een fout wachtwoord is een
+        // stap dichter bij een blokkade door de provider. Melding zodat de
+        // gebruiker het ziet, ook als hij het venster al dicht heeft.
+        const { error: notifErr } = await supabaseAdmin.from('notificaties').insert({
+          user_id,
+          type: 'algemeen',
+          titel: 'Mail niet verzonden',
+          bericht: `"${subject}" aan ${to} is niet verzonden: de mailserver weigerde je wachtwoord. Controleer je mailkoppeling in Instellingen.`,
+          link: '/instellingen',
+          gelezen: false,
+        })
+        if (notifErr) console.error('[send-email] notificatie mislukt:', notifErr)
+        return res.status(401).json({ error: 'De mailserver weigerde je wachtwoord. Controleer je mailkoppeling in Instellingen.', outboxId })
+      }
+      // 502: de client houdt zijn eigen retry-pad (outbox) voor tijdelijke
+      // storingen; alles anders is 500 en wordt niet herhaald.
+      return res.status(soort === 'tijdelijk' ? 502 : 500).json({ error: foutmelding, outboxId })
+    }
     const sentMessageId = sendResult.messageId || null
+    await werkOutboxBij(outboxId, { status: 'verzonden', verzonden_op: new Date().toISOString(), foutmelding: null })
 
     let verzondenUid: number | null = null
     let verzondenMap: string | null = null
@@ -662,7 +777,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    return res.status(200).json({ success: true, message: 'Email verzonden' })
+    return res.status(200).json({ success: true, message: 'Email verzonden', outboxId })
   } catch (error: unknown) {
     if ((error as Error).message === 'Niet geautoriseerd' || (error as Error).message === 'Ongeldige sessie') {
       return res.status(401).json({ error: (error as Error).message })

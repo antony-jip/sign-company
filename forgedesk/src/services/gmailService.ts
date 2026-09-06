@@ -83,19 +83,6 @@ async function enqueueOutbox(to: string, subject: string, body: string, options?
     const { data: { session } } = await supabase.auth.getSession()
     if (!session?.user?.id) return false
 
-    // Server kan de mail WEL verstuurd hebben terwijl alleen de response
-    // wegviel — send-email persisteert verzonden mails in `emails`, dus
-    // check de verzonden-map van de laatste minuten voordat we enqueuen.
-    const { data: netVerzonden } = await supabase
-      .from('emails')
-      .select('id')
-      .eq('user_id', session.user.id)
-      .eq('map', 'verzonden')
-      .eq('onderwerp', subject)
-      .gte('datum', new Date(Date.now() - 5 * 60_000).toISOString())
-      .limit(1)
-    if (netVerzonden && netVerzonden.length > 0) return false
-
     // Dedup: nooit twee outbox-rijen voor dezelfde mail (dubbele clicks,
     // races, herhaalde fouten op rij).
     const { data: bestaand } = await supabase
@@ -132,9 +119,14 @@ async function enqueueOutbox(to: string, subject: string, body: string, options?
   }
 }
 
-/** Statussen waarbij opnieuw proberen zin heeft (alles behalve client-fouten). */
+/**
+ * Alleen 502 gaat de outbox in: send-email geeft die bij een tijdelijke
+ * SMTP-storing en schrijft zelf al een outbox-rij op 'mislukt'. Een 401
+ * (wachtwoord geweigerd) of 500 (definitief afgewezen) herhalen heeft geen zin
+ * en zou bij een fout wachtwoord de provider tot een blokkade drijven.
+ */
 function isQueueableStatus(status: number): boolean {
-  return status === 429 || status >= 500
+  return status === 502
 }
 
 export async function sendEmail(
