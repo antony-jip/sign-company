@@ -2288,6 +2288,18 @@ export function FacturenLayout() {
   }, [facturen])
 
   // ============ RENDER ============
+  const isMobiel = useMediaQuery('(max-width: 767px)')
+  const paginaRef = useRef<HTMLDivElement>(null)
+  const scrollDoel = useScrollContainer(paginaRef)
+  const { afstand: trekAfstand, bezig: trekBezig, gereed: trekGereed } = usePullToRefresh({
+    doel: scrollDoel,
+    actief: isMobiel && !editingFactuur && !viewingFactuur,
+    onRefresh: async () => {
+      hapticLight()
+      await stilVerversen()
+    },
+  })
+
 
   if (isLoading) {
     return (
@@ -2307,17 +2319,6 @@ export function FacturenLayout() {
     )
   }
 
-  const isMobiel = useMediaQuery('(max-width: 767px)')
-  const paginaRef = useRef<HTMLDivElement>(null)
-  const scrollDoel = useScrollContainer(paginaRef)
-  const { afstand: trekAfstand, bezig: trekBezig, gereed: trekGereed } = usePullToRefresh({
-    doel: scrollDoel,
-    actief: isMobiel && !editingFactuur && !viewingFactuur,
-    onRefresh: async () => {
-      hapticLight()
-      await stilVerversen()
-    },
-  })
 
   return (
     <div ref={paginaRef} className="relative -m-3 sm:-m-4 md:-m-6">

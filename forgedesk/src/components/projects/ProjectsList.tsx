@@ -885,6 +885,17 @@ export function ProjectsList() {
     const metAandacht = projecten.filter(needsAttention).length
     return { actief, teFactureren, afgerond, metAandacht }
   }, [projecten])
+  const paginaRef = useRef<HTMLDivElement>(null)
+  const scrollDoel = useScrollContainer(paginaRef)
+  const { afstand: trekAfstand, bezig: trekBezig, gereed: trekGereed } = usePullToRefresh({
+    doel: scrollDoel,
+    actief: isMobiel,
+    onRefresh: async () => {
+      hapticLight()
+      await fetchData()
+    },
+  })
+
 
   if (isLoading) {
     return (
@@ -980,16 +991,6 @@ export function ProjectsList() {
   }
 
 
-  const paginaRef = useRef<HTMLDivElement>(null)
-  const scrollDoel = useScrollContainer(paginaRef)
-  const { afstand: trekAfstand, bezig: trekBezig, gereed: trekGereed } = usePullToRefresh({
-    doel: scrollDoel,
-    actief: isMobiel,
-    onRefresh: async () => {
-      hapticLight()
-      await fetchData()
-    },
-  })
 
   return (
     <div ref={paginaRef} className="relative -m-3 sm:-m-4 md:-m-6">
