@@ -112,6 +112,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(403).json({ error: 'Dit teamlid hoort niet bij jouw organisatie' })
     }
 
+    // De eigenaar van de organisatie is niet door een mede-admin te
+    // degraderen of te deactiveren; anders kan een admin de eigenaar
+    // buitensluiten van zijn eigen abonnement.
+    if (action === 'update_rol' || action === 'deactiveer') {
+      const { data: org } = await supabaseAdmin
+        .from('organisaties')
+        .select('eigenaar_id')
+        .eq('id', requesterProfile.organisatie_id)
+        .maybeSingle()
+      if (org?.eigenaar_id && org.eigenaar_id === profile_id) {
+        return res.status(403).json({ error: 'De eigenaar van de organisatie kan niet worden gedegradeerd of gedeactiveerd' })
+      }
+    }
+
     const auditBase = {
       organisatie_id: requesterProfile.organisatie_id,
       actor_user_id: userId,
