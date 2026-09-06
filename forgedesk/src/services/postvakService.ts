@@ -1,7 +1,7 @@
 import { supabase, isSupabaseConfigured } from './supabaseClient'
 import { getOrgId } from './supabaseHelpers'
 import { logger } from '@/utils/logger'
-import type { Postvak, PostvakSoort } from '@/lib/mail/types'
+import type { Postvak, PostvakSoort, SyncStatus } from '@/lib/mail/types'
 
 /**
  * De postvakken van deze gebruiker plus de gedeelde postvakken van de
@@ -134,6 +134,51 @@ export async function hernoem(id: string, naam: string): Promise<void> {
   if (!schoon) throw new Error('Geef het postvak een naam')
   const { error } = await supabase.from('user_email_settings').update({ naam: schoon }).eq('id', id)
   if (error) throw new Error(vertaalFout(error))
+}
+
+/**
+ * De gezondheid per postvak, uit `email_sync_state` (rij inbox). `account_id`
+ * op die tabel komt uit migratie 245: zonder die kolom is er één rij voor de
+ * hele gebruiker, en dan krijgt elk postvak diezelfde stand. Postvakken zonder
+ * rij hebben nog nooit gesynchroniseerd en staan er niet in.
+ */
+export async function getPostvakGezondheid(postvakken: Postvak[]): Promise<Record<string, SyncStatus>> {
+  if (!isSupabaseConfigured() || !supabase || postvakken.length === 0) return {}
+  const client = supabase
+  const { data: { session } } = await client.auth.getSession()
+  const userId = session?.user?.id
+  if (!userId) return {}
+
+  const alsStatus = (rij: { status?: string | null; laatste_fout?: string | null; laatste_succes_op?: string | null }): SyncStatus => ({
+    status: (rij.status as SyncStatus['status']) || 'ok',
+    laatsteFout: rij.laatste_fout || undefined,
+    laatsteSucces: rij.laatste_succes_op || undefined,
+  })
+
+  const perPostvak = await client
+    .from('email_sync_state')
+    .select('account_id, status, laatste_fout, laatste_succes_op')
+    .eq('user_id', userId)
+    .eq('folder', 'inbox')
+  if (!perPostvak.error) {
+    const uit: Record<string, SyncStatus> = {}
+    type Gezondheidsrij = { account_id: string | null; status?: string | null; laatste_fout?: string | null; laatste_succes_op?: string | null }
+    for (const rij of (perPostvak.data || []) as Gezondheidsrij[]) {
+      if (rij.account_id) uit[rij.account_id] = alsStatus(rij)
+    }
+    if (Object.keys(uit).length > 0) return uit
+  }
+
+  const enkel = await client
+    .from('email_sync_state')
+    .select('status, laatste_fout, laatste_succes_op')
+    .eq('user_id', userId)
+    .eq('folder', 'inbox')
+    .limit(1)
+    .maybeSingle()
+  if (enkel.error || !enkel.data) return {}
+  const status = alsStatus(enkel.data)
+  return Object.fromEntries(postvakken.map((p) => [p.id, status]))
 }
 
 export interface PostvakInvoer {
