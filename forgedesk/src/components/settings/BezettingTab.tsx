@@ -163,8 +163,11 @@ export function BezettingTab({ medewerkers, contracten, verlof, onNaarWerktijden
           cel.contract += uren;
           if (uren > 0) {
             const status = resolveAfwezig(afwezigIndex, m.id, dag, i);
-            const heleDagAfwezig = status.afwezig && !(status.start_tijd && status.eind_tijd);
-            if (heleDagAfwezig) cel.afwezig += uren;
+            const deelStart = status.afwezig ? minuten(status.start_tijd) : null;
+            const deelEind = status.afwezig ? minuten(status.eind_tijd) : null;
+            const deelDag = deelStart != null && deelEind != null && deelEind > deelStart;
+            if (status.afwezig && !deelDag) cel.afwezig += uren;
+            else if (deelDag) cel.afwezig += Math.min(uren, (deelEind - deelStart) / 60);
             else if (verlof.some((v) => v.medewerker_id === m.id && v.status === 'goedgekeurd' && v.start_datum <= dag && dag <= v.eind_datum)) cel.verlof += uren;
             else if (isSluitingsdag(dag)) cel.sluiting += uren;
           }
