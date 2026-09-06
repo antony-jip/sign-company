@@ -2983,7 +2983,7 @@ export function FactuurEditor() {
   // ============ RENDER ============
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-24 md:pb-0">
       <div className="px-4 md:px-8 pt-3">
         <BackButton fallbackPath="/facturen" />
       </div>
@@ -4415,6 +4415,45 @@ export function FactuurEditor() {
         </div>
       )}
       <TrialGuardDialog open={showTrialDialog} onOpenChange={setShowTrialDialog} />
+
+      {/* Vaste onderbalk op mobiel: totaal ex btw en dezelfde acties als de kop.
+          Blijft vrij van de Daan-knop plus de safe-area. */}
+      {!isReadOnly && (
+        <div
+          className="md:hidden fixed inset-x-0 z-30 bg-card/95 backdrop-blur-xl border-t border-border px-4 py-3 flex items-center gap-2 bottom-[calc(3.5rem+env(safe-area-inset-bottom))]"
+          style={{ boxShadow: '0 -4px 16px rgba(0,0,0,0.04)' }}
+        >
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Totaal ex btw</p>
+            <p className="text-[16px] font-bold font-mono tabular-nums text-foreground truncate">{formatCurrency(subtotaal)}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => handleSave(false)}
+            disabled={isSaving || ketenBezig}
+            className={cn(
+              'tap-press h-11 px-4 inline-flex items-center gap-1.5 text-[14px] font-semibold rounded-lg transition-colors disabled:opacity-50 flex-shrink-0',
+              currentStatus === 'concept'
+                ? 'border border-border bg-card text-foreground hover:bg-muted'
+                : 'bg-petrol text-white hover:bg-[#0F3D44]',
+            )}
+          >
+            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            {isEditMode ? 'Bijwerken' : 'Opslaan'}
+          </button>
+          {currentStatus === 'concept' && (
+            <button
+              type="button"
+              onClick={() => handleSave(true)}
+              disabled={isSaving || ketenBezig}
+              className="tap-press h-11 px-4 inline-flex items-center gap-1.5 text-[14px] font-semibold rounded-lg bg-flame text-white hover:bg-flame/90 shadow-[0_2px_8px_rgba(241,80,37,0.25)] transition-colors disabled:opacity-50 flex-shrink-0"
+            >
+              <Send className="h-4 w-4" />
+              Verwerken
+            </button>
+          )}
+        </div>
+      )}
     </div>
   )
 }

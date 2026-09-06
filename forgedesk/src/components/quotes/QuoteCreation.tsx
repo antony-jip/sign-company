@@ -2189,7 +2189,7 @@ export function QuoteCreation() {
   // ────────────────────────────────────────────────────────────────────
   return (
     <div className="relative -m-3 sm:-m-4 md:-m-6 -mb-20 md:-mb-6 min-h-full" style={{ backgroundColor: 'hsl(var(--background))' }}>
-    <div className="relative pb-6 px-4 md:px-6 pt-0">
+    <div className="relative pb-24 md:pb-6 px-4 md:px-6 pt-0">
       {/* ──── HEADER BAR ──── */}
       <QuoteHeader
         isEditMode={isEditMode}
@@ -3014,6 +3014,36 @@ export function QuoteCreation() {
           }}
         />
       )}
+
+      {/* Vaste onderbalk op mobiel: totaal ex btw en dezelfde acties als de zijbalk.
+          Blijft vrij van de Daan-knop plus de safe-area. */}
+      <div
+        className="md:hidden fixed inset-x-0 z-30 bg-card/95 backdrop-blur-xl border-t border-border px-4 py-3 flex items-center gap-2 bottom-[calc(3.5rem+env(safe-area-inset-bottom))]"
+        style={{ boxShadow: '0 -4px 16px rgba(0,0,0,0.04)' }}
+      >
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Totaal ex btw</p>
+          <p className="text-[16px] font-bold font-mono tabular-nums text-foreground truncate">{formatCurrency(effectieveTotalen.subtotaal)}</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => saveOfferte('concept')}
+          disabled={isSaving}
+          className="tap-press h-11 px-4 inline-flex items-center gap-1.5 text-[14px] font-semibold rounded-lg bg-petrol text-white hover:bg-[#0F3D44] transition-colors disabled:opacity-50 flex-shrink-0"
+        >
+          <Save className="h-4 w-4" />
+          {isSaving ? 'Opslaan...' : 'Opslaan'}
+        </button>
+        <button
+          type="button"
+          onClick={handleVerstuurOfferte}
+          disabled={isSaving}
+          className="tap-press h-11 px-4 inline-flex items-center gap-1.5 text-[14px] font-semibold rounded-lg bg-flame text-white hover:bg-[#E04520] shadow-[0_2px_8px_rgba(241,80,37,0.25)] transition-colors disabled:opacity-50 flex-shrink-0"
+        >
+          <Send className="h-4 w-4" />
+          Verstuur
+        </button>
+      </div>
     </div>
   )
 }
