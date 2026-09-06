@@ -52,6 +52,19 @@ const APP_FEATURES = [
 
 const CHANGELOG: ChangelogEntry[] = [
   {
+    versie: '1.6.2',
+    datum: '6 september 2026',
+    label: 'Nieuw',
+    titel: 'Tweede postvak koppelen',
+    beschrijving: 'Lees je naast je eigen adres ook studio@ of info@? Die koppel je nu zelf onder Instellingen, E-mail, Verbinding.',
+    features: [
+      { titel: 'Postvak toevoegen', beschrijving: 'Boven het formulier staat de lijst met je postvakken, met onderaan "Postvak toevoegen". Provider kiezen, adres en app-wachtwoord invullen, testen, opslaan.' },
+      { titel: 'Hernoemen en standaard', beschrijving: 'Geef een postvak een naam als Studio, en wijs aan welk postvak standaard is. Een gedeeld postvak van het team staat er met het label gedeeld bij.' },
+      { titel: 'Ontkoppelen zonder mail kwijt te raken', beschrijving: 'Ontkoppelen haalt alleen de koppeling en het wachtwoord weg. De mail van dat postvak blijft in doen. staan.' },
+      { titel: 'Alles blijft bij het oude met één postvak', beschrijving: 'Heb je één mailbox, dan verandert er niets: geen lijst, geen kiezer, geen Van-regel.' },
+    ],
+  },
+  {
     versie: '1.6.1',
     datum: '6 september 2026',
     label: 'Nieuw',
