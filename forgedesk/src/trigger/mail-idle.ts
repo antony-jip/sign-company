@@ -56,6 +56,11 @@ const START_INTERVAL_MIN = 10
 // blokkeert accounts die dat wel doen.
 const FOUT_DREMPEL = 3
 const STRAF_MS = 60 * 60 * 1000
+// Een ronde die geen minuut haalt is geen ronde maar een mislukte verbinding.
+// Zonder deze grens gaf "connect lukt, verbinding valt meteen daarna weg" een
+// lus van machinestarts: succes stond al weggeschreven, close vuurde zonder
+// fout en de volgende ronde werd meteen ingepland.
+const KORTE_RONDE_MS = 60_000
 
 /**
  * Alles wat niet terminaal is telt als "er loopt al iets". PENDING_VERSION
@@ -390,15 +395,23 @@ export const mailIdleWerker: MailIdleTaak = task({
 
     try { await client.logout() } catch { /* al dicht */ }
 
-    if (verbindingsFout) {
-      await schrijfIdleFout(supabase, lading.userId, verbindingsFout, vorigeTeller)
+    const duurMs = Date.now() - begonnenOp
+    // Een korte ronde telt als verbindingsfout, ook als `close` zonder fout
+    // vuurde. Anders liep de foutteller nooit op en grepen FOUT_DREMPEL en
+    // STRAF_MS nooit in.
+    const teKort = duurMs < KORTE_RONDE_MS
+    if (verbindingsFout || teKort) {
+      const melding = verbindingsFout || `verbinding viel na ${Math.round(duurMs / 1000)} s weg`
+      await schrijfIdleFout(supabase, lading.userId, melding, vorigeTeller)
+      if (teKort) logger.warn('IDLE-ronde te kort, niet opnieuw ingepland', { userId: lading.userId, duurMs, melding })
     }
 
     // Zichzelf opnieuw inplannen. Het kind wordt getriggerd vóór deze run
     // afloopt, zodat de starttaak hem meteen als lopend ziet en er nooit twee
-    // verbindingen naast elkaar staan.
+    // verbindingen naast elkaar staan. Na een te korte ronde niet: die wacht
+    // op de starttaak, die de straftijd kent.
     let opnieuw = false
-    if (maxPostvakken() > 0) {
+    if (maxPostvakken() > 0 && !teKort) {
       try {
         await tasks.trigger<MailIdleTaak>(TAAK_ID, { userId: lading.userId, ronde: (lading.ronde ?? 1) + 1 }, {
           tags: ['mail-idle', `mailbox:${lading.userId}`],
@@ -410,7 +423,7 @@ export const mailIdleWerker: MailIdleTaak = task({
       }
     }
 
-    return { events, syncs, duurMs: Date.now() - begonnenOp, opnieuw }
+    return { events, syncs, duurMs, opnieuw, reden: teKort ? 'te-kort' : undefined }
   },
 })
 
