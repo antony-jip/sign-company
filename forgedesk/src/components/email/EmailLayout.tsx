@@ -55,6 +55,8 @@ const IngeplandeBerichtenLijst = lazy(() => import('./IngeplandeBerichtenLijst')
 interface ComposerStand {
   document: ComposerDocument
   variant: ComposerVariant
+  /** Alleen bij heropenen na ongedaan maken: de File-objecten van de bijlagen. */
+  bestanden?: Map<string, File>
 }
 
 /**
@@ -413,10 +415,11 @@ export function EmailLayout() {
     <Composer
       document={composer.document}
       variant={composer.variant}
+      bestanden={composer.bestanden}
       losstaand={composer.variant === 'inline' && !geselecteerdId}
       onVerzonden={naVerzenden}
       onSluiten={sluitComposer}
-      onHeropen={(doc) => zetComposer({ document: doc, variant: isDesktop ? 'inline' : 'volledig' })}
+      onHeropen={(doc, bestanden) => zetComposer({ document: doc, variant: isDesktop ? 'inline' : 'volledig', bestanden })}
     />
   ) : null
 

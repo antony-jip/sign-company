@@ -40,8 +40,15 @@ export interface ComposerProps {
   variant: ComposerVariant
   onVerzonden: (emailId: string) => void
   onSluiten: () => void
-  /** Ongedaan maken, of Bewerken na inplannen: open de composer opnieuw met dit document. */
-  onHeropen?: (document: ComposerDocument) => void
+  /**
+   * Ongedaan maken, of Bewerken na inplannen: open de composer opnieuw met dit
+   * document. De File-objecten gaan mee, want die leven alleen in het geheugen
+   * van de composer die net ontmanteld is; zonder hen zou de tweede verzending
+   * de bijlagen missen.
+   */
+  onHeropen?: (document: ComposerDocument, bestanden?: Map<string, File>) => void
+  /** Bijlagen uit een eerdere composer-sessie, op naam::grootte. */
+  bestanden?: Map<string, File>
 }
 
 type Actie =
@@ -113,7 +120,7 @@ function IngeplandToast({ label, onBewerk }: { label: string; onBewerk?: () => v
   )
 }
 
-export function Composer({ document: initieel, variant, onVerzonden, onSluiten, onHeropen, losstaand }: ComposerProps) {
+export function Composer({ document: initieel, variant, onVerzonden, onSluiten, onHeropen, losstaand, bestanden: bestandenInitieel }: ComposerProps) {
   const navigate = useNavigate()
   const isMobiel = useMediaQuery('(max-width: 767px)')
   const venster = useVisueleViewport(variant === 'volledig')
@@ -133,7 +140,7 @@ export function Composer({ document: initieel, variant, onVerzonden, onSluiten, 
   const linkKnopRef = useRef<LinkInvoegHandle>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const aanInputRef = useRef<HTMLInputElement>(null)
-  const bestandenRef = useRef(new Map<string, File>())
+  const bestandenRef = useRef(new Map<string, File>(bestandenInitieel))
   const gepauzeerdRef = useRef(false)
 
   const [toonCc, setToonCc] = useState(initieel.cc.length > 0)
@@ -324,7 +331,7 @@ export function Composer({ document: initieel, variant, onVerzonden, onSluiten, 
             <IngeplandToast
               label={label || ''}
               onBewerk={onHeropen ? () => {
-                const heropen = () => onHeropen({ ...d, verzendOp: undefined })
+                const heropen = () => onHeropen({ ...d, verzendOp: undefined }, ctx.bestanden)
                 if (!ingeplandId) { heropen(); return }
                 cancelIngeplandBericht(ingeplandId).then(heropen).catch(() => toast.error('Inplanning annuleren mislukt'))
               } : undefined}
@@ -346,7 +353,7 @@ export function Composer({ document: initieel, variant, onVerzonden, onSluiten, 
         seconden: undoAan ? undoSeconden : 0,
         onder: naar,
         opvolgen: d.opvolgen,
-        onOngedaan: () => onHeropen?.({ ...d, verzendOp: undefined }),
+        onOngedaan: () => onHeropen?.({ ...d, verzendOp: undefined }, ctx.bestanden),
       },
     )
   }, [conceptId, handtekeningHtml, onSluiten, onVerzonden, onHeropen, undoAan, undoSeconden])

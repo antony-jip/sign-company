@@ -95,8 +95,10 @@ export async function bouwVerzending(doc: ComposerDocument, ctx: VerzendContext)
   for (const b of doc.bijlagen) {
     if (b.bron === 'upload') {
       const file = ctx.bestanden.get(bestandSleutel(b.naam, b.grootte))
-      if (file) uploads.push(file)
-      else toast.warning(`Bijlage "${b.naam}" is niet meer beschikbaar en gaat niet mee`)
+      // Fail-closed: liever een zichtbare fout dan een mail die zonder de
+      // beloofde bijlage bij de klant aankomt.
+      if (!file) throw new Error(`Bijlage "${b.naam}" is niet meer beschikbaar; voeg hem opnieuw toe`)
+      uploads.push(file)
     } else if (b.bron === 'storage' && b.pad) {
       attachments.push({ filename: b.naam, storagePath: b.pad, size: b.grootte, cleanupAfter: false })
     } else if (b.bron === 'origineel' && b.emailId) {
