@@ -25,6 +25,11 @@ interface NoemStand {
 
 const MAX_ZOEK = 30
 
+// user_id → naam zoals hij is ingevoegd, zodat stuurNoemMeldingen bij opslaan
+// kan zien of de @naam nog in de tekst staat. Module-breed: de ouder bewaart
+// alleen ids en hoeft de medewerkerslijst niet te kennen.
+const namenPerUser = new Map<string, string>()
+
 function zoekNoemStand(tekst: string, cursor: number): NoemStand | null {
   const voor = tekst.slice(0, cursor)
   const at = voor.lastIndexOf('@')
@@ -61,6 +66,10 @@ export const NoemTextarea = forwardRef<HTMLTextAreaElement, NoemTextareaProps>(f
   const [stand, setStand] = useState<NoemStand | null>(null)
   const [actief, setActief] = useState(0)
   const gekozenRef = useRef<Set<string>>(new Set())
+
+  useEffect(() => {
+    for (const m of medewerkers) if (m.user_id) namenPerUser.set(m.user_id, m.naam)
+  }, [medewerkers])
 
   const kandidaten = useMemo(() => {
     if (!stand) return []
@@ -158,20 +167,29 @@ export const NoemTextarea = forwardRef<HTMLTextAreaElement, NoemTextareaProps>(f
   )
 })
 
+/** Alleen wie nog als @naam in de tekst staat; een weggehaalde @ meldt niets. */
+export function nogGenoemd(userIds: string[], tekst: string): string[] {
+  return userIds.filter((id) => {
+    const naam = namenPerUser.get(id)
+    return !!naam && tekst.includes(`@${naam}`)
+  })
+}
+
 /**
  * Meldt de genoemde collega's via api/noem-collega (service_role, want
  * notificaties zijn user-only). Best effort: een mislukte melding mag het
  * opslaan van de notitie niet breken.
  */
 export async function stuurNoemMeldingen(input: { userIds: string[]; tekst: string; link: string; bron: string }): Promise<void> {
-  if (input.userIds.length === 0 || !supabase) return
+  const userIds = nogGenoemd(input.userIds, input.tekst)
+  if (userIds.length === 0 || !supabase) return
   try {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session?.access_token) return
     const respons = await fetch('/api/noem-collega', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-      body: JSON.stringify({ userIds: input.userIds, tekst: input.tekst.slice(0, 300), link: input.link, bron: input.bron }),
+      body: JSON.stringify({ userIds, tekst: input.tekst.slice(0, 300), link: input.link, bron: input.bron }),
     })
     if (!respons.ok) logger.warn('[noemen] melding versturen mislukt:', respons.status)
   } catch (err) {
