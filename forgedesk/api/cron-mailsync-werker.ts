@@ -725,6 +725,29 @@ function logUitkomst(taak: Taak, status: string, melding: string, foutSoort: str
   }
 }
 
+/**
+ * De dodebrievenbus zichtbaar maken (migratie 244): email_sync_state is
+ * client-leesbaar, mailsync_taken niet. De instellingenpagina toont
+ * 'uitgezet' met de laatste fout, en opnieuw opslaan zet hem terug op 'ok'.
+ */
+async function zetMailboxUitgezet(userId: string, foutSoort: string | null, melding: string) {
+  const omschrijving = foutSoort === 'auth' ? 'Wachtwoord geweigerd'
+    : foutSoort === 'netwerk' ? 'Server onbereikbaar'
+    : melding.slice(0, 120)
+  const nu = new Date().toISOString()
+  const { error } = await supabaseAdmin
+    .from('email_sync_state')
+    .upsert({
+      user_id: userId,
+      folder: 'inbox',
+      status: 'uitgezet',
+      laatste_fout: omschrijving,
+      laatste_fout_op: nu,
+      updated_at: nu,
+    }, { onConflict: 'user_id,folder' })
+  if (error) console.warn('[cron-mailsync-werker] status uitgezet schrijven mislukt:', { userId, fout: error.message })
+}
+
 export const config = { maxDuration: 60 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -815,6 +838,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             updated_at: new Date().toISOString(),
           })
           logUitkomst(taak, gevolg.status, `http ${respons.status}`, gevolg.fout_soort)
+          if (gevolg.status === 'mislukt') await zetMailboxUitgezet(taak.user_id, gevolg.fout_soort, tekst)
           return { taak, uitkomst: 'mislukt' as const, status: gevolg.status }
         }
 
@@ -846,6 +870,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           updated_at: new Date().toISOString(),
         })
         logUitkomst(taak, gevolg.status, melding, gevolg.fout_soort)
+        if (gevolg.status === 'mislukt') await zetMailboxUitgezet(taak.user_id, gevolg.fout_soort, melding)
         return { taak, uitkomst: 'mislukt' as const, status: gevolg.status }
       }
     }))

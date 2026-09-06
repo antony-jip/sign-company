@@ -2,6 +2,34 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { ImapFlow } from 'imapflow'
 import crypto from 'crypto'
 import { createClient } from '@supabase/supabase-js'
+import * as Sentry from '@sentry/node'
+
+// ── Sentry init (inline; Vercel bundelt geen lokale modules in api/) ──
+if (process.env.SENTRY_DSN && !Sentry.getClient()) {
+  const SENS = /password|app_password|encrypted_app_password|betaal_token|payment_token|access_token|refresh_token|mollie_api_key|authorization|cookie|secret|api_key|to|cc|bcc|email/i
+  const scrub = (v: unknown, d = 0): unknown => {
+    if (d > 6 || v == null) return v
+    if (Array.isArray(v)) return v.map(x => scrub(x, d + 1))
+    if (typeof v === 'object') {
+      const o: Record<string, unknown> = {}
+      for (const [k, val] of Object.entries(v as Record<string, unknown>)) o[k] = SENS.test(k) ? '[Filtered]' : scrub(val, d + 1)
+      return o
+    }
+    return v
+  }
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.VERCEL_ENV || process.env.NODE_ENV || 'development',
+    tracesSampleRate: 0.1,
+    sendDefaultPii: false,
+    beforeSend(event) {
+      if (event.request?.headers) for (const k of Object.keys(event.request.headers)) if (/authorization|cookie/i.test(k)) (event.request.headers as Record<string, string>)[k] = '[Filtered]'
+      if (event.request?.data) event.request.data = scrub(event.request.data) as typeof event.request.data
+      if (event.user) { delete event.user.ip_address; delete event.user.email }
+      return event
+    },
+  })
+}
 
 const supabaseAdmin = createClient(
   process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '',
@@ -577,6 +605,67 @@ async function tikSyncTijdstip(user_id: string, mapValue: string): Promise<void>
   }
 }
 
+// ── Gezondheid per mailbox (migratie 244) ─────────────────────────────────
+// De client leest status/laatste_fout van de INBOX-rij en toont die in de
+// instellingen. Korte Nederlandse omschrijvingen; de ruwe melding gaat naar
+// de logs en Sentry, niet naar het scherm.
+const GEZONDHEID_AUTH = /authenticationfailed|invalid credentials|auth(?:enticatie)?\s*(?:mislukt|geweigerd|failed)|login failed|wachtwoord|password|application-specific/i
+const GEZONDHEID_TIMEOUT = /timeout|timed out|etimedout|greeting/i
+const GEZONDHEID_NETWERK = /econnrefused|enotfound|eai_again|econnreset|socket|network|unreachable|ehostunreach|epipe/i
+
+function korteFoutOmschrijving(err: unknown): string {
+  const melding = err instanceof Error ? err.message : String(err)
+  if (GEZONDHEID_AUTH.test(melding)) return 'Wachtwoord geweigerd'
+  if (GEZONDHEID_TIMEOUT.test(melding)) return 'Time-out'
+  if (GEZONDHEID_NETWERK.test(melding)) return 'Server onbereikbaar'
+  const klasse = (err as { code?: string })?.code || (err instanceof Error ? err.name : 'Fout')
+  return `${klasse}: ${melding.slice(0, 120)}`
+}
+
+// Mailbox-brede fouten horen op de INBOX-rij, ook als de Verzonden-ronde ze
+// tegenkwam; een mapspecifieke fout blijft bij zijn eigen map.
+function isMailboxBreed(omschrijving: string): boolean {
+  return omschrijving === 'Wachtwoord geweigerd' || omschrijving === 'Time-out' || omschrijving === 'Server onbereikbaar'
+}
+
+async function schrijfGezondheid(
+  user_id: string,
+  folder: string,
+  uitkomst: { ok: true } | { ok: false; omschrijving: string },
+): Promise<void> {
+  const nu = new Date().toISOString()
+  try {
+    if (uitkomst.ok) {
+      // Partieel: bestaat de rij niet, dan is dat een no-op en zet de
+      // state-upsert verderop hem alsnog neer.
+      await supabaseAdmin
+        .from('email_sync_state')
+        .update({ status: 'ok', laatste_fout: null, laatste_succes_op: nu })
+        .eq('user_id', user_id)
+        .eq('folder', folder)
+      return
+    }
+    // Upsert: een mailbox die nooit geslaagd is heeft nog geen rij, en juist
+    // die moet zijn fout kunnen tonen. last_seen_uid blijft 0, dus de
+    // volgende ronde bootstrapt gewoon.
+    const doelen = isMailboxBreed(uitkomst.omschrijving) && folder !== 'inbox' ? [folder, 'inbox'] : [folder]
+    for (const doel of doelen) {
+      await supabaseAdmin
+        .from('email_sync_state')
+        .upsert({
+          user_id,
+          folder: doel,
+          status: 'fout',
+          laatste_fout: uitkomst.omschrijving,
+          laatste_fout_op: nu,
+          updated_at: nu,
+        }, { onConflict: 'user_id,folder' })
+    }
+  } catch (err) {
+    console.warn('[fetch-emails] gezondheid schrijven mislukt:', err instanceof Error ? err.message : err)
+  }
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
@@ -663,6 +752,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (total === 0) {
       // Een lege mailbox is wel bekeken, dus hij hoort achteraan in de wachtrij.
       await tikSyncTijdstip(user_id, mapValue)
+      await schrijfGezondheid(user_id, mapValue, { ok: true })
       await client.logout()
       return res.status(200).json({ synced: 0, total: 0, fetched: 0 })
     }
@@ -1122,6 +1212,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         uidvalidity: uidValidity,
         last_seen_uid: nieuweLastSeen,
         updated_at: new Date().toISOString(),
+        status: 'ok',
+        laatste_fout: null,
+        laatste_succes_op: new Date().toISOString(),
       }
       if (!stateBruikbaar) {
         stateRow.backfill_low_uid = minUidGezien > 0 ? minUidGezien : null
@@ -1152,12 +1245,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // introduceren die dit blok moet vermijden.
       const { error: tikErr } = await supabaseAdmin
         .from('email_sync_state')
-        .update({ updated_at: new Date().toISOString() })
+        .update({ updated_at: new Date().toISOString(), status: 'ok', laatste_fout: null, laatste_succes_op: new Date().toISOString() })
         .eq('user_id', user_id)
         .eq('folder', mapValue)
       if (tikErr) {
         console.warn('[fetch-emails] sync-tijdstip bijwerken mislukt:', tikErr.message)
       }
+    } else if (errors.length > 0) {
+      await schrijfGezondheid(user_id, mapValue, { ok: false, omschrijving: `Opslaan mislukt: ${errors[0].slice(0, 100)}` })
     }
 
     // ─── Sales Inbox auto-match v2 ───
@@ -1361,10 +1456,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(401).json({ synced: 0, total: 0, error: msg })
     }
     console.error('[fetch-emails] Fatal error:', error)
+    Sentry.captureException(error, { tags: { folder: mapValueVoorTik || 'onbekend' } })
     // Ook een mislukte poging is een poging. Zonder deze tik bezet een account
     // met een verlopen app-password of een onbereikbare server voor altijd een
     // van de acht plekken per cron-ronde.
-    if (userIdVoorTik && mapValueVoorTik) await tikSyncTijdstip(userIdVoorTik, mapValueVoorTik)
+    if (userIdVoorTik && mapValueVoorTik) {
+      await tikSyncTijdstip(userIdVoorTik, mapValueVoorTik)
+      await schrijfGezondheid(userIdVoorTik, mapValueVoorTik, { ok: false, omschrijving: korteFoutOmschrijving(error) })
+    }
     return res.status(500).json({ synced: 0, total: 0, error: msg })
   } finally {
     // Ensure IMAP connection is always closed

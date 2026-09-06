@@ -79,6 +79,54 @@ function decrypt(encryptedText: string): string {
   }
 }
 
+/**
+ * Opnieuw opslaan is het herstelpad na een uitgezette mailbox (contract
+ * sectie 5): de gezondheid gaat terug naar 'ok' en de mailsync-taak wordt
+ * weer 'wachtend', zodat de werker de mailbox de eerstvolgende ronde meeneemt.
+ * Mag het opslaan zelf nooit laten falen.
+ */
+async function herstelSyncStatus(userId: string): Promise<void> {
+  const nu = new Date().toISOString()
+  try {
+    const { error: stateErr } = await supabaseAdmin
+      .from('email_sync_state')
+      .update({ status: 'ok', laatste_fout: null, laatste_fout_op: null })
+      .eq('user_id', userId)
+    if (stateErr) console.warn('[email-settings] sync-status herstellen mislukt:', stateErr.message)
+
+    // Eén 'mislukt'-taak terugzetten: de partiele unieke index laat maar één
+    // open taak per mailbox toe, dus niet blind alle rijen tegelijk.
+    const { data: mislukt } = await supabaseAdmin
+      .from('mailsync_taken')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('status', 'mislukt')
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (mislukt?.id) {
+      const { error: taakErr } = await supabaseAdmin
+        .from('mailsync_taken')
+        .update({
+          status: 'wachtend', retry_count: 0, uitstel_count: 0, fout_soort: null, foutmelding: null,
+          gemeld_op: null, geclaimd_op: null, geclaimd_door: null, lease_tot: null,
+          scheduled_at: nu, updated_at: nu,
+        })
+        .eq('id', mislukt.id)
+        .eq('status', 'mislukt')
+      if (taakErr && taakErr.code !== '23505') console.warn('[email-settings] mailsync-taak terugzetten mislukt:', taakErr.message)
+    }
+    // Een wachtende taak meteen aan de beurt, niet pas over drie minuten.
+    await supabaseAdmin
+      .from('mailsync_taken')
+      .update({ scheduled_at: nu, updated_at: nu })
+      .eq('user_id', userId)
+      .eq('status', 'wachtend')
+  } catch (err) {
+    console.warn('[email-settings] herstelSyncStatus gooide:', err instanceof Error ? err.message : err)
+  }
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
 
@@ -174,6 +222,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         console.error('Supabase update fout:', JSON.stringify(error))
         return res.status(500).json({ error: `Kon email instellingen niet opslaan: ${error.message || error.code || JSON.stringify(error)}` })
       }
+      await herstelSyncStatus(userId)
       return res.status(200).json({ success: true, message: 'Email instellingen opgeslagen' })
     }
 
@@ -203,6 +252,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: `Kon email instellingen niet opslaan: ${error.message || error.code || JSON.stringify(error)}` })
     }
 
+    await herstelSyncStatus(userId)
     return res.status(200).json({ success: true, message: 'Email instellingen opgeslagen' })
   } catch (error: unknown) {
     console.error('Email settings fout:', error)
