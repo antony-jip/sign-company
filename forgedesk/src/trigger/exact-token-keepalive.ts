@@ -137,6 +137,7 @@ export const exactTokenKeepaliveCron = schedules.task({
   maxDuration: 300,
   run: async (payload) => {
     const supabase = getSupabaseAdmin();
+    const DEADLINE_MS = 240_000;
 
     const grens = new Date(Date.now() - MAX_STILTE_DAGEN * 24 * 60 * 60 * 1000).toISOString();
 
@@ -163,8 +164,15 @@ export const exactTokenKeepaliveCron = schedules.task({
     let ververst = 0;
     let afgewezen = 0;
     let overgeslagen = 0;
+    const gestart = Date.now();
 
     for (const rij of tokens) {
+      // Ruim binnen maxDuration (300 s) stoppen: een afgebroken refresh
+      // laat een dode keten achter, een overgeslagen rij komt morgen terug.
+      if (Date.now() - gestart > DEADLINE_MS) {
+        logger.warn("Exact keepalive: tijd op, rest wacht tot morgen", { overgebleven: tokens.length - ververst - afgewezen - overgeslagen });
+        break;
+      }
       try {
         const credentials = await laadCredentials(supabase, rij.user_id);
         if (!credentials) {
