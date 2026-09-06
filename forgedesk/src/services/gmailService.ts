@@ -545,14 +545,16 @@ export interface EmailSettingsData {
   auth_type?: MailAuthType
   /** Of er een refresh-token ligt. De tokens zelf verlaten de server nooit. */
   has_oauth?: boolean
+  /** Welk postvak dit is (user_email_settings.id, migratie 245). */
+  account_id?: string
 }
 
 export type MailAuthType = 'wachtwoord' | 'google' | 'microsoft'
 
-export async function loadEmailSettingsFromDb(): Promise<EmailSettingsData | null> {
+export async function loadEmailSettingsFromDb(accountId?: string): Promise<EmailSettingsData | null> {
   try {
     const token = await getAuthToken()
-    const response = await fetch('/api/email-settings', {
+    const response = await fetch(`/api/email-settings${accountId ? `?account_id=${encodeURIComponent(accountId)}` : ''}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -570,6 +572,7 @@ export async function loadEmailSettingsFromDb(): Promise<EmailSettingsData | nul
     return {
       gmail_address: data.gmail_address,
       app_password: '',
+      account_id: data.account_id || undefined,
       has_password: !!data.has_password,
       auth_type: (data.auth_type as MailAuthType) || 'wachtwoord',
       has_oauth: !!data.has_oauth,
@@ -595,6 +598,7 @@ export async function saveEmailSettingsToDb(settings: EmailSettingsData): Promis
     },
     body: JSON.stringify({
       gmail_address: settings.gmail_address,
+      account_id: settings.account_id,
       // Leeg wachtwoord = ongewijzigd: stuur sentinel zodat de server de
       // bestaande versleutelde waarde behoudt in plaats van hem te wissen.
       app_password: settings.app_password || 'UNCHANGED',
@@ -612,10 +616,10 @@ export async function saveEmailSettingsToDb(settings: EmailSettingsData): Promis
   }
 }
 
-export async function deleteEmailSettingsFromDb(): Promise<void> {
+export async function deleteEmailSettingsFromDb(accountId?: string): Promise<void> {
   const token = await getAuthToken()
 
-  await fetch('/api/email-settings', {
+  await fetch(`/api/email-settings${accountId ? `?account_id=${encodeURIComponent(accountId)}` : ''}`, {
     method: 'DELETE',
     headers: {
       'Authorization': `Bearer ${token}`,
