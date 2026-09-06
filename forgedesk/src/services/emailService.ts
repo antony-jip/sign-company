@@ -39,10 +39,22 @@ export async function setBackfillTarget(target: BackfillTarget): Promise<void> {
     backfill_done: false,
     updated_at: nu,
   }))
-  const { error } = await supabase
+  // Migratie 246 laat de sleutel (user_id, folder) vallen ten gunste van
+  // (account_id, folder). Zonder deze tweede poging geeft PostgREST dan 42P10
+  // en werkt "hoe ver terug" niet meer.
+  const eerste = await supabase
     .from('email_sync_state')
     .upsert(rows, { onConflict: 'user_id,folder' })
-  if (error) throw new Error(error.message)
+  if (!eerste.error) return
+  if (eerste.error.code !== '42P10' && !/no unique or exclusion constraint/i.test(eerste.error.message || '')) {
+    throw new Error(eerste.error.message)
+  }
+  const perPostvak = await supabase
+    .from('email_sync_state')
+    .update({ backfill_target: target, backfill_done: false, updated_at: nu })
+    .eq('user_id', session.user.id)
+    .in('folder', ['inbox', 'verzonden'])
+  if (perPostvak.error) throw new Error(perPostvak.error.message)
 }
 
 // ============ EMAIL CACHING ============
@@ -395,14 +407,35 @@ export async function getThreadInfos(threadIds: string[], accountId?: string | n
     if (error) return []
     return (data || []) as Rij[]
   }))
-  return resultaten.flat().map((r) => ({
-    threadId: r.thread_id,
-    laatsteDatum: r.laatste_datum,
-    aantal: r.aantal,
-    ongelezen: r.ongelezen,
-    laatsteEmailId: r.laatste_email_id,
-    deelnemers: r.deelnemers || [],
-  }))
+  // In de stand "Alle postvakken" gaat de query zonder account_id-filter en
+  // levert dezelfde thread één rij per postvak op. Die horen bij elkaar
+  // opgeteld te worden; wie ze alleen mapt houdt de laatste rij over en toont
+  // de teller van één postvak.
+  const perThread = new Map<string, ThreadInfo>()
+  for (const r of resultaten.flat()) {
+    const bestaand = perThread.get(r.thread_id)
+    if (!bestaand) {
+      perThread.set(r.thread_id, {
+        threadId: r.thread_id,
+        laatsteDatum: r.laatste_datum,
+        aantal: r.aantal,
+        ongelezen: r.ongelezen,
+        laatsteEmailId: r.laatste_email_id,
+        deelnemers: r.deelnemers || [],
+      })
+      continue
+    }
+    const nieuwer = r.laatste_datum > bestaand.laatsteDatum
+    perThread.set(r.thread_id, {
+      threadId: r.thread_id,
+      laatsteDatum: nieuwer ? r.laatste_datum : bestaand.laatsteDatum,
+      aantal: bestaand.aantal + r.aantal,
+      ongelezen: bestaand.ongelezen + r.ongelezen,
+      laatsteEmailId: nieuwer ? r.laatste_email_id : bestaand.laatsteEmailId,
+      deelnemers: [...new Set([...bestaand.deelnemers, ...(r.deelnemers || [])])],
+    })
+  }
+  return [...perThread.values()]
 }
 
 /** Gezondheid van de eigen mailbox, uit email_sync_state (rij inbox). */
@@ -411,21 +444,33 @@ export async function getSyncStatus(): Promise<SyncStatus> {
   if (!isSupabaseConfigured() || !supabase) return standaard
   const uid = await eigenUserId()
   if (!uid) return standaard
+  // Geen maybeSingle: met twee postvakken staan er twee inbox-rijen en dan gaf
+  // die PGRST116, waarna de banner permanent op "onbekend" stond. De slechtste
+  // stand van de postvakken telt, want dat is de mailbox waar iets aan de hand
+  // is.
   const { data, error } = await supabase
     .from('email_sync_state')
     .select('status, laatste_fout, laatste_succes_op')
     .eq('user_id', uid)
     .eq('folder', 'inbox')
-    .maybeSingle()
   // Een fout hier is geen "alles goed": zonder migratie 244 bestaan deze
   // kolommen niet, en terugvallen op ok liet de banner zwijgen terwijl de sync
   // stilstond. Geen rij is wél normaal: die mailbox heeft nog nooit gesynct.
   if (error) return { status: 'onbekend', laatsteFout: 'Gezondheid niet op te halen' }
-  if (!data) return standaard
+  type StatusRij = { status: string | null; laatste_fout: string | null; laatste_succes_op: string | null }
+  const rijen = (data || []) as StatusRij[]
+  if (rijen.length === 0) return standaard
+  const RANG: Record<string, number> = { ok: 0, traag: 1, achter: 2, onbekend: 3, fout: 4, uitgezet: 5 }
+  const ergste = rijen.reduce((a, b) => ((RANG[b.status || 'ok'] ?? 3) > (RANG[a.status || 'ok'] ?? 3) ? b : a))
+  const successen = rijen
+    .map((r) => r.laatste_succes_op)
+    .filter((d): d is string => !!d)
+    .sort()
+  const laatsteSucces = successen[successen.length - 1]
   return {
-    status: (data.status as SyncStatus['status']) || 'ok',
-    laatsteFout: data.laatste_fout || undefined,
-    laatsteSucces: data.laatste_succes_op || undefined,
+    status: (ergste.status as SyncStatus['status']) || 'ok',
+    laatsteFout: ergste.laatste_fout || undefined,
+    laatsteSucces: laatsteSucces || undefined,
   }
 }
 
