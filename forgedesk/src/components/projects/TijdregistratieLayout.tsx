@@ -62,8 +62,11 @@ import { getProjectUrenBudget, type ProjectUrenBudget } from "@/services/project
 import { urenVeldenUitInstellingen } from "@/utils/offerteUren";
 import { kostprijsVoor, uurtariefVoorkeuze } from "@/utils/kostprijs";
 import { standaardUrenStatus } from "@/services/tijdregistratieService";
+import { getMedewerkerContracten } from "@/services/planningService";
+import { useFunctie } from "@/hooks/useFunctie";
+import { Weekstaat } from "./Weekstaat";
 import { getCached, fetchQuery } from "@/lib/queryCache";
-import type { Tijdregistratie, Project, Klant, Medewerker } from "@/types";
+import type { Tijdregistratie, Project, Klant, Medewerker, MedewerkerContract } from "@/types";
 import { round2 } from "@/utils/budgetUtils";
 import { cn, formatCurrency } from "@/lib/utils";
 import { StatusBadge } from "@/components/shared/StatusBadge";
@@ -193,6 +196,9 @@ export function TijdregistratieLayout() {
 
   const { settings } = useAppSettings();
   const urenVelden = useMemo(() => urenVeldenUitInstellingen(settings.calculatie_uren_velden), [settings.calculatie_uren_velden]);
+  const weekstaatAan = useFunctie('uren_weekstaat');
+  const goedkeurenAan = useFunctie('uren_goedkeuren');
+  const [contracten, setContracten] = useState<MedewerkerContract[]>([]);
   // Budget van het gekozen project, voor de tariefvoorkeuze per bewerking.
   const [budgetVanProject, setBudgetVanProject] = useState<ProjectUrenBudget | null>(null);
   useEffect(() => {
@@ -232,17 +238,19 @@ export function TijdregistratieLayout() {
   const loadData = useCallback(async () => {
     if (getCached('tijdregistraties') === undefined) setLoading(true);
     try {
-      const [regData, projData, klantData, medewerkerData] = await Promise.all([
+      const [regData, projData, klantData, medewerkerData, contractData] = await Promise.all([
         fetchQuery('tijdregistraties', getTijdregistraties),
         fetchQuery('projecten', getProjecten),
         fetchQuery('klanten', getKlanten),
         fetchQuery('medewerkers', getMedewerkers),
+        getMedewerkerContracten().catch(() => [] as MedewerkerContract[]),
       ]);
 
       setRegistraties(regData || []);
       setProjecten(projData || []);
       setKlanten(klantData || []);
       setMedewerkers(medewerkerData || []);
+      setContracten(contractData || []);
     } catch (err) {
       logger.error('Kon tijdregistraties niet laden:', err);
       toast.error('Kon tijdregistraties niet laden');
@@ -832,6 +840,21 @@ export function TijdregistratieLayout() {
       </div>
 
       {/* Week Overview */}
+      {weekstaatAan ? (
+        <Weekstaat
+          registraties={registraties}
+          projecten={projecten}
+          urenVelden={urenVelden}
+          eigenMedewerker={eigenMedewerker}
+          userId={user?.id}
+          contracten={contracten}
+          settings={settings}
+          weekOffset={weekOffset}
+          onWeekOffsetChange={setWeekOffset}
+          goedkeurenAan={goedkeurenAan}
+          onGewijzigd={loadData}
+        />
+      ) : (
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -913,6 +936,7 @@ export function TijdregistratieLayout() {
           </div>
         </CardContent>
       </Card>
+      )}
 
       {/* Filter Pills */}
       <div className="flex items-center gap-2 flex-nowrap overflow-x-auto -mx-4 px-4 [scrollbar-width:none] md:flex-wrap md:mx-0 md:px-0">
