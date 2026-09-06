@@ -43,7 +43,7 @@ export function verwerkWijziging(wijziging: RealtimeWijziging): void {
   }
   // UPDATE op een rij die we nog niet kennen: dan is het een verplaatsing
   // naar een map die we wel geladen hebben (bijvoorbeeld snooze die afloopt).
-  if (mailStore.item(item.id)) mailStore.patch(item.id, item)
+  if (mailStore.item(item.id)) mailStore.patchVanServer(item.id, item)
   else mailStore.voegToe(item)
 }
 

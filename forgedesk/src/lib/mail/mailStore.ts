@@ -89,6 +89,8 @@ type Wachtend = {
   flush: () => void
   /** Laat deze ids vallen: niet wegschrijven, niet herstellen. */
   annuleer: (ids: string[]) => void
+  /** Velden die optimistisch gezet zijn en dus nog niet op de server staan. */
+  velden: string[]
 }
 
 class MailStore {
@@ -367,9 +369,27 @@ class MailStore {
 
   private neemOp(item: EmailLijstItem): EmailLijstItem {
     const bestaand = this.items.get(item.id)
-    const samengevoegd = bestaand ? { ...bestaand, ...item } : item
+    const samengevoegd = bestaand ? { ...bestaand, ...this.zonderWachtendeVelden(item.id, item) } : item
     this.items.set(item.id, samengevoegd)
     return samengevoegd
+  }
+
+  /**
+   * Velden die nu in de undo-buffer staan zijn optimistisch gezet en staan dus
+   * nog niet op de server. Een serverrij die er overheen gaat (realtime-UPDATE
+   * van de sync, een ververs) zou de mail zichtbaar terugzetten in de lijst.
+   */
+  private zonderWachtendeVelden<T extends Partial<EmailLijstItem>>(id: string, deel: T): T {
+    const velden = this.wachtend.get(id)?.velden
+    if (!velden?.length) return deel
+    const schoon = { ...deel }
+    for (const veld of velden) delete (schoon as Record<string, unknown>)[veld]
+    return schoon
+  }
+
+  /** Patch uit een serverrij: laat de velden staan waar een undo-actie op wacht. */
+  patchVanServer(id: string, deel: Partial<EmailLijstItem>): void {
+    this.patch(id, this.zonderWachtendeVelden(id, deel))
   }
 
   async laadMap(map: MailMap, opties?: { vers?: boolean }): Promise<void> {
@@ -384,7 +404,9 @@ class MailStore {
     try {
       const pagina = await getEmailsPage(map, null, PAGINA_GROOTTE, this.actiefAccountId()) as unknown as EmailLijstItem[]
       const nieuw = pagina.map((i) => this.neemOp(i))
-      const nieuweIds = nieuw.map((i) => i.id)
+      // Een mail met een lopende undo-actie staat op de server nog in deze map;
+      // die mag niet zichtbaar terugspringen in de lijst.
+      const nieuweIds = nieuw.filter((i) => !this.wachtend.has(i.id) || mappenVoor(i).includes(map)).map((i) => i.id)
       const bekend = new Set(nieuweIds)
       const oudste = nieuw.length ? nieuw[nieuw.length - 1] : null
       const huidig = this.stand(map)
@@ -648,7 +670,7 @@ class MailStore {
   /** Voor realtime-INSERT en lokaal aangemaakte rijen (concept). */
   voegToe(item: EmailLijstItem): void {
     const vorige = this.items.get(item.id)
-    if (vorige) { this.patch(item.id, item); return }
+    if (vorige) { this.patchVanServer(item.id, item); return }
     const opgenomen = this.neemOp(item)
     const geraakt = this.plaats(opgenomen)
     if (opgenomen.thread_id) {
@@ -829,7 +851,7 @@ class MailStore {
         const snap = snapshots.get(id)
         if (snap) this.patch(id, snap)
       }
-    })
+    }, Object.keys(deel))
   }
 
   /**
@@ -839,7 +861,7 @@ class MailStore {
    * Flush en herstel krijgen alleen de ids die nog wachten: annuleerWachtend
    * kan er tussentijds een paar uit hebben gehaald.
    */
-  private buffer(ids: string[], flush: (ids: string[]) => void, herstel: (ids: string[]) => void): Undo {
+  private buffer(ids: string[], flush: (ids: string[]) => void, herstel: (ids: string[]) => void, velden: string[] = []): Undo {
     for (const id of ids) {
       const eerder = this.wachtend.get(id)
       if (eerder) { clearTimeout(eerder.timer); this.wachtend.delete(id); eerder.flush() }
@@ -860,7 +882,7 @@ class MailStore {
       if (actief.size === 0) { afgehandeld = true; clearTimeout(timer) }
     }
     const timer = setTimeout(doe, UNDO_MS)
-    const rij: Wachtend = { timer, flush: doe, annuleer }
+    const rij: Wachtend = { timer, flush: doe, annuleer, velden }
     for (const id of ids) this.wachtend.set(id, rij)
     return {
       klaarOver: Date.now() + UNDO_MS,
