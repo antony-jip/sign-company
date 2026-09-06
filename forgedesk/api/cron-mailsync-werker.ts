@@ -401,7 +401,7 @@ interface TeMakenTaak {
  * Welke postvakken nog een open taak missen.
  *
  * `metAccountKolom` is de terugval: bestaat `mailsync_taken.account_id` niet
- * (migratie 245 niet gedraaid), dan is de sleutel weer de gebruiker en is dit
+ * (migratie 247 niet gedraaid), dan is de sleutel weer de gebruiker en is dit
  * exact het oude gedrag — één taak per gebruiker, zonder account_id in de rij.
  *
  * Een bestaande taak zónder account_id komt uit de oude code of uit het venster

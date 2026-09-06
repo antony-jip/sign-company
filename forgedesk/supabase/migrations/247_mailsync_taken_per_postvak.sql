@@ -15,11 +15,18 @@ BEGIN;
 
 ALTER TABLE mailsync_taken ADD COLUMN IF NOT EXISTS account_id UUID;
 
--- Bestaande taken horen bij het enige postvak van die gebruiker.
+-- is_standaard komt uit 245. Deze migratie mag ook vóór 245 draaien, dus zet de
+-- kolom hier desnoods zelf neer; het statement is hetzelfde en idempotent.
+ALTER TABLE user_email_settings ADD COLUMN IF NOT EXISTS is_standaard BOOLEAN NOT NULL DEFAULT true;
+
+-- Bestaande taken horen bij het standaardpostvak van die gebruiker. Zonder de
+-- is_standaard-voorwaarde kiest Postgres bij meerdere rijen willekeurig een
+-- postvak; 246 doet het om die reden ook zo.
 UPDATE mailsync_taken t
    SET account_id = s.id
   FROM user_email_settings s
  WHERE s.user_id = t.user_id
+   AND s.is_standaard
    AND t.account_id IS NULL;
 
 -- COALESCE zodat een taak zonder account_id (oude code, of een gebruiker zonder

@@ -42,8 +42,11 @@ UPDATE user_email_settings s SET organisatie_id = p.organisatie_id
 FROM profiles p WHERE p.id = s.user_id AND s.organisatie_id IS NULL;
 
 ALTER TABLE emails ADD COLUMN IF NOT EXISTS account_id UUID REFERENCES user_email_settings(id) ON DELETE SET NULL;
+-- is_standaard erbij: zonder die voorwaarde kiest Postgres bij meerdere rijen
+-- willekeurig een postvak.
 UPDATE emails e SET account_id = s.id
-FROM user_email_settings s WHERE s.user_id = e.user_id AND e.account_id IS NULL;
+FROM user_email_settings s
+WHERE s.user_id = e.user_id AND s.is_standaard AND e.account_id IS NULL;
 CREATE INDEX IF NOT EXISTS idx_emails_account_datum ON emails (account_id, datum DESC);
 -- Bewust geen partiële index: PostgREST stuurt bij een upsert alleen de
 -- kolommen mee en niet het WHERE-predicaat, waardoor een partiële index als
@@ -52,8 +55,11 @@ CREATE INDEX IF NOT EXISTS idx_emails_account_datum ON emails (account_id, datum
 CREATE UNIQUE INDEX IF NOT EXISTS uq_emails_account_message ON emails (account_id, message_id);
 
 ALTER TABLE email_sync_state ADD COLUMN IF NOT EXISTS account_id UUID REFERENCES user_email_settings(id) ON DELETE CASCADE;
+-- is_standaard erbij: zonder die voorwaarde kiest Postgres bij meerdere rijen
+-- willekeurig een postvak.
 UPDATE email_sync_state st SET account_id = s.id
-FROM user_email_settings s WHERE s.user_id = st.user_id AND st.account_id IS NULL;
+FROM user_email_settings s
+WHERE s.user_id = st.user_id AND s.is_standaard AND st.account_id IS NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS uq_email_sync_state_account_folder ON email_sync_state (account_id, folder);
 ALTER TABLE email_sync_state ADD COLUMN IF NOT EXISTS idle_laatst_op TIMESTAMPTZ;
 
