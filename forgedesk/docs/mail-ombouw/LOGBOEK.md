@@ -82,3 +82,66 @@ schrijven onder hun eigen kop; de hoofdsessie onder "Regie".
 - idee: de gezondheidskaart kan `herplaatst` uit de fetch-emails-response tonen ("3 mails elders verplaatst") zodra de store dat bewaart.
 - idee: "Opnieuw verbinden" bij status `uitgezet` na een wachtwoordfout heeft alleen zin met een nieuw wachtwoord; de kaart zou dan het wachtwoordveld kunnen focussen in plaats van blind opnieuw opslaan.
 - idee: mobiel-sectie in het kennisbankartikel beschrijft swipe-rechts als "gelezen"; shell moet dat bevestigen of ik pas het artikel aan.
+
+## IDLE en OAuth
+
+- IDLE-werker (7db9626f): `src/trigger/mail-idle.ts` met twee taken. `mail-idle` is er één per postvak: imapflow verbindt, opent INBOX, blijft 25 minuten hangen en roept bij een `exists`- of `flags`-event `POST /api/fetch-emails` aan met `Bearer CRON_SECRET`, `service_user_id` en `snel: true`. Events binnen 2 s worden samengevoegd en er zit minimaal 10 s tussen twee syncs. Na elke sync schrijft hij `idle_laatst_op` op de inbox-rij van `email_sync_state` (kolom uit 245; ontbreekt hij, dan alleen een logregel). Aan het eind: netjes uitloggen en zichzelf opnieuw triggeren met `ronde + 1`.
+- IDLE vernieuwt zichzelf op protocolniveau elke 5 minuten (`maxIdleTime`), ruim binnen de 29 minuten uit RFC 2177. imapflow gaat vanzelf in IDLE zodra er niets te doen is; een eigen `client.idle()` zou naast die lus gaan lopen en is daarom bewust weggelaten.
+- `mail-idle-start` (cron `*/10 * * * *`) start ontbrekende werkers: alleen postvakken met `is_verified` (die kolom bestaat vandaag niet in de database, migratie 004 is nooit gedraaid; ontbreekt hij, dan telt elk postvak als geverifieerd), zonder sync-status `fout` of `uitgezet`, nieuwste `laatste_succes_op` eerst, begrensd op `MAIL_IDLE_MAX` (standaard 10, `0` zet IDLE helemaal uit). Lopende runs worden opgevraagd via `runs.list` op tag `mailbox:<user_id>`; kan die lijst niet opgehaald worden, dan start hij niets (twee IDLE-verbindingen op één Gmail-postvak is erger dan tien minuten geen IDLE).
+- Foutteller zonder nieuwe tabel: een eigen `email_sync_state`-rij met `folder = 'idle'`, met het aantal vooraan in `laatste_fout` ("3x Invalid credentials"). Drie verbindingsfouten op rij = een uur overslaan. De gezondheidskaart leest `folder = 'inbox'` en ziet die rij dus niet; dat moet zo blijven.
+- Bewust: dit is een pilot voor de eigen vijf Gmail-postvakken. Eén open verbinding per postvak is op Trigger.dev één draaiende machine per postvak, 24 uur per dag (kleinste machine, reken op enkele tientjes per maand voor vijf). Boven ongeveer tien postvakken hoort dit in één eigen proces dat alle verbindingen multiplext; dat staat ook in de kop van het bestand. `MAIL_IDLE_MAX` is tot die tijd de rem.
+- OAuth (d8a2c088): drie endpoints. `api/mail-oauth-start.ts` bouwt de autorisatie-URL en tekent `state` met HMAC-SHA256 over user_id, provider en tijd (geldig 10 minuten); ontbreekt de client-id, dan 503 met `{ reden: 'niet_geconfigureerd' }`. `api/mail-oauth-callback.ts` controleert de state timing-safe, wisselt de code in, versleutelt beide tokens met `EMAIL_ENCRYPTION_KEY` in hetzelfde `g1:`-formaat als het app-wachtwoord, schrijft `auth_type`, de provider-hosts en het adres uit het `id_token`, wist het oude app-wachtwoord, zet de sync-status terug op ok en redirect naar `/instellingen?tab=email&mail=gekoppeld`. `api/mail-oauth-token.ts` geeft in service-modus (CRON_SECRET) een geldig access-token, zodat de IDLE-werker de clientgeheimen niet hoeft te kennen.
+- Scopes: Google `https://mail.google.com/` plus `openid email`, Microsoft `offline_access https://outlook.office.com/IMAP.AccessAsUser.All https://outlook.office.com/SMTP.Send` plus `openid email`. Die twee laatste staan er alleen voor het adres van het postvak: dat komt uit het `id_token` en niet uit een extra API-aanroep. Google krijgt `access_type=offline` en `prompt=consent`, anders geeft hij bij een tweede koppeling geen refresh-token en valt het postvak na een uur stil.
+- XOAUTH2 in de keten (ae111ccb): `fetch-emails`, `read-email`, `prefetch-email-bodies`, `email-imap-action`, `send-email` en `test-email-connection` gebruiken bij `auth_type` google of microsoft een access-token (`imapflow: auth {user, accessToken}`, `nodemailer: auth {type:'OAuth2', user, accessToken}`). De helper `haalToegangstoken` staat als letterlijke kopie in alle zeven bestanden achter marker `GEDEELD-MET-API: OAuth-toegangstoken`, zoals de citaatsplitsing in read-email; wijzig je er één, wijzig ze alle zeven. Hij ververst zodra het token binnen 5 minuten verloopt en schrijft het nieuwe token (en bij Microsoft de gerouleerde refresh-token) versleuteld terug. Bij `auth_type = 'wachtwoord'` verandert er niets.
+- 401-afhandeling: `fetch-emails` en `send-email` doen één herkansing met een geforceerd verse token; blijft het een 401, dan gaat `email_sync_state` op `uitgezet` met melding "Toegang ingetrokken, koppel opnieuw" en antwoordt fetch-emails 401 (de mailsync-werker doet dan backoff in plaats van de dodebrievenbus, en de gebruiker ziet de goede tekst in de gezondheidskaart).
+- Onboarding (aecbadcc): `api/email-settings.ts` geeft `auth_type` en `has_oauth` terug op GET en accepteert `auth_type` op POST. Een app-wachtwoord opslaan zet `auth_type` altijd op `wachtwoord` en wist de drie OAuth-kolommen. Opslaan zonder wachtwoord (de knop "Opnieuw verbinden") werkt nu ook op een OAuth-postvak: provider en adres blijven staan, alleen `updated_at` schuift en de sync-status herstelt. `test-email-connection` test een opgeslagen koppeling zodra de body `auth_type: 'google' | 'microsoft'` meestuurt.
+- Bewust anders: `getEmailCredentials` in de zes mailbestanden eist niet langer een `encrypted_app_password`; een postvak met een refresh-token is genoeg. Zonder die wijziging zou elke OAuth-mailbox met "Geen email instellingen gevonden" stuklopen.
+- Bewust anders: geen migratie geschreven (de contractregel). 244 is de basis; alles uit 245 (`account_id`, `idle_laatst_op`, `naam`, `soort`) wordt optioneel behandeld, dus de code draait met en zonder 245.
+- Niet gedaan: meerdere postvakken per gebruiker. Alle nieuwe code leest nog één rij per `user_id`; `account_id` is voorbereid maar nergens leidend. Dat is deel B.
+
+### Env-vars die Antony moet zetten
+
+Op Vercel (project doen., environment Production):
+- `MAIL_OAUTH_GOOGLE_CLIENT_ID`
+- `MAIL_OAUTH_GOOGLE_CLIENT_SECRET`
+- `MAIL_OAUTH_MICROSOFT_CLIENT_ID`
+- `MAIL_OAUTH_MICROSOFT_CLIENT_SECRET`
+- `MAIL_OAUTH_MICROSOFT_TENANT` — optioneel, standaard `common` (alle Microsoft-accounts).
+- `MAIL_OAUTH_REDIRECT` — optioneel, standaard `https://app.doen.team/api/mail-oauth-callback`. Zet hem alleen als de app op een ander domein staat; hij moet exact gelijk zijn aan de redirect-URI bij Google en Microsoft.
+- `MAIL_OAUTH_STATE_SECRET` — optioneel, valt terug op `EMAIL_ENCRYPTION_KEY`.
+- `VITE_MAIL_OAUTH_GOOGLE` en `VITE_MAIL_OAUTH_MICROSOFT` op `aan` om de knoppen in de instellingen aan te zetten (die leest de instellingen-agent al). Let op: een `VITE_`-var werkt pas na een nieuwe deploy, niet na alleen opslaan.
+
+Op Trigger.dev (dashboard, environment prod) voor de IDLE-werker:
+- `EMAIL_ENCRYPTION_KEY` — zelfde waarde als op Vercel, nodig om app-wachtwoorden te ontsleutelen.
+- `CRON_SECRET` — zelfde waarde als op Vercel.
+- `CRON_SELF_URL` — `https://app.doen.team`.
+- `MAIL_IDLE_MAX` — standaard 10; zet hem op `5` voor de pilot en op `0` om IDLE uit te zetten.
+- `SUPABASE_URL` en `SUPABASE_SERVICE_ROLE_KEY` staan er al voor de bestaande taken.
+
+### Bij Google Cloud (eenmalig, ongeveer 10 minuten)
+
+1. Ga naar console.cloud.google.com en maak een project (of gebruik een bestaand project van Sign Company).
+2. APIs en services, Bibliotheek: zet de **Gmail API** aan.
+3. APIs en services, OAuth-toestemmingsscherm: kies **Intern** als de mailboxen in een Google Workspace zitten (dan is er geen verificatie nodig en geen limiet op testgebruikers). Zit er ook maar één gewoon gmail.com-adres bij, kies dan **Extern** en zet die adressen bij **Testgebruikers**; anders werkt de koppeling niet.
+4. Scopes: voeg `https://mail.google.com/` toe. Dit is een gevoelige scope. Bij Intern maakt dat niet uit; bij Extern in testmodus ook niet, maar zodra je de app publiceert vraagt Google een verificatie (met een securityreview). Zolang het bij de eigen postvakken blijft: Intern of testmodus.
+5. Inloggegevens, Inloggegevens maken, **OAuth-client-ID**, type **Webapplicatie**. Bij "Geautoriseerde omleidings-URI's" precies dit invullen: `https://app.doen.team/api/mail-oauth-callback`.
+6. Kopieer client-ID en clientgeheim naar `MAIL_OAUTH_GOOGLE_CLIENT_ID` en `MAIL_OAUTH_GOOGLE_CLIENT_SECRET`.
+
+### Bij Microsoft Entra (eenmalig, ongeveer 15 minuten)
+
+1. Ga naar entra.microsoft.com, App-registraties, **Nieuwe registratie**. Naam bijvoorbeeld "doen. mail".
+2. Ondersteunde accounttypen: "Accounts in een organisatiemap en persoonlijke Microsoft-accounts" als je ook outlook.com-adressen wilt koppelen; anders alleen de eigen organisatie (zet dan `MAIL_OAUTH_MICROSOFT_TENANT` op de tenant-ID).
+3. Omleidings-URI: type **Web**, waarde `https://app.doen.team/api/mail-oauth-callback`.
+4. Certificaten en geheimen: **Nieuw clientgeheim**, looptijd 24 maanden. Kopieer de waarde meteen, hij is daarna niet meer te zien. Zet een herinnering voor de vervaldatum: als hij verloopt stopt het koppelen én het verversen.
+5. API-machtigingen, Machtiging toevoegen, **API's die mijn organisatie gebruikt**, zoek "Office 365 Exchange Online", **Gedelegeerde machtigingen**: `IMAP.AccessAsUser.All` en `SMTP.Send`. Voeg daarnaast `offline_access` en `email` uit Microsoft Graph toe. Klik daarna op **Beheerderstoestemming verlenen**.
+6. Belangrijk buiten Entra: in het Exchange-beheercentrum moeten **IMAP** en **geverifieerde SMTP** voor de betreffende postvakken aan staan. Microsoft zet die per postvak uit; met OAuth blijft dat een aparte schakelaar.
+7. Kopieer applicatie-ID (client) en het geheim naar `MAIL_OAUTH_MICROSOFT_CLIENT_ID` en `MAIL_OAUTH_MICROSOFT_CLIENT_SECRET`.
+
+### Voor de UI-agent (instellingen)
+
+- Koppelen start via `startMailKoppeling('google' | 'microsoft')` uit `src/services/gmailService.ts`: die geeft `{ url }` terug en de knop doet daarna `window.location.assign(url)`. Een `<a href>` werkt niet, want de server heeft de sessie in de Authorization-header nodig om de `state` te ondertekenen. Komt `{ nietGeconfigureerd: true }` terug (503), laat de knop dan uit staan met dezelfde "Binnenkort"-tekst als nu.
+- Terugkomst uit de callback: `/instellingen?tab=email&mail=gekoppeld`, `...&mail=geannuleerd` (gebruiker klikte Annuleren) of `...&mail=fout&reden=<kort>`. Toon een toast en haal de parameters daarna uit de URL.
+- `loadEmailSettingsFromDb()` geeft nu ook `auth_type` ('wachtwoord' | 'google' | 'microsoft') en `has_oauth`. Bij een OAuth-koppeling horen het wachtwoordveld en de IMAP/SMTP-velden verborgen te zijn; toon "Gekoppeld met Google" of "Gekoppeld met Microsoft" plus het adres, met een knop "Opnieuw koppelen" (zelfde `startMailKoppeling`) en "Ontkoppelen" (bestaande DELETE).
+- "Test verbinding" op een OAuth-koppeling: `testEmailConnection(adres, '', { auth_type })`. Adres en wachtwoord doen dan niet mee; de server test het opgeslagen token.
+- Bij status `uitgezet` met melding "Toegang ingetrokken, koppel opnieuw" hoort de gezondheidskaart naar opnieuw koppelen te wijzen en niet naar het wachtwoordveld.
+- Blijf in de gezondheidskaart filteren op `folder = 'inbox'`: de rij met `folder = 'idle'` is administratie van de IDLE-werker en hoort niet in beeld.
