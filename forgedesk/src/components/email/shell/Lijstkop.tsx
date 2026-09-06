@@ -2,7 +2,8 @@ import { Archive, CheckCheck, Pencil, RefreshCw, Rows3, StretchHorizontal, Trash
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import type { MailMap } from '@/lib/mail/types'
-import { FILTERS, SPLIT_TABS, mapLabel, type LijstFilter, type SplitTab } from './mapConfig'
+import { FILTERS, SPLIT_TABS, TEAM_FILTERS, mapLabel, type LijstFilter, type SplitTab } from './mapConfig'
+import { ToewijsMenu } from './ToewijsMenu'
 import type { Dichtheid } from './voorkeuren'
 import { formatRelativeSync } from '../emailHelpers'
 
@@ -33,6 +34,9 @@ interface Props {
   splitTab: SplitTab
   onSplitTab: (t: SplitTab) => void
   splitTellers: Partial<Record<SplitTab, number>>
+  /** Gedeeld postvak: filters "Van mij" en "Niet toegewezen", plus toewijzen in bulk. */
+  gedeeld?: boolean
+  onBulkToewijzen?: (sleutel: string | null) => void
 }
 
 /** Titel, teller, Nieuw bericht, filters of bulk-acties, dichtheid en verversen. Desktop. */
@@ -111,13 +115,16 @@ export function Lijstkop(p: Props) {
               <Button variant="ghost" size="sm" className="h-8 text-[12px] text-foreground/70 hover:text-foreground rounded-lg" onClick={p.onBulkOngelezen}>
                 Ongelezen
               </Button>
+              {p.gedeeld && p.onBulkToewijzen && (
+                <ToewijsMenu waarde={null} onKies={p.onBulkToewijzen} className="ml-0.5" />
+              )}
               <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground rounded-lg" onClick={p.onWisSelectie} title="Selectie wissen (Esc)">
                 <X className="h-3.5 w-3.5" />
               </Button>
             </div>
           ) : (
             <div className="flex items-center gap-4 min-w-0 overflow-x-auto scrollbar-none">
-              {FILTERS.map((f) => {
+              {[...FILTERS, ...(p.gedeeld ? TEAM_FILTERS : [])].map((f) => {
                 const actief = p.filter === f.id
                 const n = p.filterTellers[f.id]
                 return (

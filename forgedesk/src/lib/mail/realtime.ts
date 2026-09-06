@@ -8,7 +8,7 @@ const LIJST_KOLOMMEN: Array<keyof EmailLijstItem> = [
   'gelezen', 'starred', 'labels', 'bijlagen', 'map', 'from_name', 'from_address', 'imap_folder', 'pinned',
   'snoozed_until', 'thread_id', 'attachment_meta', 'has_attachments', 'body_text', 'created_at',
   'is_aanvraag', 'aanvraag_zekerheid', 'aanvraag_samenvatting', 'aanvraag_verborgen',
-  'wacht_op_reactie', 'beantwoord',
+  'wacht_op_reactie', 'beantwoord', 'toegewezen_aan', 'toegewezen_op',
 ]
 
 export function rijNaarLijstItem(rij: Record<string, unknown>): EmailLijstItem {

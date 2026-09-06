@@ -42,6 +42,8 @@ export interface EmailLijstItem {
   aanvraag_verborgen?: boolean | null
   wacht_op_reactie?: boolean | null
   beantwoord?: boolean | null
+  toegewezen_aan?: string | null
+  toegewezen_op?: string | null
   threadAantal?: number
   threadOngelezen?: number
 }

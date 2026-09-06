@@ -9,6 +9,7 @@ import { usePullToRefresh } from '@/hooks/usePullToRefresh'
 import { EmailListItem } from '../EmailListItem'
 import { bouwRijen } from './mapConfig'
 import { useKoppelingChips } from './koppelingChips'
+import { useToewijzing } from './toewijzing'
 import type { Dichtheid, SwipeLinks } from './voorkeuren'
 
 export interface MailLijstProps {
@@ -37,6 +38,8 @@ export interface MailLijstProps {
   salesMode?: 'wacht' | 'beantwoord'
   onMarkeerBeantwoord?: (id: string) => void
   onWisWacht?: (id: string) => void
+  /** Alleen bij een gedeeld postvak: toon wie het gesprek heeft opgepakt. */
+  toonToewijzing?: boolean
 }
 
 const KOP_HOOGTE = 36
@@ -80,6 +83,7 @@ export function MailLijst(p: MailLijstProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zichtbareSleutel])
   const chips = useKoppelingChips(zichtbaar)
+  const { zoek: zoekToewijzing } = useToewijzing()
 
   useEffect(() => {
     scrollEl.current?.scrollTo({ top: 0 })
@@ -228,6 +232,7 @@ export function MailLijst(p: MailLijstProps) {
                       onVerwijder={p.onVerwijder}
                       onToggleGelezen={p.onToggleGelezen}
                       onPrefetch={(item) => prefetchBodies([item.id], 'zichtbaar')}
+                      toegewezen={p.toonToewijzing ? zoekToewijzing(r.item.toegewezen_aan) : null}
                       salesMode={p.salesMode}
                       onMarkeerBeantwoord={p.onMarkeerBeantwoord}
                       onWisWacht={p.onWisWacht}

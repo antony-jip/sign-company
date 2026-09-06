@@ -1,6 +1,7 @@
 import type { EmailLijstItem, MailMap, Postvak, PostvakKeuze, SyncStatus, ThreadInfo } from './types'
 import { MAIL_MAPPEN } from './types'
 import { getPostvakken } from '@/services/postvakService'
+import { wijsToe as wijsToeInDb } from '@/services/teamInboxService'
 import {
   getEmailsPage, searchEmailsFTS, getMapTellers, getThreadInfos, getThreadItems, getSyncStatus,
   updateEmail, deleteEmail,
@@ -640,6 +641,13 @@ class MailStore {
     this.meld()
     await this.schrijfWeg(echt, { gelezen })
     this.imap(gelezen ? 'seen' : 'unseen', echt)
+  }
+
+  /** Gedeeld postvak: wie dit gesprek oppakt. `null` geeft het weer vrij. */
+  async wijsToe(ids: string[], sleutel: string | null): Promise<void> {
+    const op = sleutel ? new Date().toISOString() : null
+    for (const id of ids) this.patch(id, { toegewezen_aan: sleutel, toegewezen_op: op })
+    await wijsToeInDb(ids, sleutel)
   }
 
   async pin(ids: string[], aan: boolean): Promise<void> {

@@ -26,7 +26,7 @@ export function mapLabel(map: MailMap): string {
   return MAP_VOLGORDE.find((m) => m.id === map)?.label ?? map
 }
 
-export type LijstFilter = 'alle' | 'ongelezen' | 'vastgepind' | 'bijlagen'
+export type LijstFilter = 'alle' | 'ongelezen' | 'vastgepind' | 'bijlagen' | 'vanmij' | 'nietToegewezen'
 
 export const FILTERS: { id: LijstFilter; label: string }[] = [
   { id: 'alle', label: 'Alle' },
@@ -35,11 +35,19 @@ export const FILTERS: { id: LijstFilter; label: string }[] = [
   { id: 'bijlagen', label: 'Bijlagen' },
 ]
 
-export function voldoetAanFilter(item: EmailLijstItem, filter: LijstFilter): boolean {
+/** Extra filters van een gedeeld postvak; staan achter de gewone filters. */
+export const TEAM_FILTERS: { id: LijstFilter; label: string }[] = [
+  { id: 'vanmij', label: 'Van mij' },
+  { id: 'nietToegewezen', label: 'Niet toegewezen' },
+]
+
+export function voldoetAanFilter(item: EmailLijstItem, filter: LijstFilter, eigenSleutels?: readonly string[]): boolean {
   switch (filter) {
     case 'ongelezen': return !item.gelezen
     case 'vastgepind': return !!item.pinned
     case 'bijlagen': return item.bijlagen > 0 || !!item.has_attachments
+    case 'vanmij': return !!item.toegewezen_aan && !!eigenSleutels?.includes(item.toegewezen_aan)
+    case 'nietToegewezen': return !item.toegewezen_aan
     default: return true
   }
 }

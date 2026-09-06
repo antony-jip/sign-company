@@ -40,6 +40,7 @@ import {
   legeStaatVoor, mapLabel, sorteerVoorLijst, voldoetAanFilter,
   type LijstFilter, type SplitTab,
 } from './shell/mapConfig'
+import { useEigenSleutels } from './shell/toewijzing'
 import { VOORKEUR, useBoolVoorkeur, useVoorkeur, type Dichtheid, type SwipeLinks } from './shell/voorkeuren'
 import { chipsNaarQuery, heeftZoekopdracht, voegChipToe, type ZoekChip } from './shell/zoekChips'
 import { readerActies } from './reader'
@@ -100,6 +101,8 @@ export function EmailLayout() {
   const tellers = useMapTellers()
   const sync = useSyncStatus()
   const postvakken = usePostvakken()
+  const gedeeld = postvakken.huidig?.soort === 'gedeeld'
+  const eigenSleutels = useEigenSleutels(user?.id)
   const { bezig, laatsteSync, mailboxGekoppeld } = useMailSync(map, isDesktop, !!user?.id)
   const adresIndexen = useAdresIndexen(splitAan && map === 'inbox')
 
@@ -147,12 +150,12 @@ export function EmailLayout() {
   // ── De zichtbare lijst ──
   const bron = zoekt ? zoekLijst : mapLijst
   const zichtbaar = useMemo(() => {
-    let items = bron.items.filter((i) => voldoetAanFilter(i, filter))
+    let items = bron.items.filter((i) => voldoetAanFilter(i, filter, eigenSleutels))
     if (splitAan && map === 'inbox' && !zoekt) {
       items = items.filter((i) => classificeer(i, adresIndexen.klanten, adresIndexen.leveranciers, chipVoor(i)) === splitTab)
     }
     return sorteerVoorLijst(items)
-  }, [bron.items, filter, splitAan, map, zoekt, splitTab, adresIndexen])
+  }, [bron.items, filter, eigenSleutels, splitAan, map, zoekt, splitTab, adresIndexen])
 
   const filterTellers = useMemo(() => {
     const basis = bron.items
@@ -394,6 +397,7 @@ export function EmailLayout() {
       onToggleGelezen={wisselGelezen}
       legeStaat={<LegeStaat tekst={legeTekst} onSprong={zetMap} mailboxGekoppeld={mailboxGekoppeld} onKoppelen={() => navigate('/instellingen?tab=email')} />}
       bovenin={bovenin}
+      toonToewijzing={gedeeld}
       scrollSleutel={`${map}:${filter}:${splitTab}:${zoekt ? 'zoek' : ''}`}
       pullToRefresh={{ actief: !isDesktop, onRefresh: async () => { await mailStore.ververs(map) } }}
     />
@@ -419,6 +423,7 @@ export function EmailLayout() {
       onAntwoord={(modus, mail, body, voorstel) => { void openAntwoord(modus, mail, body, voorstel) }}
       voet={composer?.variant === 'inline' ? composerNode : null}
       onBeantwoorden={() => antwoordOpHuidige('antwoord')}
+      gedeeld={gedeeld}
     />
   ) : null
 
@@ -544,6 +549,8 @@ export function EmailLayout() {
               splitTab={splitTab}
               onSplitTab={(t) => { zetSplitTab(t); zetGeselecteerd(null) }}
               splitTellers={splitTellers}
+              gedeeld={gedeeld}
+              onBulkToewijzen={(sleutel) => { void mailStore.wijsToe([...aangevinkt], sleutel); zetAangevinkt(new Set()) }}
             />
             {lijst}
           </div>

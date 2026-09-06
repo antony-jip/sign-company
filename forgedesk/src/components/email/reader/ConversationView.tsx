@@ -23,6 +23,8 @@ import { AanvraagKaart } from '@/components/email/AanvraagKaart'
 import { EmailReaderAIToolbar } from '@/components/email/EmailReaderAIToolbar'
 import { bepaalOpenBerichten, deelnemersLabel, deelnemersVan, sorteerOudNaarNieuw } from './thread'
 import { chipsVoor, SOORT_LABEL, type KoppelingChip } from './koppelingen'
+import { NotitieBlok } from './NotitieBlok'
+import { ToewijsMenu } from '@/components/email/shell/ToewijsMenu'
 
 /**
  * Contract met de shell (docs/mail-ombouw/CONTRACT.md, golf 2 reader):
@@ -48,6 +50,8 @@ export interface ConversationViewProps {
   voet?: ReactNode
   onKoppel?: (soort: KoppelingSoort, doelId: string) => void
   compact?: boolean
+  /** Actief postvak is gedeeld: toewijzen aan een collega en interne notities. */
+  gedeeld?: boolean
 }
 
 /** EmailLijstItem heeft geen `inhoud`; de bestaande afzender-hooks verwachten een Email. */
@@ -136,7 +140,7 @@ export function useKoppelingen(emailId: string | null, threadId: string | null |
   return { chips, ververs }
 }
 
-export function ConversationView({ emailId, onSluiten, onAntwoord, onVolgende, onVorige, voet, onKoppel, compact }: ConversationViewProps) {
+export function ConversationView({ emailId, onSluiten, onAntwoord, onVolgende, onVorige, voet, onKoppel, compact, gedeeld }: ConversationViewProps) {
   const { user } = useAuth()
   const { navigateWithTab } = useNavigateWithTab()
   const mailUitStore = useMail(emailId)
@@ -279,6 +283,14 @@ export function ConversationView({ emailId, onSluiten, onAntwoord, onVolgende, o
             </p>
           </div>
           <div className="flex flex-shrink-0 items-center gap-0.5">
+            {gedeeld && (
+              <ToewijsMenu
+                waarde={mail.toegewezen_aan}
+                onKies={(sleutel) => { void mailStore.wijsToe([mail.id], sleutel) }}
+                compact={compact}
+                className="mr-1"
+              />
+            )}
             {!compact && (
               <>
                 <KopKnop label="Vorige mail" onClick={onVorige}><ChevronUp className="h-4 w-4" /></KopKnop>
@@ -362,6 +374,12 @@ export function ConversationView({ emailId, onSluiten, onAntwoord, onVolgende, o
             />
           ))}
         </div>
+
+        {gedeeld && (
+          <div className="mt-4">
+            <NotitieBlok emailId={mail.id} threadId={threadId} compact={compact} />
+          </div>
+        )}
 
         {voet && <div className="mt-4">{voet}</div>}
 

@@ -199,11 +199,15 @@ export async function getEmailsPage(map: string, cursor: EmailPageCursor | null,
   const uid = await eigenUserId()
   if (!uid) return []
 
-  if (MAPPEN_VIA_TABEL.has(map)) {
-    // Eerst de smalle id-query op de tabel (daar staan de vlaggen), dan de
-    // lijstkolommen uit de view, in de volgorde van de eerste stap.
+  // emails_list_view kent account_id, toegewezen_aan en toegewezen_op niet
+  // (migratie 245 raakt de view niet aan), dus zodra er op postvak gefilterd
+  // wordt loopt het via dezelfde twee stappen als Opvolgen: ids uit `emails`,
+  // lijstkolommen uit de view.
+  const viaTabel = MAPPEN_VIA_TABEL.has(map) || (!!accountId && accountKolomBekend !== false)
+  if (viaTabel) {
+    const extra = accountId ? 'id, wacht_op_reactie, beantwoord, toegewezen_aan, toegewezen_op' : 'id, wacht_op_reactie, beantwoord'
     const idsQ = pasMapFilterToe(
-      metAccount(client.from('emails').select('id, wacht_op_reactie, beantwoord').eq('user_id', uid) as unknown as LijstBouwer, accountId),
+      metAccount(client.from('emails').select(extra).eq('user_id', uid) as unknown as LijstBouwer, accountId),
       map,
     )
     if (!idsQ) return []
@@ -218,7 +222,9 @@ export async function getEmailsPage(map: string, cursor: EmailPageCursor | null,
       }
       throw error
     }
-    const vlaggen = new Map(((treffers || []) as Array<{ id: string; wacht_op_reactie: boolean; beantwoord: boolean }>).map((r, i) => [r.id, { i, r }]))
+    if (accountId) accountKolomBekend = true
+    type Vlaggen = { id: string; wacht_op_reactie?: boolean; beantwoord?: boolean; toegewezen_aan?: string | null; toegewezen_op?: string | null }
+    const vlaggen = new Map(((treffers || []) as unknown as Vlaggen[]).map((r, i) => [r.id, { i, r }]))
     if (vlaggen.size === 0) return []
     const { data: rijen, error: rijenErr } = await client
       .from('emails_list_view')
@@ -229,12 +235,18 @@ export async function getEmailsPage(map: string, cursor: EmailPageCursor | null,
       .sort((a, b) => (vlaggen.get(a.id as string)?.i ?? 0) - (vlaggen.get(b.id as string)?.i ?? 0))
       .map((e) => {
         const v = vlaggen.get(e.id as string)?.r
-        return alsLijstItem({ ...e, wacht_op_reactie: v?.wacht_op_reactie, beantwoord: v?.beantwoord })
+        return alsLijstItem({
+          ...e,
+          wacht_op_reactie: v?.wacht_op_reactie,
+          beantwoord: v?.beantwoord,
+          toegewezen_aan: v?.toegewezen_aan ?? null,
+          toegewezen_op: v?.toegewezen_op ?? null,
+        })
       })
   }
 
   const basis = pasMapFilterToe(
-    metAccount(client.from('emails_list_view').select(LIST_VIEW_COLUMNS).eq('user_id', uid) as unknown as LijstBouwer, accountId),
+    client.from('emails_list_view').select(LIST_VIEW_COLUMNS).eq('user_id', uid) as unknown as LijstBouwer,
     map,
   )
   if (!basis) return []
@@ -242,14 +254,7 @@ export async function getEmailsPage(map: string, cursor: EmailPageCursor | null,
     .order('datum', { ascending: false })
     .order('id', { ascending: false })
     .limit(limit)
-  if (error) {
-    if (accountId && isOnbekendeKolom(error)) {
-      accountKolomBekend = false
-      return getEmailsPage(map, cursor, limit, null)
-    }
-    throw error
-  }
-  if (accountId) accountKolomBekend = true
+  if (error) throw error
   return ((data || []) as Array<Record<string, unknown>>).map(alsLijstItem)
 }
 

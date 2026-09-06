@@ -4,6 +4,8 @@ import type { EmailLijstItem } from '@/lib/mail/types'
 import { extractSenderName, cleanEmailPreview, formatShortDate, getAvatarStyle, labelColors } from './emailHelpers'
 import type { Dichtheid, SwipeLinks } from './shell/voorkeuren'
 import type { KoppelingChipInfo } from './shell/koppelingChips'
+import { ToewijsAvatar } from './shell/ToewijsMenu'
+import type { ToewijsDoel } from './shell/toewijzing'
 import { cn } from '@/lib/utils'
 import { hapticLight, hapticMedium } from '@/utils/haptic'
 
@@ -27,6 +29,8 @@ export interface EmailListItemProps {
   onVerwijder: (item: EmailLijstItem) => void
   onToggleGelezen: (item: EmailLijstItem) => void
   onPrefetch?: (item: EmailLijstItem) => void
+  /** Gedeeld postvak: wie dit gesprek heeft opgepakt. */
+  toegewezen?: ToewijsDoel | null
   salesMode?: 'wacht' | 'beantwoord'
   onMarkeerBeantwoord?: (id: string) => void
   onWisWacht?: (id: string) => void
@@ -43,7 +47,7 @@ const CHIP_ICOON = { klant: Building2, project: FolderKanban, offerte: FileText 
 export const EmailListItem = memo(function EmailListItem({
   item, actief, aangevinkt, focus, dichtheid, chip, swipeLinks,
   onSelect, onToggleCheck, onPin, onArchiveer, onVerwijder, onToggleGelezen, onPrefetch,
-  salesMode, onMarkeerBeantwoord, onWisWacht,
+  toegewezen, salesMode, onMarkeerBeantwoord, onWisWacht,
 }: EmailListItemProps) {
   const ongelezen = !item.gelezen
   const compact = dichtheid === 'compact'
@@ -192,6 +196,7 @@ export const EmailListItem = memo(function EmailListItem({
                 {threadAantal}
               </span>
             )}
+            {toegewezen && <ToewijsAvatar doel={toegewezen} formaat={15} />}
             {bijlagen && <Paperclip className="h-3 w-3 text-petrol/45 dark:text-muted-foreground flex-shrink-0" aria-label="Bijlage" />}
             {item.pinned && <Pin className="h-3 w-3 fill-flame text-flame -rotate-45 flex-shrink-0" aria-label="Vastgepind" />}
             <span className={cn('ml-auto pl-2 text-[11.5px] font-mono tabular-nums flex-shrink-0 leading-none md:group-hover:opacity-0 transition-opacity', ongelezen ? 'text-petrol dark:text-[#7FB5BF] font-semibold' : 'text-muted-foreground/80')}>
