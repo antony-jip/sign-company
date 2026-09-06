@@ -493,10 +493,21 @@ export function TijdregistratieLayout() {
     setDeleteConfirmId(null);
   }
 
+  // Met uren_goedkeuren aan gaat alleen 'goedgekeurd' naar de factuur; uit telt elk uur (status is dan altijd goedgekeurd).
+  const factureerbaar = (r: Tijdregistratie) =>
+    r.facturabel && !r.gefactureerd && (!goedkeurenAan || (r.status ?? "goedgekeurd") === "goedgekeurd");
+  const aantalFactureerbaar = registraties.filter(factureerbaar).length;
+
   async function handleFactureerUren() {
-    const teFactureren = sortedRegistraties.filter((r) => r.facturabel && !r.gefactureerd);
+    const teFactureren = sortedRegistraties.filter(factureerbaar);
+    const wachtMinuten = goedkeurenAan
+      ? sortedRegistraties.filter((r) => r.facturabel && !r.gefactureerd && r.status === "definitief").reduce((sum, r) => sum + r.duur_minuten, 0)
+      : 0;
+    if (wachtMinuten > 0) {
+      toast.info(`${(wachtMinuten / 60).toLocaleString("nl-NL", { maximumFractionDigits: 1 })} uur wacht op goedkeuring en gaat nog niet mee`);
+    }
     if (teFactureren.length === 0) {
-      toast.error("Geen ongefactureerde uren gevonden");
+      if (wachtMinuten === 0) toast.error("Geen ongefactureerde uren gevonden");
       return;
     }
 
@@ -657,10 +668,10 @@ export function TijdregistratieLayout() {
             variant="outline"
             size="sm"
             onClick={handleFactureerUren}
-            disabled={factureerBezig || registraties.filter((r) => r.facturabel && !r.gefactureerd).length === 0}
+            disabled={factureerBezig || aantalFactureerbaar === 0}
           >
             <Euro className="mr-2 h-4 w-4" />
-            {factureerBezig ? "Bezig..." : `Factureer uren (${registraties.filter((r) => r.facturabel && !r.gefactureerd).length})`}
+            {factureerBezig ? "Bezig..." : `Factureer uren (${aantalFactureerbaar})`}
           </Button>
           <Button onClick={openNewDialog}>
             <Plus className="mr-2 h-4 w-4" />
