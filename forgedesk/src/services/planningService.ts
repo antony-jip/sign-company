@@ -168,22 +168,37 @@ export async function createMontageAfspraakReeks(
 }
 
 /** "Deze en volgende": alle rijen van de reeks vanaf deze datum, inclusief deze. Geeft de verwijderde id's terug. */
-export async function deleteMontageAfspraakReeksVanaf(bronId: string, vanafDatum: string): Promise<string[]> {
+/**
+ * "Deze en volgende" uit een reeks. Afspraken met een werkbon of die al
+ * afgerond zijn blijven staan: daar hangt werk aan dat je niet per ongeluk
+ * kwijt wilt. Geeft terug wat weg is en wat is overgeslagen.
+ */
+export async function deleteMontageAfspraakReeksVanaf(
+  bronId: string,
+  vanafDatum: string,
+): Promise<{ verwijderd: string[]; overgeslagen: number }> {
   assertId(bronId, 'herhaling_bron_id')
+  const beschermd = (a: Pick<MontageAfspraak, 'werkbon_id' | 'status'>) => !!a.werkbon_id || a.status === 'afgerond'
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
+    const { data: kandidaten, error: leesFout } = await supabase
       .from('montage_afspraken')
-      .delete()
+      .select('id, werkbon_id, status')
       .eq('herhaling_bron_id', bronId)
       .gte('datum', vanafDatum)
-      .select('id')
-    if (error) throw error
-    return (data || []).map((r) => r.id as string)
+    if (leesFout) throw leesFout
+    const rijen = (kandidaten || []) as Pick<MontageAfspraak, 'id' | 'werkbon_id' | 'status'>[]
+    const weg = rijen.filter((a) => !beschermd(a)).map((a) => a.id)
+    if (weg.length > 0) {
+      const { error } = await supabase.from('montage_afspraken').delete().in('id', weg)
+      if (error) throw error
+    }
+    return { verwijderd: weg, overgeslagen: rijen.length - weg.length }
   }
   const items = getLocalData<MontageAfspraak>('montage_afspraken')
-  const weg = items.filter((a) => a.herhaling_bron_id === bronId && a.datum >= vanafDatum).map((a) => a.id)
+  const kandidaten = items.filter((a) => a.herhaling_bron_id === bronId && a.datum >= vanafDatum)
+  const weg = kandidaten.filter((a) => !beschermd(a)).map((a) => a.id)
   setLocalData('montage_afspraken', items.filter((a) => !weg.includes(a.id)))
-  return weg
+  return { verwijderd: weg, overgeslagen: kandidaten.length - weg.length }
 }
 
 export async function getMontageAfsprakenByProject(projectId: string): Promise<MontageAfspraak[]> {

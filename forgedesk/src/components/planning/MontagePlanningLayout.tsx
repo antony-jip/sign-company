@@ -1466,10 +1466,14 @@ export function MontagePlanningLayout() {
     const confirmed = await confirm({ message: 'Deze en alle volgende afspraken uit de reeks verwijderen?', variant: 'destructive', confirmLabel: 'Verwijderen' })
     if (!confirmed) return
     try {
-      const weg = new Set(await deleteMontageAfspraakReeksVanaf(afspraak.herhaling_bron_id, afspraak.datum));
-      weg.add(afspraak.id);
+      const uitkomst = await deleteMontageAfspraakReeksVanaf(afspraak.herhaling_bron_id, afspraak.datum);
+      const weg = new Set(uitkomst.verwijderd);
       setAfspraken((prev) => prev.filter((a) => !weg.has(a.id)));
-      toast.success(`${weg.size} afspra${weg.size === 1 ? 'ak' : 'ken'} verwijderd`);
+      if (uitkomst.overgeslagen > 0) {
+        toast.success(`${weg.size} verwijderd, ${uitkomst.overgeslagen} met werkbon of afgerond blijven staan`);
+      } else {
+        toast.success(`${weg.size} afspra${weg.size === 1 ? 'ak' : 'ken'} verwijderd`);
+      }
     } catch (err) {
       logger.error('Reeks verwijderen mislukt:', err)
       toast.error("Er ging iets mis bij het verwijderen");
