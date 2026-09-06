@@ -11,9 +11,8 @@
 -- 5. email_threads_view: threading van de server, de client groepeert niet meer.
 -- 6. user_email_settings: OAuth-kolommen voor Google en Microsoft (golf 3).
 --
--- Let op: de kopie van body_html naar email_bodies kan bij 24.000 mails een
--- paar minuten duren. Daarna wordt emails.body_html leeggemaakt; oude code
--- valt dan terug op ophalen via IMAP, nieuwe code leest email_bodies.
+-- Deze migratie is licht: alleen structuur, geen data. Het overzetten van de
+-- bestaande mailteksten gebeurt daarna met 244b, in blokken.
 
 BEGIN;
 
@@ -54,13 +53,11 @@ DROP POLICY IF EXISTS "Eigenaar verwijdert eigen bodies" ON email_bodies;
 CREATE POLICY "Eigenaar verwijdert eigen bodies" ON email_bodies
   FOR DELETE TO authenticated USING (user_id = auth.uid());
 
-INSERT INTO email_bodies (email_id, user_id, body_html, body_text)
-SELECT id, user_id, body_html, body_text
-FROM emails
-WHERE body_html IS NOT NULL
-ON CONFLICT (email_id) DO NOTHING;
-
-UPDATE emails SET body_html = NULL WHERE body_html IS NOT NULL;
+-- De kopie van de bestaande teksten staat NIET in deze migratie. Bij 24.000
+-- mails is dat honderden MB in één transactie en loopt de SQL-editor in een
+-- time-out. Draai daarvoor 244b_mail_bodies_kopieren.sql, zo vaak tot hij 0
+-- meldt. Tot die tijd leest de app gewoon uit emails.body_html; de terugval
+-- daarop zit in src/services/emailService.ts.
 
 -- 2. Concepten als rijen
 ALTER TABLE emails ADD COLUMN IF NOT EXISTS concept JSONB;

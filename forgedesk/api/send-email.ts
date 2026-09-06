@@ -132,6 +132,8 @@ async function attachmentToegestaan(
   return false
 }
 interface EmailCredentials {
+  /** Rij-id van het postvak; pas gevuld na migratie 245. */
+  account_id: string | null
   gmail_address: string
   app_password: string
   user_id: string
@@ -344,7 +346,7 @@ async function getEmailCredentials(userId: string, accountId?: string | null): P
   // eerst de volledige select, en bij een kolomfout opnieuw met de kolommen van
   // vóór 244. Zie dezelfde helper in fetch-emails, read-email,
   // prefetch-email-bodies, email-imap-action en email-settings.
-  const KOLOMMEN_VOOR_244 = 'gmail_address, encrypted_app_password, smtp_host, smtp_port, imap_host, imap_port'
+  const KOLOMMEN_VOOR_244 = 'id, gmail_address, encrypted_app_password, smtp_host, smtp_port, imap_host, imap_port'
   const KOLOMMEN = `${KOLOMMEN_VOOR_244}, auth_type, oauth_refresh_token_enc, oauth_access_token_enc, oauth_token_verloopt_op`
   const isKolomFout = (fout: { code?: string; message?: string } | null): boolean => {
     if (!fout) return false
@@ -405,6 +407,7 @@ async function getEmailCredentials(userId: string, accountId?: string | null): P
   }
 
   return {
+    account_id: (data.id as string) ?? null,
     gmail_address: data.gmail_address as string,
     app_password: data.encrypted_app_password ? decryptPassword(data.encrypted_app_password as string) : '',
     user_id: userId,
@@ -946,6 +949,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .insert({
           user_id,
           organisatie_id: mailOrgId,
+          // Uit welk postvak deze mail vertrok. Zonder dit is verzonden mail uit
+          // een gedeeld postvak onzichtbaar voor het team, want de policy uit
+          // migratie 245 eist een account_id.
+          ...(creds?.account_id ? { account_id: creds.account_id } : {}),
           message_id: sentMessageId,
           in_reply_to: in_reply_to || null,
           thread_id: effectiveThreadId,

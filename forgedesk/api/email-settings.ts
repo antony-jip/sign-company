@@ -215,6 +215,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'DELETE') {
     try {
       const userId = await verifyUser(req)
+      // Met een account_id ontkoppel je één postvak; zonder id alleen wanneer er
+      // precies één is. Een kale delete op user_id wiste bij een tweede postvak
+      // stilzwijgend ook de eerste.
+      const accountId = typeof req.query.account_id === 'string' ? req.query.account_id : (req.body?.account_id as string | undefined)
+      if (accountId) {
+        const { error } = await supabaseAdmin
+          .from('user_email_settings')
+          .delete()
+          .eq('user_id', userId)
+          .eq('id', accountId)
+        if (error) return res.status(400).json({ error: 'Postvak ontkoppelen mislukt' })
+        return res.status(200).json({ success: true, message: 'Postvak ontkoppeld' })
+      }
+      const { data: rijen } = await supabaseAdmin
+        .from('user_email_settings')
+        .select('id')
+        .eq('user_id', userId)
+      if ((rijen?.length ?? 0) > 1) {
+        return res.status(400).json({ error: 'Er zijn meer postvakken gekoppeld. Kies welk postvak je wilt ontkoppelen.' })
+      }
       await supabaseAdmin
         .from('user_email_settings')
         .delete()
