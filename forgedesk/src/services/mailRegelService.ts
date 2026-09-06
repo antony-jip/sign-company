@@ -190,23 +190,117 @@ const GEZIEN_MAX = 500
 
 /**
  * `email_regels` heeft geen kolom om per mail vast te leggen dat de regels
- * gedraaid hebben, dus houdt de browser de laatste 500 ids bij. Genoeg om te
- * voorkomen dat een regel bij elke herlaad opnieuw archiveert.
+ * gedraaid hebben, dus houdt de browser de laatste 500 ids bij.
+ *
+ * De lijst staat in het geheugen en is daar leidend; localStorage is de kopie
+ * die een herlaad overleeft. Dat moet wel, want markeren is synchroon: wie de
+ * lijst leest, awaits doet en pas daarna terugschrijft, laat een tweede ronde
+ * dezelfde mail nog een keer archiveren. Na `markeerGezien(ids)` geeft
+ * `isGezien(id)` meteen true, ook vóór de eerstvolgende await.
  */
-export function leesGezien(): Set<string> {
-  try {
-    const rauw = localStorage.getItem(GEZIEN_SLEUTEL)
-    if (!rauw) return new Set()
-    const lijst = JSON.parse(rauw)
-    return Array.isArray(lijst) ? new Set(lijst.map(String)) : new Set()
-  } catch {
-    return new Set()
-  }
+let gezienLijst: string[] = []
+const gezienIds = new Set<string>()
+let gezienGeladen: Promise<void> | null = null
+
+/** Eén keer per sessie de bewaarde lijst in het geheugen zetten. */
+export function zorgVoorGezien(): Promise<void> {
+  if (gezienGeladen) return gezienGeladen
+  neemOverUitStorage(GEZIEN_SLEUTEL)
+  gezienGeladen = Promise.resolve()
+  return gezienGeladen
 }
 
-export function schrijfGezien(ids: Iterable<string>): void {
+function neemOverUitStorage(sleutel: string): void {
   try {
-    const lijst = [...ids].slice(-GEZIEN_MAX)
-    localStorage.setItem(GEZIEN_SLEUTEL, JSON.stringify(lijst))
+    const rauw = localStorage.getItem(sleutel)
+    if (!rauw) return
+    const lijst = JSON.parse(rauw)
+    if (!Array.isArray(lijst)) return
+    // Wat deze sessie al markeerde is nieuwer dan wat er opgeslagen stond.
+    const bewaard = lijst.map(String).filter((id) => !gezienIds.has(id))
+    for (const id of bewaard) gezienIds.add(id)
+    gezienLijst = [...bewaard, ...gezienLijst]
   } catch { /* storage geblokkeerd */ }
+}
+
+function bewaarGezien(): void {
+  try {
+    localStorage.setItem(GEZIEN_SLEUTEL, JSON.stringify(gezienLijst))
+  } catch { /* storage geblokkeerd */ }
+}
+
+function knipEnBewaar(): void {
+  if (gezienLijst.length > GEZIEN_MAX) {
+    for (const id of gezienLijst.slice(0, gezienLijst.length - GEZIEN_MAX)) gezienIds.delete(id)
+    gezienLijst = gezienLijst.slice(-GEZIEN_MAX)
+  }
+  bewaarGezien()
+}
+
+export function isGezien(id: string): boolean {
+  void zorgVoorGezien()
+  return gezienIds.has(id)
+}
+
+/** Synchroon markeren: geen await tussen het besluit en de vastlegging. */
+export function markeerGezien(ids: Iterable<string>): void {
+  void zorgVoorGezien()
+  let iets = false
+  for (const id of ids) {
+    if (gezienIds.has(id)) continue
+    gezienIds.add(id)
+    gezienLijst.push(id)
+    iets = true
+  }
+  if (iets) knipEnBewaar()
+}
+
+/** "Nu toepassen" moet een mail opnieuw langs de regels kunnen sturen. */
+export function vergeetGezien(ids: Iterable<string>): void {
+  void zorgVoorGezien()
+  let iets = false
+  for (const id of ids) if (gezienIds.delete(id)) iets = true
+  if (!iets) return
+  gezienLijst = gezienLijst.filter((id) => gezienIds.has(id))
+  bewaarGezien()
+}
+
+/**
+ * Ids die op dit moment door de regels lopen. Een tweede ronde (realtime en
+ * een herlaad tegelijk) mag dezelfde mail niet nog eens pakken zolang de
+ * acties van de eerste ronde nog in de lucht hangen.
+ */
+export const idsInBehandeling = new Set<string>()
+
+/** Claimt de ids die nog vrij zijn en geeft precies die terug. */
+export function neemInBehandeling(ids: Iterable<string>): string[] {
+  const genomen: string[] = []
+  for (const id of ids) {
+    if (idsInBehandeling.has(id)) continue
+    idsInBehandeling.add(id)
+    genomen.push(id)
+  }
+  return genomen
+}
+
+export function laatLos(ids: Iterable<string>): void {
+  for (const id of ids) idsInBehandeling.delete(id)
+}
+
+/** @deprecated Gebruik isGezien; deze kopie loopt achter zodra er een await tussen zit. */
+export function leesGezien(): Set<string> {
+  void zorgVoorGezien()
+  return new Set(gezienIds)
+}
+
+/** @deprecated Gebruik markeerGezien of vergeetGezien. */
+export function schrijfGezien(ids: Iterable<string>): void {
+  void zorgVoorGezien()
+  const binnen = [...ids].map(String)
+  const binnenSet = new Set(binnen)
+  for (const id of [...gezienIds]) if (!binnenSet.has(id)) gezienIds.delete(id)
+  const nieuw = binnen.filter((id) => !gezienIds.has(id))
+  for (const id of nieuw) gezienIds.add(id)
+  gezienLijst = [...gezienLijst.filter((id) => binnenSet.has(id)), ...nieuw]
+  knipEnBewaar()
 }
