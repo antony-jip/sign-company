@@ -9,9 +9,11 @@
 -- 3. Storage: documenten-prive was voor elke ingelogde gebruiker op elk pad
 --    schrijfbaar (185), en project-fotos accepteerde uploads in elke
 --    projectmap (028). Het pad wordt nu aan de gebruiker of de organisatie
---    gebonden. Padvormen in gebruik: {user}/..., email-bijlagen/{user}/...,
---    email-bijlagen-groot/{user}/..., projects/{org}/..., montage-bijlagen/{org}/...
---    en project-fotos/{project_id}/...
+--    gebonden. Padvormen in gebruik in documenten-prive: {user}/...,
+--    email-bijlagen/{user}/..., email-bijlagen-groot/{user}/...,
+--    projects/{org}/..., montage-bijlagen/{org}/..., werkbon-fotos/{werkbon}/...,
+--    werkbon-afbeeldingen/{werkbon_item}/... en werkbon-pdfs/{werkbon_item}/...
+--    In project-fotos: {project_id}/... en taken/{taak_id}/...
 
 BEGIN;
 
@@ -95,6 +97,22 @@ CREATE POLICY "documenten_prive_schrijven" ON storage.objects
       (storage.foldername(name))[1] = auth.uid()::text
       OR (storage.foldername(name))[2] = auth.uid()::text
       OR (storage.foldername(name))[2] = auth_organisatie_id()::text
+      OR (
+        (storage.foldername(name))[1] = 'werkbon-fotos'
+        AND EXISTS (
+          SELECT 1 FROM werkbonnen w
+          WHERE w.id::text = (storage.foldername(name))[2]
+            AND w.organisatie_id = auth_organisatie_id()
+        )
+      )
+      OR (
+        (storage.foldername(name))[1] IN ('werkbon-afbeeldingen', 'werkbon-pdfs')
+        AND EXISTS (
+          SELECT 1 FROM werkbon_items wi
+          WHERE wi.id::text = (storage.foldername(name))[2]
+            AND wi.organisatie_id = auth_organisatie_id()
+        )
+      )
     )
   );
 
@@ -107,6 +125,22 @@ CREATE POLICY "documenten_prive_bijwerken" ON storage.objects
       (storage.foldername(name))[1] = auth.uid()::text
       OR (storage.foldername(name))[2] = auth.uid()::text
       OR (storage.foldername(name))[2] = auth_organisatie_id()::text
+      OR (
+        (storage.foldername(name))[1] = 'werkbon-fotos'
+        AND EXISTS (
+          SELECT 1 FROM werkbonnen w
+          WHERE w.id::text = (storage.foldername(name))[2]
+            AND w.organisatie_id = auth_organisatie_id()
+        )
+      )
+      OR (
+        (storage.foldername(name))[1] IN ('werkbon-afbeeldingen', 'werkbon-pdfs')
+        AND EXISTS (
+          SELECT 1 FROM werkbon_items wi
+          WHERE wi.id::text = (storage.foldername(name))[2]
+            AND wi.organisatie_id = auth_organisatie_id()
+        )
+      )
     )
   )
   WITH CHECK (
@@ -115,6 +149,22 @@ CREATE POLICY "documenten_prive_bijwerken" ON storage.objects
       (storage.foldername(name))[1] = auth.uid()::text
       OR (storage.foldername(name))[2] = auth.uid()::text
       OR (storage.foldername(name))[2] = auth_organisatie_id()::text
+      OR (
+        (storage.foldername(name))[1] = 'werkbon-fotos'
+        AND EXISTS (
+          SELECT 1 FROM werkbonnen w
+          WHERE w.id::text = (storage.foldername(name))[2]
+            AND w.organisatie_id = auth_organisatie_id()
+        )
+      )
+      OR (
+        (storage.foldername(name))[1] IN ('werkbon-afbeeldingen', 'werkbon-pdfs')
+        AND EXISTS (
+          SELECT 1 FROM werkbon_items wi
+          WHERE wi.id::text = (storage.foldername(name))[2]
+            AND wi.organisatie_id = auth_organisatie_id()
+        )
+      )
     )
   );
 
@@ -127,6 +177,22 @@ CREATE POLICY "documenten_prive_verwijderen" ON storage.objects
       (storage.foldername(name))[1] = auth.uid()::text
       OR (storage.foldername(name))[2] = auth.uid()::text
       OR (storage.foldername(name))[2] = auth_organisatie_id()::text
+      OR (
+        (storage.foldername(name))[1] = 'werkbon-fotos'
+        AND EXISTS (
+          SELECT 1 FROM werkbonnen w
+          WHERE w.id::text = (storage.foldername(name))[2]
+            AND w.organisatie_id = auth_organisatie_id()
+        )
+      )
+      OR (
+        (storage.foldername(name))[1] IN ('werkbon-afbeeldingen', 'werkbon-pdfs')
+        AND EXISTS (
+          SELECT 1 FROM werkbon_items wi
+          WHERE wi.id::text = (storage.foldername(name))[2]
+            AND wi.organisatie_id = auth_organisatie_id()
+        )
+      )
     )
   );
 
