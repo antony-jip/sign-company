@@ -44,6 +44,8 @@ import {
   getVoorraadArtikelen,
 } from '@/services/supabaseService';
 import { getCached, fetchQuery } from '@/lib/queryCache';
+import { getMedewerkerContracten } from '@/services/planningService';
+import { contractOpDatum, contractUrenOpDag, datumPlusDagen } from '@/utils/contracturen';
 import type {
   Klant,
   Project,
@@ -52,6 +54,7 @@ import type {
   Tijdregistratie,
   Medewerker,
   VoorraadArtikel,
+  MedewerkerContract,
 } from '@/types';
 import { exBtw, openstaandExBtw } from '@/utils/btwWeergave'
 import { cn, formatCurrency } from '@/lib/utils';
@@ -128,6 +131,7 @@ export function RapportagesLayout() {
   const [tijdregistraties, setTijdregistraties] = useState<Tijdregistratie[]>(() => getCached<Tijdregistratie[]>('tijdregistraties') ?? []);
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>(() => getCached<Medewerker[]>('medewerkers') ?? []);
   const [voorraadArtikelen, setVoorraadArtikelen] = useState<VoorraadArtikel[]>(() => getCached<VoorraadArtikel[]>('voorraadArtikelen') ?? []);
+  const [contracten, setContracten] = useState<MedewerkerContract[]>([]);
   const [loading, setLoading] = useState(() => getCached('facturen') === undefined);
 
   // Fetch data on mount
@@ -135,13 +139,14 @@ export function RapportagesLayout() {
     async function fetchData() {
       if (getCached('facturen') === undefined) setLoading(true);
       try {
-        const [facturenData, projectenData, offertesData, tijdData, mwData, vaData] = await Promise.all([
+        const [facturenData, projectenData, offertesData, tijdData, mwData, vaData, contractData] = await Promise.all([
           fetchQuery('facturen', getFacturen),
           fetchQuery('projecten', getProjecten),
           fetchQuery('offertes', getOffertes),
           fetchQuery('tijdregistraties', getTijdregistraties),
           fetchQuery('medewerkers', getMedewerkers).catch(() => []),
           fetchQuery('voorraadArtikelen', getVoorraadArtikelen).catch(() => []),
+          getMedewerkerContracten().catch(() => [] as MedewerkerContract[]),
         ]);
 
         setFacturen(facturenData);
@@ -150,6 +155,7 @@ export function RapportagesLayout() {
         setTijdregistraties(tijdData);
         setMedewerkers(mwData);
         setVoorraadArtikelen(vaData);
+        setContracten(contractData);
       } catch (err) {
         logger.error('Fout bij het laden van rapportagegegevens:', err);
         toast.error('Fout bij het laden van rapportagegegevens');
@@ -386,16 +392,27 @@ export function RapportagesLayout() {
   // ---------------------------------------------------------------------------
 
   const medewerkerProductiviteit = useMemo(() => {
+    const lokaalIso = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+    const vandaag = lokaalIso(new Date());
+    const periodeStart = lokaalIso(range.start);
+    const periodeEind = [lokaalIso(range.end), vandaag].sort()[0];
     return medewerkers
       .filter((m) => m.status === 'actief')
       .map((m) => {
-        const minuten = tijdregistraties
-          .filter((t) => t.medewerker_id === m.id)
-          .reduce((s, t) => s + (t.duur_minuten || 0), 0);
+        const eigen = tijdregistraties.filter((t) => t.medewerker_id === m.id);
+        const minuten = eigen.reduce((s, t) => s + (t.duur_minuten || 0), 0);
+        const facturabelMinuten = eigen.filter((t) => t.facturabel).reduce((s, t) => s + (t.duur_minuten || 0), 0);
         const uren = minuten / 60;
-        const projectIds = new Set(
-          tijdregistraties.filter((t) => t.medewerker_id === m.id).map((t) => t.project_id)
-        );
+        const projectIds = new Set(eigen.map((t) => t.project_id));
+        // Tegen rooster: uren in de periode tegen de contracturen van dezelfde dagen, tot vandaag.
+        let roosterUren = 0;
+        let periodeMinuten = 0;
+        if (contracten.length > 0 && contractOpDatum(contracten, m.id, periodeEind)) {
+          for (let dag = periodeStart; dag <= periodeEind; dag = datumPlusDagen(dag, 1)) {
+            roosterUren += contractUrenOpDag(contracten, m.id, dag);
+          }
+          periodeMinuten = eigen.filter((t) => t.datum >= periodeStart && t.datum <= periodeEind).reduce((s, t) => s + (t.duur_minuten || 0), 0);
+        }
         return {
           id: m.id,
           naam: m.naam,
@@ -404,10 +421,13 @@ export function RapportagesLayout() {
           projecten: projectIds.size,
           uurtarief: m.uurtarief,
           omzet: round2(uren * m.uurtarief),
+          facturabelPct: minuten > 0 ? Math.round((facturabelMinuten / minuten) * 100) : null,
+          roosterPct: roosterUren > 0 ? Math.round((periodeMinuten / 60 / roosterUren) * 100) : null,
         };
       })
       .sort((a, b) => b.uren - a.uren);
-  }, [medewerkers, tijdregistraties]);
+  }, [medewerkers, tijdregistraties, contracten, range]);
+  const toonRooster = contracten.length > 0;
 
   // ---------------------------------------------------------------------------
   // Voorraad rapportage
@@ -505,11 +525,13 @@ export function RapportagesLayout() {
   }
 
   function handleExportMedewerkers(type: 'csv' | 'excel') {
-    const headers = ['Medewerker', 'Functie', 'Uren', 'Projecten', 'Uurtarief', 'Omzet'];
+    const headers = ['Medewerker', 'Functie', 'Uren', 'Facturabel %', ...(toonRooster ? ['Tegen rooster %'] : []), 'Projecten', 'Uurtarief', 'Omzet'];
     const data = medewerkerProductiviteit.map((m) => ({
       Medewerker: m.naam,
       Functie: m.functie,
       Uren: m.uren,
+      'Facturabel %': m.facturabelPct ?? '',
+      ...(toonRooster ? { 'Tegen rooster %': m.roosterPct ?? '' } : {}),
       Projecten: m.projecten,
       Uurtarief: m.uurtarief,
       Omzet: m.omzet,
@@ -1427,6 +1449,8 @@ export function RapportagesLayout() {
                     <th className="pb-3 font-medium text-muted-foreground">Medewerker</th>
                     <th className="pb-3 font-medium text-muted-foreground">Functie</th>
                     <th className="pb-3 font-medium text-muted-foreground text-right">Uren</th>
+                    <th className="pb-3 font-medium text-muted-foreground text-right">Facturabel %</th>
+                    {toonRooster && <th className="pb-3 font-medium text-muted-foreground text-right">Tegen rooster %</th>}
                     <th className="pb-3 font-medium text-muted-foreground text-right">Projecten</th>
                     <th className="pb-3 font-medium text-muted-foreground text-right">Uurtarief</th>
                     <th className="pb-3 font-medium text-muted-foreground text-right">Omzet</th>
@@ -1438,6 +1462,8 @@ export function RapportagesLayout() {
                       <td className="py-3 font-medium">{m.naam}</td>
                       <td className="py-3 text-muted-foreground">{m.functie || '-'}</td>
                       <td className="py-3 text-right">{m.uren}u</td>
+                      <td className="py-3 text-right">{m.facturabelPct === null ? '-' : `${m.facturabelPct}%`}</td>
+                      {toonRooster && <td className="py-3 text-right">{m.roosterPct === null ? '-' : `${m.roosterPct}%`}</td>}
                       <td className="py-3 text-right">{m.projecten}</td>
                       <td className="py-3 text-right">{formatCurrency(m.uurtarief)}/u</td>
                       <td className="py-3 text-right font-medium">{formatCurrency(m.omzet)}</td>
