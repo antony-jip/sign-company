@@ -53,7 +53,9 @@ import {
   updateVerlof,
   deleteVerlof,
 } from '@/services/supabaseService';
-import type { Medewerker, Verlof } from '@/types';
+import { getMedewerkerContracten, upsertMedewerkerContract } from '@/services/planningService';
+import type { Medewerker, Verlof, MedewerkerContract } from '@/types';
+import { contractOpDatum, contractUrenPerWeek, datumPlusDagen } from '@/utils/contracturen';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { useAuth } from '@/contexts/AuthContext';
 import { isAdminUser } from '@/utils/authHelpers';
@@ -116,6 +118,37 @@ function avatarColor(naam: string): string {
   return colours[Math.abs(hash) % colours.length];
 }
 
+const DAG_LABELS = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'];
+const UREN_VELDEN = ['uren_ma', 'uren_di', 'uren_wo', 'uren_do', 'uren_vr', 'uren_za', 'uren_zo'] as const;
+const STANDAARD_UREN = [8, 8, 8, 8, 8, 0, 0];
+
+function vandaagIso(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function formatUren(n: number): string {
+  return Number.isInteger(n) ? String(n) : n.toFixed(1).replace('.', ',');
+}
+
+function formatDatumKort(iso: string): string {
+  return new Date(iso.slice(0, 10) + 'T00:00:00').toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function urenVanContract(c: MedewerkerContract): number[] {
+  return UREN_VELDEN.map((v) => Number(c[v] ?? 0));
+}
+
+function urenNaarVelden(uren: number[]): Pick<MedewerkerContract, typeof UREN_VELDEN[number]> {
+  return {
+    uren_ma: uren[0], uren_di: uren[1], uren_wo: uren[2], uren_do: uren[3],
+    uren_vr: uren[4], uren_za: uren[5], uren_zo: uren[6],
+  };
+}
+
+function blankWerktijden() {
+  return { uren: [...STANDAARD_UREN], geldig_van: vandaagIso() };
+}
+
 function blankMedewerker(): Omit<Medewerker, 'id' | 'user_id' | 'created_at' | 'updated_at'> {
   return {
     naam: '',
@@ -155,6 +188,9 @@ export function TeamLayout() {
   const [form, setForm] = useState(blankMedewerker());
   const [skillInput, setSkillInput] = useState('');
   const [saving, setSaving] = useState(false);
+  const [contracten, setContracten] = useState<MedewerkerContract[]>([]);
+  const [werktijden, setWerktijden] = useState(blankWerktijden());
+  const [werktijdenAangeraakt, setWerktijdenAangeraakt] = useState(false);
 
   // Verlof dialog state
   const [verlofDialogOpen, setVerlofDialogOpen] = useState(false);
@@ -175,12 +211,14 @@ export function TeamLayout() {
   async function loadData() {
     setLoading(true);
     try {
-      const [mwData, verlofData] = await Promise.all([
+      const [mwData, verlofData, contractData] = await Promise.all([
         getMedewerkers(),
         getVerlof(),
+        getMedewerkerContracten().catch((err) => { logger.warn('Contracten niet geladen:', err); return [] as MedewerkerContract[]; }),
       ]);
       setMedewerkers(mwData || []);
       setVerlofLijst(verlofData || []);
+      setContracten(contractData);
     } catch (err) {
       logger.error('Kon teamgegevens niet laden:', err);
       toast.error('Kon teamgegevens niet laden');
@@ -241,7 +279,50 @@ export function TeamLayout() {
     setEditId(null);
     setForm(blankMedewerker());
     setSkillInput('');
+    setWerktijden(blankWerktijden());
+    setWerktijdenAangeraakt(false);
     setDialogOpen(true);
+  }
+
+  function geldendContract(medewerkerId: string): MedewerkerContract | null {
+    return contractOpDatum(contracten, medewerkerId, vandaagIso());
+  }
+
+  function urenPerWeekLabel(medewerkerId: string): string | null {
+    const c = geldendContract(medewerkerId);
+    return c ? `${formatUren(contractUrenPerWeek(c))} u/wk` : null;
+  }
+
+  const contractenVanBewerkte = useMemo(
+    () => (editId ? contracten.filter((c) => c.medewerker_id === editId).sort((a, b) => (a.geldig_van < b.geldig_van ? 1 : -1)) : []),
+    [contracten, editId]
+  );
+
+  const weektotaal = werktijden.uren.reduce((som, u) => som + (Number.isFinite(u) ? u : 0), 0);
+
+  function setDagUren(index: number, waarde: string) {
+    const n = waarde === '' ? 0 : Math.max(0, Math.min(24, parseFloat(waarde.replace(',', '.')) || 0));
+    setWerktijden((w) => ({ ...w, uren: w.uren.map((u, i) => (i === index ? n : u)) }));
+    setWerktijdenAangeraakt(true);
+  }
+
+  // Het geldende rooster bijwerken, of bij een latere ingangsdatum het oude
+  // afsluiten op de dag ervoor en een nieuw contract beginnen.
+  async function slaWerktijdenOp(medewerkerId: string) {
+    const basis = contractOpDatum(contracten, medewerkerId, werktijden.geldig_van) ?? geldendContract(medewerkerId);
+    if (basis && !werktijdenAangeraakt) return;
+    const velden = urenNaarVelden(werktijden.uren);
+    if (!basis) {
+      await upsertMedewerkerContract({ medewerker_id: medewerkerId, geldig_van: werktijden.geldig_van, geldig_tot: null, ...velden });
+    } else if (werktijden.geldig_van > basis.geldig_van.slice(0, 10)) {
+      const ongewijzigd = urenVanContract(basis).every((u, i) => u === werktijden.uren[i]);
+      if (ongewijzigd) return;
+      await upsertMedewerkerContract({ ...basis, geldig_tot: datumPlusDagen(werktijden.geldig_van, -1) });
+      await upsertMedewerkerContract({ medewerker_id: medewerkerId, geldig_van: werktijden.geldig_van, geldig_tot: null, ...velden });
+    } else {
+      await upsertMedewerkerContract({ ...basis, geldig_van: werktijden.geldig_van, ...velden });
+    }
+    setContracten(await getMedewerkerContracten());
   }
 
   function openBewerken(m: Medewerker) {
@@ -262,6 +343,9 @@ export function TeamLayout() {
       notities: m.notities,
     });
     setSkillInput('');
+    const contract = geldendContract(m.id);
+    setWerktijden(contract ? { uren: urenVanContract(contract), geldig_van: contract.geldig_van.slice(0, 10) } : blankWerktijden());
+    setWerktijdenAangeraakt(false);
     setDialogOpen(true);
   }
 
@@ -272,8 +356,12 @@ export function TeamLayout() {
     }
 
     setSaving(true);
+    let opgeslagenId: string | null = editId;
     try {
-      if (editId) {
+      if (editId?.startsWith('profile-')) {
+        // Teamlid zonder medewerker-record: de gegevens staan in het profiel,
+        // alleen de werktijden zijn hier te bewaren.
+      } else if (editId) {
         const updated = await updateMedewerker(editId, form);
         if (updated) {
           setMedewerkers((prev) =>
@@ -291,6 +379,7 @@ export function TeamLayout() {
         const created = await createMedewerker({ ...form, user_id: user.id });
         if (created) {
           setMedewerkers((prev) => [...prev, created]);
+          opgeslagenId = created.id;
           toast.success('Medewerker toegevoegd.');
         } else {
           const nieuw: Medewerker = {
@@ -301,6 +390,7 @@ export function TeamLayout() {
             updated_at: new Date().toISOString(),
           };
           setMedewerkers((prev) => [...prev, nieuw]);
+          opgeslagenId = nieuw.id;
           toast.success('Medewerker toegevoegd (lokaal).');
         }
       }
@@ -308,6 +398,15 @@ export function TeamLayout() {
     } catch (err) {
       logger.error('Fout bij opslaan medewerker:', err);
       toast.error('Er is iets misgegaan bij het opslaan.');
+      setSaving(false);
+      return;
+    }
+    try {
+      if (opgeslagenId) await slaWerktijdenOp(opgeslagenId);
+      if (editId?.startsWith('profile-')) toast.success('Werktijden opgeslagen.');
+    } catch (err) {
+      logger.error('Fout bij opslaan werktijden:', err);
+      toast.error('De werktijden zijn niet opgeslagen.');
     } finally {
       setSaving(false);
     }
@@ -929,7 +1028,12 @@ export function TeamLayout() {
                     {getInitials(m.naam)}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-base font-semibold text-[#1A4A52] dark:text-foreground">{m.naam}</p>
+                    <p className="flex items-baseline gap-2 min-w-0">
+                      <span className="truncate text-base font-semibold text-[#1A4A52] dark:text-foreground">{m.naam}</span>
+                      {urenPerWeekLabel(m.id) && (
+                        <span className="shrink-0 text-xs text-muted-foreground tabular-nums">{urenPerWeekLabel(m.id)}</span>
+                      )}
+                    </p>
                     <p className="truncate text-sm text-muted-foreground">{m.functie}</p>
                     <p className="truncate text-sm text-muted-foreground">{m.afdeling}</p>
                   </div>
@@ -1125,6 +1229,56 @@ export function TeamLayout() {
                 <p className="text-xs text-muted-foreground">Wat een uur van deze medewerker kost. Wordt als momentopname op elke urenregel bewaard.</p>
               </div>
             )}
+
+            {/* Werktijden · contracturen per weekdag */}
+            <div className="grid gap-2">
+              <div className="flex items-baseline justify-between">
+                <Label>Werktijden</Label>
+                <span className="text-xs text-muted-foreground">{formatUren(weektotaal)} u per week</span>
+              </div>
+              <div className="grid grid-cols-7 gap-1">
+                {DAG_LABELS.map((dag, i) => (
+                  <div key={dag} className="grid gap-1">
+                    <span className="text-center text-2xs font-medium uppercase tracking-wider text-muted-foreground">{dag}</span>
+                    <Input
+                      type="number"
+                      inputMode="decimal"
+                      min={0}
+                      max={24}
+                      step={0.5}
+                      aria-label={`Uren ${dag}`}
+                      value={werktijden.uren[i]}
+                      onChange={(e) => setDagUren(i, e.target.value)}
+                      className="h-11 px-1 text-center tabular-nums sm:h-9"
+                    />
+                  </div>
+                ))}
+              </div>
+              <div className="grid grid-cols-[auto_1fr] items-center gap-3">
+                <Label htmlFor="geldig_van" className="text-muted-foreground font-normal">Geldig vanaf</Label>
+                <DatePicker
+                  value={werktijden.geldig_van}
+                  onChange={(v) => { setWerktijden((w) => ({ ...w, geldig_van: v })); setWerktijdenAangeraakt(true); }}
+                  asInput
+                />
+              </div>
+              {contractenVanBewerkte.length > 1 && (
+                <div className="rounded-md border bg-muted/40 px-3 py-2">
+                  <p className="text-2xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Eerdere roosters</p>
+                  <ul className="space-y-0.5">
+                    {contractenVanBewerkte.map((c) => (
+                      <li key={c.id} className="flex justify-between gap-2 text-xs text-muted-foreground tabular-nums">
+                        <span>
+                          {formatDatumKort(c.geldig_van)}
+                          {c.geldig_tot ? ` tot ${formatDatumKort(c.geldig_tot)}` : ' en verder'}
+                        </span>
+                        <span>{formatUren(contractUrenPerWeek(c))} u/wk</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
 
             {/* Status */}
             <div className="flex items-center justify-between">
