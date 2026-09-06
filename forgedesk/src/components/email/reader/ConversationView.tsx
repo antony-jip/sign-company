@@ -16,6 +16,7 @@ import { useFunctie } from '@/hooks/useFunctie'
 import { extractSenderEmail } from '@/components/email/emailHelpers'
 import { Bericht, type AntwoordModus } from './Bericht'
 import { BodyFrame } from './BodyFrame'
+import { Bijlagen } from './BijlagenRij'
 import { bepaalOpenBerichten, deelnemersLabel, deelnemersVan, sorteerOudNaarNieuw } from './thread'
 import { chipsVoor, SOORT_LABEL, type KoppelingChip } from './koppelingen'
 
@@ -309,6 +310,7 @@ export function ConversationView({ emailId, onSluiten, onAntwoord, onVolgende, o
               compact={compact}
               onToggle={() => toggle(bericht.id)}
               onAntwoord={(modus, body) => onAntwoord(modus, bericht, body)}
+              bijlagen={<Bijlagen bericht={bericht} compact={compact} />}
               inhoud={(body, laden, fout, opnieuw) => (
                 <BerichtInhoud body={body} onBody={bericht.id === emailId ? zetGeselecteerdeBody : undefined}>
                   <BodyFrame
