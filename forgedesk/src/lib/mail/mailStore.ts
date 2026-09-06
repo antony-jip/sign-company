@@ -305,7 +305,7 @@ class MailStore {
   async pasRegelsToeOpBestaande(aantal = 200): Promise<number> {
     if (!regelsBeschikbaar()) return 0
     await this.laadRegels(true)
-    const pagina = await getEmailsPage('inbox', null, aantal, this.actiefAccountId()) as unknown as EmailLijstItem[]
+    const pagina = await getEmailsPage('inbox', null, aantal, this.actiefAccountId(), this.wilPostvakKolom()) as unknown as EmailLijstItem[]
     for (const rij of pagina) this.neemOp(rij)
     // Zonder de gezien-lijst: dit is een uitdrukkelijke opdracht van de gebruiker.
     await zorgVoorGezien()
@@ -516,7 +516,7 @@ class MailStore {
     this.zetStand('zoek', { laden: true, ids: vorige, geladen: true })
     this.meld()
     try {
-      const rijen = await searchEmailsFTS(schoon, ZOEK_GROOTTE, offset) as unknown as EmailLijstItem[]
+      const rijen = await searchEmailsFTS(schoon, ZOEK_GROOTTE, offset, this.actiefAccountId()) as unknown as EmailLijstItem[]
       if (this.zoekQuery !== schoon) return
       const bekend = new Set(vorige)
       const ids = [...vorige]
@@ -554,7 +554,8 @@ class MailStore {
     this.threadLeden.set(threadId, { ids: huidig?.ids ?? [], laden: true })
     this.meld()
     try {
-      const [leden, infos] = await Promise.all([getThreadItems(threadId), getThreadInfos([threadId])])
+      const account = this.actiefAccountId()
+      const [leden, infos] = await Promise.all([getThreadItems(threadId, account), getThreadInfos([threadId], account)])
       for (const info of infos) this.threads.set(info.threadId, info)
       const ids = leden.map((rij) => this.neemOp(rij).id)
       this.threadLeden.set(threadId, { ids, laden: false })
@@ -590,7 +591,7 @@ class MailStore {
   private async vulThreadInfo(items: EmailLijstItem[]): Promise<void> {
     const threadIds = items.map((i) => i.thread_id).filter((t): t is string => !!t)
     if (threadIds.length === 0) return
-    const infos = await getThreadInfos(threadIds).catch(() => [])
+    const infos = await getThreadInfos(threadIds, this.actiefAccountId()).catch(() => [])
     if (infos.length === 0) return
     for (const info of infos) this.threads.set(info.threadId, info)
     this.pasThreadTellersToe(items.map((i) => i.id))
@@ -697,6 +698,11 @@ class MailStore {
   voegToe(item: EmailLijstItem): void {
     const vorige = this.items.get(item.id)
     if (vorige) { this.patchVanServer(item.id, item); return }
+    // Realtime filtert op user_id, niet op postvak: mail die in postvak B
+    // binnenkomt hoort niet in de lijst te ploppen terwijl je op A staat. Een
+    // rij zonder account_id (vóór migratie 245) blijft gewoon welkom.
+    const actief = this.actiefAccountId()
+    if (actief && item.account_id && item.account_id !== actief) return
     // Kennen we hem niet meer maar wacht er wel een actie op, dan staat hij in
     // een lopende definitieve verwijdering. Een realtime-UPDATE die daar
     // doorheen komt mag hem niet zichtbaar terugzetten; de undo doet dat zelf,

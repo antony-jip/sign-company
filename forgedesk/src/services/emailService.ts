@@ -158,6 +158,28 @@ function metAccount(q: LijstBouwer, accountId?: string | null): LijstBouwer {
   return q.eq('account_id', accountId)
 }
 
+type Uitkomst<T> = { data: T[] | null; error: unknown }
+
+/**
+ * Een query met postvakfilter, met terugval op dezelfde query zonder filter
+ * zodra `account_id` niet blijkt te bestaan. Zo hoeft geen enkele aanroeper te
+ * weten of migratie 245 al gedraaid is.
+ */
+async function metPostvak<T>(
+  accountId: string | null | undefined,
+  bouw: (accountId: string | null) => PromiseLike<Uitkomst<T>>,
+): Promise<Uitkomst<T>> {
+  const gekozen = accountId && accountKolomBekend !== false ? accountId : null
+  const eerste = await bouw(gekozen)
+  if (!gekozen) return eerste
+  if (eerste.error && isOnbekendeKolom(eerste.error)) {
+    accountKolomBekend = false
+    return bouw(null)
+  }
+  if (!eerste.error) accountKolomBekend = true
+  return eerste
+}
+
 function metCursor(q: LijstBouwer, cursor: EmailPageCursor | null): LijstBouwer {
   if (!cursor) return q
   return q.or(`datum.lt."${cursor.datum}",and(datum.eq."${cursor.datum}",id.lt."${cursor.id}")`)
@@ -221,7 +243,7 @@ export async function getEmailsPage(map: string, cursor: EmailPageCursor | null,
     if (error) {
       if (accountId && isOnbekendeKolom(error)) {
         accountKolomBekend = false
-        return getEmailsPage(map, cursor, limit, null)
+        return getEmailsPage(map, cursor, limit, null, metPostvakKolom)
       }
       throw error
     }
@@ -287,24 +309,28 @@ async function metAccountKolom(client: NonNullable<typeof supabase>, rijen: Emai
 }
 
 /** Alle berichten van één gesprek als lijst-items, oudste eerst. Concepten en prullenbak blijven eruit, net als in email_threads_view. */
-export async function getThreadItems(threadId: string): Promise<EmailLijstItem[]> {
+export async function getThreadItems(threadId: string, accountId?: string | null): Promise<EmailLijstItem[]> {
   if (!threadId || !isSupabaseConfigured() || !supabase) return []
+  const client = supabase
   const uid = await eigenUserId()
   if (!uid) return []
-  const { data, error } = await supabase
-    .from('emails_list_view')
-    .select(LIST_VIEW_COLUMNS)
-    .eq('user_id', uid)
-    .eq('thread_id', threadId)
-    .not('map', 'in', '("prullenbak","concepten")')
-    .order('datum', { ascending: true })
-    .order('id', { ascending: true })
+  const { data, error } = await metPostvak<Record<string, unknown>>(accountId, (acc) => {
+    const basis = client
+      .from('emails_list_view')
+      .select(LIST_VIEW_COLUMNS)
+      .eq('user_id', uid)
+      .eq('thread_id', threadId)
+      .not('map', 'in', '("prullenbak","concepten")') as unknown as LijstBouwer
+    return (acc ? basis.eq('account_id', acc) : basis)
+      .order('datum', { ascending: true })
+      .order('id', { ascending: true }) as unknown as PromiseLike<Uitkomst<Record<string, unknown>>>
+  })
   if (error) throw error
   return (data || []) as unknown as EmailLijstItem[]
 }
 
 /** Thread-tellers van de server (email_threads_view) voor een reeks threads. */
-export async function getThreadInfos(threadIds: string[]): Promise<ThreadInfo[]> {
+export async function getThreadInfos(threadIds: string[], accountId?: string | null): Promise<ThreadInfo[]> {
   const uniek = [...new Set(threadIds.filter(Boolean))]
   if (uniek.length === 0 || !isSupabaseConfigured() || !supabase) return []
   const client = supabase
@@ -312,14 +338,20 @@ export async function getThreadInfos(threadIds: string[]): Promise<ThreadInfo[]>
   if (!uid) return []
   const blokken: string[][] = []
   for (let i = 0; i < uniek.length; i += 100) blokken.push(uniek.slice(i, i + 100))
+  type Rij = { thread_id: string; laatste_datum: string; aantal: number; ongelezen: number; laatste_email_id: string; deelnemers: string[] | null }
   const resultaten = await Promise.all(blokken.map(async (blok) => {
-    const { data, error } = await client
-      .from('email_threads_view')
-      .select('thread_id, laatste_datum, aantal, ongelezen, laatste_email_id, deelnemers')
-      .eq('user_id', uid)
-      .in('thread_id', blok)
+    // email_threads_view groepeert sinds migratie 245 óók op account_id, dus
+    // zonder filter tellen twee postvakken van dezelfde gebruiker dubbel.
+    const { data, error } = await metPostvak<Rij>(accountId, (acc) => {
+      const basis = client
+        .from('email_threads_view')
+        .select('thread_id, laatste_datum, aantal, ongelezen, laatste_email_id, deelnemers')
+        .eq('user_id', uid)
+        .in('thread_id', blok) as unknown as LijstBouwer
+      return (acc ? basis.eq('account_id', acc) : basis) as unknown as PromiseLike<Uitkomst<Rij>>
+    })
     if (error) return []
-    return (data || []) as Array<{ thread_id: string; laatste_datum: string; aantal: number; ongelezen: number; laatste_email_id: string; deelnemers: string[] | null }>
+    return (data || []) as Rij[]
   }))
   return resultaten.flat().map((r) => ({
     threadId: r.thread_id,
@@ -360,17 +392,20 @@ function veiligeZoekterm(w: string): string {
   return w.replace(/[,%()"*]/g, '').trim()
 }
 
-export async function searchEmailsFTS(query: string, limit = 50, offset = 0): Promise<Email[]> {
+export async function searchEmailsFTS(query: string, limit = 50, offset = 0, accountId?: string | null): Promise<Email[]> {
   if (!query.trim() || !isSupabaseConfigured() || !supabase) return []
   const client = supabase
   const uid = await eigenUserId()
   if (!uid) return []
   const filters = parseZoekQuery(query)
+  // Zoeken bleef over alle postvakken gaan terwijl de lijst er één toonde.
+  const postvak = accountId && accountKolomBekend !== false ? accountId : null
 
   // Alle filters buiten de vrije tekst gelden in beide rondes.
   type Bouwer = PostgrestFilterBuilder<any, any, any, any>
   const pasFiltersToe = (q: Bouwer): Bouwer => {
     let uit = q.eq('user_id', uid)
+    if (postvak) uit = uit.eq('account_id', postvak)
     if (filters.van) {
       const veilig = veiligeZoekterm(filters.van)
       if (veilig) uit = uit.or(`van.ilike.%${veilig}%,from_address.ilike.%${veilig}%`)
@@ -407,7 +442,15 @@ export async function searchEmailsFTS(query: string, limit = 50, offset = 0): Pr
   const tsQuery = bouwTsQuery(filters.termen)
   const eersteRonde = tsQuery ? idsQuery().textSearch('fts', tsQuery) : idsQuery()
   const { data: treffers, error } = await eersteRonde
-  if (error) throw error
+  if (error) {
+    // Zonder migratie 245 bestaat account_id niet; dan zoekt hij zoals altijd.
+    if (postvak && isOnbekendeKolom(error)) {
+      accountKolomBekend = false
+      return searchEmailsFTS(query, limit, offset, null)
+    }
+    throw error
+  }
+  if (postvak) accountKolomBekend = true
   let ids = ((treffers || []) as Array<{ id: string }>).map(r => r.id)
 
   // Vangnet: letterlijke deelstring op de korte kolommen. De Nederlandse
@@ -641,18 +684,22 @@ export async function getThread(threadId: string): Promise<Email[]> {
 }
 
 /** Alle correspondentie met één adres · zowel ontvangen als verstuurd. */
-export async function getEmailsMetAdres(adres: string, limit = 20): Promise<Email[]> {
+export async function getEmailsMetAdres(adres: string, limit = 20, accountId?: string | null): Promise<Email[]> {
   const bareEmail = adres.trim().toLowerCase()
   if (!bareEmail) return []
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
-      .from('emails_list_view')
-      .select(LIST_VIEW_COLUMNS)
-      .or(`from_address.ilike.%${bareEmail}%,van.ilike.%${bareEmail}%,aan.ilike.%${bareEmail}%`)
-      .order('datum', { ascending: false })
-      .limit(limit)
+    const client = supabase
+    const { data, error } = await metPostvak<Record<string, unknown>>(accountId, (acc) => {
+      const basis = client
+        .from('emails_list_view')
+        .select(LIST_VIEW_COLUMNS)
+        .or(`from_address.ilike.%${bareEmail}%,van.ilike.%${bareEmail}%,aan.ilike.%${bareEmail}%`) as unknown as LijstBouwer
+      return (acc ? basis.eq('account_id', acc) : basis)
+        .order('datum', { ascending: false })
+        .limit(limit) as unknown as PromiseLike<Uitkomst<Record<string, unknown>>>
+    })
     if (error) throw error
-    return (data || []).map(e => ({ ...e, inhoud: '', body_html: null }))
+    return (data || []).map(e => ({ ...e, inhoud: '', body_html: null })) as unknown as Email[]
   }
   const emails = getLocalData<Email>('emails')
   return emails
