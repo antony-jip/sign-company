@@ -664,6 +664,33 @@ function basisUrl(): string {
 }
 
 /**
+ * Tweede ronde per mailbox: de Verzonden-map. Eigen email_sync_state-rij per
+ * folder, klein venster, en `snel` omdat de sweeps al in de INBOX-ronde zijn
+ * gedaan. Faalt stil: de INBOX-taak is dan al afgerond en dat is wat telt.
+ */
+async function syncVerzonden(userId: string, cronSecret: string, url: string, resterendMs: number): Promise<number> {
+  if (resterendMs < 8_000) return 0
+  try {
+    const respons = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cronSecret}` },
+      body: JSON.stringify({ folder: 'verzonden', limit: 200, snel: true, service_user_id: userId }),
+      signal: AbortSignal.timeout(resterendMs - 1_000),
+    })
+    if (!respons.ok) {
+      const tekst = await respons.text().catch(() => '')
+      console.warn('[cron-mailsync-werker] verzonden-sync mislukt', { userId, status: respons.status, tekst: tekst.slice(0, 200) })
+      return 0
+    }
+    const antwoord = (await respons.json().catch(() => ({}))) as { synced?: number }
+    return Number(antwoord?.synced) || 0
+  } catch (err) {
+    console.warn('[cron-mailsync-werker] verzonden-sync gooide', { userId, err: err instanceof Error ? err.message : err })
+    return 0
+  }
+}
+
+/**
  * Afronden van een geslaagde ronde: de rij wordt hergebruikt in plaats van op
  * 'gedaan' gezet. Zo blijft de coalescing-index betekenisvol — precies één rij
  * per mailbox, altijd — en blijft de tabel klein.
@@ -791,10 +818,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           return { taak, uitkomst: 'mislukt' as const, status: gevolg.status }
         }
 
-        const antwoord = await respons.json().catch(() => ({}))
+        const antwoord = (await respons.json().catch(() => ({}))) as { synced?: number }
         const nieuw = Number(antwoord?.synced) || 0
         await rondAf(taak.id, runId, herplanWaarden(Date.now(), Date.now() - begonnenOp))
         if (nieuw > 0) await meldNieuweMail(taak.user_id, nieuw, cronSecret, basisUrl())
+        if (taak.folder === 'inbox') {
+          await syncVerzonden(taak.user_id, cronSecret, url, DEADLINE_MS - (Date.now() - gestartOp))
+        }
         return { taak, uitkomst: 'gedaan' as const, synced: nieuw }
       } catch (err) {
         const melding = err instanceof Error ? err.message : String(err)

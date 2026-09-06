@@ -127,6 +127,33 @@ async function meldNieuweMail(userId: string, aantal: number, cronSecret: string
   }
 }
 
+/**
+ * Tweede ronde per mailbox: de Verzonden-map, met een eigen email_sync_state-rij
+ * en een klein venster. `snel` omdat de sweeps al in de INBOX-ronde zijn gedaan.
+ * Faalt stil: de INBOX-sync is al geslaagd.
+ */
+async function syncVerzonden(userId: string, cronSecret: string, url: string, resterendMs: number): Promise<number> {
+  if (resterendMs < 8_000) return 0
+  try {
+    const respons = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cronSecret}` },
+      body: JSON.stringify({ folder: 'verzonden', limit: 200, snel: true, service_user_id: userId }),
+      signal: AbortSignal.timeout(resterendMs - 1_000),
+    })
+    if (!respons.ok) {
+      const tekst = await respons.text().catch(() => '')
+      console.warn('[cron-email-sync] verzonden-sync mislukt', { userId, status: respons.status, tekst: tekst.slice(0, 200) })
+      return 0
+    }
+    const antwoord = (await respons.json().catch(() => ({}))) as { synced?: number }
+    return Number(antwoord?.synced) || 0
+  } catch (err) {
+    console.warn('[cron-email-sync] verzonden-sync gooide', { userId, err: err instanceof Error ? err.message : err })
+    return 0
+  }
+}
+
 export const config = { maxDuration: 60 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -193,9 +220,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           console.warn('[cron-email-sync] sync mislukt', { userId, status: respons.status, tekst: tekst.slice(0, 200) })
           return { userId, ok: false, reden: `http_${respons.status}` }
         }
-        const uitkomst = await respons.json().catch(() => ({}))
+        const uitkomst = (await respons.json().catch(() => ({}))) as { synced?: number }
         const nieuw = Number(uitkomst?.synced) || 0
         if (nieuw > 0) await meldNieuweMail(userId, nieuw, cronSecret, basisUrl())
+        await syncVerzonden(userId, cronSecret, url, DEADLINE_MS - (Date.now() - gestartOp))
         return { userId, ok: true, synced: nieuw }
       } catch (err) {
         console.warn('[cron-email-sync] sync gooide', { userId, err: err instanceof Error ? err.message : err })

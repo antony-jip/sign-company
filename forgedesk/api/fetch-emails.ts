@@ -673,7 +673,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Zonder state (eerste keer, UIDVALIDITY-wissel, of migratie 131 nog
     // niet gedraaid) bootstrappen we met het oude laatste-N-gedrag.
     const uidValidity = Number(mailbox.uidValidity ?? 0)
-    const MAX_PER_RUN = 600
+    // De Verzonden-map loopt mee als tweede ronde na de INBOX en krijgt een
+    // kleiner venster: daar wacht niemand op en het tijdbudget is al deels op.
+    const MAX_PER_RUN = mapValue === 'inbox' ? 600 : 200
 
     const { data: syncState } = await supabaseAdmin
       .from('email_sync_state')
