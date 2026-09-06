@@ -457,12 +457,6 @@ export interface Offerte {
   spoed?: boolean;
   /** Referentie of PO-nummer van de klant (migratie 237). */
   klant_referentie?: string | null;
-  /**
-   * @deprecated Kolom is weg (migratie 240); altijd undefined. Lees de
-   * handtekening via getOfferteHandtekening. Verdwijnt zodra QuoteCreation
-   * daarop over is.
-   */
-  handtekening_data?: string | null;
 }
 
 /**

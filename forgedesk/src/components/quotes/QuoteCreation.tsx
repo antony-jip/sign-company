@@ -98,7 +98,7 @@ import { OfferteVervolgDialog } from './OfferteVervolgDialog'
 import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
 import { ResponsiveDialog } from '@/components/ui/responsive-dialog'
 import { useFunctie, useFunctieGetal } from '@/hooks/useFunctie'
-import { getOfferteCondities } from '@/services/offerteService'
+import { getOfferteCondities, getOfferteHandtekening } from '@/services/offerteService'
 import type { OfferteConditie } from '@/types'
 import { rondOfferteCheckAf } from '@/services/offerteCheckService'
 import { useMedewerkers } from '@/contexts/MedewerkersContext'
@@ -785,9 +785,14 @@ export function QuoteCreation() {
         // Track status for factureren workflow
         setOfferteStatus(offerte.status)
         setAfgewezenReden(offerte.afgewezen_reden || null)
-        setOndertekening(offerte.geaccepteerd_door || offerte.handtekening_data
-          ? { door: offerte.geaccepteerd_door, op: offerte.geaccepteerd_op || offerte.akkoord_op, handtekening: offerte.handtekening_data }
+        setOndertekening(offerte.geaccepteerd_door
+          ? { door: offerte.geaccepteerd_door, op: offerte.geaccepteerd_op || offerte.akkoord_op }
           : null)
+        // De handtekening staat sinds migratie 240 in een eigen tabel; lazy laden
+        // zodat de offertelijsten er niet mee belast worden.
+        void getOfferteHandtekening(offerte.id)
+          .then((h) => { if (h?.data) setOndertekening((o) => ({ ...(o ?? {}), handtekening: h.data })) })
+          .catch((err) => logger.error('Handtekening laden mislukt:', err))
         // Optimistic locking: track server timestamp
         lastKnownUpdatedAtRef.current = offerte.updated_at
         if (offerte.geconverteerd_naar_factuur_id) {

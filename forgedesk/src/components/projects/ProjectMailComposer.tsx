@@ -36,6 +36,8 @@ interface ProjectMailComposerProps {
   medewerkerNaam?: string
   open: boolean
   onOpenChange: (open: boolean) => void
+  /** 'paneel': vult de hoogte van een zijpaneel, gesprek bovenaan en groeiend, invoer onderaan vast. */
+  variant?: 'kaart' | 'paneel'
 }
 
 type BijlageBron = 'upload' | 'bestand' | 'offerte' | 'factuur' | 'werkbon' | 'visualisatie'
@@ -315,7 +317,7 @@ function EmailChipsInput({ value, onChange, placeholder }: EmailChipsInputProps)
 }
 
 export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, ProjectMailComposerProps>(function ProjectMailComposer(
-  { project, klant, contactpersoon, userId, medewerkerNaam, open, onOpenChange },
+  { project, klant, contactpersoon, userId, medewerkerNaam, open, onOpenChange, variant = 'kaart' },
   ref,
 ) {
   const { emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, handtekeningAfbeeldingLink, profile, primaireKleur } = useAppSettings()
@@ -1049,9 +1051,12 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
   return (
     <div
       ref={containerRef}
-      className="bg-white rounded-2xl border border-border/70 shadow-[0_2px_16px_rgba(26,83,92,0.07)] overflow-hidden"
+      className={variant === 'paneel'
+        ? 'flex flex-col h-full min-h-0 bg-background'
+        : 'bg-white rounded-2xl border border-border/70 shadow-[0_2px_16px_rgba(26,83,92,0.07)] overflow-hidden'}
     >
-      {/* Header */}
+      {/* Header · alleen op de kaart; in het paneel staat het project al in de kop en de modus-keuze bij de invoer */}
+      {variant === 'kaart' && (
       <div className="flex items-center justify-between px-4 py-3 border-b border-border/70">
         <div className="flex items-center gap-3 min-w-0">
           <span className="h-8 w-8 rounded-full bg-petrol text-white text-[12px] font-semibold flex items-center justify-center flex-shrink-0">
@@ -1095,11 +1100,12 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
           <X className="h-4 w-4" />
         </button>
       </div>
+      )}
 
       {/* Body */}
-      <div className="px-4 py-3.5 space-y-2.5">
+      <div className={variant === 'paneel' ? 'flex-1 min-h-0 flex flex-col' : 'px-4 py-3.5 space-y-2.5'}>
         {threadMails.length > 0 && (
-          <div>
+          <div className={variant === 'paneel' ? 'flex-1 min-h-0 overflow-y-auto px-4 pt-2 pb-3 bg-muted/25' : undefined}>
             {/* Zelfde tijdlijn als de Gesprek-strip in de mailmodule · één
                 regel per bericht, klik om de volledige tekst uit te klappen. */}
             <button
@@ -1115,7 +1121,7 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
               <ChevronDown className={cn('h-3.5 w-3.5 text-petrol/40 transition-transform duration-200', threadOpen && 'rotate-180')} />
             </button>
             {threadOpen && (
-              <div className="relative max-h-[300px] overflow-y-auto pb-1 pt-2">
+              <div className={variant === 'paneel' ? 'relative pb-1 pt-2' : 'relative max-h-[300px] overflow-y-auto pb-1 pt-2'}>
                 <div className="absolute left-[18px] top-7 bottom-3 w-px bg-petrol/[0.14]" aria-hidden />
                 <div className="relative flex flex-col gap-0.5">
                   {[...threadMails].reverse().map((m) => {
@@ -1162,10 +1168,46 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
             )}
           </div>
         )}
+        {variant === 'paneel' && threadMails.length === 0 && (
+          <div className="flex-1 min-h-0 flex items-center justify-center px-6 text-center text-[12.5px] text-muted-foreground bg-muted/25">
+            Nog geen gesprek over dit project. Je eerste bericht start het.
+          </div>
+        )}
 
+        {/* Invoer: op de kaart gewoon onder het gesprek, in het paneel onderaan vast. */}
+        <div className={variant === 'paneel' ? 'flex-shrink-0 border-t border-border/70 px-4 pt-2 pb-1 bg-background' : 'contents'}>
+        {variant === 'paneel' && (
+          <div className="flex items-center justify-between gap-2 py-1.5">
+            {antwoordAnker ? (
+              <div className="inline-flex items-center gap-[2px] rounded-button bg-petrol/[0.06] p-[2px]">
+                {([
+                  { waarde: 'antwoord' as const, label: 'Antwoord in gesprek' },
+                  { waarde: 'nieuw' as const, label: 'Nieuw bericht' },
+                ]).map((keuze) => (
+                  <button
+                    key={keuze.waarde}
+                    type="button"
+                    onClick={() => kiesModus(keuze.waarde)}
+                    className={cn(
+                      'px-2 py-[3px] rounded-button text-[10.5px] font-semibold transition-colors',
+                      mailModus === keuze.waarde
+                        ? 'bg-white text-petrol shadow-[0_1px_2px_rgba(26,83,92,0.08)]'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    {keuze.label}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-petrol">Nieuw bericht</span>
+            )}
+            {defaultNaam && <span className="text-[11.5px] text-muted-foreground truncate">aan {defaultNaam}</span>}
+          </div>
+        )}
         {/* Geen overflow-hidden: dat knipte de contactsuggesties onder het
             Aan-veld af zodra ze voorbij de Onderwerp-regel kwamen. */}
-        <div className="rounded-lg border border-border/70 divide-y divide-border/50">
+        <div className={variant === 'paneel' ? 'border-y border-border/60 divide-y divide-border/50' : 'rounded-lg border border-border/70 divide-y divide-border/50'}>
           <div className="flex items-center gap-2 md:gap-3 px-3 py-1.5 min-h-[36px] min-w-0">
             <label className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground/70 select-none w-[48px] md:w-[74px] flex-shrink-0 whitespace-nowrap">Aan</label>
             <EmailChipsInput value={toEmails} onChange={setToEmails} placeholder="naam@bedrijf.nl" />
@@ -1205,14 +1247,14 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
         </div>
 
         {/* Body-blok: textarea + handtekening visueel als één 'mailbox' */}
-        <div className="rounded-lg border border-border/70 focus-within:border-petrol/50 focus-within:ring-2 focus-within:ring-petrol/10 transition-all p-3 space-y-2">
+        <div className={variant === 'paneel' ? 'px-3 pt-3 pb-1 space-y-2' : 'rounded-lg border border-border/70 focus-within:border-petrol/50 focus-within:ring-2 focus-within:ring-petrol/10 transition-all p-3 space-y-2'}>
           <textarea
             ref={textareaRef}
             value={body}
             onChange={(e) => setBody(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Typ je bericht..."
-            rows={3}
+            rows={variant === 'paneel' ? 4 : 3}
             className="w-full bg-transparent border-0 outline-none text-[13px] text-foreground placeholder:text-muted-foreground resize-none leading-relaxed focus:ring-0 focus:outline-none focus-visible:outline-none focus-visible:ring-0 p-0 overflow-hidden"
             style={{ boxShadow: 'none' }}
           />
@@ -1221,7 +1263,7 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
             <img
               src={handtekeningAfbeelding}
               alt="Handtekening"
-              style={{ maxWidth: handtekeningBreedte(handtekeningAfbeeldingGrootte) }}
+              style={{ maxWidth: variant === 'paneel' ? Math.min(240, handtekeningBreedte(handtekeningAfbeeldingGrootte)) : handtekeningBreedte(handtekeningAfbeeldingGrootte) }}
               className="object-contain max-w-full"
             />
           )}
@@ -1271,11 +1313,16 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
           className="hidden"
           onChange={handleFileSelect}
         />
+        </div>
       </div>
 
       {/* Actiebalk: opmaak + toevoegen links · opvolgen + inplannen + versturen rechts */}
-      <div className="flex flex-wrap items-center justify-between gap-y-2 gap-x-2 px-4 py-2.5 border-t border-border/70 bg-muted/20">
-        <div className="flex items-center gap-2">
+      <div className={cn(
+        variant === 'paneel'
+          ? 'flex flex-col gap-2 px-4 pt-1 pb-3 flex-shrink-0 bg-background'
+          : 'flex flex-wrap items-center justify-between gap-y-2 gap-x-2 px-4 py-2.5 border-t border-border/70 bg-muted/20',
+      )}>
+        <div className={cn('flex items-center gap-2', variant === 'paneel' && 'flex-wrap')}>
         <div className="flex items-center gap-0.5 rounded-lg bg-muted/50 border border-border/60 p-0.5">
           <button type="button" onClick={() => wrapSelection('**', '**')} title="Bold" className="h-7 w-7 rounded-md flex items-center justify-center text-foreground/70 hover:bg-white hover:text-foreground hover:shadow-sm transition-all">
             <Bold className="h-3.5 w-3.5" />
@@ -1378,7 +1425,7 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
               )}
             >
               <Plus className="h-3.5 w-3.5" />
-              <span className="whitespace-nowrap">Toevoegen<span className="hidden sm:inline"> vanuit project</span></span>
+              <span className="whitespace-nowrap">{variant === 'paneel' ? 'Uit project' : <>Toevoegen<span className="hidden sm:inline"> vanuit project</span></>}</span>
               <ChevronDown className={cn("h-3 w-3 transition-transform", pickerOpen && "rotate-180")} />
             </button>
 
@@ -1426,7 +1473,7 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
         )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className={cn('flex items-center gap-2', variant === 'paneel' && 'w-full justify-between pt-2 border-t border-border/60')}>
           <button
             type="button"
             onClick={() => setOpvolgen((v) => !v)}

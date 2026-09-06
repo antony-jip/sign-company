@@ -116,7 +116,7 @@ import {
   type HerinneringOntvanger,
 } from '@/services/factuurService'
 import { FactuurOpvolgStepper, toonOpvolgStepper } from '@/components/invoices/FactuurOpvolgStepper'
-import { leesEnWisFactuurPrefill, type FactuurPrefill } from '@/components/invoices/factuurPrefill'
+import { leesEnWisFactuurPrefill, voerPrefillTevensUit, type FactuurPrefill } from '@/components/invoices/factuurPrefill'
 import { useFunctie } from '@/hooks/useFunctie'
 import supabase from '@/services/supabaseClient'
 import { generateWerkbonInstructiePDF } from '@/services/werkbonPdfService'
@@ -1701,6 +1701,12 @@ export function FactuurEditor() {
           } catch (err) {
             logger.error('Voorschot als verrekend markeren mislukt:', err)
           }
+        }
+
+        // "Tevens"-acties uit Wat wil je factureren (project op status, taken
+        // afronden) pas nu de factuur bestaat.
+        if (prefill?.tevens) {
+          voerPrefillTevensUit(prefill.tevens).catch((err) => logger.error('Tevens-acties na factuur mislukt:', err))
         }
 
         // Update offerte met factuur link (bidirectioneel) en zet status op gefactureerd.
