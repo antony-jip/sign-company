@@ -100,6 +100,42 @@ CREATE POLICY "Org verwijdert koppelingen" ON email_koppelingen
   FOR DELETE TO authenticated USING (organisatie_id = auth_organisatie_id());
 
 -- 4. Gezondheid per mailbox
+--
+-- email_sync_state komt uit migratie 131, maar die is in deze database nooit
+-- gedraaid (gecontroleerd op 6 sep 2026: de tabel bestond niet). De map loopt
+-- vaker uit de pas met de database, zie CLAUDE.md sectie 3. Daarom eerst
+-- aanmaken als hij ontbreekt, met dezelfde vorm als 131.
+CREATE TABLE IF NOT EXISTS email_sync_state (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  folder TEXT NOT NULL,
+  imap_folder TEXT,
+  uidvalidity BIGINT,
+  last_seen_uid BIGINT NOT NULL DEFAULT 0,
+  backfill_low_uid BIGINT,
+  backfill_done BOOLEAN NOT NULL DEFAULT FALSE,
+  backfill_target TEXT NOT NULL DEFAULT '1jaar'
+    CHECK (backfill_target IN ('1jaar', '5jaar', 'alles')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (user_id, folder)
+);
+CREATE INDEX IF NOT EXISTS idx_email_sync_state_user ON email_sync_state(user_id);
+ALTER TABLE email_sync_state ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "email_sync_state_select_own" ON email_sync_state;
+CREATE POLICY "email_sync_state_select_own" ON email_sync_state
+  FOR SELECT TO authenticated USING (user_id = auth.uid());
+DROP POLICY IF EXISTS "email_sync_state_insert_own" ON email_sync_state;
+CREATE POLICY "email_sync_state_insert_own" ON email_sync_state
+  FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid());
+DROP POLICY IF EXISTS "email_sync_state_update_own" ON email_sync_state;
+CREATE POLICY "email_sync_state_update_own" ON email_sync_state
+  FOR UPDATE TO authenticated USING (user_id = auth.uid());
+DROP POLICY IF EXISTS "email_sync_state_delete_own" ON email_sync_state;
+CREATE POLICY "email_sync_state_delete_own" ON email_sync_state
+  FOR DELETE TO authenticated USING (user_id = auth.uid());
+
 ALTER TABLE email_sync_state ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'ok';
 ALTER TABLE email_sync_state ADD COLUMN IF NOT EXISTS laatste_fout TEXT;
 ALTER TABLE email_sync_state ADD COLUMN IF NOT EXISTS laatste_fout_op TIMESTAMPTZ;
