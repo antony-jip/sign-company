@@ -42,7 +42,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { getOffertes, updateOfferte, deleteOfferte, getKlant, getOfferteItems, getProject, createTaak, getMedewerkers, updateKlant, updateProject } from '@/services/supabaseService'
-import { useFunctie } from '@/hooks/useFunctie'
+import { useFunctie, useFunctieGetal } from '@/hooks/useFunctie'
+import { verzendBlokkade } from '@/utils/offerteVerzendPoort'
 import { getCached, fetchQuery } from '@/lib/queryCache'
 import { vierEenmalig, MIJLPAAL_COPY } from '@/lib/mijlpaal'
 import { ModuleIntro } from '@/components/shared/ModuleIntro'
@@ -456,6 +457,17 @@ export function QuotesPipeline() {
     return vierEenmalig('eerste_offerte_akkoord', !anderAkkoord, MIJLPAAL_COPY.eerste_offerte_akkoord)
   }, [offertes])
 
+  const checkVerplichtAan = useFunctie('offerte_check_verplicht')
+  const checkDrempel = useFunctieGetal('offerte_check_drempel')
+  // Zelfde poort als de editor: PO verplicht en collega-check boven de drempel
+  // gelden ook bij slepen en bij de status-select.
+  const magNaarVerzonden = useCallback(async (offerte: Offerte): Promise<boolean> => {
+    const klant = await getKlant(offerte.klant_id).catch(() => null)
+    const blokkade = verzendBlokkade(offerte, klant, { checkVerplicht: checkVerplichtAan, drempel: checkDrempel })
+    if (blokkade) { toast.error(blokkade); return false }
+    return true
+  }, [checkVerplichtAan, checkDrempel])
+
   const handleDrop = useCallback(async (e: React.DragEvent, newStatus: string) => {
     e.preventDefault()
     setDragOverColumn(null)
@@ -463,6 +475,7 @@ export function QuotesPipeline() {
     if (!offerteId) return
     const offerte = offertes.find(o => o.id === offerteId)
     if (!offerte || offerte.status === newStatus) return
+    if (newStatus === 'verzonden' && !(await magNaarVerzonden(offerte))) return
     const updates: Partial<Offerte> = { status: newStatus as Offerte['status'] }
     if (newStatus === 'verzonden' && !offerte.verstuurd_op) updates.verstuurd_op = new Date().toISOString()
     if (newStatus === 'goedgekeurd') updates.akkoord_op = new Date().toISOString()
@@ -483,7 +496,7 @@ export function QuotesPipeline() {
     if (!(newStatus === 'goedgekeurd' && vierAkkoordAlsEerste(offerteId))) {
       toast.success(`${offerte.nummer} → ${STATUS_LABELS[newStatus] || newStatus}`)
     }
-  }, [offertes, runOptimistic, vierAkkoordAlsEerste, naAkkoord])
+  }, [offertes, runOptimistic, vierAkkoordAlsEerste, naAkkoord, magNaarVerzonden])
 
   const handleOpenMail = useCallback(async (offerte: Offerte) => {
     try {
@@ -695,6 +708,10 @@ export function QuotesPipeline() {
   }, [listSortColumn])
 
   const handleStatusChange = useCallback(async (offerteId: string, newStatus: string) => {
+    if (newStatus === 'verzonden') {
+      const offerte = offertes.find(o => o.id === offerteId)
+      if (offerte && !(await magNaarVerzonden(offerte))) return
+    }
     const updates: Partial<Offerte> = { status: newStatus as Offerte['status'] }
     if (newStatus === 'verzonden') updates.verstuurd_op = new Date().toISOString()
     if (newStatus === 'goedgekeurd') updates.akkoord_op = new Date().toISOString()
@@ -718,7 +735,7 @@ export function QuotesPipeline() {
     if (!(newStatus === 'goedgekeurd' && vierAkkoordAlsEerste(offerteId))) {
       toast.success(`Status gewijzigd naar ${STATUS_LABELS[newStatus] || newStatus}`)
     }
-  }, [offertes, runOptimistic, vierAkkoordAlsEerste, naAkkoord])
+  }, [offertes, runOptimistic, vierAkkoordAlsEerste, naAkkoord, magNaarVerzonden])
 
   function toggleSelect(id: string) {
     setSelectedIds(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next })

@@ -679,6 +679,7 @@ export function FactuurEditor() {
   // Ladder uit Instellingen (migratie 212); leeg = standaardladder van de cron
   const [opvolgStappen, setOpvolgStappen] = useState<FactuurOpvolgStap[]>([])
   const stepperAan = useFunctie('factuur_stepper')
+  const geschiedenisAan = useFunctie('geschiedenis')
   const vergrendelingAan = useFunctie('factuur_vergrendeling')
   const [herinneringType, setHerinneringType] = useState<HerinneringType>('herinnering_1')
   const [herinneringPreview, setHerinneringPreview] = useState('')
@@ -3458,7 +3459,7 @@ export function FactuurEditor() {
               <div>
                 <Label className="text-xs">
                   Referentie klant
-                  {selectedKlant?.po_verplicht && <span className="text-flame"> · verplicht</span>}
+                  {selectedKlant?.po_verplicht && <span className="text-muted-foreground"> · verplicht</span>}
                 </Label>
                 <Input
                   value={klantReferentie}
@@ -4411,7 +4412,7 @@ export function FactuurEditor() {
       {/* Audit Log */}
       {existingFactuur && (
         <div className="rounded-xl border border-border bg-card p-5">
-          <AuditLogPanel entityType="factuur" entityId={existingFactuur.id} />
+          {geschiedenisAan && <AuditLogPanel entityType="factuur" entityId={existingFactuur.id} />}
         </div>
       )}
       <TrialGuardDialog open={showTrialDialog} onOpenChange={setShowTrialDialog} />

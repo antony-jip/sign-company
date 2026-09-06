@@ -2925,7 +2925,7 @@ export function MontagePlanningLayout() {
                           title="Weergave verwijderen"
                           aria-label={`Weergave ${w.naam} verwijderen`}
                           onClick={(e) => { e.stopPropagation(); e.preventDefault(); void handleWeergaveVerwijderen(w); }}
-                          className="p-0.5 rounded text-muted-foreground/60 hover:text-[#C03A18] opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity"
+                          className="p-2 -m-1 rounded text-muted-foreground/60 hover:text-[#C03A18] opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition-opacity"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>

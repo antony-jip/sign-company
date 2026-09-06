@@ -1179,15 +1179,16 @@ Offertes
 - *Interne notitie op de regel* (offerte_interne_notitie): geel veld dat nooit
   op de PDF of in het portaal komt.
 - *Condities als set* (offerte_condities): Standaard of Spoed kiest geldigheid,
-  betaaltermijn, levertijd, betalingsconditie en voorwaarden in één keer. Spoed
+  levertijd, betalingsconditie en voorwaarden in één keer. Spoed
   geeft het project bij akkoord prioriteit. Beheer in Instellingen > Offertes >
   Calculatie, blok Condities.
 - *Staffelprijzen* (offerte_staffel): vanaf een aantal een andere inkoop- en
   verkoopprijs op een calculatieproduct; de editor neemt de juiste staffel over.
 - *Grote offerte alleen na collega-check* (offerte_check_verplicht, met
   drempelbedrag): boven het bedrag gaat de offerte pas de deur uit na een check.
-- *Handtekening bij online akkoord*: de klant tekent op het scherm; naam, datum
-  en handtekening staan daarna bij de offerte.
+- *Handtekening bij online akkoord*: accepteert de klant via de offertelink, dan
+  tekent hij op het scherm; naam, datum en handtekening staan daarna bij de
+  offerte. Akkoord via het klantportaal blijft zonder handtekening.
 - *Referentie klant*: veld op offerte en factuur, op de PDF als "Uw
   referentie". Bij klanten met "PO-nummer verplicht" is verzenden zonder
   referentie geblokkeerd.
@@ -1201,8 +1202,7 @@ Klanten
 - *Standaardwaarden per klant*: verzendvoorkeur (e-mail, post, portaal), btw
   verlegd, PO-nummer verplicht, geen betalingsherinneringen. Te vinden op de
   klantkaart, blok Facturatie.
-- *Tags* (klant_tags): vrije labels op de klant, filter in de klantenlijst; de
-  nieuwsbrief gebruikt dezelfde labels.
+- *Tags* (klant_tags): vrije labels op de klant, filter in de klantenlijst.
 - *Prospect wordt klant* (prospect_wordt_klant): bij een geaccepteerde offerte
   gaat de status van prospect naar actief.
 
@@ -1211,8 +1211,8 @@ Projecten
   de projectenlijst, met per fase het aantal en de som van de projectwaarde.
 - *Projectsjablonen* (project_sjablonen): "Opslaan als sjabloon" in het
   projectmenu; bij een nieuw project "Beginnen vanuit een sjabloon".
-- *Geschiedenis* (geschiedenis): menu-item op offerte, project en factuur met
-  wie wat wanneer deed.
+- *Geschiedenis* (geschiedenis): menu-item op de offerte en paneel op de factuur
+  met wie wat wanneer deed; het project heeft zijn eigen activiteitenfeed.
 
 Planning
 - *Opgeslagen weergaven* (planning_weergaven): keuzelijst "Weergave" bovenin

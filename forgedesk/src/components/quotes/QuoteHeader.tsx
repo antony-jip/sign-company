@@ -323,8 +323,8 @@ export function QuoteHeader({
             <span className="hidden md:inline">{isSaving ? 'Opslaan…' : 'Opslaan'}</span>
           </button>
 
-          {/* Verstuur · Flame split-button */}
-          <div className="relative flex items-center">
+          {/* Verstuur · Flame split-button · op mobiel staat hij in de vaste onderbalk */}
+          <div className="relative hidden md:flex items-center">
             <button
               onClick={() => { hapticMedium(); handleVerstuurOfferte() }}
               disabled={isSaving}

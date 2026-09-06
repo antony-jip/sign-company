@@ -340,7 +340,7 @@ const ARTICLES: KbArticle[] = [
     inhoud: [
       'Op een verstuurde of goedgekeurde offerte staat de knop **Vervolg**. In één scherm kies je: naar een project (uren en bewerkingen gaan mee), direct factureren, of afgewezen met een reden (te duur, te late levering, iets anders). De reden blijft zichtbaar op de offerte en gaat mee naar de deal.',
       'Mail of print je de offerte buiten de app? Kies **Markeer als verzonden**. De status wordt verzonden zonder dat er een mail uitgaat, en de opvolging loopt gewoon.',
-      'Bij online akkoord tekent de klant met een **handtekening** op het scherm. Die staat daarna bij de offerte, met naam en datum.',
+      'Accepteert de klant via de offertelink, dan tekent hij met een **handtekening** op het scherm. Die staat daarna bij de offerte, met naam en datum. Akkoord via het klantportaal blijft zonder handtekening.',
     ],
     tips: [
       'Een afgewezen offerte met reden is waardevoller dan een die stil verloopt: je ziet later waarom je verliest',
@@ -356,7 +356,7 @@ const ARTICLES: KbArticle[] = [
     titel: 'Condities, staffels en interne notities',
     subtitel: 'Standaard of Spoed in één keuze',
     inhoud: [
-      'Een **conditie** is een set: geldigheid, betaaltermijn, levertijd, betalingsconditie en voorwaarden. Kies op de offerte Standaard of Spoed en alles staat goed. Spoed geeft het project bij akkoord meteen prioriteit. Condities beheer je bij Instellingen > Offertes > Calculatie.',
+      'Een **conditie** is een set: geldigheid, levertijd, betalingsconditie en voorwaarden. Kies op de offerte Standaard of Spoed en alles staat goed. Spoed geeft het project bij akkoord meteen prioriteit. Condities beheer je bij Instellingen > Offertes > Calculatie.',
       'Een **staffel** op een calculatieproduct geeft vanaf een aantal een andere inkoop- en verkoopprijs. De editor neemt de juiste staffel over en laat stil zien wat de volgende stap is: "vanaf 25 st: 8,40".',
       'De gele **interne notitie** per regel komt nooit op de offerte of in het portaal. Voor PMS-nummers, montage-afspraken en waarschuwingen aan jezelf. Het veld **Referentie klant** komt wel op de PDF, als "Uw referentie"; bij klanten met PO-nummer verplicht kan de offerte niet zonder de deur uit.',
     ],
@@ -376,11 +376,11 @@ const ARTICLES: KbArticle[] = [
     inhoud: [
       'Zet op de klant een **gepinde notitie** en vink "toon als waarschuwing" aan. De notitie verschijnt dan bovenaan de offerte, het project, de werkbon, de bestelbon en de inkoopfactuur. "Altijd PO-nummer vragen." "Levering alleen via de achterkant."',
       'Per klant leg je **standaardwaarden** vast: verzendvoorkeur (e-mail, post of portaal), btw verlegd, PO-nummer verplicht en geen betalingsherinneringen. Offerte en factuur houden er rekening mee.',
-      '**Tags** zijn vrije labels zoals Kerstkaart of Beurs. Je filtert de klantenlijst erop en de nieuwsbrief gebruikt dezelfde labels. Een **prospect** wordt automatisch klant zodra een offerte wordt geaccepteerd.',
+      '**Tags** zijn vrije labels zoals Kerstkaart of Beurs. Je filtert de klantenlijst erop. Een **prospect** wordt automatisch klant zodra een offerte wordt geaccepteerd.',
     ],
     tips: [
       'Gebruik de waarschuwing spaarzaam: één zin die de monteur of calculator echt moet lezen',
-      'Tags staan in Functies; zet ze aan als je meer dan een handvol klanten wilt groeperen',
+      'Tags staan in Functies en staan standaard aan; zet ze uit als je ze niet gebruikt',
     ],
     link: '/klanten',
   },
@@ -394,7 +394,7 @@ const ARTICLES: KbArticle[] = [
     inhoud: [
       'Zet de projectenlijst om naar **kolommen per fase**. Boven elke kolom staat het aantal projecten en de som van de projectwaarde. Sleep een project naar de volgende fase; op de telefoon veeg je door de kolommen.',
       'Sla een project op als **sjabloon** (met bewerkingen en taken, zonder klant en datums) en start een nieuw project daaruit: autobelettering, gevelframe, doosletters. Sjablonen staan niet tussen je gewone projecten.',
-      'Op offerte, project en factuur vind je **Geschiedenis**: wie wat wanneer deed, uit het activiteitenlogboek.',
+      'Op offerte en factuur vind je **Geschiedenis**: wie wat wanneer deed, uit het activiteitenlogboek. Het project heeft daarvoor zijn eigen activiteitenfeed.',
     ],
     tips: [
       'De kolomweergave werkt het best met een projectwaarde ingevuld; die komt uit de offerte',
@@ -432,7 +432,7 @@ const ARTICLES: KbArticle[] = [
       'Een factuur die naar **Exact** is gegaan, is daarna **vergrendeld**: bedragen en regels veranderen niet meer. Corrigeren gaat via een creditfactuur. Meerdere concepten voor dezelfde klant voeg je samen tot één factuur.',
     ],
     tips: [
-      'Zet in Functies "Concepten op de eerste werkdag versturen" aan en je krijgt elke maand een seintje met wat er klaarstaat',
+      'Zet in Functies "Concepten op de eerste werkdag melden" aan en je krijgt elke maand een seintje met wat er klaarstaat; versturen blijft een bewuste klik',
     ],
     link: '/facturen',
   },

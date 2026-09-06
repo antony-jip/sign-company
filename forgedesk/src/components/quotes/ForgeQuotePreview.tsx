@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge'
 import { getOfferte, getOfferteItems, getKlant, updateOfferte, updateProject, getProject, createProject, updateKlant } from '@/services/supabaseService'
 import { converteerOfferteNaarProject } from '@/services/offerteService'
 import { OfferteVervolgDialog } from './OfferteVervolgDialog'
-import { useFunctie } from '@/hooks/useFunctie'
+import { useFunctie, useFunctieGetal } from '@/hooks/useFunctie'
+import { verzendBlokkade } from '@/utils/offerteVerzendPoort'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { generateOffertePDF } from '@/services/pdfService'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
@@ -73,6 +74,9 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
   // State for service-layer data (used when accessed via route, i.e. no props)
   const [fetchedOfferte, setFetchedOfferte] = useState<Offerte | null>(null)
   const [fetchedKlant, setFetchedKlant] = useState<Klant | null>(null)
+  const [markeerBezig, setMarkeerBezig] = useState(false)
+  const checkVerplichtAan = useFunctie('offerte_check_verplicht')
+  const checkDrempel = useFunctieGetal('offerte_check_drempel')
   const [fetchedItems, setFetchedItems] = useState<OfferteItem[]>([])
   const [isLoading, setIsLoading] = useState(!propOfferte && !!id)
   const vervolgAan = useFunctie('offerte_vervolg')
@@ -228,7 +232,10 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
 
   // Verzonden buiten de app om (print, eigen mail): zelfde stand, geen mail.
   async function handleMarkeerVerzonden() {
-    if (!fetchedOfferte?.id) return
+    if (!fetchedOfferte?.id || markeerBezig) return
+    const blokkade = verzendBlokkade(fetchedOfferte, fetchedKlant, { checkVerplicht: checkVerplichtAan, drempel: checkDrempel })
+    if (blokkade) { toast.error(blokkade); return }
+    setMarkeerBezig(true)
     try {
       const updated = await updateOfferte(fetchedOfferte.id, {
         status: 'verzonden',
@@ -236,10 +243,12 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
         verzendwijze: 'via_handmatig',
       })
       setFetchedOfferte(updated)
-      toast.success('Gemarkeerd als verzonden')
+      toast.success(<>Gemarkeerd als verzonden<span className="text-flame">.</span></>)
     } catch (err) {
       logger.error('Markeren als verzonden mislukt:', err)
       toast.error('Kon offerte niet als verzonden markeren')
+    } finally {
+      setMarkeerBezig(false)
     }
   }
 

@@ -137,7 +137,7 @@ export function FactuurOpvolgStepper({ factuur, stappen, klant, compact, classNa
     <ol className={cn('flex items-start gap-0 overflow-x-auto', className)} aria-label="Opvolgstappen">
       {items.map((s, i) => (
         <li key={s.sleutel} className="flex items-start min-w-0">
-          <div className="flex flex-col items-center min-w-[88px]">
+          <div className="flex flex-col items-center min-w-[72px] md:min-w-[88px]">
             <div className="flex items-center w-full">
               <span className={cn('h-px flex-1', i === 0 ? 'bg-transparent' : items[i - 1].staat === 'gedaan' ? 'bg-petrol/60' : 'bg-border')} />
               <span className={cn('inline-block w-2.5 h-2.5 rounded-full flex-shrink-0', STIP[s.staat])} />

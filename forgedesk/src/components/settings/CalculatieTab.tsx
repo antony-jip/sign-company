@@ -985,7 +985,7 @@ function ProductenSection({
                       {staffels.map((st) => (
                         <tr key={st.id}>
                           <td className="px-3 py-1.5 tabular-nums">{st.vanaf_aantal} {productEenheid}</td>
-                          <td className="px-3 py-1.5 text-right tabular-nums text-muted-foreground">{st.inkoop_prijs != null ? formatCurrency(st.inkoop_prijs) : '—'}</td>
+                          <td className="px-3 py-1.5 text-right tabular-nums text-muted-foreground">{st.inkoop_prijs != null ? formatCurrency(st.inkoop_prijs) : '·'}</td>
                           <td className="px-3 py-1.5 text-right tabular-nums font-medium">{formatCurrency(st.verkoop_prijs)}</td>
                           <td className="px-1 py-1 text-right">
                             <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive" aria-label="Staffel verwijderen" onClick={() => verwijderStaffel(st.id)}>
@@ -2636,7 +2636,7 @@ function ConditiesBlok() {
                   </div>
                   <p className="text-xs text-muted-foreground truncate">
                     geldig {c.geldigheid_dagen} dagen
-                    {c.betaaltermijn_dagen != null ? ` · betaling ${c.betaaltermijn_dagen} dagen` : ''}
+                    {''}
                     {c.levertijd ? ` · ${c.levertijd}` : ''}
                   </p>
                 </div>
@@ -2661,10 +2661,6 @@ function ConditiesBlok() {
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium">Geldigheid (dagen)</Label>
                 <Input type="number" min={1} value={form.geldigheid_dagen || ''} onChange={(e) => setForm({ ...form, geldigheid_dagen: parseInt(e.target.value) || 0 })} />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium">Betaaltermijn (dagen)</Label>
-                <Input type="number" min={0} value={form.betaaltermijn_dagen ?? ''} onChange={(e) => setForm({ ...form, betaaltermijn_dagen: e.target.value === '' ? null : parseInt(e.target.value) })} />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium">Levertijd</Label>

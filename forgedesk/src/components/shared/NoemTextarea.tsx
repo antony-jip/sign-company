@@ -94,7 +94,7 @@ export const NoemTextarea = forwardRef<HTMLTextAreaElement, NoemTextareaProps>(f
   }, [stand, onNoem])
 
   if (!aan) {
-    return <Textarea ref={ref} onChange={onChange} onKeyDown={onKeyDown} onBlur={onBlur} {...props} />
+    return <Textarea ref={ref} onChange={onChange} onKeyDown={onKeyDown} onBlur={onBlur} {...props} placeholder={typeof props.placeholder === 'string' ? props.placeholder.replace(/\s*Typ @ om een collega te noemen\.?/, '') : props.placeholder} />
   }
 
   const open = stand !== null && kandidaten.length > 0

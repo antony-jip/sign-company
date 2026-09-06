@@ -185,6 +185,7 @@ export function TijdregistratieLayout() {
   const [factureerBezig, setFactureerBezig] = useState(false);
   const [weekOffset, setWeekOffset] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [opslaanBezig, setOpslaanBezig] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormData>(EMPTY_FORM);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -382,6 +383,9 @@ export function TijdregistratieLayout() {
       toast.error("Voer een omschrijving in");
       return;
     }
+    if (opslaanBezig) return;
+    setOpslaanBezig(true);
+    try {
     if (!formData.start_tijd || !formData.eind_tijd) {
       toast.error("Vul start- en eindtijd in");
       return;
@@ -452,6 +456,9 @@ export function TijdregistratieLayout() {
     setDialogOpen(false);
     setEditingId(null);
     setFormData({ ...EMPTY_FORM, uurtarief: uurtariefVoorkeuze(null, eigenMedewerker, settings) });
+    } finally {
+      setOpslaanBezig(false);
+    }
   }
 
   async function handleDelete(id: string) {
@@ -1172,8 +1179,8 @@ export function TijdregistratieLayout() {
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
               Annuleren
             </Button>
-            <Button onClick={handleSave}>
-              {editingId ? "Bijwerken" : "Opslaan"}
+            <Button onClick={handleSave} disabled={opslaanBezig}>
+              {opslaanBezig ? "Opslaan…" : editingId ? "Bijwerken" : "Opslaan"}
             </Button>
           </>
         )}

@@ -2489,6 +2489,9 @@ export function QuoteCreation() {
                 className="h-10"
               />
             </div>
+            {conditiesAan && condities.length === 0 && (
+              <p className="mb-4 text-[12px] text-muted-foreground">Nog geen condities. <Link to="/instellingen?tab=calculatie" className="text-petrol underline-offset-2 hover:underline">Maak Standaard en Spoed aan bij Instellingen</Link>.</p>
+            )}
             {conditiesAan && condities.length > 0 && (
               <div className="mb-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                 <div className="space-y-1.5 sm:w-64">

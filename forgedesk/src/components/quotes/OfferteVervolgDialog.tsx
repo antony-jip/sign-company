@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { ResponsiveDialog } from '@/components/ui/responsive-dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { FolderPlus, Receipt, XCircle, ChevronRight, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -25,10 +25,6 @@ interface OfferteVervolgDialogProps {
   /** Wordt aangeroepen met de bijgewerkte offerte zodra er iets is gewijzigd. */
   onBijgewerkt?: (offerte: Offerte) => void
 }
-
-// Onder sm een lade van onderen in plaats van een dialoog in het midden.
-export const SHEET_OP_MOBIEL =
-  'sm:max-w-md max-sm:top-auto max-sm:bottom-0 max-sm:left-0 max-sm:translate-x-0 max-sm:translate-y-0 max-sm:max-w-none max-sm:rounded-b-none max-sm:rounded-t-2xl max-sm:pb-[calc(env(safe-area-inset-bottom)+1.5rem)] max-sm:data-[state=open]:slide-in-from-bottom max-sm:data-[state=closed]:slide-out-to-bottom max-sm:data-[state=open]:slide-in-from-left-0 max-sm:data-[state=closed]:slide-out-to-left-0 max-sm:data-[state=open]:zoom-in-100 max-sm:data-[state=closed]:zoom-out-100'
 
 export function OfferteVervolgDialog({ open, onOpenChange, offerteId, onBijgewerkt }: OfferteVervolgDialogProps) {
   const navigate = useNavigate()
@@ -70,12 +66,12 @@ export function OfferteVervolgDialog({ open, onOpenChange, offerteId, onBijgewer
         if (prospectWordtKlant && huidig.klant_id) {
           getKlant(huidig.klant_id)
             .then((k) => (k?.status === 'prospect' ? updateKlant(k.id, { status: 'actief' }) : null))
-            .catch((err) => logger.error('Prospect naar klant mislukt:', err))
+            .catch((err) => { logger.error('Prospect naar klant mislukt:', err); toast.error('Klantstatus kon niet worden bijgewerkt') })
         }
       }
       if (huidig.project_id) {
         if (huidig.spoed) {
-          updateProject(huidig.project_id, { prioriteit: 'kritiek' }).catch((err) => logger.error('Spoed-prioriteit zetten mislukt:', err))
+          updateProject(huidig.project_id, { prioriteit: 'kritiek' }).catch((err) => { logger.error('Spoed-prioriteit zetten mislukt:', err); toast.error('Prioriteit kon niet worden gezet') })
         }
         onBijgewerkt?.(huidig)
         onOpenChange(false)
@@ -131,14 +127,13 @@ export function OfferteVervolgDialog({ open, onOpenChange, offerteId, onBijgewer
 
   return (
     <>
-    <Dialog open={open} onOpenChange={(v) => { if (!v) sluit(); else onOpenChange(v) }}>
-      <DialogContent className={SHEET_OP_MOBIEL}>
-        <DialogHeader>
-          <DialogTitle>Vervolg<span className="text-flame">.</span></DialogTitle>
-          <DialogDescription>
-            {offerte ? `Offerte ${offerte.nummer}${offerte.titel ? ` · ${offerte.titel}` : ''}` : 'Laden…'}
-          </DialogDescription>
-        </DialogHeader>
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={(v) => { if (!v) sluit(); else onOpenChange(v) }}
+      className="sm:max-w-md"
+      title={<>Vervolg<span className="text-flame">.</span></>}
+      description={offerte ? `Offerte ${offerte.nummer}${offerte.titel ? ` · ${offerte.titel}` : ''}` : 'Laden…'}
+    >
 
         <div className="space-y-2">
           <button type="button" onClick={handleNaarProject} disabled={!offerte || !!bezig} className={keuzeCls}>
@@ -221,8 +216,7 @@ export function OfferteVervolgDialog({ open, onOpenChange, offerteId, onBijgewer
             </div>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+    </ResponsiveDialog>
       {offerte && deelfactuurAan && (
         <WatFacturerenDialog
           open={watFacturerenOpen}

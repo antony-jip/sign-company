@@ -45,7 +45,6 @@ import { toast } from 'sonner'
 import { logger } from '../../utils/logger'
 import type { Medewerker } from '@/types'
 import { SubTabNav } from './SubTabNav'
-import { PushMeldingenKaart } from './PushMeldingenKaart'
 import { HandtekeningEditor } from './HandtekeningEditor'
 import {
   handtekeningNaarHtml,
@@ -932,7 +931,6 @@ export function EmailTab() {
 
       {subTab === 'algemeen' && (
         <div className="space-y-6">
-        <PushMeldingenKaart />
 
         <Card>
           <CardHeader>
