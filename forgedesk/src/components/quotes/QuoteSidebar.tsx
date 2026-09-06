@@ -321,8 +321,6 @@ export function QuoteSidebar({
                                   )}
                                 </div>
 
-                                <KlantStatusWarning klant={selectedKlant} className="mt-1" />
-
                                 {/* TODO: vervang door <KlantContactSelector> (zelfde component als ProjectDetail). */}
                                 {/* Mergt JSONB+DB en biedt primary-fallback gratis. Vereist QuoteSidebar refactor · losse follow-up. */}
                                 {selectedKlant.contactpersonen?.length > 0 && (

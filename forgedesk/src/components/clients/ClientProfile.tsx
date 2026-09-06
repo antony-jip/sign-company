@@ -112,7 +112,7 @@ const statusLabels: Record<string, string> = {
   'te-plannen': 'Te plannen',
 }
 
-const KLANT_TABS = ['projecten', 'deals', 'offertes', 'facturen', 'tijdregistratie', 'communicatie', 'documenten', 'historie']
+const KLANT_TABS = ['projecten', 'deals', 'offertes', 'facturen', 'tijdregistratie', 'communicatie', 'documenten', 'historie', 'notities']
 
 export function ClientProfile() {
   const { id } = useParams<{ id: string }>()

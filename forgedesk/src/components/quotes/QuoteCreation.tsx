@@ -2981,7 +2981,7 @@ export function QuoteCreation() {
               <DialogDescription>Wie wat deed op offerte {offerteNummer}.</DialogDescription>
             </DialogHeader>
             <div className="max-h-[60vh] overflow-y-auto -mt-4">
-              <AuditLogPanel entityType="offerte" entityId={editOfferteId} maxItems={20} />
+              <AuditLogPanel entityType="offerte" entityId={editOfferteId} maxItems={20} defaultExpanded />
             </div>
           </DialogContent>
         </Dialog>

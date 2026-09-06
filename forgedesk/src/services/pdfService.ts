@@ -1549,6 +1549,7 @@ export function generateFactuurPDF(
     factuur_adres?: string
     factuur_postcode?: string
     factuur_plaats?: string
+    klant_referentie?: string
   },
   items: OfferteItem[],
   klant: Partial<Klant>,
@@ -1664,7 +1665,10 @@ export function generateFactuurPDF(
   metaRows.push({ label: 'Factuurdatum', value: formatDate(factuurData.datum) })
   metaRows.push({ label: 'Vervaldatum', value: formatDate(factuurData.vervaldatum) })
   if (factuurData.titel) {
-    metaRows.push({ label: 'Referentie', value: factuurData.titel })
+    metaRows.push({ label: 'Betreft', value: factuurData.titel })
+  }
+  if (factuurData.klant_referentie?.trim()) {
+    metaRows.push({ label: 'Uw referentie', value: factuurData.klant_referentie.trim() })
   }
 
   const labelColWidth = 42

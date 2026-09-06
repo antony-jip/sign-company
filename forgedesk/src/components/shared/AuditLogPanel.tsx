@@ -5,6 +5,8 @@ import { getAuditLog } from '@/services/supabaseService'
 import type { AuditLogEntry } from '@/types'
 
 interface AuditLogPanelProps {
+  /** Open starten, bijvoorbeeld in een lade waar het paneel de enige inhoud is. */
+  defaultExpanded?: boolean
   entityType: AuditLogEntry['entity_type']
   entityId: string
   maxItems?: number
@@ -60,10 +62,10 @@ function beschrijfActie(entry: AuditLogEntry): string {
   }
 }
 
-export function AuditLogPanel({ entityType, entityId, maxItems = 10 }: AuditLogPanelProps) {
+export function AuditLogPanel({ entityType, entityId, maxItems = 10, defaultExpanded = false }: AuditLogPanelProps) {
   const [entries, setEntries] = useState<AuditLogEntry[]>([])
   const [loading, setLoading] = useState(false)
-  const [expanded, setExpanded] = useState(false)
+  const [expanded, setExpanded] = useState(defaultExpanded)
   const [showAll, setShowAll] = useState(false)
 
   useEffect(() => {

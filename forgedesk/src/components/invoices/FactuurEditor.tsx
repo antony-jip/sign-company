@@ -602,6 +602,7 @@ export function FactuurEditor() {
   const [offerteId, setOfferteId] = useState('')
   const [projectId, setProjectId] = useState('')
   const [titel, setTitel] = useState('')
+  const [klantReferentie, setKlantReferentie] = useState('')
   const [nummer, setNummer] = useState('')
 
   const { setActiveTabLabel } = useTabs()
@@ -728,6 +729,7 @@ export function FactuurEditor() {
               setOfferteId(factuur.offerte_id || '')
               setProjectId(factuur.project_id || '')
               setTitel(factuur.titel)
+              setKlantReferentie(factuur.klant_referentie || '')
               setNummer(factuur.nummer)
               setFactuurdatum(factuur.factuurdatum)
               setVervaldatum(factuur.vervaldatum)
@@ -902,6 +904,7 @@ export function FactuurEditor() {
                 setKlantId(offerte.klant_id)
                 setShowKlantSelector(false)
                 setTitel(offerte.titel)
+                if (offerte.klant_referentie) setKlantReferentie(offerte.klant_referentie)
                 if (offerte.project_id) setProjectId(offerte.project_id)
                 if (offerte.notities) setNotities(offerte.notities)
                 if (offerte.intro_tekst) setIntroTekst(offerte.intro_tekst)
@@ -1453,6 +1456,10 @@ export function FactuurEditor() {
       toast.error('Vul een titel in')
       return null
     }
+    if (verwerken && selectedKlant?.po_verplicht && !klantReferentie.trim()) {
+      toast.error('Deze klant wil altijd een referentie op de factuur', { description: 'Vul het PO-nummer of kenmerk van de klant in bij Referentie klant.' })
+      return null
+    }
     if (validItems.length === 0) {
       toast.error('Voeg minimaal een regelitem toe')
       return null
@@ -1560,6 +1567,7 @@ export function FactuurEditor() {
           ...vasteVelden,
           contactpersoon_id: contactpersoonId || undefined,
           titel,
+          klant_referentie: klantReferentie.trim() || undefined,
           voorwaarden,
           notities,
           intro_tekst: introTekst || undefined,
@@ -1631,6 +1639,7 @@ export function FactuurEditor() {
           project_id: projectId || undefined,
           nummer: effectiefNummer,
           titel,
+          klant_referentie: klantReferentie.trim() || undefined,
           status: doelStatus,
           subtotaal,
           btw_bedrag: btwBedrag,
@@ -1796,7 +1805,7 @@ export function FactuurEditor() {
       setIsSaving(false)
     }
   }, [
-    klantId, contactpersoonId, selectedKlant, titel, validItems, isEditMode, existingFactuur,
+    klantId, contactpersoonId, selectedKlant, titel, klantReferentie, validItems, isEditMode, existingFactuur,
     factuurdatum, vervaldatum, voorwaarden, notities, introTekst, outroTekst,
     subtotaal, btwBedrag, totaal, nummer, offerteId, projectId, user, navigate,
     kostenplaatsId, isCreditFactuur, creditVoorFactuurId,
@@ -1930,6 +1939,7 @@ export function FactuurEditor() {
     const factuurData = {
       nummer: pdfNummer,
       titel,
+      klant_referentie: klantReferentie.trim() || undefined,
       datum: factuurdatum,
       vervaldatum,
       subtotaal,
@@ -2109,6 +2119,7 @@ export function FactuurEditor() {
         const factuurData = {
           nummer,
           titel,
+          klant_referentie: klantReferentie.trim() || undefined,
           datum: factuurdatum,
           vervaldatum,
           subtotaal,
@@ -2776,6 +2787,7 @@ export function FactuurEditor() {
           const factuurData = {
             nummer,
             titel,
+            klant_referentie: klantReferentie.trim() || undefined,
             datum: factuurdatum,
             vervaldatum,
             subtotaal,
@@ -2892,6 +2904,7 @@ export function FactuurEditor() {
           const factuurData = {
             nummer,
             titel,
+            klant_referentie: klantReferentie.trim() || undefined,
             datum: factuurdatum,
             vervaldatum,
             subtotaal,
@@ -3440,6 +3453,19 @@ export function FactuurEditor() {
                   onChange={(e) => setTitel(e.target.value)}
                   placeholder="Bijv. Gevelreclame installatie"
                   className="text-sm"
+                />
+              </div>
+              <div>
+                <Label className="text-xs">
+                  Referentie klant
+                  {selectedKlant?.po_verplicht && <span className="text-flame"> · verplicht</span>}
+                </Label>
+                <Input
+                  value={klantReferentie}
+                  onChange={(e) => setKlantReferentie(e.target.value)}
+                  placeholder="PO-nummer of kenmerk van de klant"
+                  className="text-sm"
+                  readOnly={isReadOnly}
                 />
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -4092,6 +4118,11 @@ export function FactuurEditor() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2 text-sm">
+            {selectedKlant?.verzendvoorkeur && selectedKlant.verzendvoorkeur !== 'email' && (
+              <p className="text-xs text-amber-700 dark:text-amber-400">
+                Voorkeur van deze klant: {selectedKlant.verzendvoorkeur === 'post' ? 'per post' : 'via het portaal'}. Download de PDF of deel via het portaal als je die voorkeur wilt volgen.
+              </p>
+            )}
             <div className="space-y-1.5">
               <div className="flex items-baseline justify-between">
                 <span className="text-muted-foreground">Aan</span>
