@@ -72,29 +72,80 @@ async function verifyUser(req: VercelRequest): Promise<string> {
 // ───── Bodies in email_bodies (migratie 244), kopie van api/read-email.ts ─────
 const MAX_BODY_TEXT = 20_000
 
-const CITAAT_PATRONEN: RegExp[] = [
-  /<blockquote[\s>]/i,
-  /<[a-z][^>]*class="[^"]*gmail_quote[^"]*"/i,
-  /<div[^>]*>\s*(?:<[^>]+>\s*)*Op\s[\s\S]{0,300}?schreef/i,
-  /-{3,}\s*(?:Original Message|Oorspronkelijk bericht)\s*-{3,}/i,
-  /(?:From|Van):[\s\S]{0,200}?(?:Sent|Verzonden):/,
+// ── CITAAT-SPLITSING: letterlijke kopie van src/lib/mail/quoted.ts ──
+// api/ importeert niets uit src; wijzig je daar iets, wijzig het hier en in
+// api/read-email.ts mee, anders splitsen server en client anders.
+const SPECIFIEKE_MARKERS: RegExp[] = [
+  /<div[^>]*\bclass\s*=\s*["'][^"']*\bgmail_quote\b/i,
+  /<div[^>]*\bid\s*=\s*["']divRplyFwdMsg["']/i,
+  /<div[^>]*\bid\s*=\s*["']appendonsend["']/i,
+  /<hr[^>]*\bid\s*=\s*["']stopSpelling["']/i,
+  /-{2,}\s*(?:Original Message|Oorspronkelijk bericht|Ursprüngliche Nachricht|Message d'origine)\s*-{2,}/i,
+  /(?:^|>|\n)\s*(?:<(?:b|strong|span)[^>]*>\s*)*(?:From|Van)\s*(?:<\/(?:b|strong|span)>\s*)*:[\s\S]{0,200}?(?:Sent|Verzonden|Date|Datum)\s*(?:<\/(?:b|strong|span)>\s*)*:/i,
+  /\bOp\s[\s\S]{4,200}?\sschreef\s[\s\S]{0,300}?:/i,
+  /\bOp\s[\s\S]{4,200}?\sheeft\s[\s\S]{0,300}?geschreven\s*:/i,
+  /\bOn\s[\s\S]{4,200}?\swrote\s*:/i,
 ]
+
+const BLOCKQUOTE = /<blockquote\b/i
+
+const BLOK_TAGS = ['<div', '<p', '<blockquote', '<table', '<hr']
+const IS_BLOK_TAG = /^<(?:div|p|blockquote|table|hr)[\s>/]/i
+const OMSLUITENDE_OPENER = /<(?:div|blockquote|table|tbody|tr|td|th|section)\b[^>]*>\s*$/i
+const MAX_TERUG = 400
+
+function eersteTreffer(html: string, patronen: RegExp[]): number {
+  let beste = -1
+  for (const patroon of patronen) {
+    const m = patroon.exec(html)
+    if (!m) continue
+    let index = m.index
+    if (/^[>\n]/.test(m[0])) index += 1
+    if (beste === -1 || index < beste) beste = index
+  }
+  return beste
+}
+
+function naarBlokStart(html: string, index: number): number {
+  let pos = index
+  if (!IS_BLOK_TAG.test(html.slice(index, index + 12))) {
+    let dichtstbij = -1
+    for (const tag of BLOK_TAGS) {
+      const q = html.lastIndexOf(tag, index)
+      if (q === -1 || index - q > MAX_TERUG) continue
+      if (!IS_BLOK_TAG.test(html.slice(q, q + 12))) continue
+      if (q > dichtstbij) dichtstbij = q
+    }
+    if (dichtstbij !== -1) pos = dichtstbij
+  }
+  for (;;) {
+    const voor = html.slice(Math.max(0, pos - MAX_TERUG), pos)
+    const m = OMSLUITENDE_OPENER.exec(voor)
+    if (!m) break
+    pos -= m[0].length
+  }
+  return pos
+}
+
+function heeftTekst(html: string): boolean {
+  return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim().length > 0
+}
 
 function splitsCitaat(html: string): { eigen: string; geciteerd: string | null } {
   if (!html) return { eigen: html || '', geciteerd: null }
-  let grens = -1
-  for (const patroon of CITAAT_PATRONEN) {
-    const m = patroon.exec(html)
-    if (m && (grens < 0 || m.index < grens)) grens = m.index
+  let index = eersteTreffer(html, SPECIFIEKE_MARKERS)
+  if (index === -1) {
+    const bq = BLOCKQUOTE.exec(html)
+    index = bq ? bq.index : -1
   }
-  if (grens <= 0) return { eigen: html, geciteerd: null }
-  const aanloop = html.slice(Math.max(0, grens - 200), grens)
-  const omhullend = aanloop.search(/<(?:div|p|hr)\b[^>]*>\s*(?:<[^>]+>\s*)*$/i)
-  if (omhullend >= 0) grens = Math.max(0, grens - 200) + omhullend
-  const eigenTekst = html.slice(0, grens).replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim()
-  if (!eigenTekst) return { eigen: html, geciteerd: null }
-  return { eigen: html.slice(0, grens), geciteerd: html.slice(grens) }
+  if (index === -1) return { eigen: html, geciteerd: null }
+  const knip = naarBlokStart(html, index)
+  const eigen = html.slice(0, knip)
+  const geciteerd = html.slice(knip)
+  if (!heeftTekst(eigen)) return { eigen: html, geciteerd: null }
+  return { eigen, geciteerd }
 }
+// ── EINDE KOPIE ──
 
 /**
  * Kandidaten: rijen met uid in deze map zonder rij in email_bodies, nieuwste
