@@ -1,0 +1,301 @@
+/**
+ * Stap 2 van het koppelen: Google of Microsoft stuurt de gebruiker hier terug
+ * met een `code`. Die wisselen we in voor een refresh- en access-token,
+ * versleutelen ze met EMAIL_ENCRYPTION_KEY (hetzelfde g1-formaat als het
+ * app-wachtwoord) en zetten de mailbox op `auth_type` google of microsoft.
+ *
+ * Geen Authorization-header: dit is een browser-redirect. De koppeling aan een
+ * gebruiker komt daarom uit de ondertekende `state` uit api/mail-oauth-start.ts
+ * — HMAC-SHA256 over user_id, provider en tijd, hoogstens tien minuten oud.
+ * Zonder die handtekening zou iemand met een eigen `code` de mailbox van een
+ * ander kunnen overschrijven.
+ *
+ * Antwoordt altijd met een redirect naar de instellingenpagina, ook bij een
+ * fout: dit endpoint zit in de adresbalk van de gebruiker, niet in een fetch.
+ */
+import type { VercelRequest, VercelResponse } from '@vercel/node'
+import crypto from 'crypto'
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseAdmin = createClient(
+  process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+)
+
+// ── GEDEELD-MET-API BEGIN: OAuth-providers ────────────────────────────────
+// Letterlijke kopie in api/mail-oauth-start.ts en api/mail-oauth-callback.ts.
+// De scopes zijn het hele verhaal: Gmail geeft met https://mail.google.com/
+// zowel IMAP als SMTP, Microsoft wil ze los. `openid email` staat erbij omdat
+// het id_token het adres van de mailbox draagt; zonder dat weten we niet welk
+// postvak er gekoppeld is.
+
+type Provider = 'google' | 'microsoft'
+
+interface ProviderConfig {
+  scopes: string[]
+  imap_host: string
+  imap_port: number
+  smtp_host: string
+  smtp_port: number
+}
+
+const PROVIDERS: Record<Provider, ProviderConfig> = {
+  google: {
+    scopes: ['https://mail.google.com/', 'openid', 'email'],
+    imap_host: 'imap.gmail.com',
+    imap_port: 993,
+    smtp_host: 'smtp.gmail.com',
+    smtp_port: 587,
+  },
+  microsoft: {
+    scopes: [
+      'offline_access',
+      'https://outlook.office.com/IMAP.AccessAsUser.All',
+      'https://outlook.office.com/SMTP.Send',
+      'openid',
+      'email',
+    ],
+    imap_host: 'outlook.office365.com',
+    imap_port: 993,
+    smtp_host: 'smtp.office365.com',
+    smtp_port: 587,
+  },
+}
+
+function isProvider(waarde: unknown): waarde is Provider {
+  return waarde === 'google' || waarde === 'microsoft'
+}
+
+function redirectUri(): string {
+  return process.env.MAIL_OAUTH_REDIRECT || 'https://app.doen.team/api/mail-oauth-callback'
+}
+
+function stateGeheim(): string | null {
+  return process.env.MAIL_OAUTH_STATE_SECRET || process.env.EMAIL_ENCRYPTION_KEY || null
+}
+
+function tekenState(userId: string, provider: Provider, tijd: number, geheim: string): string {
+  const kern = `${userId}.${provider}.${tijd}`
+  const hmac = crypto.createHmac('sha256', geheim).update(kern).digest('base64url')
+  return `${Buffer.from(kern, 'utf8').toString('base64url')}.${hmac}`
+}
+// ── GEDEELD-MET-API EINDE: OAuth-providers ────────────────────────────────
+
+const STATE_GELDIG_MS = 10 * 60_000
+
+function leesState(state: string, geheim: string): { userId: string; provider: Provider } | null {
+  const punt = state.lastIndexOf('.')
+  if (punt <= 0) return null
+  const kern = Buffer.from(state.slice(0, punt), 'base64url').toString('utf8')
+  const delen = kern.split('.')
+  if (delen.length !== 3) return null
+  const [userId, provider, tijdTekst] = delen
+  if (!isProvider(provider)) return null
+  const tijd = Number(tijdTekst)
+  if (!Number.isFinite(tijd) || Math.abs(Date.now() - tijd) > STATE_GELDIG_MS) return null
+
+  const verwacht = tekenState(userId, provider, tijd, geheim)
+  const a = Buffer.from(state)
+  const b = Buffer.from(verwacht)
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null
+  return { userId, provider }
+}
+
+/** Zelfde g1-vorm als api/email-settings.ts: AES-256-GCM, salt per waarde. */
+function versleutelToken(tekst: string): string {
+  const sleutel = process.env.EMAIL_ENCRYPTION_KEY
+  if (!sleutel) throw new Error('EMAIL_ENCRYPTION_KEY niet geconfigureerd')
+  const salt = crypto.randomBytes(16)
+  const key = crypto.scryptSync(sleutel, salt, 32)
+  const iv = crypto.randomBytes(12)
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv)
+  const ct = Buffer.concat([cipher.update(tekst, 'utf8'), cipher.final()])
+  return 'g1:' + Buffer.concat([salt, iv, cipher.getAuthTag(), ct]).toString('base64')
+}
+
+function tokenUrl(provider: Provider): string {
+  if (provider === 'microsoft') {
+    const tenant = process.env.MAIL_OAUTH_MICROSOFT_TENANT || 'common'
+    return `https://login.microsoftonline.com/${encodeURIComponent(tenant)}/oauth2/v2.0/token`
+  }
+  return 'https://oauth2.googleapis.com/token'
+}
+
+/**
+ * Het adres van de mailbox uit het id_token. Niet verifiëren hoeft: dit token
+ * komt rechtstreeks van het token-endpoint over TLS, niet via de browser.
+ */
+function adresUitIdToken(idToken: string | undefined): string | null {
+  if (!idToken) return null
+  const delen = idToken.split('.')
+  if (delen.length < 2) return null
+  try {
+    const lading = JSON.parse(Buffer.from(delen[1], 'base64url').toString('utf8')) as Record<string, unknown>
+    const adres = lading.email || lading.preferred_username || lading.upn
+    return typeof adres === 'string' && adres.includes('@') ? adres.toLowerCase() : null
+  } catch {
+    return null
+  }
+}
+
+function appUrl(): string {
+  try {
+    return new URL(redirectUri()).origin
+  } catch {
+    return 'https://app.doen.team'
+  }
+}
+
+function terug(res: VercelResponse, params: Record<string, string>) {
+  const query = new URLSearchParams({ tab: 'email', ...params })
+  res.setHeader('Location', `${appUrl()}/instellingen?${query.toString()}`)
+  return res.status(302).end()
+}
+
+/**
+ * Kopie van herstelSyncStatus uit api/email-settings.ts: een nieuwe koppeling
+ * is het herstelpad na een uitgezette mailbox. Mag het koppelen zelf nooit
+ * laten falen.
+ */
+async function herstelSyncStatus(userId: string): Promise<void> {
+  const nu = new Date().toISOString()
+  try {
+    const { error: stateErr } = await supabaseAdmin
+      .from('email_sync_state')
+      .update({ status: 'ok', laatste_fout: null, laatste_fout_op: null })
+      .eq('user_id', userId)
+    if (stateErr) console.warn('[mail-oauth-callback] sync-status herstellen mislukt:', stateErr.message)
+
+    const { data: mislukt } = await supabaseAdmin
+      .from('mailsync_taken')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('status', 'mislukt')
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (mislukt?.id) {
+      const { error: taakErr } = await supabaseAdmin
+        .from('mailsync_taken')
+        .update({
+          status: 'wachtend', retry_count: 0, uitstel_count: 0, fout_soort: null, foutmelding: null,
+          gemeld_op: null, geclaimd_op: null, geclaimd_door: null, lease_tot: null,
+          scheduled_at: nu, updated_at: nu,
+        })
+        .eq('id', mislukt.id)
+        .eq('status', 'mislukt')
+      if (taakErr && taakErr.code !== '23505') console.warn('[mail-oauth-callback] mailsync-taak terugzetten mislukt:', taakErr.message)
+    }
+    await supabaseAdmin
+      .from('mailsync_taken')
+      .update({ scheduled_at: nu, updated_at: nu })
+      .eq('user_id', userId)
+      .eq('status', 'wachtend')
+  } catch (err) {
+    console.warn('[mail-oauth-callback] herstelSyncStatus gooide:', err instanceof Error ? err.message : err)
+  }
+}
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method === 'OPTIONS') return res.status(200).end()
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
+
+  const foutParam = typeof req.query.error === 'string' ? req.query.error : null
+  if (foutParam) {
+    // access_denied is de gebruiker die op Annuleren drukt; geen fout om over
+    // te struikelen, wel iets om terug te melden.
+    return terug(res, { mail: foutParam === 'access_denied' ? 'geannuleerd' : 'fout', reden: foutParam.slice(0, 60) })
+  }
+
+  const code = typeof req.query.code === 'string' ? req.query.code : null
+  const state = typeof req.query.state === 'string' ? req.query.state : null
+  const geheim = stateGeheim()
+  if (!code || !state || !geheim) return terug(res, { mail: 'fout', reden: 'onvolledig' })
+
+  const gelezen = leesState(state, geheim)
+  if (!gelezen) return terug(res, { mail: 'fout', reden: 'state' })
+  const { userId, provider } = gelezen
+
+  const clientId = provider === 'microsoft'
+    ? process.env.MAIL_OAUTH_MICROSOFT_CLIENT_ID
+    : process.env.MAIL_OAUTH_GOOGLE_CLIENT_ID
+  const clientSecret = provider === 'microsoft'
+    ? process.env.MAIL_OAUTH_MICROSOFT_CLIENT_SECRET
+    : process.env.MAIL_OAUTH_GOOGLE_CLIENT_SECRET
+  if (!clientId || !clientSecret) return terug(res, { mail: 'fout', reden: 'niet_geconfigureerd' })
+
+  try {
+    const respons = await fetch(tokenUrl(provider), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        code,
+        grant_type: 'authorization_code',
+        redirect_uri: redirectUri(),
+      }).toString(),
+      signal: AbortSignal.timeout(15_000),
+    })
+    const antwoord = (await respons.json().catch(() => ({}))) as {
+      access_token?: string
+      refresh_token?: string
+      expires_in?: number
+      id_token?: string
+      error?: string
+    }
+    if (!respons.ok || !antwoord.access_token) {
+      console.error('[mail-oauth-callback] code inwisselen mislukt', { provider, status: respons.status, fout: antwoord.error })
+      return terug(res, { mail: 'fout', reden: (antwoord.error || `http_${respons.status}`).slice(0, 60) })
+    }
+
+    const adres = adresUitIdToken(antwoord.id_token)
+    if (!adres) return terug(res, { mail: 'fout', reden: 'geen_adres' })
+
+    const config = PROVIDERS[provider]
+    const nu = new Date().toISOString()
+    const velden: Record<string, unknown> = {
+      user_id: userId,
+      gmail_address: adres,
+      auth_type: provider,
+      oauth_access_token_enc: versleutelToken(antwoord.access_token),
+      oauth_token_verloopt_op: new Date(Date.now() + (Number(antwoord.expires_in) || 3600) * 1000).toISOString(),
+      imap_host: config.imap_host,
+      imap_port: config.imap_port,
+      smtp_host: config.smtp_host,
+      smtp_port: config.smtp_port,
+      // Het app-wachtwoord hoort niet te blijven staan naast een OAuth-
+      // koppeling: dan zou een terugval erop stilletjes met oude gegevens
+      // kunnen inloggen.
+      encrypted_app_password: null,
+      updated_at: nu,
+    }
+    if (antwoord.refresh_token) {
+      velden.oauth_refresh_token_enc = versleutelToken(antwoord.refresh_token)
+    } else {
+      // Google geeft zonder prompt=consent geen nieuwe refresh-token. Is er al
+      // één van een eerdere koppeling, dan blijft die staan; zo niet, dan valt
+      // de mailbox na een uur stil en is opnieuw koppelen het enige juiste.
+      const { data: bestaand } = await supabaseAdmin
+        .from('user_email_settings')
+        .select('oauth_refresh_token_enc')
+        .eq('user_id', userId)
+        .maybeSingle()
+      if (!bestaand?.oauth_refresh_token_enc) return terug(res, { mail: 'fout', reden: 'geen_refresh_token' })
+    }
+
+    const { error } = await supabaseAdmin
+      .from('user_email_settings')
+      .upsert(velden, { onConflict: 'user_id' })
+    if (error) {
+      console.error('[mail-oauth-callback] opslaan mislukt:', error.message)
+      return terug(res, { mail: 'fout', reden: 'opslaan' })
+    }
+
+    await herstelSyncStatus(userId)
+    return terug(res, { mail: 'gekoppeld' })
+  } catch (err) {
+    console.error('[mail-oauth-callback] onverwachte fout:', err)
+    return terug(res, { mail: 'fout', reden: 'onverwacht' })
+  }
+}
