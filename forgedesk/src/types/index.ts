@@ -2504,6 +2504,7 @@ export interface IngeplandBericht {
   user_id: string
   ontvanger: string
   cc?: string
+  bcc?: string
   onderwerp: string
   body?: string
   html?: string

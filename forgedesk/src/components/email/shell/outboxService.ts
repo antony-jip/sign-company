@@ -42,11 +42,67 @@ export function heeftBijlagenZonderInhoud(b: IngeplandBericht): boolean {
   return (b.bijlagen || []).some((x) => !x.content)
 }
 
+/** Venster waarbinnen de client-rij bij dezelfde verzendpoging kan horen. */
+const TWEELINGRIJ_VENSTER_MS = 15 * 60 * 1000
+
+/**
+ * Bij een 502 staan er twee outbox-rijen voor dezelfde mail: deze rij, die
+ * send-email zelf op `mislukt` zette, en een rij op `wachtend` die de client
+ * er daarna bij zette (`enqueueOutbox` in gmailService keek in zijn dedup
+ * alleen naar wachtend/verwerken). Versturen we hier zonder meer, dan levert
+ * de verzend-cron een minuut later de tweede kopie bij de klant af.
+ *
+ * Daarom annuleren we de wachtende tweelingrij vóór het versturen, met
+ * dezelfde compare-and-swap als de cron gebruikt (`status = 'wachtend'` in de
+ * WHERE). Lukt die claim niet, dan heeft de cron hem al te pakken en is de
+ * mail al onderweg; dan versturen we hier niets. Annuleren-vóór-versturen is
+ * de veilige volgorde: andersom kan de cron tussen versturen en annuleren
+ * alsnog een tweede kopie afleveren.
+ *
+ * De andere route (mislukt meenemen in de dedup van `enqueueOutbox`) is
+ * onveiliger: de cron pakt alleen `wachtend` op, dus dan blijft een mail na
+ * een tijdelijke SMTP-storing stil liggen tot iemand hem hier opmerkt.
+ */
+async function annuleerWachtendeTweelingrij(b: IngeplandBericht): Promise<void> {
+  if (!supabase) return
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.id) return
+
+  const basis = new Date(b.created_at).getTime()
+  const { data: kandidaten, error } = await supabase
+    .from('ingeplande_berichten')
+    .select('id, status')
+    .eq('user_id', session.user.id)
+    .eq('ontvanger', b.ontvanger)
+    .eq('onderwerp', b.onderwerp)
+    .eq('bron', 'outbox')
+    .in('status', ['wachtend', 'verwerken'])
+    .gte('created_at', new Date(basis - 60_000).toISOString())
+    .lte('created_at', new Date(basis + TWEELINGRIJ_VENSTER_MS).toISOString())
+  if (error) throw error
+  if (!kandidaten || kandidaten.length === 0) return
+
+  const alOnderweg = new Error('Deze mail wordt nu al door de wachtrij verzonden. Wacht even en ververs.')
+  if (kandidaten.some((k) => k.status !== 'wachtend')) throw alOnderweg
+
+  const ids = kandidaten.map((k) => k.id)
+  const { data: geannuleerd, error: annuleerFout } = await supabase
+    .from('ingeplande_berichten')
+    .update({ status: 'geannuleerd' })
+    .in('id', ids)
+    .eq('status', 'wachtend')
+    .select('id')
+  if (annuleerFout) throw annuleerFout
+  if ((geannuleerd?.length ?? 0) < ids.length) throw alOnderweg
+}
+
 /** Opnieuw versturen met dezelfde inhoud; de oude rij gaat op geannuleerd zodat hij niet dubbel telt. */
 export async function verstuurOutboxOpnieuw(b: IngeplandBericht): Promise<void> {
+  await annuleerWachtendeTweelingrij(b)
   const bijlagen = (b.bijlagen || []).filter((x) => !!x.content)
   await sendEmail(b.ontvanger, b.onderwerp, b.body || b.onderwerp, {
     cc: b.cc,
+    bcc: b.bcc,
     html: b.html,
     attachments: bijlagen.length ? bijlagen.map((x) => ({ filename: x.filename, content: x.content, encoding: 'base64' as const })) : undefined,
   })
