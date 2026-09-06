@@ -194,7 +194,7 @@ export function eersteRegelVoor(regels: MailRegel[], item: EmailLijstItem, _uiPo
 
 // ─── Wat al gedraaid heeft ───────────────────────────────────────
 
-const GEZIEN_SLEUTEL = 'doen_mail_regels_gezien'
+const GEZIEN_SLEUTEL_BASIS = 'doen_mail_regels_gezien'
 const GEZIEN_MAX = 500
 
 /**
@@ -207,15 +207,46 @@ const GEZIEN_MAX = 500
  * dezelfde mail nog een keer archiveren. Na `markeerGezien(ids)` geeft
  * `isGezien(id)` meteen true, ook vóór de eerstvolgende await.
  */
+// Nieuwste eerst. Knippen op GEZIEN_MAX gooit dus de oudste weg; andersom
+// verloor de lijst precies de mail die net binnenkwam, want zowel laadMap als
+// pasRegelsToe lopen van nieuw naar oud.
 let gezienLijst: string[] = []
 const gezienIds = new Set<string>()
 let gezienGeladen: Promise<void> | null = null
+let gezienSleutel: string | null = null
 
-/** Eén keer per sessie de bewaarde lijst in het geheugen zetten. */
+/**
+ * De sleutel hangt aan de gebruiker: op een gedeeld apparaat mag de volgende
+ * eigenaar de lijst van de vorige niet erven, want dan zwijgen zijn regels
+ * over mail die hij nog nooit gezien heeft. De oude, ongescopete sleutel wordt
+ * één keer overgenomen en daarna opgeruimd.
+ */
+async function bepaalGezienSleutel(): Promise<string> {
+  try {
+    if (!supabase) return GEZIEN_SLEUTEL_BASIS
+    const { data: { session } } = await supabase.auth.getSession()
+    const userId = session?.user?.id
+    return userId ? `${GEZIEN_SLEUTEL_BASIS}_${userId}` : GEZIEN_SLEUTEL_BASIS
+  } catch {
+    return GEZIEN_SLEUTEL_BASIS
+  }
+}
+
+/**
+ * Eén keer per sessie de bewaarde lijst in het geheugen zetten. Await dit
+ * vóór de eerste isGezien: het user-id komt uit een async sessie-lees.
+ */
 export function zorgVoorGezien(): Promise<void> {
   if (gezienGeladen) return gezienGeladen
-  neemOverUitStorage(GEZIEN_SLEUTEL)
-  gezienGeladen = Promise.resolve()
+  gezienGeladen = (async () => {
+    gezienSleutel = await bepaalGezienSleutel()
+    neemOverUitStorage(gezienSleutel)
+    if (gezienSleutel !== GEZIEN_SLEUTEL_BASIS) {
+      neemOverUitStorage(GEZIEN_SLEUTEL_BASIS)
+      try { localStorage.removeItem(GEZIEN_SLEUTEL_BASIS) } catch { /* storage geblokkeerd */ }
+    }
+    bewaarGezien()
+  })()
   return gezienGeladen
 }
 
@@ -228,20 +259,21 @@ function neemOverUitStorage(sleutel: string): void {
     // Wat deze sessie al markeerde is nieuwer dan wat er opgeslagen stond.
     const bewaard = lijst.map(String).filter((id) => !gezienIds.has(id))
     for (const id of bewaard) gezienIds.add(id)
-    gezienLijst = [...bewaard, ...gezienLijst]
+    gezienLijst = [...gezienLijst, ...bewaard]
   } catch { /* storage geblokkeerd */ }
 }
 
 function bewaarGezien(): void {
+  if (!gezienSleutel) return
   try {
-    localStorage.setItem(GEZIEN_SLEUTEL, JSON.stringify(gezienLijst))
+    localStorage.setItem(gezienSleutel, JSON.stringify(gezienLijst))
   } catch { /* storage geblokkeerd */ }
 }
 
 function knipEnBewaar(): void {
   if (gezienLijst.length > GEZIEN_MAX) {
-    for (const id of gezienLijst.slice(0, gezienLijst.length - GEZIEN_MAX)) gezienIds.delete(id)
-    gezienLijst = gezienLijst.slice(-GEZIEN_MAX)
+    for (const id of gezienLijst.slice(GEZIEN_MAX)) gezienIds.delete(id)
+    gezienLijst = gezienLijst.slice(0, GEZIEN_MAX)
   }
   bewaarGezien()
 }
@@ -251,17 +283,22 @@ export function isGezien(id: string): boolean {
   return gezienIds.has(id)
 }
 
-/** Synchroon markeren: geen await tussen het besluit en de vastlegging. */
+/**
+ * Synchroon markeren: geen await tussen het besluit en de vastlegging. De ids
+ * komen nieuwste eerst binnen en gaan vooraan de lijst in, zodat knippen de
+ * oudste laat vallen en niet de mail van vanochtend.
+ */
 export function markeerGezien(ids: Iterable<string>): void {
   void zorgVoorGezien()
-  let iets = false
+  const nieuw: string[] = []
   for (const id of ids) {
     if (gezienIds.has(id)) continue
     gezienIds.add(id)
-    gezienLijst.push(id)
-    iets = true
+    nieuw.push(id)
   }
-  if (iets) knipEnBewaar()
+  if (nieuw.length === 0) return
+  gezienLijst = [...nieuw, ...gezienLijst]
+  knipEnBewaar()
 }
 
 /** "Nu toepassen" moet een mail opnieuw langs de regels kunnen sturen. */
@@ -296,6 +333,9 @@ export function laatLos(ids: Iterable<string>): void {
   for (const id of ids) idsInBehandeling.delete(id)
 }
 
+// De sessie-lees is async; alvast starten scheelt de eerste ronde een lege lijst.
+void zorgVoorGezien()
+
 /** @deprecated Gebruik isGezien; deze kopie loopt achter zodra er een await tussen zit. */
 export function leesGezien(): Set<string> {
   void zorgVoorGezien()
@@ -310,6 +350,8 @@ export function schrijfGezien(ids: Iterable<string>): void {
   for (const id of [...gezienIds]) if (!binnenSet.has(id)) gezienIds.delete(id)
   const nieuw = binnen.filter((id) => !gezienIds.has(id))
   for (const id of nieuw) gezienIds.add(id)
-  gezienLijst = [...gezienLijst.filter((id) => binnenSet.has(id)), ...nieuw]
+  // Wat er nieuw bij komt is per definitie het verste; dat mag het knippen
+  // niet als eerste kwijtraken, welke volgorde de aanroeper ook aanhield.
+  gezienLijst = [...nieuw, ...gezienLijst.filter((id) => binnenSet.has(id))]
   knipEnBewaar()
 }
