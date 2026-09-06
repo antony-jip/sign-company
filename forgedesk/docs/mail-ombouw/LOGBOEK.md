@@ -181,3 +181,14 @@ Op Trigger.dev (dashboard, environment prod) voor de IDLE-werker:
 - `email_notities`: twee leespolicies naast elkaar (eigen notities, en notities op een gedeeld postvak) in plaats van één met een EXISTS erin. De RLS-invariantentest vangt die vorm af, met migratie 195 als precedent. Plus een UPDATE-policy, want een notitie was niet te bewerken.
 - `email_threads_view` groepeert nu ook op `account_id`: anders smelten twee postvakken van dezelfde gebruiker samen en ziet een collega de threads van een gedeeld postvak nooit.
 - 244 en 245 raken beide elke rij in `emails` (24k). Draai ze in een rustig moment en zet zo nodig `statement_timeout` hoger.
+
+## Reviewfixes verzenden en store
+
+- Undo-send overleeft een tabsluiting: `verzendMetBedenktijd` hangt een `pagehide`-listener op die de verzendtaak alsnog draait met `keepalive` op de fetch (nieuwe optie `keepalive` in `SendEmailOptions` en `verstuurPayload`), en ruimt hem op bij ongedaan maken en bij normaal aflopen.
+- Ongedaan maken houdt de bijlagen: `onHeropen(document, bestanden)` geeft de File-map van de ontmantelde composer mee (nieuwe prop `bestanden`, `EmailLayout` bewaart hem in `ComposerStand`), en `bouwVerzending` gooit nu een fout bij een ontbrekende upload in plaats van een waarschuwing, zodat er nooit een mail zonder beloofde bijlage vertrekt.
+- Geen dubbele bezorging na een 502: de fout uit de outbox-enqueue is gemarkeerd (`outboxQueued`, herkenbaar via `isOutboxFout`) en `sendInBackground` laat de Opnieuw-knop daarvoor weg. De wachtende rij annuleren vóór een retry is de onveiligere variant, want de cron kan hem al op `verwerken` hebben staan.
+- `mailStore.annuleerWachtend(ids)` laat een wachtende undo-actie vallen zonder wegschrijven of herstellen; `herstel()` en de archiveer-tak van `voerRegelUit` roepen hem aan vóór de tegengestelde actie. De buffer houdt nu per id bij wat nog wacht, dus een deelherstel raakt de rest van de bulk niet.
+- Serverrijen overschrijven een lopende optimistische actie niet meer: de buffer onthoudt welke velden hij zette, `patchVanServer` (realtime-UPDATE) en `neemOp` (ververs) slaan die velden over, en `laadMap` laat een rij met een lopende actie buiten de lijst.
+- Ref-guard op verzenden in de composer: de knop leunde op een render en de Cmd+Enter-route keek helemaal niet naar `bezig`.
+- De `pagehide`-flush van de undo-buffer gaat met `keepalive` de deur uit (`imapActie` kreeg die optie). Het imap-action-endpoint schrijft zelf ook de map-kolom, dus dat is meteen het vangnet voor de supabase-update die met het tabblad verdwijnt.
+- Tests in `tests/lib/mail/mailStore.test.ts`: herstel annuleert de wachtende archivering, en een realtime-UPDATE zet een lopende map-wissel niet terug.
