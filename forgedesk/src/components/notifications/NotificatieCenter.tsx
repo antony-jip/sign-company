@@ -84,6 +84,16 @@ const typeConfig: Record<
     colorClass: "text-petrol",
     bgClass: "bg-[hsl(var(--status-green-bg))]",
   },
+  uren_week_ingediend: {
+    icon: Clock,
+    colorClass: "text-petrol",
+    bgClass: "bg-[hsl(var(--status-green-bg))]",
+  },
+  uren_week_goedgekeurd: {
+    icon: Clock,
+    colorClass: "text-petrol",
+    bgClass: "bg-[hsl(var(--status-green-bg))]",
+  },
   website_aanvraag: {
     icon: MessageSquare,
     colorClass: "text-[#C03A18]",
