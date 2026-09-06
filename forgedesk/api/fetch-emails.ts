@@ -97,21 +97,7 @@ function leaseGrens(nu: number): string {
 // Alleen de mailbox zelf is 'auth'. Die krijgt géén backoff maar meteen de
 // dodebrievenbus: een verkeerd wachtwoord elke drie minuten opnieuw bij Gmail
 // aanbieden is de manier om het account door Gmail geblokkeerd te krijgen.
-// Domeinen van vrije mailproviders. Een lead op zo'n adres mag nooit op
-// 'gereageerd' komen omdat een willekeurige andere gmail-gebruiker mailde, dus
-// bij deze domeinen telt alleen een exacte adresmatch.
-const GEDEELDE_MAILDOMEINEN = new Set([
-  'gmail.com', 'googlemail.com', 'hotmail.com', 'hotmail.nl', 'hotmail.be',
-  'outlook.com', 'outlook.nl', 'outlook.be', 'live.nl', 'live.com', 'live.be',
-  'msn.com', 'yahoo.com', 'yahoo.co.uk', 'icloud.com', 'me.com', 'mac.com',
-  'protonmail.com', 'proton.me', 'gmx.com', 'gmx.net', 'aol.com',
-  'ziggo.nl', 'kpnmail.nl', 'kpnplanet.nl', 'planet.nl', 'home.nl', 'casema.nl',
-  'xs4all.nl', 'telfort.nl', 'hetnet.nl', 'chello.nl', 'upcmail.nl', 'online.nl',
-  'zonnet.nl', 'quicknet.nl', 'wanadoo.nl', 'tiscali.nl', 'solcon.nl', 'caiway.nl',
-  'telenet.be', 'skynet.be', 'scarlet.be', 'proximus.be',
-])
-
-const AUTH_PATROON =/authenticationfailed|invalid credentials|auth(?:enticatie)?\s*(?:mislukt|geweigerd|failed)|wachtwoord|password/i
+const AUTH_PATROON = /authenticationfailed|invalid credentials|auth(?:enticatie)?\s*(?:mislukt|geweigerd|failed)|wachtwoord|password/i
 
 // Serverconfiguratie, geen gebruikersfout. Deze twee kwamen eerst in
 // AUTH_PATROON terecht en gingen daarmee zonder backoff naar de dodebrievenbus.
@@ -322,6 +308,20 @@ function messageIdVoorRij(
 }
 
 // ── GEDEELD-MET-API EINDE ──────────────────────────────────────────────
+
+// Domeinen van vrije mailproviders. Een lead op zo'n adres mag nooit op
+// 'gereageerd' komen omdat een willekeurige andere gmail-gebruiker mailde, dus
+// bij deze domeinen telt alleen een exacte adresmatch.
+const GEDEELDE_MAILDOMEINEN = new Set([
+  'gmail.com', 'googlemail.com', 'hotmail.com', 'hotmail.nl', 'hotmail.be',
+  'outlook.com', 'outlook.nl', 'outlook.be', 'live.nl', 'live.com', 'live.be',
+  'msn.com', 'yahoo.com', 'yahoo.co.uk', 'icloud.com', 'me.com', 'mac.com',
+  'protonmail.com', 'proton.me', 'gmx.com', 'gmx.net', 'aol.com',
+  'ziggo.nl', 'kpnmail.nl', 'kpnplanet.nl', 'planet.nl', 'home.nl', 'casema.nl',
+  'xs4all.nl', 'telfort.nl', 'hetnet.nl', 'chello.nl', 'upcmail.nl', 'online.nl',
+  'zonnet.nl', 'quicknet.nl', 'wanadoo.nl', 'tiscali.nl', 'solcon.nl', 'caiway.nl',
+  'telenet.be', 'skynet.be', 'scarlet.be', 'proximus.be',
+])
 
 const VLAG_QUEUE = 'mailsync_queue'
 // Kort in cache per invocatie, niet per request: dit is de warmste route van
