@@ -104,6 +104,11 @@ function decryptPassword(encrypted: string): string {
 // Bewust gekopieerd en niet gedeeld: api/* is standalone, een import uit src/
 // of api/_lib bundelt Vercel niet mee. Leunt op `crypto`, `supabaseAdmin` en
 // `decryptPassword` uit het bestand zelf.
+//
+// AFWIJKING (6 sep 2026): alleen deze kopie schrijft het verse token
+// voorwaardelijk terug (zie haalToegangstoken), zodat een trage tweede
+// verversing een nieuwer token niet met een ouder overschrijft. De andere zes
+// kopieën hebben die bescherming nog niet; zie LOGBOEK.md.
 
 interface OauthRij {
   user_id?: string | null
@@ -202,8 +207,30 @@ async function haalToegangstoken(rij: OauthRij, opties?: { forceer?: boolean }):
   if (antwoord.refresh_token) patch.oauth_refresh_token_enc = versleutelToken(antwoord.refresh_token)
 
   if (rij.user_id) {
-    const { error } = await supabaseAdmin.from('user_email_settings').update(patch).eq('user_id', rij.user_id)
+    // Microsoft rouleert refresh-tokens, dus twee verversingen tegelijk kunnen
+    // elkaar overschrijven. Wint de trage, dan staat er een refresh-token in de
+    // rij dat al vervangen is en valt de mailbox stil. Alleen schrijven als de
+    // opgeslagen vervaldatum ouder is dan de nieuwe: dan wint altijd de
+    // nieuwste. Geen .or(): die faalt op UPDATE, vandaar twee pogingen.
+    const { data, error } = await supabaseAdmin
+      .from('user_email_settings')
+      .update(patch)
+      .eq('user_id', rij.user_id)
+      .lt('oauth_token_verloopt_op', nieuwVerlooptOp)
+      .select('user_id')
     if (error) console.warn('[oauth] nieuw token niet opgeslagen:', error.message)
+    else if (!data || data.length === 0) {
+      const leeg = await supabaseAdmin
+        .from('user_email_settings')
+        .update(patch)
+        .eq('user_id', rij.user_id)
+        .is('oauth_token_verloopt_op', null)
+        .select('user_id')
+      if (leeg.error) console.warn('[oauth] nieuw token niet opgeslagen:', leeg.error.message)
+      else if (!leeg.data || leeg.data.length === 0) {
+        console.info('[oauth] nieuwer token stond er al, niet overschreven', { userId: rij.user_id })
+      }
+    }
   }
   rij.oauth_access_token_enc = patch.oauth_access_token_enc as string
   rij.oauth_token_verloopt_op = nieuwVerlooptOp

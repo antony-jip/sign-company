@@ -104,7 +104,10 @@ function maxPostvakken(): number {
   const rauw = process.env.MAIL_IDLE_MAX
   if (rauw === undefined || rauw === '') return 10
   const getal = Number(rauw)
-  return Number.isFinite(getal) && getal >= 0 ? Math.floor(getal) : 10
+  // Onzin of een negatief getal betekent uit, niet "dan maar tien". Wie hier
+  // iets raars neerzet wil geen tien machines aanzetten.
+  if (!Number.isFinite(getal) || getal < 0) return 0
+  return Math.floor(getal)
 }
 
 /**
@@ -380,45 +383,49 @@ export const mailIdleWerker: MailIdleTaak = task({
     }
 
     let verbindingsFout: string | null = null
+    // logout in finally: elke uitgang, ook een onverwachte fout in de
+    // luisterlus, hoort de socket te sluiten. Gmail telt open verbindingen mee
+    // voor zijn limiet en blokkeert accounts die er te veel laten staan.
     try {
-      await client.connect()
-      await client.mailboxOpen('INBOX')
-    } catch (err) {
-      verbindingsFout = err instanceof Error ? err.message : String(err)
-      await schrijfIdleFout(supabase, postvak, verbindingsFout, vorigeTeller)
-      logger.error('IDLE: verbinden mislukt', { userId: lading.userId, melding: verbindingsFout })
-      try { await client.logout() } catch { /* verbinding was er al niet */ }
-      return { reden: 'verbinden-mislukt' }
-    }
-
-    await schrijfIdleSucces(supabase, postvak)
-    logger.info('IDLE open', { userId: lading.userId, ronde: lading.ronde ?? 1, host: postvak.imap_host })
-
-    await new Promise<void>((klaar) => {
-      let gestopt = false
-      const stop = () => {
-        if (gestopt) return
-        gestopt = true
-        if (samenvoeger) clearTimeout(samenvoeger)
-        clearTimeout(eindTimer)
-        klaar()
+      try {
+        await client.connect()
+        await client.mailboxOpen('INBOX')
+      } catch (err) {
+        verbindingsFout = err instanceof Error ? err.message : String(err)
+        await schrijfIdleFout(supabase, postvak, verbindingsFout, vorigeTeller)
+        logger.error('IDLE: verbinden mislukt', { userId: lading.userId, melding: verbindingsFout })
+        return { reden: 'verbinden-mislukt' }
       }
-      const eindTimer = setTimeout(stop, IDLE_DUUR_MS)
-      const opEvent = (aanleiding: string) => {
-        events += 1
-        if (samenvoeger) clearTimeout(samenvoeger)
-        samenvoeger = setTimeout(() => { void vraagSync(aanleiding) }, SAMENVOEG_MS)
-      }
-      client.on('exists', () => opEvent('exists'))
-      client.on('flags', () => opEvent('flags'))
-      client.on('error', (err: Error) => {
-        verbindingsFout = err?.message || 'IMAP-fout'
-        stop()
+
+      await schrijfIdleSucces(supabase, postvak)
+      logger.info('IDLE open', { userId: lading.userId, ronde: lading.ronde ?? 1, host: postvak.imap_host })
+
+      await new Promise<void>((klaar) => {
+        let gestopt = false
+        const stop = () => {
+          if (gestopt) return
+          gestopt = true
+          if (samenvoeger) clearTimeout(samenvoeger)
+          clearTimeout(eindTimer)
+          klaar()
+        }
+        const eindTimer = setTimeout(stop, IDLE_DUUR_MS)
+        const opEvent = (aanleiding: string) => {
+          events += 1
+          if (samenvoeger) clearTimeout(samenvoeger)
+          samenvoeger = setTimeout(() => { void vraagSync(aanleiding) }, SAMENVOEG_MS)
+        }
+        client.on('exists', () => opEvent('exists'))
+        client.on('flags', () => opEvent('flags'))
+        client.on('error', (err: Error) => {
+          verbindingsFout = err?.message || 'IMAP-fout'
+          stop()
+        })
+        client.on('close', () => stop())
       })
-      client.on('close', () => stop())
-    })
-
-    try { await client.logout() } catch { /* al dicht */ }
+    } finally {
+      try { await client.logout() } catch { /* al dicht */ }
+    }
 
     const duurMs = Date.now() - begonnenOp
     // Een korte ronde telt als verbindingsfout, ook als `close` zonder fout
