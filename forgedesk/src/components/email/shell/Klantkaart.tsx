@@ -180,7 +180,7 @@ export function Klantkaart({ mail, open, onSluiten, onZoekKlant, onSelectMail, e
                 <Loader2 className="h-4 w-4 animate-spin text-petrol/50 mt-1" />
               ) : klant ? (
                 <>
-                  <button type="button" onClick={() => navigateWithTab({ path: `/klanten/${klant.id}`, label: klant.bedrijfsnaam || klant.contactpersoon })} className="text-left font-heading text-[15px] font-bold text-foreground tracking-[-0.01em] hover:text-petrol transition-colors truncate block max-w-full">
+                  <button type="button" onClick={() => navigateWithTab({ path: `/klanten/${klant.id}`, label: klant.bedrijfsnaam || klant.contactpersoon })} className="block max-w-full text-left font-heading text-[15px] font-bold leading-tight tracking-[-0.01em] text-foreground transition-colors hover:text-petrol [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2] overflow-hidden">
                     {klant.bedrijfsnaam || klant.contactpersoon}
                   </button>
                   <p className="text-[12px] text-muted-foreground truncate">{klant.contactpersoon}{klant.status && klant.status !== 'actief' ? ` · ${klant.status}` : ''}</p>
@@ -223,18 +223,22 @@ export function Klantkaart({ mail, open, onSluiten, onZoekKlant, onSelectMail, e
 
           {klant && (
             <>
-              <Kop tekst="Open offertes" />
+              <Kop tekst="Open offertes" actie={offertes.length > 0 ? <span className="font-mono text-[10.5px] tabular-nums text-muted-foreground/80">{offertes.length} · {formatCurrency(offertes.reduce((t, o) => t + (o.totaal || 0), 0))}</span> : undefined} />
               {offertes.length === 0 ? <p className="text-[12px] text-muted-foreground">Geen open offertes</p> : offertes.slice(0, 5).map((o) => (
-                <button key={o.id} type="button" onClick={() => navigateWithTab({ path: `/offertes/${o.id}/bewerken`, label: o.nummer })} className="w-full flex items-center gap-2 py-1.5 text-left hover:bg-background rounded-lg px-1.5 -mx-1.5 transition-colors group">
-                  <span className="font-mono text-[11px] text-muted-foreground flex-shrink-0">{o.nummer}</span>
-                  <span className="text-[12.5px] text-foreground/85 truncate flex-1">{o.titel}</span>
-                  <span className="font-mono text-[11.5px] tabular-nums text-foreground/80">{formatCurrency(o.totaal)}</span>
-                  <Status code={o.status} label={OFFERTE_STATUS[o.status] || o.status} />
-                  <ChevronRight className="h-3 w-3 text-muted-foreground/50 group-hover:text-petrol flex-shrink-0" />
+                <button key={o.id} type="button" onClick={() => navigateWithTab({ path: `/offertes/${o.id}/bewerken`, label: o.nummer })} className="group -mx-1.5 flex w-full items-center gap-2 rounded-lg px-1.5 py-1.5 text-left transition-colors hover:bg-background">
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[12.5px] text-foreground/85">{o.titel}</span>
+                    <span className="block font-mono text-[10.5px] text-muted-foreground/70">{o.nummer}</span>
+                  </span>
+                  <span className="flex flex-shrink-0 flex-col items-end">
+                    <span className="font-mono text-[11.5px] tabular-nums text-foreground/80">{formatCurrency(o.totaal)}</span>
+                    <Status code={o.status} label={OFFERTE_STATUS[o.status] || o.status} />
+                  </span>
+                  <ChevronRight className="h-3 w-3 flex-shrink-0 text-muted-foreground/40 group-hover:text-petrol" />
                 </button>
               ))}
 
-              <Kop tekst="Lopende projecten" actie={<span className="text-[10px] text-muted-foreground/70 inline-flex items-center gap-1"><Link2 className="h-3 w-3" /> sleep een mail hierheen</span>} />
+              <Kop tekst="Lopende projecten" actie={projecten.length > 0 ? <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/60"><Link2 className="h-3 w-3" /> sleep een mail hierheen</span> : undefined} />
               {projecten.length === 0 ? <p className="text-[12px] text-muted-foreground">Geen lopende projecten</p> : projecten.slice(0, 6).map((pr) => (
                 <button
                   key={pr.id}
@@ -245,8 +249,10 @@ export function Klantkaart({ mail, open, onSluiten, onZoekKlant, onSelectMail, e
                   onDrop={(e) => dropOpProject(e, pr)}
                   className={cn('w-full flex items-center gap-2 py-1.5 text-left rounded-lg px-1.5 -mx-1.5 transition-colors group', sleeptOver === pr.id ? 'bg-petrol/[0.12] ring-2 ring-petrol/50' : 'hover:bg-background')}
                 >
-                  {pr.project_nummer && <span className="font-mono text-[11px] text-muted-foreground flex-shrink-0">{pr.project_nummer}</span>}
-                  <span className="text-[12.5px] text-foreground/85 truncate flex-1">{pr.naam}</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[12.5px] text-foreground/85">{pr.naam}</span>
+                    {pr.project_nummer && <span className="block font-mono text-[10.5px] text-muted-foreground/70">{pr.project_nummer}</span>}
+                  </span>
                   <Status code={pr.status} label={PROJECT_FASE[pr.status] || pr.status} />
                   <ChevronRight className="h-3 w-3 text-muted-foreground/50 group-hover:text-petrol flex-shrink-0" />
                 </button>

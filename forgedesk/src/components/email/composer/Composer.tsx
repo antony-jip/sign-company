@@ -434,12 +434,11 @@ export function Composer({ document: initieel, variant, onVerzonden, onSluiten, 
 
       {/* Kop */}
       {variant === 'inline' && (
-        <div className={cn('flex items-center justify-between gap-3 pb-1.5', losstaand ? 'px-4 pt-3' : 'px-1')}>
-          <div className="min-w-0 flex items-baseline gap-2">
-            <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-petrol/70 font-semibold whitespace-nowrap">{kopLabel}</span>
-            {doc.aan[0] && <span className="text-[12px] text-muted-foreground truncate">aan {ontvangerLabel(doc.aan[0])}{doc.aan.length > 1 ? ` +${doc.aan.length - 1}` : ''}</span>}
-          </div>
-          <button type="button" onClick={sluit} title="Sluiten (concept blijft bewaard)" className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors flex-shrink-0">
+        /* De ontvanger staat al in het Aan-veld eronder; een kopregel die dat
+           herhaalt maakt het scherm alleen voller. */
+        <div className={cn('flex items-center justify-between gap-3', losstaand ? 'px-4 pt-2' : 'px-1')}>
+          <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-petrol/70">{kopLabel}</span>
+          <button type="button" onClick={sluit} title="Sluiten (concept blijft bewaard)" className="h-7 w-7 flex-shrink-0 rounded-md flex items-center justify-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
             <X className="h-4 w-4" />
           </button>
         </div>
