@@ -586,6 +586,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // zelf staat binnen de try en is daar niet in scope.
   let mapValueVoorTik: string | null = null
   let userIdVoorTik: string | null = null
+  const gestart = Date.now()
 
   try {
     // `snel`: alleen mail ophalen en wegschrijven, zonder de nabewerking
@@ -800,20 +801,112 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
     }
 
-    // ─── Flags-resync: leesstatus van recente mails ophalen ───
+    // ─── Flags-resync: lees- en pinstatus van de laatste 500 mails ───
     // De upsert hieronder raakt bestaande rijen niet aan (ignoreDuplicates),
-    // dus mails die elders (telefoon, webmail) gelezen zijn worden hier
-    // bijgewerkt. Bewust één richting (ongelezen → gelezen): doen. zet zelf
-    // geen \Seen op IMAP, dus andersom zou lokaal-gelezen mail terugflippen.
-    const seenByUid = new Map<number, boolean>()
+    // dus wat elders (telefoon, webmail) gelezen of gevlagd is komt hier
+    // binnen. Beide richtingen: de server is de waarheid, want doen. schrijft
+    // sinds de ombouw zelf \Seen en \Flagged terug via email-imap-action.
+    const vlagPerUid = new Map<number, { seen: boolean; flagged: boolean }>()
     try {
-      const flagsCount = Math.min(Math.max(veiligeLimit, 100), 200, total)
+      const flagsCount = Math.min(500, total)
       const flagsStart = Math.max(1, total - flagsCount + 1)
       for await (const msg of client.fetch({ seq: `${flagsStart}:${total}` }, { uid: true, flags: true })) {
-        if (msg.uid) seenByUid.set(msg.uid, msg.flags?.has('\\Seen') || false)
+        if (msg.uid) {
+          vlagPerUid.set(msg.uid, {
+            seen: msg.flags?.has('\\Seen') || false,
+            flagged: msg.flags?.has('\\Flagged') || false,
+          })
+        }
       }
     } catch (flagErr) {
       console.warn('[fetch-emails] flags-resync overgeslagen:', flagErr instanceof Error ? flagErr.message : flagErr)
+    }
+
+    // ─── Server → DB: mail die uit de INBOX verdween ───
+    // Elders gearchiveerd of weggegooid (telefoon, webmail) bleef hier in de
+    // inbox staan. UID SEARCH ALL tegen onze rijen onder de waterlijn; wat
+    // ontbreekt gaat naar 'archief' als het in Archief/All Mail te vinden is,
+    // anders naar 'prullenbak'. Nooit rijen verwijderen. Alleen voor de INBOX,
+    // niet bij `snel`, en binnen een eigen tijdbudget.
+    const RECONCILE_BUDGET_MS = 12_000
+    const MAX_ONTBREKEND_PER_RONDE = 40
+    let herplaatst = 0
+    if (mapValue === 'inbox' && !snel && stateBruikbaar && Date.now() - gestart < 20_000) {
+      const reconcileStart = Date.now()
+      const binnenBudget = () => Date.now() - reconcileStart < RECONCILE_BUDGET_MS
+      try {
+        const opServer = new Set<number>((await client.search({ all: true }, { uid: true })) || [])
+        // Een lege uitkomst op een mailbox met berichten is een mislukte
+        // search, geen lege map: dan niets herplaatsen.
+        if (opServer.size > 0) {
+          const waterlijn = Number(syncState!.last_seen_uid)
+          const dbRijen: Array<{ id: string; uid: number; message_id: string | null }> = []
+          for (let van = 0; van < 5000 && binnenBudget(); van += 1000) {
+            const { data: blok } = await supabaseAdmin
+              .from('emails')
+              .select('id, uid, message_id')
+              .eq('user_id', user_id)
+              .eq('map', 'inbox')
+              .eq('imap_folder', imapFolder)
+              .not('uid', 'is', null)
+              .lte('uid', waterlijn)
+              .order('uid', { ascending: false })
+              .range(van, van + 999)
+            if (!blok?.length) break
+            dbRijen.push(...(blok as typeof dbRijen))
+            if (blok.length < 1000) break
+          }
+          const ontbrekend = dbRijen.filter((r) => !opServer.has(Number(r.uid))).slice(0, MAX_ONTBREKEND_PER_RONDE)
+
+          if (ontbrekend.length > 0) {
+            const isGmail = client.capabilities?.has?.('X-GM-EXT-1') ?? false
+            const mailboxen = (await client.list()) as ImapMailbox[]
+            const archiefMap = isGmail
+              ? mailboxen.find((m) => m.specialUse === '\\All') || mailboxen.find((m) => NAME_PATTERNS.alle.test(m.path))
+              : mailboxen.find((m) => m.specialUse === '\\Archive') || mailboxen.find((m) => /^archiv|archief|arkiv|gearchiveerd/i.test(m.path) || /^archiv|archief|arkiv|gearchiveerd/i.test(m.name || ''))
+
+            const naarArchief: Array<{ id: string; uid: number }> = []
+            const naarPrullenbak: string[] = []
+            if (archiefMap) {
+              await client.mailboxOpen(archiefMap.path, { readOnly: true })
+              for (const r of ontbrekend) {
+                if (!binnenBudget()) break
+                if (!r.message_id || r.message_id.endsWith('@sync.doen.local>')) {
+                  naarPrullenbak.push(r.id)
+                  continue
+                }
+                const gevonden = await client.search({ header: { 'message-id': r.message_id } }, { uid: true })
+                if (gevonden && gevonden.length > 0) naarArchief.push({ id: r.id, uid: gevonden[0] })
+                else naarPrullenbak.push(r.id)
+              }
+            } else {
+              naarPrullenbak.push(...ontbrekend.map((r) => r.id))
+            }
+
+            for (const r of naarArchief) {
+              const { error: archErr } = await supabaseAdmin
+                .from('emails')
+                .update({ map: 'archief', imap_folder: archiefMap!.path, uid: r.uid, gmail_id: String(r.uid) })
+                .eq('id', r.id)
+                .eq('user_id', user_id)
+              if (!archErr) herplaatst++
+            }
+            if (naarPrullenbak.length > 0) {
+              // Zonder uid: de INBOX-uid is dood en in de prullenbak kennen we
+              // hem niet. Latere acties op de rij degraderen dan naar alleen-DB.
+              const { error: prulErr } = await supabaseAdmin
+                .from('emails')
+                .update({ map: 'prullenbak', labels: ['prullenbak'], uid: null })
+                .eq('user_id', user_id)
+                .in('id', naarPrullenbak)
+              if (!prulErr) herplaatst += naarPrullenbak.length
+            }
+            if (herplaatst > 0) console.log('[fetch-emails] elders verplaatste mail herplaatst', { archief: naarArchief.length, prullenbak: naarPrullenbak.length })
+          }
+        }
+      } catch (reconcileErr) {
+        console.warn('[fetch-emails] inbox-reconciliatie overgeslagen:', reconcileErr instanceof Error ? reconcileErr.message : reconcileErr)
+      }
     }
 
     await client.logout()
@@ -975,22 +1068,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    // ─── Flags toepassen: elders-gelezen mails ook hier op gelezen ───
-    if (seenByUid.size > 0) {
+    // ─── Flags toepassen: \Seen ↔ gelezen en \Flagged ↔ pinned, beide kanten op ───
+    if (vlagPerUid.size > 0) {
       try {
+        const uids = [...vlagPerUid.keys()]
         const { data: bestaande } = await supabaseAdmin
           .from('emails')
-          .select('id, uid, gelezen')
+          .select('id, uid, gelezen, pinned')
           .eq('user_id', user_id)
           .eq('imap_folder', imapFolder)
-          .eq('gelezen', false)
-          .in('uid', [...seenByUid.keys()])
-        const markeerGelezen = (bestaande || [])
-          .filter((row) => seenByUid.get(Number(row.uid)) === true)
-          .map((row) => row.id)
-        if (markeerGelezen.length > 0) {
-          await supabaseAdmin.from('emails').update({ gelezen: true }).in('id', markeerGelezen)
+          .gte('uid', Math.min(...uids))
+          .lte('uid', Math.max(...uids))
+          .limit(1000)
+        const lezen: string[] = []
+        const ongelezen: string[] = []
+        const pinnen: string[] = []
+        const ontpinnen: string[] = []
+        for (const row of bestaande || []) {
+          const vlag = vlagPerUid.get(Number(row.uid))
+          if (!vlag) continue
+          if (vlag.seen !== !!row.gelezen) (vlag.seen ? lezen : ongelezen).push(row.id)
+          if (vlag.flagged !== !!row.pinned) (vlag.flagged ? pinnen : ontpinnen).push(row.id)
         }
+        const schrijf = async (ids: string[], patch: Record<string, unknown>) => {
+          for (let i = 0; i < ids.length; i += 100) {
+            await supabaseAdmin.from('emails').update(patch).eq('user_id', user_id).in('id', ids.slice(i, i + 100))
+          }
+        }
+        await schrijf(lezen, { gelezen: true })
+        await schrijf(ongelezen, { gelezen: false })
+        await schrijf(pinnen, { pinned: true })
+        await schrijf(ontpinnen, { pinned: false })
       } catch (flagErr) {
         console.warn('[fetch-emails] flags toepassen mislukt:', flagErr instanceof Error ? flagErr.message : flagErr)
       }
@@ -1243,6 +1351,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       fetched: newEmails.length,
       incremental,
       snel: snel || undefined,
+      herplaatst: herplaatst > 0 ? herplaatst : undefined,
       remaining: remaining > 0 ? remaining : undefined,
       errors: errors.length > 0 ? errors : undefined,
     })

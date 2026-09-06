@@ -216,9 +216,20 @@ interface MailRij {
   message_id: string | null
 }
 
-type Actie = 'trash' | 'purge' | 'archive'
-const TOEGESTANE_ACTIES: Actie[] = ['trash', 'purge', 'archive']
+type Actie = 'trash' | 'purge' | 'archive' | 'move' | 'seen' | 'unseen' | 'flagged' | 'unflagged'
+const TOEGESTANE_ACTIES: Actie[] = ['trash', 'purge', 'archive', 'move', 'seen', 'unseen', 'flagged', 'unflagged']
+// Logische doelen voor 'move'; de echte mapnaam wordt hieronder opgezocht.
+type MoveDoel = 'inbox' | 'archief' | 'prullenbak'
+const TOEGESTANE_DOELEN: MoveDoel[] = ['inbox', 'archief', 'prullenbak']
 const MAX_PER_REQUEST = 200
+
+function isVlagActie(actie: Actie): actie is 'seen' | 'unseen' | 'flagged' | 'unflagged' {
+  return actie === 'seen' || actie === 'unseen' || actie === 'flagged' || actie === 'unflagged'
+}
+
+function isVerplaatsActie(actie: Actie): actie is 'trash' | 'archive' | 'move' {
+  return actie === 'trash' || actie === 'archive' || actie === 'move'
+}
 
 export const config = { maxDuration: 60 }
 
@@ -231,10 +242,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const user_id = await verifyUser(req)
 
-    // Vlag staat standaard uit. Dit schrijft in de échte mailbox van een
-    // klant; pas aanzetten nadat het tegen minstens één niet-Gmail-account
-    // is nagelopen. Zolang hij uit staat blijft doen. zich gedragen als nu.
-    if (process.env.EMAIL_IMAP_WRITEBACK !== 'aan') {
+    // Writeback staat standaard aan (mail-ombouw, contract sectie 5). Alleen de
+    // expliciete waarde 'uit' zet hem uit; dan blijft alles bij de DB-mutatie.
+    if (process.env.EMAIL_IMAP_WRITEBACK === 'uit') {
       return res.status(200).json({ overgeslagen: true, reden: 'writeback_uit' })
     }
 
@@ -242,7 +252,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(429).json({ error: 'Te veel verzoeken. Probeer het zo opnieuw.' })
     }
 
-    const { action, emailIds } = req.body as { action?: string; emailIds?: unknown }
+    const { action, emailIds, doel } = req.body as { action?: string; emailIds?: unknown; doel?: unknown }
     if (!action || !TOEGESTANE_ACTIES.includes(action as Actie)) {
       return res.status(400).json({ error: 'Onbekende actie' })
     }
@@ -250,6 +260,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: `Geef 1 tot ${MAX_PER_REQUEST} email-ids mee` })
     }
     const actie = action as Actie
+    if (actie === 'move' && !TOEGESTANE_DOELEN.includes(doel as MoveDoel)) {
+      return res.status(400).json({ error: 'Onbekend doel voor verplaatsen' })
+    }
+    // De map waar de rij na afloop in onze administratie staat.
+    const doelMap: string = actie === 'archive' ? 'archief'
+      : actie === 'trash' ? 'prullenbak'
+      : actie === 'move' ? (doel as MoveDoel)
+      : ''
     // Ontdubbelen: dezelfde rij twee keer in de lijst zou anders twee keer in
     // de uitkomst komen en de tellingen scheeftrekken.
     const ids = [...new Set(emailIds.filter((i): i is string => typeof i === 'string' && i.length > 0))]
@@ -294,7 +312,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // verbinding opzetten.
     if (metUid.length === 0) {
       if (actie !== 'purge') {
-        const dbFout = await schrijfDbMutatie(actie, alle.map((r) => r.id), user_id, null)
+        const dbFout = await schrijfDbMutatie(actie, alle.map((r) => r.id), user_id, null, undefined, doelMap)
         for (const r of alle) {
           resultaten.push({ id: r.id, ok: !dbFout, imap: 'overgeslagen', ...(dbFout ? { error: dbFout } : {}) })
         }
@@ -329,7 +347,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       client = null
       return res.status(409).json({ error: 'Deze mailserver ondersteunt geen UID EXPUNGE. Definitief verwijderen is hier niet veilig.' })
     }
-    if (actie !== 'purge' && !client.capabilities?.has?.('MOVE')) {
+    if (isVerplaatsActie(actie) && !client.capabilities?.has?.('MOVE')) {
       try { await client.logout() } catch { /* verbinding al dicht */ }
       client = null
       return res.status(409).json({ error: 'Deze mailserver ondersteunt MOVE niet. Verplaatsen is hier niet veilig.' })
@@ -343,12 +361,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ? zoekDoelmap(mailboxen, '\\All', NAME_PATTERNS.alle)
       : zoekDoelmap(mailboxen, ARCHIEF_SPECIAL_USE, ARCHIEF_NAAM_PATROON)
 
-    const doelPad = actie === 'archive' ? archiefPad : trashPad
-    if (actie !== 'purge' && !doelPad) {
+    const doelPad = !isVerplaatsActie(actie) ? null
+      : doelMap === 'archief' ? archiefPad
+      : doelMap === 'prullenbak' ? trashPad
+      : 'INBOX'
+    if (isVerplaatsActie(actie) && !doelPad) {
       try { await client.logout() } catch { /* verbinding al dicht */ }
       client = null
       return res.status(409).json({
-        error: actie === 'archive'
+        error: doelMap === 'archief'
           ? 'Deze mailbox heeft geen archiefmap'
           : 'Deze mailbox heeft geen prullenbak',
       })
@@ -367,8 +388,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // Al in de doelmap: een MOVE naar dezelfde map wijzen servers af of
         // voeren ze uit als kopie. Alleen de administratie bijwerken; de uid
         // blijft geldig, dus die laten we staan.
-        if (actie !== 'purge' && bronPad === doelPad) {
-          const dbFout = await schrijfDbMutatie(actie, groep.map((r) => r.id), user_id, null)
+        if (isVerplaatsActie(actie) && bronPad === doelPad) {
+          const dbFout = await schrijfDbMutatie(actie, groep.map((r) => r.id), user_id, null, undefined, doelMap)
           for (const r of groep) {
             resultaten.push({ id: r.id, ok: !dbFout, imap: 'al_in_doelmap', ...(dbFout ? { error: dbFout } : {}) })
           }
@@ -404,6 +425,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (bekend.length === 0 && actie === 'purge') {
           for (const r of groep) {
             resultaten.push({ id: r.id, ok: false, imap: 'geweigerd', error: 'geen_syncstatus' })
+          }
+          continue
+        }
+
+        if (isVlagActie(actie)) {
+          // Vlaggen zijn omkeerbaar, maar een uid die inmiddels aan een ander
+          // bericht hangt zou wel het verkeerde bericht gelezen of gepind
+          // maken. Zelfde bevestiging op Message-ID als bij verplaatsen.
+          const bevestigd = await bevestigBerichten(client, groep)
+          for (const r of groep) {
+            if (!bevestigd.has(Number(r.uid))) resultaten.push({ id: r.id, ok: false, imap: 'overgeslagen', error: 'bericht_niet_bevestigd' })
+          }
+          const teVlaggen = groep.filter((r) => bevestigd.has(Number(r.uid)))
+          if (teVlaggen.length === 0) continue
+
+          const uids = [...new Set(teVlaggen.map((r) => Number(r.uid)))].join(',')
+          const vlag = actie === 'seen' || actie === 'unseen' ? '\\Seen' : '\\Flagged'
+          const gelukt = actie === 'seen' || actie === 'flagged'
+            ? await client.messageFlagsAdd({ uid: uids }, [vlag])
+            : await client.messageFlagsRemove({ uid: uids }, [vlag])
+          if (!gelukt) {
+            for (const r of teVlaggen) resultaten.push({ id: r.id, ok: false, imap: 'mislukt', error: 'vlag_geweigerd' })
+            continue
+          }
+          const dbFout = await schrijfDbMutatie(actie, teVlaggen.map((r) => r.id), user_id, null)
+          for (const r of teVlaggen) {
+            resultaten.push({ id: r.id, ok: !dbFout, imap: 'gevlagd', ...(dbFout ? { error: dbFout } : {}) })
           }
           continue
         }
@@ -492,7 +540,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           // Direct na de move wegschrijven, niet aan het eind. Faalt de
           // logout daarna, dan klopt de administratie nog steeds en wijst
           // geen bewaarde uid meer naar een verplaatst bericht.
-          const dbFout = await schrijfDbMutatie(actie, gelukt.map((r) => r.id), user_id, doelPad, nieuweUids)
+          const dbFout = await schrijfDbMutatie(actie, gelukt.map((r) => r.id), user_id, doelPad, nieuweUids, doelMap)
           for (const r of gelukt) {
             resultaten.push({ id: r.id, ok: !dbFout, imap: 'verplaatst', ...(dbFout ? { error: dbFout } : {}) })
           }
@@ -516,7 +564,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     client = null
 
     if (actie !== 'purge' && zonderUid.length > 0) {
-      const dbFout = await schrijfDbMutatie(actie, zonderUid.map((r) => r.id), user_id, null)
+      const dbFout = await schrijfDbMutatie(actie, zonderUid.map((r) => r.id), user_id, null, undefined, doelMap)
       for (const r of zonderUid) {
         resultaten.push({ id: r.id, ok: !dbFout, imap: 'overgeslagen', ...(dbFout ? { error: dbFout } : {}) })
       }
@@ -581,6 +629,7 @@ async function schrijfDbMutatie(
   user_id: string,
   nieuwPad: string | null,
   nieuweUids?: Map<string, number>,
+  doelMap?: string,
 ): Promise<string | null> {
   if (ids.length === 0) return null
   const fouten: string[] = []
@@ -591,9 +640,15 @@ async function schrijfDbMutatie(
       if (error) fouten.push(error.message)
       continue
     }
-    const patch: Record<string, unknown> = action === 'archive'
-      ? { map: 'archief' }
-      : { map: 'prullenbak', labels: ['prullenbak'] }
+    const patch: Record<string, unknown> =
+      action === 'seen' ? { gelezen: true }
+      : action === 'unseen' ? { gelezen: false }
+      : action === 'flagged' ? { pinned: true }
+      : action === 'unflagged' ? { pinned: false }
+      : action === 'archive' ? { map: 'archief' }
+      : action === 'trash' ? { map: 'prullenbak', labels: ['prullenbak'] }
+      : doelMap === 'prullenbak' ? { map: 'prullenbak', labels: ['prullenbak'] }
+      : { map: doelMap || 'inbox' }
     if (nieuwPad) {
       patch.imap_folder = nieuwPad
       patch.uid = null
