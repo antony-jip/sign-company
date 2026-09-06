@@ -1,13 +1,14 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { ChevronRight, FileText } from 'lucide-react'
 import { listDefaults } from '@/services/emailTemplateService'
 import { TemplateEditor } from './TemplateEditor'
-import { getOrgId } from '@/services/supabaseHelpers'
 
 // Deze 5 templates zijn doen.-platform-mails (doen. → org-admin). Voor
 // klant-orgs zijn ze irrelevant · alleen Sign Makers (de doen.-eigenaar)
 // ziet ze in de editor.
-const DOEN_PLATFORM_ORG_ID = '226bf02a-ebb2-4b4c-ae51-cdc9919e4229'
+// Mails die doen. zelf aan een organisatie stuurt (onboarding, proefperiode).
+// Niet per organisatie te bewerken: de onboarding-taak heeft eigen vaste tekst
+// en de trial-herinnering valt terug op de standaardtekst.
 const DOEN_PLATFORM_TRIGGERS = new Set([
   'onboarding_dag3',
   'onboarding_dag7',
@@ -19,16 +20,7 @@ const DOEN_PLATFORM_TRIGGERS = new Set([
 export function TemplatesSubTab() {
   const defaults = listDefaults()
   const [editing, setEditing] = useState<string | null>(null)
-  const [orgId, setOrgId] = useState<string | null>(null)
-
-  useEffect(() => {
-    getOrgId().then((id) => setOrgId(id ?? null)).catch(() => setOrgId(null))
-  }, [])
-
-  const isDoenPlatformOrg = orgId === DOEN_PLATFORM_ORG_ID
-  const triggers = Object.keys(defaults).filter(
-    (key) => isDoenPlatformOrg || !DOEN_PLATFORM_TRIGGERS.has(key),
-  )
+  const triggers = Object.keys(defaults).filter((key) => !DOEN_PLATFORM_TRIGGERS.has(key))
 
   return (
     <div className="space-y-3">
