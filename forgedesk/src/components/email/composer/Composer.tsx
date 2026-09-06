@@ -19,6 +19,8 @@ import { MailStatusToast } from '@/components/shared/MailStatusToast'
 import { OntvangerChips } from '@/components/shared/OntvangerVeld'
 import type { LinkInvoegHandle } from '@/components/shared/LinkInvoegKnop'
 import { lijktOpHtml } from '@/components/email/emailHelpers'
+import { usePostvakken } from '@/lib/mail/hooks'
+import { PostvakKiezer } from '@/components/email/shell/PostvakKiezer'
 import type { ComposerBijlage, ComposerDocument, Ontvanger } from '@/lib/mail/types'
 import { Editor, type EditorHandle } from './Editor'
 import { Werkbalk } from './Werkbalk'
@@ -116,6 +118,7 @@ export function Composer({ document: initieel, variant, onVerzonden, onSluiten, 
   const { emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, handtekeningAfbeeldingLink, bedrijfsnaam, settings } = useAppSettings()
   const undoAan = useFunctie('mail_undo_verzenden')
   const undoSeconden = useFunctieGetal('mail_undo_seconden')
+  const postvakken = usePostvakken()
 
   const [doc, dispatch] = useReducer(reducer, initieel)
   const docRef = useRef(doc)
@@ -165,6 +168,15 @@ export function Composer({ document: initieel, variant, onVerzonden, onSluiten, 
   useEffect(() => {
     getEmailTemplates().then(setTemplates).catch(() => {})
   }, [])
+
+  // Zonder gekozen postvak gaat het bericht uit het actieve postvak, en anders
+  // uit het standaardpostvak. Altijd meesturen: api/send-email leest het zodra
+  // migratie 245 gedraaid is.
+  useEffect(() => {
+    if (docRef.current.accountId) return
+    const keuze = postvakken.huidig ?? postvakken.postvakken.find((p) => p.isStandaard) ?? postvakken.postvakken[0]
+    if (keuze) patch({ accountId: keuze.id })
+  }, [postvakken.huidig, postvakken.postvakken, patch])
 
   // Focus: bij een nieuw bericht in Aan, bij een antwoord in de tekst.
   useEffect(() => {
@@ -448,6 +460,18 @@ export function Composer({ document: initieel, variant, onVerzonden, onSluiten, 
       {/* Inhoud · overflow-x dicht: een brede handtekening trok anders het paneel scheef */}
       <div className={cn('min-w-0', variant !== 'inline' && 'flex-1 min-h-0 overflow-y-auto overflow-x-hidden')}>
         <div className={cn('min-w-0 max-w-full', variant === 'inline' ? 'px-1' : 'px-4 md:px-5')}>
+          {postvakken.meerdere && (
+            <div className={veldRijCls}>
+              <span className={veldLabelCls}>Van</span>
+              <PostvakKiezer
+                postvakken={postvakken.postvakken}
+                actief={doc.accountId ?? postvakken.postvakken[0]?.id ?? 'alle'}
+                onKies={(keuze) => { if (keuze !== 'alle') patch({ accountId: keuze }) }}
+                metAlle={false}
+                className="min-w-0 flex-1"
+              />
+            </div>
+          )}
           <div className={veldRijCls}>
             <span className={veldLabelCls}>Aan</span>
             <OntvangerChips

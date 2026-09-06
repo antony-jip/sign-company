@@ -1,10 +1,17 @@
 import { createPortal } from 'react-dom'
 import { Pencil, Moon, Mail, PanelLeftClose, PanelLeftOpen, Settings } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { MailMap } from '@/lib/mail/types'
+import type { MailMap, Postvak, PostvakKeuze } from '@/lib/mail/types'
 import { MAP_VOLGORDE } from './mapConfig'
+import { PostvakKiezer } from './PostvakKiezer'
 
-interface RailProps {
+interface PostvakProps {
+  postvakken: Postvak[]
+  actiefPostvak: PostvakKeuze
+  onPostvak: (keuze: PostvakKeuze) => void
+}
+
+interface RailProps extends PostvakProps {
   actieveMap: MailMap
   tellers: Partial<Record<MailMap, number>>
   onKies: (map: MailMap) => void
@@ -22,7 +29,7 @@ function tellerVoor(map: MailMap, tellers: Partial<Record<MailMap, number>>): nu
   return tellers[map] ?? 0
 }
 
-export function Mappenrail({ actieveMap, tellers, onKies, onNieuw, labels, onLabels, focusModus, onFocusModus, onInstellingen }: RailProps) {
+export function Mappenrail({ actieveMap, tellers, onKies, onNieuw, labels, onLabels, focusModus, onFocusModus, onInstellingen, postvakken, actiefPostvak, onPostvak }: RailProps) {
   return (
     <div
       className={cn(
@@ -43,6 +50,14 @@ export function Mappenrail({ actieveMap, tellers, onKies, onNieuw, labels, onLab
           {labels && <span>Nieuw bericht</span>}
         </button>
       </div>
+
+      <PostvakKiezer
+        postvakken={postvakken}
+        actief={actiefPostvak}
+        onKies={onPostvak}
+        labels={labels}
+        className={cn('pb-1.5', labels ? 'px-3' : 'px-2')}
+      />
 
       <nav className={cn('flex-1 overflow-y-auto space-y-px', labels ? 'px-2' : 'px-2')} aria-label="Mappen">
         {MAP_VOLGORDE.map((m) => {
@@ -116,7 +131,7 @@ export function Mappenrail({ actieveMap, tellers, onKies, onNieuw, labels, onLab
   )
 }
 
-interface LadeProps {
+interface LadeProps extends PostvakProps {
   open: boolean
   onSluiten: () => void
   actieveMap: MailMap
@@ -129,7 +144,7 @@ interface LadeProps {
 }
 
 /** De hamburger-lade op mobiel, geportald zodat hij boven de globale header uitkomt. */
-export function MobieleMappenLade({ open, onSluiten, actieveMap, tellers, onKies, onNieuw, gebruiker, focusModus, onFocusModus }: LadeProps) {
+export function MobieleMappenLade({ open, onSluiten, actieveMap, tellers, onKies, onNieuw, gebruiker, focusModus, onFocusModus, postvakken, actiefPostvak, onPostvak }: LadeProps) {
   return createPortal(
     <>
       {open && <div className="fixed inset-0 z-40 bg-black/40 md:hidden" onClick={onSluiten} aria-hidden="true" />}
@@ -159,6 +174,7 @@ export function MobieleMappenLade({ open, onSluiten, actieveMap, tellers, onKies
             Nieuw bericht
           </button>
         </div>
+        <PostvakKiezer postvakken={postvakken} actief={actiefPostvak} onKies={onPostvak} className="px-3 pb-2" />
         <nav className="flex-1 overflow-y-auto px-2 space-y-0">
           {MAP_VOLGORDE.map((m) => {
             const actief = actieveMap === m.id

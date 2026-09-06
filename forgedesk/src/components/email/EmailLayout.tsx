@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils'
 import { mailStore } from '@/lib/mail/mailStore'
 import { startRealtime } from '@/lib/mail/realtime'
 import { prefetchBodies, haalBody } from '@/lib/mail/bodyRepository'
-import { useMailLijst, useMapTellers, useSyncStatus, useZoekresultaten } from '@/lib/mail/hooks'
+import { useMailLijst, useMapTellers, usePostvakken, useSyncStatus, useZoekresultaten } from '@/lib/mail/hooks'
 import type { EmailBody, EmailLijstItem, MailMap } from '@/lib/mail/types'
 import { getConcept } from '@/services/conceptService'
 import { updateLeadStatus } from '@/services/leadsService'
@@ -99,6 +99,7 @@ export function EmailLayout() {
   const zoekLijst = useZoekresultaten()
   const tellers = useMapTellers()
   const sync = useSyncStatus()
+  const postvakken = usePostvakken()
   const { bezig, laatsteSync, mailboxGekoppeld } = useMailSync(map, isDesktop, !!user?.id)
   const adresIndexen = useAdresIndexen(splitAan && map === 'inbox')
 
@@ -462,6 +463,9 @@ export function EmailLayout() {
           gebruiker={gebruiker}
           focusModus={focusModus}
           onFocusModus={zetFocusModus}
+          postvakken={postvakken.postvakken}
+          actiefPostvak={postvakken.actief}
+          onPostvak={postvakken.kies}
         />
         <SnoozeMenu open={snoozeOpen} onSluiten={() => zetSnoozeOpen(false)} onKies={(tot) => { const ids = doelIds(); if (ids.length) void mailStore.snooze(ids, tot ? tot.toISOString() : null); zetSnoozeOpen(false); naActie(ids) }} gesnoozed={map === 'gesnoozed'} />
       </div>
@@ -481,6 +485,9 @@ export function EmailLayout() {
         focusModus={focusModus}
         onFocusModus={zetFocusModus}
         onInstellingen={() => navigate('/instellingen?tab=email')}
+        postvakken={postvakken.postvakken}
+        actiefPostvak={postvakken.actief}
+        onPostvak={postvakken.kies}
       />
 
       {focusModus ? (

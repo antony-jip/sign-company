@@ -154,6 +154,7 @@ export async function verstuurPayload(doc: ComposerDocument, payload: VerzendPay
     in_reply_to: doc.inReplyTo,
     references: doc.references,
     thread_id: doc.threadId,
+    account_id: doc.accountId,
   })
   return { id: (resp as { id?: string }).id }
 }

@@ -1,5 +1,6 @@
-import type { EmailLijstItem, MailMap, SyncStatus, ThreadInfo } from './types'
+import type { EmailLijstItem, MailMap, Postvak, PostvakKeuze, SyncStatus, ThreadInfo } from './types'
 import { MAIL_MAPPEN } from './types'
+import { getPostvakken } from '@/services/postvakService'
 import {
   getEmailsPage, searchEmailsFTS, getMapTellers, getThreadInfos, getThreadItems, getSyncStatus,
   updateEmail, deleteEmail,
@@ -29,7 +30,12 @@ export interface MailState {
   threadLeden: ReadonlyMap<string, { ids: string[]; laden: boolean }>
   tellers: Record<MailMap, number>
   sync: SyncStatus
+  postvakken: Postvak[]
+  actiefPostvak: PostvakKeuze
 }
+
+/** Welk postvak de gebruiker het laatst koos; per apparaat, niet per sessie. */
+export const POSTVAK_VOORKEUR = 'doen_mail_postvak'
 
 export type Undo = { ongedaan: () => void; klaarOver: number }
 
@@ -81,6 +87,9 @@ class MailStore {
   private threadLeden = new Map<string, { ids: string[]; laden: boolean }>()
   private tellers = legeTellers()
   private sync: SyncStatus = { status: 'ok' }
+  private postvakken: Postvak[] = []
+  private actiefPostvak: PostvakKeuze = 'alle'
+  private postvakkenBelofte: Promise<Postvak[]> | null = null
   private versie = 0
   private snapshot: MailState | null = null
   private luisteraars = new Set<Luisteraar>()
@@ -93,6 +102,10 @@ class MailStore {
   constructor() {
     if (typeof window !== 'undefined') {
       window.addEventListener('pagehide', () => this.flushAlles())
+      try {
+        const bewaard = localStorage.getItem(POSTVAK_VOORKEUR)
+        if (bewaard) this.actiefPostvak = bewaard
+      } catch { /* storage geblokkeerd */ }
     }
   }
 
@@ -115,6 +128,8 @@ class MailStore {
       threadLeden: this.threadLeden,
       tellers: this.tellers,
       sync: this.sync,
+      postvakken: this.postvakken,
+      actiefPostvak: this.actiefPostvak,
     }
     return this.snapshot
   }
@@ -144,9 +159,61 @@ class MailStore {
     this.tellers = legeTellers()
     this.sync = { status: 'ok' }
     this.zoekQuery = ''
+    this.postvakken = []
+    this.postvakkenBelofte = null
     for (const t of this.cacheTimers.values()) clearTimeout(t)
     this.cacheTimers.clear()
     this.meld()
+  }
+
+  // ── Postvakken ──
+
+  getPostvakkenLokaal(): Postvak[] {
+    return this.postvakken
+  }
+
+  /** Het id waarop de lijst-query filtert; 'alle' of een onbekend postvak levert geen filter. */
+  actiefAccountId(): string | null {
+    if (this.actiefPostvak === 'alle') return null
+    return this.postvakken.some((p) => p.id === this.actiefPostvak) ? this.actiefPostvak : null
+  }
+
+  actiefPostvakObject(): Postvak | null {
+    const id = this.actiefAccountId()
+    return id ? this.postvakken.find((p) => p.id === id) ?? null : null
+  }
+
+  async laadPostvakken(opnieuw = false): Promise<Postvak[]> {
+    if (this.postvakkenBelofte && !opnieuw) return this.postvakkenBelofte
+    this.postvakkenBelofte = getPostvakken()
+      .then((lijst) => {
+        this.postvakken = lijst
+        // Een bewaard postvak dat niet meer bestaat valt terug op alles.
+        if (this.actiefPostvak !== 'alle' && !lijst.some((p) => p.id === this.actiefPostvak)) {
+          this.actiefPostvak = 'alle'
+        }
+        this.meld()
+        return lijst
+      })
+      .catch(() => {
+        this.postvakken = []
+        return []
+      })
+    return this.postvakkenBelofte
+  }
+
+  zetActiefPostvak(keuze: PostvakKeuze): void {
+    if (keuze === this.actiefPostvak) return
+    this.actiefPostvak = keuze
+    try { localStorage.setItem(POSTVAK_VOORKEUR, keuze) } catch { /* storage geblokkeerd */ }
+    // De maplijsten hangen aan het postvak: alles opnieuw ophalen. De items
+    // blijven staan zodat een open leesvenster niet leegvalt.
+    this.flushAlles()
+    this.lijsten = new Map()
+    this.tellers = legeTellers()
+    this.zoekQuery = ''
+    this.meld()
+    void this.laadTellers()
   }
 
   /** user-id + organisatie-id, de sleutel waaronder IndexedDB rijen van deze mailbox bewaart. */
@@ -232,7 +299,7 @@ class MailStore {
     if (!stand.geladen) await this.laadUitCache(map)
 
     try {
-      const pagina = await getEmailsPage(map, null, PAGINA_GROOTTE) as unknown as EmailLijstItem[]
+      const pagina = await getEmailsPage(map, null, PAGINA_GROOTTE, this.actiefAccountId()) as unknown as EmailLijstItem[]
       const nieuw = pagina.map((i) => this.neemOp(i))
       const nieuweIds = nieuw.map((i) => i.id)
       const bekend = new Set(nieuweIds)
@@ -272,7 +339,7 @@ class MailStore {
     this.zetStand(map, { laden: true })
     this.meld()
     try {
-      const pagina = await getEmailsPage(map, stand.cursor, PAGINA_GROOTTE) as unknown as EmailLijstItem[]
+      const pagina = await getEmailsPage(map, stand.cursor, PAGINA_GROOTTE, this.actiefAccountId()) as unknown as EmailLijstItem[]
       const huidig = this.stand(map)
       const bekend = new Set(huidig.ids)
       const toegevoegd: EmailLijstItem[] = []
@@ -368,7 +435,7 @@ class MailStore {
   }
 
   async laadTellers(): Promise<void> {
-    const t = await getMapTellers().catch(() => null)
+    const t = await getMapTellers(this.actiefAccountId()).catch(() => null)
     if (!t) return
     this.tellers = {
       ...this.tellers,
@@ -411,9 +478,15 @@ class MailStore {
 
   // ── Persistentie ──
 
+  /** De cache is per postvak: anders zou een wissel de vorige lijst tonen. */
+  private cacheMap(map: MailMap): string {
+    const account = this.actiefAccountId()
+    return account ? `${map}@${account}` : map
+  }
+
   private async laadUitCache(map: MailMap): Promise<void> {
     const eigenaar = await this.eigenaarSleutel()
-    const bewaard = await leesMapLijst<EmailLijstItem[]>(map, eigenaar).catch(() => null)
+    const bewaard = await leesMapLijst<EmailLijstItem[]>(this.cacheMap(map), eigenaar).catch(() => null)
     if (!bewaard || bewaard.length === 0) return
     if (this.stand(map).geladen) return
     const ids = bewaard.map((i) => this.neemOp(i).id)
@@ -435,7 +508,7 @@ class MailStore {
     const stand = this.lijsten.get(map)
     if (!stand?.geladen) return
     const eigenaar = await this.eigenaarSleutel()
-    await schrijfMapLijst(map, eigenaar, this.lijstItems(map).slice(0, CACHE_GROOTTE)).catch(() => {})
+    await schrijfMapLijst(this.cacheMap(map), eigenaar, this.lijstItems(map).slice(0, CACHE_GROOTTE)).catch(() => {})
   }
 
   private planCacheVoor(mappen: Iterable<MailMap>): void {

@@ -74,6 +74,8 @@ export interface ComposerBijlage {
 export interface ComposerDocument {
   id?: string
   modus: 'nieuw' | 'antwoord' | 'allen' | 'doorsturen'
+  /** Vanuit welk postvak dit bericht gaat (user_email_settings.id). Gaat als `account_id` mee naar send-email. */
+  accountId?: string
   aan: Ontvanger[]
   cc: Ontvanger[]
   bcc: Ontvanger[]

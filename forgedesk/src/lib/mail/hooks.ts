@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react'
-import type { EmailLijstItem, MailMap, SyncStatus } from './types'
+import type { EmailLijstItem, MailMap, Postvak, PostvakKeuze, SyncStatus } from './types'
 import { mailStore } from './mailStore'
 
 /**
@@ -14,7 +14,8 @@ function useVersie(): number {
 
 export function useMailLijst(map: MailMap): { items: EmailLijstItem[]; laden: boolean; klaar: boolean; laadMeer: () => void; fout?: string } {
   const versie = useVersie()
-  useEffect(() => { void mailStore.laadMap(map) }, [map])
+  const { actief } = usePostvakken()
+  useEffect(() => { void mailStore.laadMap(map) }, [map, actief])
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const items = useMemo(() => mailStore.lijstItems(map), [versie, map])
   const stand = mailStore.lijstStand(map)
@@ -47,6 +48,30 @@ export function useSyncStatus(): SyncStatus {
   useVersie()
   useEffect(() => { void mailStore.laadSyncStatus() }, [])
   return mailStore.getSnapshot().sync
+}
+
+export interface PostvakkenStand {
+  postvakken: Postvak[]
+  actief: PostvakKeuze
+  /** Het gekozen postvak, of null bij "Alle postvakken". */
+  huidig: Postvak | null
+  /** Meer dan één postvak: pas dan verschijnt de kiezer en de Van-regel. */
+  meerdere: boolean
+  kies: (keuze: PostvakKeuze) => void
+}
+
+export function usePostvakken(): PostvakkenStand {
+  useVersie()
+  useEffect(() => { void mailStore.laadPostvakken() }, [])
+  const stand = mailStore.getSnapshot()
+  const kies = useCallback((keuze: PostvakKeuze) => mailStore.zetActiefPostvak(keuze), [])
+  return {
+    postvakken: stand.postvakken,
+    actief: stand.actiefPostvak,
+    huidig: mailStore.actiefPostvakObject(),
+    meerdere: stand.postvakken.length > 1,
+    kies,
+  }
 }
 
 export function useZoekresultaten(): { items: EmailLijstItem[]; laden: boolean; klaar: boolean; laadMeer: () => void } {

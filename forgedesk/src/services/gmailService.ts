@@ -72,6 +72,8 @@ interface SendEmailOptions {
   /** Message-ID-keten voor de References-header; send-email pakt hem op zodra hij hem kent. */
   references?: string[]
   thread_id?: string
+  /** Postvak waaruit verstuurd wordt (user_email_settings.id, migratie 245). */
+  account_id?: string
 }
 
 /**
@@ -160,6 +162,7 @@ export async function sendEmail(
         in_reply_to: options?.in_reply_to,
         references: options?.references,
         thread_id: options?.thread_id,
+        account_id: options?.account_id,
       }),
     })
   } catch (netErr) {

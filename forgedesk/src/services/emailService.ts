@@ -98,18 +98,26 @@ export async function getEmails(limit = 200): Promise<Email[]> {
  * de client geladen heeft (met duizenden mails in de DB telt de client
  * anders alleen zijn eigen venster).
  */
-export async function getMapTellers(): Promise<{ inboxOngelezen: number; concepten: number; gepland: number; gesnoozed: number; opvolgen: number } | null> {
+export async function getMapTellers(accountId?: string | null): Promise<{ inboxOngelezen: number; concepten: number; gepland: number; gesnoozed: number; opvolgen: number } | null> {
   if (!isSupabaseConfigured() || !supabase) return null
+  const client = supabase
   const uid = await eigenUserId()
   if (!uid) return null
+  const telling = () => metAccount(client.from('emails').select('id', { count: 'exact', head: true }).eq('user_id', uid) as unknown as LijstBouwer, accountId)
   const [inboxQ, conceptenQ, geplandQ, gesnoozedQ, opvolgenQ] = await Promise.all([
-    supabase.from('emails').select('id', { count: 'exact', head: true }).eq('user_id', uid).eq('map', 'inbox').eq('gelezen', false).is('snoozed_until', null),
-    supabase.from('emails').select('id', { count: 'exact', head: true }).eq('user_id', uid).eq('map', 'concepten'),
-    supabase.from('emails').select('id', { count: 'exact', head: true }).eq('user_id', uid).eq('map', 'gepland'),
-    supabase.from('emails').select('id', { count: 'exact', head: true }).eq('user_id', uid).not('snoozed_until', 'is', null),
-    supabase.from('emails').select('id', { count: 'exact', head: true }).eq('user_id', uid).eq('wacht_op_reactie', true).eq('beantwoord', false),
+    telling().eq('map', 'inbox').eq('gelezen', false).is('snoozed_until', null),
+    telling().eq('map', 'concepten'),
+    telling().eq('map', 'gepland'),
+    telling().not('snoozed_until', 'is', null),
+    telling().eq('wacht_op_reactie', true).eq('beantwoord', false),
   ])
-  if (inboxQ.error || conceptenQ.error || geplandQ.error || gesnoozedQ.error || opvolgenQ.error) return null
+  if (inboxQ.error || conceptenQ.error || geplandQ.error || gesnoozedQ.error || opvolgenQ.error) {
+    if (accountId && [inboxQ, conceptenQ, geplandQ, gesnoozedQ, opvolgenQ].some((q) => isOnbekendeKolom(q.error))) {
+      accountKolomBekend = false
+      return getMapTellers(null)
+    }
+    return null
+  }
   return {
     inboxOngelezen: inboxQ.count ?? 0,
     concepten: conceptenQ.count ?? 0,
@@ -125,6 +133,30 @@ export interface EmailPageCursor {
 }
 
 type LijstBouwer = PostgrestFilterBuilder<any, any, any, any>
+
+/**
+ * `emails.account_id` komt uit migratie 245. Zolang die niet gedraaid is
+ * bestaat de kolom niet en zou elk filter erop de hele lijst laten falen.
+ * Eén mislukte poging zet de vlag op false en daarna filtert niemand meer:
+ * met één postvak levert dat precies het oude gedrag.
+ */
+let accountKolomBekend: boolean | null = null
+
+export function accountKolomOntbreekt(): boolean {
+  return accountKolomBekend === false
+}
+
+function isOnbekendeKolom(fout: unknown): boolean {
+  const code = (fout as { code?: string } | null)?.code
+  if (code === '42703' || code === 'PGRST204') return true
+  return /column .*account_id.* does not exist/i.test((fout as { message?: string } | null)?.message || '')
+}
+
+/** Filter op postvak, maar alleen zolang de kolom bestaat en er één gekozen is. */
+function metAccount(q: LijstBouwer, accountId?: string | null): LijstBouwer {
+  if (!accountId || accountKolomBekend === false) return q
+  return q.eq('account_id', accountId)
+}
 
 function metCursor(q: LijstBouwer, cursor: EmailPageCursor | null): LijstBouwer {
   if (!cursor) return q
@@ -161,7 +193,7 @@ function alsLijstItem(e: Record<string, unknown>): Email {
  * (datum, id) — stabiel bij nieuwe mail bovenin, geen offset-drift.
  * De data komt uit de eigen DB; de historie-backfill vult die aan.
  */
-export async function getEmailsPage(map: string, cursor: EmailPageCursor | null, limit = 100): Promise<Email[]> {
+export async function getEmailsPage(map: string, cursor: EmailPageCursor | null, limit = 100, accountId?: string | null): Promise<Email[]> {
   if (!isSupabaseConfigured() || !supabase) return []
   const client = supabase
   const uid = await eigenUserId()
@@ -171,7 +203,7 @@ export async function getEmailsPage(map: string, cursor: EmailPageCursor | null,
     // Eerst de smalle id-query op de tabel (daar staan de vlaggen), dan de
     // lijstkolommen uit de view, in de volgorde van de eerste stap.
     const idsQ = pasMapFilterToe(
-      client.from('emails').select('id, wacht_op_reactie, beantwoord').eq('user_id', uid) as unknown as LijstBouwer,
+      metAccount(client.from('emails').select('id, wacht_op_reactie, beantwoord').eq('user_id', uid) as unknown as LijstBouwer, accountId),
       map,
     )
     if (!idsQ) return []
@@ -179,7 +211,13 @@ export async function getEmailsPage(map: string, cursor: EmailPageCursor | null,
       .order('datum', { ascending: false })
       .order('id', { ascending: false })
       .limit(limit)
-    if (error) throw error
+    if (error) {
+      if (accountId && isOnbekendeKolom(error)) {
+        accountKolomBekend = false
+        return getEmailsPage(map, cursor, limit, null)
+      }
+      throw error
+    }
     const vlaggen = new Map(((treffers || []) as Array<{ id: string; wacht_op_reactie: boolean; beantwoord: boolean }>).map((r, i) => [r.id, { i, r }]))
     if (vlaggen.size === 0) return []
     const { data: rijen, error: rijenErr } = await client
@@ -196,7 +234,7 @@ export async function getEmailsPage(map: string, cursor: EmailPageCursor | null,
   }
 
   const basis = pasMapFilterToe(
-    client.from('emails_list_view').select(LIST_VIEW_COLUMNS).eq('user_id', uid) as unknown as LijstBouwer,
+    metAccount(client.from('emails_list_view').select(LIST_VIEW_COLUMNS).eq('user_id', uid) as unknown as LijstBouwer, accountId),
     map,
   )
   if (!basis) return []
@@ -204,7 +242,14 @@ export async function getEmailsPage(map: string, cursor: EmailPageCursor | null,
     .order('datum', { ascending: false })
     .order('id', { ascending: false })
     .limit(limit)
-  if (error) throw error
+  if (error) {
+    if (accountId && isOnbekendeKolom(error)) {
+      accountKolomBekend = false
+      return getEmailsPage(map, cursor, limit, null)
+    }
+    throw error
+  }
+  if (accountId) accountKolomBekend = true
   return ((data || []) as Array<Record<string, unknown>>).map(alsLijstItem)
 }
 
