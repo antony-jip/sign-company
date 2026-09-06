@@ -950,7 +950,61 @@ export function TijdregistratieLayout() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
+          {sortedRegistraties.length > 0 && (
+            <div className="md:hidden space-y-2">
+              {sortedRegistraties.map((reg) => {
+                const totaal = (reg.duur_minuten / 60) * reg.uurtarief;
+                return (
+                  <div key={`mobile-${reg.id}`} className="rounded-xl border border-border bg-card p-3.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[14px] font-semibold text-[#1A4A52] dark:text-foreground truncate">{reg.project_naam}</p>
+                        <p className="text-[12px] text-muted-foreground truncate mt-0.5">{reg.omschrijving || "-"}</p>
+                      </div>
+                      <Badge variant="secondary" className="font-mono shrink-0">{formatDuur(reg.duur_minuten)}</Badge>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between gap-2">
+                      <div className="flex flex-wrap items-center gap-x-1.5 text-[12px] text-muted-foreground font-mono min-w-0">
+                        <span>{formatDatumKort(reg.datum)}</span>
+                        <span>·</span>
+                        <span>{reg.start_tijd} - {reg.eind_tijd}</span>
+                        {totaal > 0 && (<><span>·</span><span>{formatCurrency(totaal)}</span></>)}
+                      </div>
+                      <div className="flex items-center gap-0.5 shrink-0 -mr-2">
+                        <span className="flex h-11 w-9 items-center justify-center" aria-label={reg.gefactureerd ? "Gefactureerd" : reg.facturabel ? "Facturabel" : "Niet facturabel"}>
+                          {reg.gefactureerd ? (
+                            <StatusBadge status="gefactureerd" label="Gefact." />
+                          ) : reg.facturabel ? (
+                            <CheckCircle2 className="h-5 w-5 text-green-500" />
+                          ) : (
+                            <XCircle className="h-5 w-5 text-muted-foreground" />
+                          )}
+                        </span>
+                        <Button variant="ghost" size="icon" className="h-11 w-11" onClick={() => openEditDialog(reg)} aria-label="Bewerken">
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-11 w-11 text-destructive hover:text-destructive" onClick={() => setDeleteConfirmId(reg.id)} aria-label="Verwijderen">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              <div className="flex items-center justify-between gap-2 px-1 pt-2 text-sm font-medium">
+                <span>Totaal · {sortedRegistraties.length} registraties</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">
+                    {sortedRegistraties.filter((r) => r.facturabel).length}/{sortedRegistraties.length} facturabel
+                  </span>
+                  <Badge className="font-mono">
+                    {formatDuur(sortedRegistraties.reduce((sum, r) => sum + r.duur_minuten, 0))}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          )}
+          <div className={cn("overflow-x-auto", sortedRegistraties.length > 0 && "hidden md:block")}>
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-left">

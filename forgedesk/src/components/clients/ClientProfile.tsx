@@ -1082,7 +1082,63 @@ export function ClientProfile() {
                   </p>
                 </CardContent>
               ) : (
-                <div className="overflow-x-auto">
+                <>
+                <div className="md:hidden divide-y divide-border">
+                  {clientProjecten
+                    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                    .map((project) => {
+                      const eind = project.eind_datum ? new Date(project.eind_datum) : null
+                      const heeftDeadline = !!eind && !Number.isNaN(eind.getTime())
+                      const isOverdue = heeftDeadline && eind! < new Date() && project.status !== 'afgerond'
+                      const pmNaam = naamVanMedewerker(project.team_leden?.[0])
+                      return (
+                        <div
+                          key={`mobile-${project.id}`}
+                          onClick={() => navigate(`/projecten/${project.id}`)}
+                          className="flex items-center gap-3 px-4 py-3 min-h-[64px] cursor-pointer active:bg-muted/50 transition-colors"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[14px] font-semibold text-foreground truncate">{project.naam}</p>
+                            <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[12px] text-muted-foreground font-mono">
+                              <StatusBadge status={project.status} label={statusLabels[project.status] || project.status} />
+                              {pmNaam && <span className="font-sans truncate">{pmNaam}</span>}
+                              {heeftDeadline && (
+                                <span className={cn(isOverdue && 'text-red-600 dark:text-red-400 font-medium')}>
+                                  tot {formatDate(project.eind_datum ?? "")}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <span className="text-[14px] font-semibold font-mono text-foreground">{formatCurrency(project.budget)}</span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                const headers = ['Veld', 'Waarde']
+                                const rows = [
+                                  { Veld: 'Project', Waarde: project.naam },
+                                  { Veld: 'Klant', Waarde: klant!.bedrijfsnaam },
+                                  { Veld: 'Status', Waarde: statusLabels[project.status] || project.status },
+                                  { Veld: 'Budget', Waarde: formatCurrency(project.budget) },
+                                  { Veld: 'Besteed', Waarde: formatCurrency(project.besteed) },
+                                  { Veld: 'Voortgang', Waarde: project.voortgang + '%' },
+                                  { Veld: 'Start', Waarde: formatDate(project.start_datum ?? "") },
+                                  { Veld: 'Deadline', Waarde: formatDate(project.eind_datum ?? "") },
+                                ]
+                                exportCSV(project.naam.replace(/\s+/g, '-').toLowerCase(), headers, rows)
+                              }}
+                              className="-mr-2 h-11 w-11 rounded-lg flex items-center justify-center hover:bg-muted transition-colors"
+                              aria-label="Download CSV"
+                            >
+                              <FileText className="w-4 h-4 text-muted-foreground" />
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    })}
+                </div>
+                <div className="hidden md:block overflow-x-auto">
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-border dark:border-border">
@@ -1204,6 +1260,7 @@ export function ClientProfile() {
                     </tbody>
                   </table>
                 </div>
+                </>
               )}
             </Card>
           )}
@@ -1221,7 +1278,29 @@ export function ClientProfile() {
                   </p>
                 </CardContent>
               ) : (
-                <div className="overflow-x-auto">
+                <>
+                <div className="md:hidden divide-y divide-border">
+                  {clientOffertes.map((offerte) => (
+                    <div
+                      key={`mobile-${offerte.id}`}
+                      onClick={() => navigate(`/offertes/${offerte.id}/bewerken`, { state: { from: `/klanten/${id}` } })}
+                      className="flex items-center gap-3 px-4 py-3 min-h-[64px] cursor-pointer active:bg-muted/50 transition-colors"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-[13px] font-medium font-mono text-petrol dark:text-blue-400 shrink-0">{offerte.nummer}</span>
+                          <span className="text-[14px] text-foreground truncate">{offerte.titel}</span>
+                        </div>
+                        <div className="mt-1 flex items-center gap-2 text-[12px] text-muted-foreground font-mono">
+                          <StatusBadge status={offerte.status} className="capitalize" />
+                          <span>tot {formatDate(offerte.geldig_tot)}</span>
+                        </div>
+                      </div>
+                      <span className="text-[14px] font-semibold font-mono text-foreground shrink-0">{formatCurrency(exBtw(offerte))}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="hidden md:block overflow-x-auto">
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-border dark:border-border">
@@ -1267,6 +1346,7 @@ export function ClientProfile() {
                     </tbody>
                   </table>
                 </div>
+                </>
               )}
             </Card>
           )}
@@ -1280,7 +1360,27 @@ export function ClientProfile() {
                   <p className="text-muted-foreground">Geen deals voor deze klant</p>
                 </CardContent>
               ) : (
-                <div className="overflow-x-auto">
+                <>
+                <div className="md:hidden divide-y divide-border">
+                  {clientDeals.map((deal) => (
+                    <div
+                      key={`mobile-${deal.id}`}
+                      onClick={() => navigate(`/deals/${deal.id}`)}
+                      className="flex items-center gap-3 px-4 py-3 min-h-[64px] cursor-pointer active:bg-muted/50 transition-colors"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[14px] font-medium text-foreground truncate">{deal.titel}</p>
+                        <div className="mt-1 flex items-center gap-2 text-[12px] text-muted-foreground">
+                          <StatusBadge status={deal.status} className="capitalize" />
+                          <span className="capitalize">{deal.fase}</span>
+                          <span className="font-mono">{deal.kans_percentage || 50}%</span>
+                        </div>
+                      </div>
+                      <span className="text-[14px] font-semibold font-mono text-foreground shrink-0">{formatCurrency(deal.verwachte_waarde)}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="hidden md:block overflow-x-auto">
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-border dark:border-border">
@@ -1310,6 +1410,7 @@ export function ClientProfile() {
                     </tbody>
                   </table>
                 </div>
+                </>
               )}
             </Card>
           )}
@@ -1323,7 +1424,29 @@ export function ClientProfile() {
                   <p className="text-muted-foreground">Geen facturen voor deze klant</p>
                 </CardContent>
               ) : (
-                <div className="overflow-x-auto">
+                <>
+                <div className="md:hidden divide-y divide-border">
+                  {clientFacturen.map((factuur) => (
+                    <div
+                      key={`mobile-${factuur.id}`}
+                      onClick={() => navigate(`/facturen/${factuur.id}/bewerken`, { state: { from: `/klanten/${id}` } })}
+                      className="flex items-center gap-3 px-4 py-3 min-h-[64px] cursor-pointer active:bg-muted/50 transition-colors"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-[13px] font-medium font-mono text-petrol dark:text-blue-400 shrink-0">{factuur.nummer}</span>
+                          <span className="text-[14px] text-foreground truncate">{factuur.titel}</span>
+                        </div>
+                        <div className="mt-1 flex items-center gap-2 text-[12px] text-muted-foreground font-mono">
+                          <StatusBadge status={factuur.status} className="capitalize" />
+                          <span>{formatDate(factuur.factuurdatum)}</span>
+                        </div>
+                      </div>
+                      <span className="text-[14px] font-semibold font-mono text-foreground shrink-0">{formatCurrency(exBtw(factuur))}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="hidden md:block overflow-x-auto">
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-border dark:border-border">
@@ -1357,6 +1480,7 @@ export function ClientProfile() {
                     </tbody>
                   </table>
                 </div>
+                </>
               )}
             </Card>
           )}
@@ -1371,7 +1495,29 @@ export function ClientProfile() {
                   <p className="text-sm text-muted-foreground">Nog geen uren geregistreerd</p>
                 </CardContent>
               ) : (
-                <div className="overflow-x-auto">
+                <>
+                <div className="md:hidden divide-y divide-border">
+                  {clientTijdregistraties
+                    .sort((a, b) => new Date(b.datum).getTime() - new Date(a.datum).getTime())
+                    .map((t) => (
+                      <div key={`mobile-${t.id}`} className="flex items-center gap-3 px-4 py-3 min-h-[56px]">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[14px] font-medium text-foreground truncate">{t.project_naam || '-'}</p>
+                          <p className="mt-0.5 text-[12px] text-muted-foreground truncate">
+                            <span className="font-mono">{t.datum}</span>
+                            {t.medewerker_naam ? ` · ${t.medewerker_naam}` : ''}
+                            {t.omschrijving ? ` · ${t.omschrijving}` : ''}
+                          </p>
+                        </div>
+                        <span className="text-[14px] font-semibold font-mono text-foreground shrink-0">{(t.duur_minuten / 60).toFixed(1)}u</span>
+                      </div>
+                    ))}
+                  <div className="flex items-center justify-between px-4 py-3 text-sm font-semibold">
+                    <span>Totaal</span>
+                    <span className="font-mono">{(clientTijdregistraties.reduce((s, t) => s + t.duur_minuten, 0) / 60).toFixed(1)}u</span>
+                  </div>
+                </div>
+                <div className="hidden md:block overflow-x-auto">
                   <table className="w-full">
                     <thead>
                       <tr className="border-b">
@@ -1400,6 +1546,7 @@ export function ClientProfile() {
                     </tbody>
                   </table>
                 </div>
+                </>
               )}
             </Card>
           )}

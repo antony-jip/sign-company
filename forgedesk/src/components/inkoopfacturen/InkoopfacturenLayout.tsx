@@ -758,7 +758,59 @@ export function InkoopfacturenLayout() {
         className="doen-slate-surface rounded-2xl"
         style={{ clipPath: 'inset(0 round 16px)' }}
       >
-        <div className="overflow-x-auto">
+        {filtered.length > 0 && (
+          <div className="md:hidden divide-y divide-border">
+            {filtered.map((factuur, idx) => {
+              const config = STATUS_CONFIG[factuur.status]
+              const isDimmed = factuur.status === 'goedgekeurd' || factuur.status === 'afgewezen'
+              const stripeHex = inkoopStatusHex(factuur.status)
+              const naam = factuur.leverancier_naam || factuur.email_van || '-'
+              const tint = avatarTint(naam)
+              return (
+                <div
+                  key={`mobile-${factuur.id}`}
+                  onClick={() => openLightbox(factuur)}
+                  style={{ animationDelay: `${idx * 25}ms`, ['--row-accent' as string]: stripeHex } as React.CSSProperties}
+                  className={cn(
+                    'doen-row flex items-center gap-3 pl-3 pr-4 py-3 min-h-[64px] cursor-pointer active:bg-petrol/[0.05] transition-colors',
+                    selectedIds.has(factuur.id) && 'bg-petrol/[0.05]',
+                    isDimmed && 'opacity-45',
+                  )}
+                >
+                  <div className="flex h-11 w-9 shrink-0 items-center justify-center" onClick={e => e.stopPropagation()}>
+                    <Checkbox
+                      checked={selectedIds.has(factuur.id)}
+                      onCheckedChange={() => toggleSelect(factuur.id)}
+                      className="border-[#1A4A52]/25 rounded-[5px] data-[state=checked]:bg-flame data-[state=checked]:border-flame data-[state=checked]:text-white"
+                    />
+                  </div>
+                  <span
+                    className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-[12px] font-bold uppercase select-none"
+                    style={{ backgroundColor: tint.bg, color: tint.fg }}
+                  >
+                    {naam.charAt(0)}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[14px] font-semibold text-[#1A4A52] dark:text-foreground truncate">{naam}</p>
+                    <p className="text-[12px] text-muted-foreground font-mono truncate mt-0.5">
+                      {formatDatum(factuur.factuur_datum || factuur.created_at)}
+                      {factuur.factuur_nummer ? ` · ${factuur.factuur_nummer}` : ''}
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    <span className="font-mono tabular-nums text-[14px] font-semibold text-foreground">{formatCurrency(exBtw(factuur))}</span>
+                    <StatusBadge
+                      status={factuur.status}
+                      label={config.label}
+                      color={factuur.status === 'verwerkt' || factuur.status === 'toegewezen' ? stripeHex : undefined}
+                    />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+        <div className={cn('overflow-x-auto', filtered.length > 0 && 'hidden md:block')}>
           <table className="w-full">
             <thead className="sticky top-0 z-10" style={{ backgroundColor: 'hsl(var(--card))', backdropFilter: 'blur(4px)' }}>
               <tr className="border-b border-border">
