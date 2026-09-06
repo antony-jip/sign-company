@@ -148,8 +148,20 @@ export async function bouwVerzending(doc: ComposerDocument, ctx: VerzendContext)
 /** Opties die per verzendpoging verschillen; `keepalive` alleen op de pagehide-ronde. */
 export interface VerzendOpties { keepalive?: boolean }
 
-/** De taak die de bedenktijd uitvoert: één poging, eventueel met keepalive. */
-export type VerzendTaak = (opties?: VerzendOpties) => Promise<void>
+/**
+ * Een `fetch` met `keepalive` weigert een body boven 64 kB. Een mail met een
+ * ingesloten foto of een originele bijlage (base64 in de body) gaat daar zo
+ * overheen, en dan verdwijnt hij bij een tabsluiting terwijl de toast
+ * "Verzonden" beloofde. Boven deze grens slaan we de bedenktijd dus over en
+ * versturen we meteen, met een normale fetch.
+ */
+export const KEEPALIVE_GRENS_BYTES = 60 * 1024
+
+export function payloadGrootte(payload: VerzendPayload): number {
+  const json = JSON.stringify(payload)
+  if (typeof TextEncoder === 'undefined') return json.length
+  return new TextEncoder().encode(json).length
+}
 
 export async function verstuurPayload(doc: ComposerDocument, payload: VerzendPayload, opties?: VerzendOpties): Promise<{ id?: string }> {
   const resp = await sendEmailViaApi(payload.to, payload.subject, payload.body, {
@@ -233,61 +245,104 @@ interface BedenktijdOpties {
 }
 
 /**
- * Verzenden met bedenktijd: eerst N seconden een toast met "Ongedaan maken",
- * pas daarna de echte verzending via sendInBackground (retry en outbox
- * blijven zo intact). 0 seconden = direct.
+ * Verzenden met bedenktijd: eerst de payload bouwen, dan N seconden een toast
+ * met "Ongedaan maken", pas daarna de echte verzending via sendInBackground
+ * (retry en outbox blijven zo intact). 0 seconden = direct.
+ *
+ * Het bouwen (uploads, originele bijlagen ophalen, koppelingen lezen) gebeurt
+ * vóór de bedenktijd, niet erin: het is netwerkwerk met awaits, en dat haalt
+ * een tabsluiting niet. Na de bedenktijd hoeft er alleen nog gepost te worden.
  *
  * Sluit de gebruiker het tabblad binnen die seconden, dan gaat de mail alsnog
- * weg: `pagehide` voert de taak meteen uit met `keepalive`, zodat het verzoek
- * de pagina overleeft. De toast beloofde "Verzonden", dus stil laten vallen is
- * geen optie. Bijlagen die dan nog geüpload moeten worden halen het niet altijd;
- * de outbox in send-email vangt de rest op.
+ * weg: `pagehide` post meteen met `keepalive`, zodat het verzoek de pagina
+ * overleeft. De toast beloofde "Verzonden", dus stil laten vallen is geen
+ * optie. Zo'n verzoek mag hooguit 64 kB body hebben, dus boven
+ * KEEPALIVE_GRENS_BYTES slaan we de bedenktijd over en versturen we direct;
+ * de toast zegt er dan bij dat er geen bedenktijd was.
  */
-export function verzendMetBedenktijd(task: VerzendTaak, opties: BedenktijdOpties): void {
-  const opvolgTekst = opties.opvolgen ? 'staat in Opvolgen' : opties.onder
-  const start = () => sendInBackground(() => task(), {
-    loading: 'Versturen',
-    success: 'Email verzonden',
-    loadingRender: () => <MailStatusToast bezig titel="Versturen" onder={opties.onder} />,
-    successRender: () => <MailStatusToast titel="Verzonden" onder={opvolgTekst} />,
+export function verzendMetBedenktijd(
+  voorbereiden: () => Promise<VerzendPayload>,
+  verstuur: (payload: VerzendPayload, opties?: VerzendOpties) => Promise<void>,
+  opties: BedenktijdOpties,
+): void {
+  // Voorbereiden is meestal een fractie van een seconde; alleen als het langer
+  // duurt (uploads) verschijnt er een melding, anders zou hij flitsen.
+  let bezigToast: string | number | undefined
+  const bezigTimer = setTimeout(() => {
+    bezigToast = toast.custom(() => <MailStatusToast bezig titel="Versturen" onder={opties.onder} />, { duration: Infinity })
+  }, 400)
+  const stopBezig = () => {
+    clearTimeout(bezigTimer)
+    if (bezigToast !== undefined) toast.dismiss(bezigToast)
+  }
+
+  voorbereiden().then((payload) => {
+    stopBezig()
+    plan(payload)
+  }).catch((err) => {
+    stopBezig()
+    logger.error('Verzending voorbereiden mislukt:', err)
+    toast.error(err instanceof Error && err.message ? err.message : 'Verzenden mislukt', { duration: 10000 })
   })
 
-  if (opties.seconden <= 0) { start(); return }
+  function plan(payload: VerzendPayload) {
+    const teGroot = payloadGrootte(payload) > KEEPALIVE_GRENS_BYTES
+    const seconden = teGroot ? 0 : opties.seconden
+    const onder = teGroot ? [opties.onder, 'geen bedenktijd, bericht te groot'].filter(Boolean).join(' · ') : opties.onder
+    const opvolgTekst = opties.opvolgen ? 'staat in Opvolgen' : onder
 
-  let timer: ReturnType<typeof setTimeout> | null = null
-  const bijPagehide = () => {
-    if (!timer) return
-    clearTimeout(timer)
-    timer = null
-    stopPagehide()
-    toast.dismiss(toastId)
-    void task({ keepalive: true }).catch((err) => logger.warn('Verzenden bij tabsluiting mislukt:', err))
-  }
-  const stopPagehide = () => {
-    if (typeof window !== 'undefined') window.removeEventListener('pagehide', bijPagehide)
-  }
-  if (typeof window !== 'undefined') window.addEventListener('pagehide', bijPagehide)
+    const start = () => sendInBackground(() => verstuur(payload), {
+      loading: 'Versturen',
+      success: 'Email verzonden',
+      loadingRender: () => <MailStatusToast bezig titel="Versturen" onder={onder} />,
+      successRender: () => <MailStatusToast titel="Verzonden" onder={opvolgTekst} />,
+    })
 
-  const toastId = toast.custom(
-    (id) => (
-      <UndoToast
-        seconden={opties.seconden}
-        onder={opties.onder}
-        onOngedaan={() => {
-          if (timer) clearTimeout(timer)
-          timer = null
-          stopPagehide()
-          toast.dismiss(id)
-          opties.onOngedaan()
-        }}
-      />
-    ),
-    { duration: Infinity },
-  )
-  timer = setTimeout(() => {
-    timer = null
-    stopPagehide()
-    toast.dismiss(toastId)
-    start()
-  }, opties.seconden * 1000)
+    if (seconden <= 0) { start(); return }
+
+    let timer: ReturnType<typeof setTimeout> | null = null
+    const bijPagehide = () => {
+      if (!timer) return
+      clearTimeout(timer)
+      timer = null
+      stopPagehide()
+      toast.dismiss(toastId)
+      void verstuur(payload, { keepalive: true }).catch((err) => {
+        logger.error('Verzenden bij tabsluiting mislukt:', err)
+        // Luid: de toast zei "Verzonden" en dat blijkt niet waar. Blijft staan
+        // tot de gebruiker hem wegklikt, want hij ziet dit pas als hij terug is.
+        toast.error('Mail is niet verzonden', {
+          description: 'De verzending bij het sluiten van het tabblad is mislukt. Het concept staat nog klaar.',
+          duration: Infinity,
+        })
+      })
+    }
+    const stopPagehide = () => {
+      if (typeof window !== 'undefined') window.removeEventListener('pagehide', bijPagehide)
+    }
+    if (typeof window !== 'undefined') window.addEventListener('pagehide', bijPagehide)
+
+    const toastId = toast.custom(
+      (id) => (
+        <UndoToast
+          seconden={seconden}
+          onder={onder}
+          onOngedaan={() => {
+            if (timer) clearTimeout(timer)
+            timer = null
+            stopPagehide()
+            toast.dismiss(id)
+            opties.onOngedaan()
+          }}
+        />
+      ),
+      { duration: Infinity },
+    )
+    timer = setTimeout(() => {
+      timer = null
+      stopPagehide()
+      toast.dismiss(toastId)
+      start()
+    }, seconden * 1000)
+  }
 }
