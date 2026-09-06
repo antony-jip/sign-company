@@ -6,7 +6,7 @@
  * volledige IMAP-ronde voordat er iets te zien was. Nu staat de mail er al en
  * is openen een database-read.
  *
- * Roept /api/fetch-emails per gebruiker aan in plaats van de IMAP-logica te
+ * Roept /api/fetch-emails per postvak aan in plaats van de IMAP-logica te
  * kopiëren: api/*-bestanden mogen niets delen (zie CLAUDE.md), en een tweede
  * exemplaar van 500 regels sync-code loopt gegarandeerd uit de pas.
  *
@@ -57,7 +57,9 @@ const supabaseAdmin = createClient(
 // te kosten. Wie inlogt is de eerstvolgende ronde weer mee.
 const ACTIEF_BINNEN_DAGEN = 7
 // Per ronde, zodat één ronde binnen maxDuration past. De rest komt de
-// volgende ronde: de sortering zet de langst-niet-gesyncte vooraan.
+// volgende ronde: de sortering zet het langst-niet-gesyncte postvak vooraan.
+// Telt postvakken, niet gebruikers: wie twee mailboxen heeft kost twee slots,
+// want het zijn twee IMAP-verbindingen naar twee servers.
 const MAX_PER_RONDE = 8
 // Ruim onder maxDuration, zodat de samenvatting nog terugkomt.
 const DEADLINE_MS = 50_000
@@ -66,6 +68,102 @@ function basisUrl(): string {
   if (process.env.CRON_SELF_URL) return process.env.CRON_SELF_URL.replace(/\/$/, '')
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
   return 'https://app.doen.team'
+}
+
+interface Postvak {
+  /** Rij-id van user_email_settings. Null zolang de kolom niet leesbaar is. */
+  id: string | null
+  user_id: string
+  is_standaard: boolean
+}
+
+function isKolomFout(fout: { code?: string; message?: string } | null): boolean {
+  if (!fout) return false
+  if (fout.code === '42703' || fout.code === 'PGRST204') return true
+  return /column .* does not exist|could not find the .* column/i.test(fout.message || '')
+}
+
+/**
+ * Eén rij per postvak in plaats van één per gebruiker. Tot vandaag selecteerde
+ * deze ronde alleen user_id en ontdubbelde hij niet: met twee postvakken kwam
+ * dezelfde gebruiker twee keer in de ronde en openden er twee verbindingen naar
+ * hetzelfde eerste postvak.
+ *
+ * `is_standaard` komt uit migratie 245 en mag ontbreken; dan telt elk postvak
+ * als standaard en verandert er niets. Ontbreekt ook `id`, dan valt de sleutel
+ * terug op user_id: zonder id kan deze ronde twee rijen niet uit elkaar houden
+ * én kan fetch-emails niet weten welke bedoeld is, dus is één ronde per
+ * gebruiker precies het oude gedrag.
+ */
+async function haalPostvakken(): Promise<Postvak[]> {
+  for (const kolommen of ['id, user_id, is_standaard', 'id, user_id', 'user_id']) {
+    const { data, error } = await supabaseAdmin
+      .from('user_email_settings')
+      .select(kolommen)
+      .not('gmail_address', 'is', null)
+      .not('encrypted_app_password', 'is', null)
+    if (error) {
+      if (isKolomFout(error)) continue
+      throw new Error(error.message)
+    }
+    const gezien = new Set<string>()
+    const postvakken: Postvak[] = []
+    for (const rij of (data ?? []) as unknown as Array<Record<string, unknown>>) {
+      const userId = rij.user_id as string
+      if (!userId) continue
+      const id = (rij.id as string) ?? null
+      const sleutel = id ?? userId
+      if (gezien.has(sleutel)) continue
+      gezien.add(sleutel)
+      postvakken.push({
+        id,
+        user_id: userId,
+        is_standaard: rij.is_standaard === undefined || rij.is_standaard === null || rij.is_standaard === true,
+      })
+    }
+    return postvakken
+  }
+  return []
+}
+
+interface SyncTijden {
+  perAccount: Map<string, number>
+  perUser: Map<string, number>
+}
+
+/**
+ * Wie het langst niet gesynct is gaat voor. Met account_id (migratie 245) telt
+ * dat per postvak; zonder die kolom per gebruiker, en dan is de oudste rij van
+ * die gebruiker de maat — dat is het postvak dat de ronde het hardst nodig heeft.
+ */
+async function laatsteInboxSync(postvakken: Postvak[]): Promise<SyncTijden> {
+  const perAccount = new Map<string, number>()
+  const perUser = new Map<string, number>()
+  const userIds = [...new Set(postvakken.map((p) => p.user_id))]
+  if (userIds.length === 0) return { perAccount, perUser }
+
+  for (const kolommen of ['account_id, user_id, updated_at', 'user_id, updated_at']) {
+    const { data, error } = await supabaseAdmin
+      .from('email_sync_state')
+      .select(kolommen)
+      .eq('folder', 'inbox')
+      .in('user_id', userIds)
+    if (error) {
+      if (isKolomFout(error)) continue
+      console.warn('[cron-email-sync] sync-state lezen mislukt:', error.message)
+      return { perAccount, perUser }
+    }
+    for (const rij of (data ?? []) as unknown as Array<Record<string, unknown>>) {
+      const op = Date.parse(rij.updated_at as string) || 0
+      const accountId = (rij.account_id as string) ?? null
+      if (accountId) perAccount.set(accountId, op)
+      const userId = rij.user_id as string
+      const bekend = perUser.get(userId)
+      if (userId && (bekend === undefined || op < bekend)) perUser.set(userId, op)
+    }
+    return { perAccount, perUser }
+  }
+  return { perAccount, perUser }
 }
 
 async function actieveUserIds(): Promise<Set<string>> {
@@ -132,13 +230,14 @@ async function meldNieuweMail(userId: string, aantal: number, cronSecret: string
  * en een klein venster. `snel` omdat de sweeps al in de INBOX-ronde zijn gedaan.
  * Faalt stil: de INBOX-sync is al geslaagd.
  */
-async function syncVerzonden(userId: string, cronSecret: string, url: string, resterendMs: number): Promise<number> {
+async function syncVerzonden(postvak: Postvak, cronSecret: string, url: string, resterendMs: number): Promise<number> {
   if (resterendMs < 8_000) return 0
+  const userId = postvak.user_id
   try {
     const respons = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cronSecret}` },
-      body: JSON.stringify({ folder: 'verzonden', limit: 200, snel: true, service_user_id: userId }),
+      body: JSON.stringify({ folder: 'verzonden', limit: 200, snel: true, service_user_id: userId, ...(postvak.id ? { account_id: postvak.id } : {}) }),
       signal: AbortSignal.timeout(resterendMs - 1_000),
     })
     if (!respons.ok) {
@@ -169,39 +268,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const gestartOp = Date.now()
 
   try {
-    const { data: accounts, error } = await supabaseAdmin
-      .from('user_email_settings')
-      .select('user_id')
-      .not('gmail_address', 'is', null)
-      .not('encrypted_app_password', 'is', null)
-    if (error) throw error
-    if (!accounts?.length) return res.status(200).json({ gesynct: 0, overgeslagen: 0 })
+    const postvakken = await haalPostvakken()
+    if (!postvakken.length) return res.status(200).json({ gesynct: 0, overgeslagen: 0 })
 
     const actief = await actieveUserIds()
-    const kandidaten = accounts.map((a) => a.user_id as string).filter((id) => actief.has(id))
+    const kandidaten = postvakken.filter((p) => actief.has(p.user_id))
 
-    // Langst niet gesynct eerst. Wie nog geen sync-state heeft (nieuw account)
-    // komt vooraan, want die heeft de ronde het hardst nodig.
-    const { data: states } = await supabaseAdmin
-      .from('email_sync_state')
-      .select('user_id, updated_at')
-      .eq('folder', 'inbox')
-      .in('user_id', kandidaten)
-    const laatstGesynct = new Map<string, number>()
-    for (const s of states || []) {
-      laatstGesynct.set(s.user_id as string, Date.parse(s.updated_at as string) || 0)
-    }
-    kandidaten.sort((a, b) => (laatstGesynct.get(a) ?? 0) - (laatstGesynct.get(b) ?? 0))
+    // Langst niet gesynct eerst. Wie nog geen sync-state heeft (nieuw postvak)
+    // komt vooraan, want die heeft de ronde het hardst nodig. Bij gelijkspel
+    // gaat het standaardpostvak voor.
+    const tijden = await laatsteInboxSync(kandidaten)
+    const laatstGesynct = (p: Postvak) =>
+      (p.id ? tijden.perAccount.get(p.id) : undefined) ?? tijden.perUser.get(p.user_id) ?? 0
+    kandidaten.sort((a, b) =>
+      (laatstGesynct(a) - laatstGesynct(b)) || (Number(b.is_standaard) - Number(a.is_standaard)))
 
     const ronde = kandidaten.slice(0, MAX_PER_RONDE)
     const url = `${basisUrl()}/api/fetch-emails`
 
-    // Parallel: elke gebruiker opent zijn eigen IMAP-verbinding naar zijn
-    // eigen server, dus ze staan elkaar niet in de weg. Sequentieel zou bij
-    // acht mailboxen gegarandeerd de deadline halen.
-    const uitkomsten = await Promise.all(ronde.map(async (userId) => {
+    // Parallel: elk postvak opent zijn eigen IMAP-verbinding naar zijn eigen
+    // server, dus ze staan elkaar niet in de weg. Sequentieel zou bij acht
+    // mailboxen gegarandeerd de deadline halen.
+    const uitkomsten = await Promise.all(ronde.map(async (postvak) => {
+      const userId = postvak.user_id
+      const accountId = postvak.id
       const resterend = DEADLINE_MS - (Date.now() - gestartOp)
-      if (resterend <= 5_000) return { userId, ok: false, reden: 'deadline' }
+      if (resterend <= 5_000) return { userId, accountId, ok: false, reden: 'deadline' }
       const afbreken = AbortSignal.timeout(resterend)
       try {
         const respons = await fetch(url, {
@@ -212,22 +304,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           },
           // snel blijft uit: de sales- en lead-sweeps die de client op mobiel
           // overslaat horen juist hier thuis, waar niemand op ze wacht.
-          body: JSON.stringify({ folder: 'INBOX', limit: 200, service_user_id: userId }),
+          // account_id erbij zodra migratie 245 gedraaid is: zonder dat pakt
+          // fetch-emails het eerste postvak van deze gebruiker.
+          body: JSON.stringify({ folder: 'INBOX', limit: 200, service_user_id: userId, ...(accountId ? { account_id: accountId } : {}) }),
           signal: afbreken,
         })
         if (!respons.ok) {
           const tekst = await respons.text().catch(() => '')
-          console.warn('[cron-email-sync] sync mislukt', { userId, status: respons.status, tekst: tekst.slice(0, 200) })
-          return { userId, ok: false, reden: `http_${respons.status}` }
+          console.warn('[cron-email-sync] sync mislukt', { userId, accountId, status: respons.status, tekst: tekst.slice(0, 200) })
+          return { userId, accountId, ok: false, reden: `http_${respons.status}` }
         }
         const uitkomst = (await respons.json().catch(() => ({}))) as { synced?: number }
         const nieuw = Number(uitkomst?.synced) || 0
         if (nieuw > 0) await meldNieuweMail(userId, nieuw, cronSecret, basisUrl())
-        await syncVerzonden(userId, cronSecret, url, DEADLINE_MS - (Date.now() - gestartOp))
-        return { userId, ok: true, synced: nieuw }
+        await syncVerzonden(postvak, cronSecret, url, DEADLINE_MS - (Date.now() - gestartOp))
+        return { userId, accountId, ok: true, synced: nieuw }
       } catch (err) {
-        console.warn('[cron-email-sync] sync gooide', { userId, err: err instanceof Error ? err.message : err })
-        return { userId, ok: false, reden: 'exception' }
+        console.warn('[cron-email-sync] sync gooide', { userId, accountId, err: err instanceof Error ? err.message : err })
+        return { userId, accountId, ok: false, reden: 'exception' }
       }
     }))
 
@@ -237,7 +331,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       geprobeerd: ronde.length,
       gesynct: gelukt.length,
       nieuweMail: gelukt.reduce((som, u) => som + (Number(u.synced) || 0), 0),
-      mislukt: uitkomsten.filter((u) => !u.ok).map((u) => ({ userId: u.userId, reden: u.reden })),
+      mislukt: uitkomsten.filter((u) => !u.ok).map((u) => ({ userId: u.userId, accountId: u.accountId, reden: u.reden })),
       duurMs: Date.now() - gestartOp,
     })
   } catch (err) {
