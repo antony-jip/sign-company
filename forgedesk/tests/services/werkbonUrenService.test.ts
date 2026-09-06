@@ -9,6 +9,7 @@ let claimAntwoord = true
 let insertFaalt = false
 
 vi.mock('@/services/tijdregistratieService', () => ({
+  standaardUrenStatus: () => 'goedgekeurd',
   createTijdregistraties: async (entries: Record<string, unknown>[]) => {
     if (insertFaalt) throw new Error('insert mislukt')
     entries.forEach((entry) => aangemaakteRegistraties.push(entry))
