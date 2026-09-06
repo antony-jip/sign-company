@@ -197,18 +197,55 @@ function isToegangGeweigerd(fout: unknown): boolean {
  * een tweede 401: de eerste kan een verlopen token zijn en die ververst
  * haalToegangstoken zelf.
  */
-async function meldToegangIngetrokken(userId: string): Promise<void> {
+// ── GEDEELD-MET-API: upsert-ladder ────────────────────────────────────────
+// Migratie 245 zet (account_id, folder) naast (user_id, folder); migratie 246
+// laat de oude sleutel vallen. Zolang beide werelden kunnen bestaan proberen we
+// de nieuwe sleutel eerst en vallen we terug op de oude. PostgREST geeft 42703
+// als de kolom er nog niet is en 42P10 als er bij de opgegeven kolommen geen
+// unieke index te vinden is; de terugval in deze bestanden ving alleen dat
+// eerste geval, dus na 246 zou de write blijven falen. account_id gaat ook in
+// de rij mee, anders vindt de nieuwe sleutel nooit een bestaande rij.
+// Dezelfde ladder staat in src/trigger/mail-idle.ts en in de andere
+// api-mailbestanden.
+function isOnbekendeSleutel(fout: { code?: string; message?: string } | null): boolean {
+  if (!fout) return false
+  return fout.code === '42703' || fout.code === '42P10'
+    || /column .* does not exist|no unique or exclusion constraint/i.test(fout.message || '')
+}
+
+type SyncStateUitkomst = { error: { message: string; code?: string } | null }
+
+async function upsertSyncStateRij(rij: Record<string, unknown>, accountId?: string | null): Promise<SyncStateUitkomst> {
+  const pogingen: Array<{ onConflict: string; metAccount: boolean }> = accountId
+    ? [
+        { onConflict: 'account_id,folder', metAccount: true },
+        { onConflict: 'user_id,folder', metAccount: true },
+        { onConflict: 'user_id,folder', metAccount: false },
+      ]
+    : [{ onConflict: 'user_id,folder', metAccount: false }]
+
+  let laatste: SyncStateUitkomst = { error: { message: 'onbekend' } }
+  for (const poging of pogingen) {
+    const lading = poging.metAccount ? { ...rij, account_id: accountId } : rij
+    const uitkomst = await supabaseAdmin.from('email_sync_state').upsert(lading, { onConflict: poging.onConflict })
+    if (!uitkomst.error) return { error: null }
+    laatste = uitkomst as SyncStateUitkomst
+    if (!isOnbekendeSleutel(uitkomst.error)) return laatste
+  }
+  return laatste
+}
+// ── GEDEELD-MET-API EINDE: upsert-ladder ──────────────────────────────────
+
+async function meldToegangIngetrokken(userId: string, accountId?: string | null): Promise<void> {
   const nu = new Date().toISOString()
-  const { error } = await supabaseAdmin
-    .from('email_sync_state')
-    .upsert({
-      user_id: userId,
-      folder: 'inbox',
-      status: 'uitgezet',
-      laatste_fout: 'Toegang ingetrokken, koppel opnieuw',
-      laatste_fout_op: nu,
-      updated_at: nu,
-    }, { onConflict: 'user_id,folder' })
+  const { error } = await upsertSyncStateRij({
+    user_id: userId,
+    folder: 'inbox',
+    status: 'uitgezet',
+    laatste_fout: 'Toegang ingetrokken, koppel opnieuw',
+    laatste_fout_op: nu,
+    updated_at: nu,
+  }, accountId)
   if (error) console.warn('[oauth] status uitgezet schrijven mislukt:', error.message)
 }
 // ── GEDEELD-MET-API EINDE: OAuth-toegangstoken ────────────────────────────
@@ -342,6 +379,7 @@ async function testOauthKoppeling(userId: string, accountId: string | null, res:
     return res.status(400).json({ imap_ok: false, smtp_ok: false, error: 'Geen koppeling met Google of Microsoft gevonden' })
   }
 
+  const postvakId = (data.id as string | null) ?? null
   const adres = data.gmail_address as string
   const imap_host = (data.imap_host as string) || 'imap.gmail.com'
   const imap_port = Number(data.imap_port) || 993
@@ -380,7 +418,7 @@ async function testOauthKoppeling(userId: string, accountId: string | null, res:
     if (uitkomst.auth) {
       uitkomst = await probeer(true)
       if (uitkomst.auth) {
-        await meldToegangIngetrokken(userId)
+        await meldToegangIngetrokken(userId, postvakId)
         return res.status(200).json({ imap_ok: false, smtp_ok: false, error: 'Toegang ingetrokken, koppel opnieuw' })
       }
     }
@@ -392,7 +430,7 @@ async function testOauthKoppeling(userId: string, accountId: string | null, res:
   } catch (err) {
     const melding = err instanceof Error ? err.message : 'Verbindingstest mislukt'
     console.error('[test-email-connection] OAuth-test mislukt:', melding)
-    if (/ingetrokken/i.test(melding)) await meldToegangIngetrokken(userId)
+    if (/ingetrokken/i.test(melding)) await meldToegangIngetrokken(userId, postvakId)
     return res.status(200).json({ imap_ok: false, smtp_ok: false, error: melding })
   }
 }

@@ -198,6 +198,49 @@ function leesAccountId(req: VercelRequest): string | null {
   return null
 }
 
+// ── GEDEELD-MET-API: upsert-ladder ────────────────────────────────────────
+// Migratie 245 zet (account_id, message_id) naast (user_id, message_id);
+// migratie 246 laat de oude sleutel vallen. Zolang beide werelden kunnen
+// bestaan proberen we de nieuwe sleutel eerst en vallen we terug op de oude.
+// PostgREST geeft 42703 als de kolom er nog niet is en 42P10 als er bij de
+// opgegeven kolommen geen unieke index te vinden is; de terugval in deze
+// bestanden ving alleen dat eerste geval, dus na 246 zou de write blijven
+// falen. account_id gaat ook in de rij mee, anders vindt de nieuwe sleutel
+// nooit een bestaande mail terug.
+// Dezelfde ladder staat in src/trigger/mail-idle.ts en in de andere
+// api-mailbestanden.
+function isOnbekendeSleutel(fout: { code?: string; message?: string } | null): boolean {
+  if (!fout) return false
+  return fout.code === '42703' || fout.code === '42P10'
+    || /column .* does not exist|no unique or exclusion constraint/i.test(fout.message || '')
+}
+
+type EmailsUpsertUitkomst = { error: { message: string; code?: string } | null }
+
+async function upsertEmailsBatch(batch: Array<Record<string, unknown>>): Promise<EmailsUpsertUitkomst> {
+  const metAccount = batch.length > 0 && batch.every((r) => !!r.account_id)
+  const pogingen: Array<{ onConflict: string; metAccount: boolean }> = metAccount
+    ? [
+        { onConflict: 'account_id,message_id', metAccount: true },
+        { onConflict: 'user_id,message_id', metAccount: true },
+        { onConflict: 'user_id,message_id', metAccount: false },
+      ]
+    : [{ onConflict: 'user_id,message_id', metAccount: false }]
+
+  let laatste: EmailsUpsertUitkomst = { error: { message: 'onbekend' } }
+  for (const poging of pogingen) {
+    const lading = poging.metAccount
+      ? batch
+      : batch.map((r) => { const kopie = { ...r }; delete kopie.account_id; return kopie })
+    const uitkomst = await supabaseAdmin.from('emails').upsert(lading, { onConflict: poging.onConflict, ignoreDuplicates: true })
+    if (!uitkomst.error) return { error: null }
+    laatste = uitkomst as EmailsUpsertUitkomst
+    if (!isOnbekendeSleutel(uitkomst.error)) return laatste
+  }
+  return laatste
+}
+// ── GEDEELD-MET-API EINDE: upsert-ladder ──────────────────────────────────
+
 export const config = { maxDuration: 60 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -306,6 +349,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       newEmails.push({
         user_id,
         organisatie_id: mailOrgId,
+        // Zonder account_id op de rij vindt de nieuwe sleutel
+        // (account_id, message_id) nooit een bestaande mail terug.
+        ...(creds.account_id ? { account_id: creds.account_id } : {}),
         uid: message.uid,
         message_id: message.envelope.messageId || null,
         in_reply_to: message.envelope.inReplyTo || null,
@@ -386,9 +432,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let fataleFout: string | null = null
     for (let i = 0; i < newEmails.length; i += 50) {
       const batch = newEmails.slice(i, i + 50)
-      const { error } = await supabaseAdmin
-        .from('emails')
-        .upsert(batch, { onConflict: 'user_id,message_id', ignoreDuplicates: true })
+      const { error } = await upsertEmailsBatch(batch)
       if (error) {
         fataleFout = error.message
         break

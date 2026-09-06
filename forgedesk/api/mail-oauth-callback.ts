@@ -275,18 +275,41 @@ async function zoekPostvakRij(userId: string, adres: string): Promise<{ rij: Pos
   return { rij: null, aantal: 0 }
 }
 
+// ── GEDEELD-MET-API: upsert-ladder ────────────────────────────────────────
+// user_email_settings had UNIQUE (user_id) uit migratie 037; migratie 246 haalt
+// die weg en zet er een partiële unieke index op is_standaard voor terug. Een
+// upsert op user_id geeft daarna 42P10 (geen unieke index bij die kolommen) in
+// plaats van 42703, en juist die code ving de bestaande terugval niet: opslaan
+// zou dan falen, precies de knop die je nodig hebt om het te herstellen.
+// Kennen we het rij-id, dan is een gerichte update altijd beter dan een upsert.
+// Dezelfde ladder staat in api/mail-oauth-callback.ts en api/email-settings.ts.
+function isOnbekendeSleutel(fout: { code?: string; message?: string } | null): boolean {
+  if (!fout) return false
+  return fout.code === '42703' || fout.code === '42P10'
+    || /column .* does not exist|no unique or exclusion constraint/i.test(fout.message || '')
+}
+
+/** Schrijft het postvak weg: op id als we dat kennen, anders over de oude sleutel. */
+async function schrijfPostvak(velden: Record<string, unknown>, userId: string, postvakId?: string | null): Promise<string | null> {
+  if (postvakId) {
+    const { error } = await supabaseAdmin.from('user_email_settings').update(velden).eq('id', postvakId)
+    return error ? error.message : null
+  }
+  const upsert = await supabaseAdmin.from('user_email_settings').upsert({ ...velden, user_id: userId }, { onConflict: 'user_id' })
+  if (!upsert.error) return null
+  if (!isOnbekendeSleutel(upsert.error)) return upsert.error.message
+  const update = await supabaseAdmin.from('user_email_settings').update(velden).eq('user_id', userId)
+  return update.error ? update.error.message : null
+}
+// ── GEDEELD-MET-API EINDE: upsert-ladder ──────────────────────────────────
+
 /**
  * Bewaren op de primaire sleutel zodra we die kennen, met de oude upsert op
  * user_id als terugval voor een database waar `id` nog niet uit de API komt.
  */
-async function bewaarPostvak(rij: PostvakRij | null, aantal: number, velden: Record<string, unknown>): Promise<string | null> {
-  if (rij?.id) {
-    const { error } = await supabaseAdmin.from('user_email_settings').update(velden).eq('id', rij.id)
-    return error ? error.message : null
-  }
+async function bewaarPostvak(rij: PostvakRij | null, aantal: number, velden: Record<string, unknown>, userId: string): Promise<string | null> {
   if (rij) {
-    const { error } = await supabaseAdmin.from('user_email_settings').upsert(velden, { onConflict: 'user_id' })
-    return error ? error.message : null
+    return await schrijfPostvak(velden, userId, rij.id)
   }
   // Een tweede postvak mag niet ook standaard zijn: migratie 246 legt daar een
   // unieke index op. Ontbreekt de kolom nog, dan invoegen zonder.
@@ -437,7 +460,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return terug(res, { mail: 'fout', reden: 'geen_refresh_token' })
     }
 
-    const opslagFout = await bewaarPostvak(bestaandeRij, aantal, velden)
+    const opslagFout = await bewaarPostvak(bestaandeRij, aantal, velden, userId)
     if (opslagFout) {
       console.error('[mail-oauth-callback] opslaan mislukt:', opslagFout)
       return terug(res, { mail: 'fout', reden: 'opslaan' })

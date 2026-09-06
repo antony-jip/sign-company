@@ -262,18 +262,87 @@ function isToegangGeweigerd(fout: unknown): boolean {
  * een tweede 401: de eerste kan een verlopen token zijn en die ververst
  * haalToegangstoken zelf.
  */
-async function meldToegangIngetrokken(userId: string): Promise<void> {
+// ── GEDEELD-MET-API: upsert-ladder ────────────────────────────────────────
+// Migratie 245 zet (account_id, folder) naast (user_id, folder); migratie 246
+// laat de oude sleutel vallen. Zolang beide werelden kunnen bestaan proberen we
+// de nieuwe sleutel eerst en vallen we terug op de oude. PostgREST geeft 42703
+// als de kolom er nog niet is en 42P10 als er bij de opgegeven kolommen geen
+// unieke index te vinden is; de terugval in deze bestanden ving alleen dat
+// eerste geval, dus na 246 zou de write blijven falen. account_id gaat ook in
+// de rij mee, anders vindt de nieuwe sleutel nooit een bestaande rij.
+// Dezelfde ladder staat in src/trigger/mail-idle.ts en in de andere
+// api-mailbestanden.
+function isOnbekendeSleutel(fout: { code?: string; message?: string } | null): boolean {
+  if (!fout) return false
+  return fout.code === '42703' || fout.code === '42P10'
+    || /column .* does not exist|no unique or exclusion constraint/i.test(fout.message || '')
+}
+
+type SyncStateUitkomst = { error: { message: string; code?: string } | null }
+
+async function upsertSyncStateRij(rij: Record<string, unknown>, accountId?: string | null): Promise<SyncStateUitkomst> {
+  const pogingen: Array<{ onConflict: string; metAccount: boolean }> = accountId
+    ? [
+        { onConflict: 'account_id,folder', metAccount: true },
+        { onConflict: 'user_id,folder', metAccount: true },
+        { onConflict: 'user_id,folder', metAccount: false },
+      ]
+    : [{ onConflict: 'user_id,folder', metAccount: false }]
+
+  let laatste: SyncStateUitkomst = { error: { message: 'onbekend' } }
+  for (const poging of pogingen) {
+    const lading = poging.metAccount ? { ...rij, account_id: accountId } : rij
+    const uitkomst = await supabaseAdmin.from('email_sync_state').upsert(lading, { onConflict: poging.onConflict })
+    if (!uitkomst.error) return { error: null }
+    laatste = uitkomst as SyncStateUitkomst
+    if (!isOnbekendeSleutel(uitkomst.error)) return laatste
+  }
+  return laatste
+}
+
+/**
+ * Dezelfde ladder voor `emails`: migratie 245 zet (account_id, message_id)
+ * naast (user_id, message_id), 246 laat de oude sleutel vallen. Eerst de nieuwe
+ * sleutel, dan de oude, en als laatste zonder account_id voor een database van
+ * vóór 245.
+ */
+type EmailUpsertUitkomst = { data: { id: string } | null; error: { message: string; code?: string } | null }
+
+async function upsertEmailRij(rij: Record<string, unknown>): Promise<EmailUpsertUitkomst> {
+  const pogingen: Array<{ onConflict: string; metAccount: boolean }> = rij.account_id
+    ? [
+        { onConflict: 'account_id,message_id', metAccount: true },
+        { onConflict: 'user_id,message_id', metAccount: true },
+        { onConflict: 'user_id,message_id', metAccount: false },
+      ]
+    : [{ onConflict: 'user_id,message_id', metAccount: false }]
+
+  let laatste: EmailUpsertUitkomst = { data: null, error: { message: 'onbekend' } }
+  for (const poging of pogingen) {
+    const lading = poging.metAccount ? rij : (() => { const kopie = { ...rij }; delete kopie.account_id; return kopie })()
+    const uitkomst = await supabaseAdmin
+      .from('emails')
+      .upsert(lading, { onConflict: poging.onConflict, ignoreDuplicates: false })
+      .select('id')
+      .maybeSingle()
+    if (!uitkomst.error) return uitkomst as unknown as EmailUpsertUitkomst
+    laatste = uitkomst as unknown as EmailUpsertUitkomst
+    if (!isOnbekendeSleutel(uitkomst.error)) return laatste
+  }
+  return laatste
+}
+// ── GEDEELD-MET-API EINDE: upsert-ladder ──────────────────────────────────
+
+async function meldToegangIngetrokken(userId: string, accountId?: string | null): Promise<void> {
   const nu = new Date().toISOString()
-  const { error } = await supabaseAdmin
-    .from('email_sync_state')
-    .upsert({
-      user_id: userId,
-      folder: 'inbox',
-      status: 'uitgezet',
-      laatste_fout: 'Toegang ingetrokken, koppel opnieuw',
-      laatste_fout_op: nu,
-      updated_at: nu,
-    }, { onConflict: 'user_id,folder' })
+  const { error } = await upsertSyncStateRij({
+    user_id: userId,
+    folder: 'inbox',
+    status: 'uitgezet',
+    laatste_fout: 'Toegang ingetrokken, koppel opnieuw',
+    laatste_fout_op: nu,
+    updated_at: nu,
+  }, accountId)
   if (error) console.warn('[oauth] status uitgezet schrijven mislukt:', error.message)
 }
 // ── GEDEELD-MET-API EINDE: OAuth-toegangstoken ────────────────────────────
@@ -891,11 +960,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           .select('organisatie_id')
           .eq('id', user_id)
           .maybeSingle()
-        const { data: upserted } = await supabaseAdmin
-          .from('emails')
-          .upsert({
+        const { data: upserted } = await upsertEmailRij({
             user_id,
             organisatie_id: (orgProfiel?.organisatie_id as string | null) ?? null,
+            // Zonder account_id op de rij vindt de nieuwe sleutel
+            // (account_id, message_id) nooit een bestaande mail terug.
+            ...(creds?.account_id ? { account_id: creds.account_id } : {}),
             uid: Number(uid),
             message_id: result.messageId || null,
             imap_folder: result.imapFolder,
@@ -916,12 +986,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             inhoud: bodyTextBegrensd,
             gmail_id: String(uid),
             cached_at: new Date().toISOString(),
-          }, {
-            onConflict: 'user_id,message_id',
-            ignoreDuplicates: false,
-          })
-          .select('id')
-          .maybeSingle()
+        })
         email_uuid = upserted?.id || null
         // Fallback: als upsert geen id terug gaf (bijv. message_id NULL),
         // doe een gerichte SELECT zodat we alsnog kunnen cachen.

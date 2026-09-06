@@ -605,18 +605,103 @@ function isToegangGeweigerd(fout: unknown): boolean {
  * een tweede 401: de eerste kan een verlopen token zijn en die ververst
  * haalToegangstoken zelf.
  */
-async function meldToegangIngetrokken(userId: string): Promise<void> {
+// ── GEDEELD-MET-API: upsert-ladder ────────────────────────────────────────
+// Migratie 245 zet (account_id, folder) naast (user_id, folder); migratie 246
+// laat de oude sleutel vallen. Zolang beide werelden kunnen bestaan proberen we
+// de nieuwe sleutel eerst en vallen we terug op de oude. PostgREST geeft 42703
+// als de kolom er nog niet is en 42P10 als er bij de opgegeven kolommen geen
+// unieke index te vinden is; de terugval in deze bestanden ving alleen dat
+// eerste geval, dus na 246 zou de write blijven falen. account_id gaat ook in
+// de rij mee, anders vindt de nieuwe sleutel nooit een bestaande rij.
+// Dezelfde ladder staat in src/trigger/mail-idle.ts en in de andere
+// api-mailbestanden.
+function isOnbekendeSleutel(fout: { code?: string; message?: string } | null): boolean {
+  if (!fout) return false
+  return fout.code === '42703' || fout.code === '42P10'
+    || /column .* does not exist|no unique or exclusion constraint/i.test(fout.message || '')
+}
+
+type SyncStateUitkomst = { error: { message: string; code?: string } | null }
+
+async function upsertSyncStateRij(rij: Record<string, unknown>, accountId?: string | null): Promise<SyncStateUitkomst> {
+  const pogingen: Array<{ onConflict: string; metAccount: boolean }> = accountId
+    ? [
+        { onConflict: 'account_id,folder', metAccount: true },
+        { onConflict: 'user_id,folder', metAccount: true },
+        { onConflict: 'user_id,folder', metAccount: false },
+      ]
+    : [{ onConflict: 'user_id,folder', metAccount: false }]
+
+  let laatste: SyncStateUitkomst = { error: { message: 'onbekend' } }
+  for (const poging of pogingen) {
+    const lading = poging.metAccount ? { ...rij, account_id: accountId } : rij
+    const uitkomst = await supabaseAdmin.from('email_sync_state').upsert(lading, { onConflict: poging.onConflict })
+    if (!uitkomst.error) return { error: null }
+    laatste = uitkomst as SyncStateUitkomst
+    if (!isOnbekendeSleutel(uitkomst.error)) return laatste
+  }
+  return laatste
+}
+
+/**
+ * Dezelfde ladder voor een partiële update: met twee postvakken raakt een
+ * update op (user_id, folder) beide rijen, dus filteren we op account_id zodra
+ * die kolom bestaat.
+ */
+async function updateSyncStateRij(rij: Record<string, unknown>, userId: string, folder: string, accountId?: string | null): Promise<SyncStateUitkomst> {
+  if (accountId) {
+    const metAccount = await supabaseAdmin.from('email_sync_state').update(rij).eq('account_id', accountId).eq('folder', folder)
+    if (!metAccount.error) return { error: null }
+    if (!isOnbekendeSleutel(metAccount.error)) return metAccount as SyncStateUitkomst
+  }
+  return await supabaseAdmin.from('email_sync_state').update(rij).eq('user_id', userId).eq('folder', folder) as SyncStateUitkomst
+}
+
+/**
+ * Dezelfde ladder voor `emails`: migratie 245 zet (account_id, message_id)
+ * naast (user_id, message_id), 246 laat de oude sleutel vallen. Eerst de nieuwe
+ * sleutel, dan de oude, en als laatste zonder account_id voor een database van
+ * vóór 245.
+ */
+type EmailsUpsertUitkomst = { data: Array<{ id: string }> | null; error: { message: string; code?: string } | null }
+
+async function upsertEmailsBatch(batch: Array<Record<string, unknown>>): Promise<EmailsUpsertUitkomst> {
+  const metAccount = batch.length > 0 && batch.every((r) => !!r.account_id)
+  const pogingen: Array<{ onConflict: string; metAccount: boolean }> = metAccount
+    ? [
+        { onConflict: 'account_id,message_id', metAccount: true },
+        { onConflict: 'user_id,message_id', metAccount: true },
+        { onConflict: 'user_id,message_id', metAccount: false },
+      ]
+    : [{ onConflict: 'user_id,message_id', metAccount: false }]
+
+  let laatste: EmailsUpsertUitkomst = { data: null, error: { message: 'onbekend' } }
+  for (const poging of pogingen) {
+    const lading = poging.metAccount
+      ? batch
+      : batch.map((r) => { const kopie = { ...r }; delete kopie.account_id; return kopie })
+    const uitkomst = await supabaseAdmin
+      .from('emails')
+      .upsert(lading, { onConflict: poging.onConflict, ignoreDuplicates: true })
+      .select('id')
+    if (!uitkomst.error) return uitkomst as unknown as EmailsUpsertUitkomst
+    laatste = uitkomst as unknown as EmailsUpsertUitkomst
+    if (!isOnbekendeSleutel(uitkomst.error)) return laatste
+  }
+  return laatste
+}
+// ── GEDEELD-MET-API EINDE: upsert-ladder ──────────────────────────────────
+
+async function meldToegangIngetrokken(userId: string, accountId?: string | null): Promise<void> {
   const nu = new Date().toISOString()
-  const { error } = await supabaseAdmin
-    .from('email_sync_state')
-    .upsert({
-      user_id: userId,
-      folder: 'inbox',
-      status: 'uitgezet',
-      laatste_fout: 'Toegang ingetrokken, koppel opnieuw',
-      laatste_fout_op: nu,
-      updated_at: nu,
-    }, { onConflict: 'user_id,folder' })
+  const { error } = await upsertSyncStateRij({
+    user_id: userId,
+    folder: 'inbox',
+    status: 'uitgezet',
+    laatste_fout: 'Toegang ingetrokken, koppel opnieuw',
+    laatste_fout_op: nu,
+    updated_at: nu,
+  }, accountId)
   if (error) console.warn('[oauth] status uitgezet schrijven mislukt:', error.message)
 }
 // ── GEDEELD-MET-API EINDE: OAuth-toegangstoken ────────────────────────────
@@ -848,13 +933,9 @@ export const config = { maxDuration: 60 }
  * no-op en dat is juist. Een nieuwe rij aanmaken zou een waterlijn van 0
  * suggereren op een mailbox die nooit gelezen is.
  */
-async function tikSyncTijdstip(user_id: string, mapValue: string): Promise<void> {
+async function tikSyncTijdstip(user_id: string, mapValue: string, accountId?: string | null): Promise<void> {
   try {
-    await supabaseAdmin
-      .from('email_sync_state')
-      .update({ updated_at: new Date().toISOString() })
-      .eq('user_id', user_id)
-      .eq('folder', mapValue)
+    await updateSyncStateRij({ updated_at: new Date().toISOString() }, user_id, mapValue, accountId)
   } catch {
     // Mag de sync nooit laten falen: dit is administratie, geen mail.
   }
@@ -901,21 +982,21 @@ function zonderGezondheid(rij: Record<string, unknown>): Record<string, unknown>
 
 type SchrijfUitkomst = { error: { message: string; code?: string } | null }
 
-async function upsertSyncState(rij: Record<string, unknown>): Promise<SchrijfUitkomst> {
-  const eerste = await supabaseAdmin.from('email_sync_state').upsert(rij, { onConflict: 'user_id,folder' })
+async function upsertSyncState(rij: Record<string, unknown>, accountId?: string | null): Promise<SchrijfUitkomst> {
+  const eerste = await upsertSyncStateRij(rij, accountId)
   if (!eerste.error || !isKolomFout(eerste.error)) return eerste as SchrijfUitkomst
   const zonder = zonderGezondheid(rij)
   if (Object.keys(zonder).length === Object.keys(rij).length) return eerste as SchrijfUitkomst
-  return await supabaseAdmin.from('email_sync_state').upsert(zonder, { onConflict: 'user_id,folder' }) as SchrijfUitkomst
+  return await upsertSyncStateRij(zonder, accountId) as SchrijfUitkomst
 }
 
-async function updateSyncState(user_id: string, folder: string, rij: Record<string, unknown>): Promise<SchrijfUitkomst> {
-  const eerste = await supabaseAdmin.from('email_sync_state').update(rij).eq('user_id', user_id).eq('folder', folder)
+async function updateSyncState(user_id: string, folder: string, rij: Record<string, unknown>, accountId?: string | null): Promise<SchrijfUitkomst> {
+  const eerste = await updateSyncStateRij(rij, user_id, folder, accountId)
   if (!eerste.error || !isKolomFout(eerste.error)) return eerste as SchrijfUitkomst
   const zonder = zonderGezondheid(rij)
   // Blijft er niets over, dan viel er zonder 244 ook niets te schrijven.
   if (Object.keys(zonder).length === 0 || Object.keys(zonder).length === Object.keys(rij).length) return eerste as SchrijfUitkomst
-  return await supabaseAdmin.from('email_sync_state').update(zonder).eq('user_id', user_id).eq('folder', folder) as SchrijfUitkomst
+  return await updateSyncStateRij(zonder, user_id, folder, accountId) as SchrijfUitkomst
 }
 // ── GEDEELD-MET-API EINDE: sync-state zonder 244 ──────────────────────────
 
@@ -923,13 +1004,14 @@ async function schrijfGezondheid(
   user_id: string,
   folder: string,
   uitkomst: { ok: true } | { ok: false; omschrijving: string },
+  accountId?: string | null,
 ): Promise<void> {
   const nu = new Date().toISOString()
   try {
     if (uitkomst.ok) {
       // Partieel: bestaat de rij niet, dan is dat een no-op en zet de
       // state-upsert verderop hem alsnog neer.
-      await updateSyncState(user_id, folder, { status: 'ok', laatste_fout: null, laatste_succes_op: nu })
+      await updateSyncState(user_id, folder, { status: 'ok', laatste_fout: null, laatste_succes_op: nu }, accountId)
       return
     }
     // Upsert: een mailbox die nooit geslaagd is heeft nog geen rij, en juist
@@ -944,7 +1026,7 @@ async function schrijfGezondheid(
         laatste_fout: uitkomst.omschrijving,
         laatste_fout_op: nu,
         updated_at: nu,
-      })
+      }, accountId)
     }
   } catch (err) {
     console.warn('[fetch-emails] gezondheid schrijven mislukt:', err instanceof Error ? err.message : err)
@@ -960,6 +1042,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // zelf staat binnen de try en is daar niet in scope.
   let mapValueVoorTik: string | null = null
   let userIdVoorTik: string | null = null
+  let accountIdVoorTik: string | null = null
   const gestart = Date.now()
 
   try {
@@ -1009,6 +1092,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       imap_host = creds.imap_host
       imap_port = creds.imap_port
       if (isOauthKoppeling(creds.auth_type)) oauthCreds = creds
+      accountIdVoorTik = creds.account_id
     } else {
       gmail_address = req.body.gmail_address
       app_password = req.body.app_password
@@ -1050,8 +1134,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         await client.connect()
       } catch (tweedeFout) {
         if (!isToegangGeweigerd(tweedeFout)) throw tweedeFout
-        await meldToegangIngetrokken(user_id)
-        await tikSyncTijdstip(user_id, mapValue)
+        await meldToegangIngetrokken(user_id, creds?.account_id ?? null)
+        await tikSyncTijdstip(user_id, mapValue, creds?.account_id ?? null)
         return res.status(401).json({ synced: 0, total: 0, error: 'Toegang ingetrokken, koppel opnieuw' })
       }
     }
@@ -1063,8 +1147,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (total === 0) {
       // Een lege mailbox is wel bekeken, dus hij hoort achteraan in de wachtrij.
-      await tikSyncTijdstip(user_id, mapValue)
-      await schrijfGezondheid(user_id, mapValue, { ok: true })
+      await tikSyncTijdstip(user_id, mapValue, creds?.account_id ?? null)
+      await schrijfGezondheid(user_id, mapValue, { ok: true }, creds?.account_id ?? null)
       await client.logout()
       return res.status(200).json({ synced: 0, total: 0, fetched: 0 })
     }
@@ -1371,31 +1455,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       for (let i = 0; i < newEmails.length; i += 50) {
         const batch = newEmails.slice(i, i + 50)
 
-        // Try batch upsert with onConflict. `select()` erbij zodat we tellen
+        // Batch upsert over de sleutel-ladder. `select()` erbij zodat we tellen
         // wat er echt is ingevoegd: met ignoreDuplicates worden bestaande
         // rijen overgeslagen en telde batch.length structureel te hoog.
-        const { data: ingevoegd, error } = await supabaseAdmin
-          .from('emails')
-          .upsert(batch, {
-            onConflict: 'user_id,message_id',
-            ignoreDuplicates: true,
-          })
-          .select('id')
+        const { data: ingevoegd, error } = await upsertEmailsBatch(batch)
 
         if (!error) {
           synced += ingevoegd?.length ?? 0
           continue
-        }
-
-        // account_id komt uit migratie 245; zolang die niet gedraaid is faalt de
-        // hele batch op die ene kolom. Opnieuw zonder dat veld.
-        if (isKolomFout(error) && batch.some((r) => 'account_id' in r)) {
-          const zonderAccount = batch.map((r) => { const kopie = { ...r }; delete (kopie as Record<string, unknown>).account_id; return kopie })
-          const tweede = await supabaseAdmin
-            .from('emails')
-            .upsert(zonderAccount, { onConflict: 'user_id,message_id', ignoreDuplicates: true })
-            .select('id')
-          if (!tweede.error) { synced += tweede.data?.length ?? 0; continue }
         }
 
         // Batch upsert failed — try individual inserts
@@ -1546,7 +1613,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         stateRow.backfill_low_uid = minUidGezien > 0 ? minUidGezien : null
         stateRow.backfill_done = false
       }
-      const { error: stateErr } = await upsertSyncState(stateRow)
+      const { error: stateErr } = await upsertSyncState(stateRow, creds?.account_id ?? null)
       if (stateErr) {
         console.warn('[fetch-emails] sync-state opslaan mislukt (migratie 131 gedraaid?):', stateErr.message)
       }
@@ -1570,12 +1637,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const nuIso = new Date().toISOString()
       const { error: tikErr } = await updateSyncState(user_id, mapValue, {
         updated_at: nuIso, status: 'ok', laatste_fout: null, laatste_succes_op: nuIso,
-      })
+      }, creds?.account_id ?? null)
       if (tikErr) {
         console.warn('[fetch-emails] sync-tijdstip bijwerken mislukt:', tikErr.message)
       }
     } else if (errors.length > 0) {
-      await schrijfGezondheid(user_id, mapValue, { ok: false, omschrijving: `Opslaan mislukt: ${errors[0].slice(0, 100)}` })
+      await schrijfGezondheid(user_id, mapValue, { ok: false, omschrijving: `Opslaan mislukt: ${errors[0].slice(0, 100)}` }, creds?.account_id ?? null)
     }
 
     // ─── Sales Inbox auto-match v2 ───
@@ -1784,8 +1851,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // met een verlopen app-password of een onbereikbare server voor altijd een
     // van de acht plekken per cron-ronde.
     if (userIdVoorTik && mapValueVoorTik) {
-      await tikSyncTijdstip(userIdVoorTik, mapValueVoorTik)
-      await schrijfGezondheid(userIdVoorTik, mapValueVoorTik, { ok: false, omschrijving: korteFoutOmschrijving(error) })
+      await tikSyncTijdstip(userIdVoorTik, mapValueVoorTik, accountIdVoorTik)
+      await schrijfGezondheid(userIdVoorTik, mapValueVoorTik, { ok: false, omschrijving: korteFoutOmschrijving(error) }, accountIdVoorTik)
     }
     return res.status(500).json({ synced: 0, total: 0, error: msg })
   } finally {

@@ -211,6 +211,30 @@ async function leesPostvakken(userId: string, kolommen: string, kolommenVoor244:
 }
 // ── GEDEELD-MET-API EINDE: credentials per postvak ────────────────────────
 
+// ── GEDEELD-MET-API: upsert-ladder ────────────────────────────────────────
+// user_email_settings had UNIQUE (user_id) uit migratie 037; migratie 246 haalt
+// die weg en zet er een partiële unieke index op is_standaard voor terug. Een
+// upsert op user_id geeft daarna 42P10 (geen unieke index bij die kolommen) in
+// plaats van 42703, en juist die code ving de bestaande terugval niet: opslaan
+// zou dan falen, precies de knop die je nodig hebt om een uitgezette mailbox
+// te herstellen. Kennen we het rij-id, dan is een gerichte update altijd beter.
+// Dezelfde ladder staat in api/mail-oauth-callback.ts.
+function isOnbekendeSleutel(fout: { code?: string; message?: string } | null): boolean {
+  if (!fout) return false
+  return fout.code === '42703' || fout.code === '42P10'
+    || /column .* does not exist|no unique or exclusion constraint/i.test(fout.message || '')
+}
+
+async function schrijfPostvak(velden: Record<string, unknown>, userId: string, postvakId?: string | null): Promise<{ error: { message?: string; code?: string } | null }> {
+  if (postvakId) {
+    return await supabaseAdmin.from('user_email_settings').update(velden).eq('id', postvakId)
+  }
+  const upsert = await supabaseAdmin.from('user_email_settings').upsert({ ...velden, user_id: userId }, { onConflict: 'user_id' })
+  if (!upsert.error || !isOnbekendeSleutel(upsert.error)) return upsert
+  return await supabaseAdmin.from('user_email_settings').update(velden).eq('user_id', userId)
+}
+// ── GEDEELD-MET-API EINDE: upsert-ladder ──────────────────────────────────
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
 
@@ -371,19 +395,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
     }
 
-    const { error } = await supabaseAdmin
-      .from('user_email_settings')
-      .upsert({
-        ...basisVelden,
-        encrypted_app_password: encryptedPassword,
-        // Een app-wachtwoord opslaan is het einde van een OAuth-koppeling,
-        // welk auth_type het formulier ook meestuurt: laat je de tokens staan,
-        // dan kan een leespad stilletjes op de oude koppeling terugvallen.
-        auth_type: 'wachtwoord',
-        oauth_refresh_token_enc: null,
-        oauth_access_token_enc: null,
-        oauth_token_verloopt_op: null,
-      }, { onConflict: 'user_id' })
+    const { error } = await schrijfPostvak({
+      ...basisVelden,
+      encrypted_app_password: encryptedPassword,
+      // Een app-wachtwoord opslaan is het einde van een OAuth-koppeling,
+      // welk auth_type het formulier ook meestuurt: laat je de tokens staan,
+      // dan kan een leespad stilletjes op de oude koppeling terugvallen.
+      auth_type: 'wachtwoord',
+      oauth_refresh_token_enc: null,
+      oauth_access_token_enc: null,
+      oauth_token_verloopt_op: null,
+    }, userId)
 
     if (error) {
       console.error('Supabase upsert fout:', JSON.stringify(error))
