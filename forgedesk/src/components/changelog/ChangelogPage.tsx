@@ -52,6 +52,20 @@ const APP_FEATURES = [
 
 const CHANGELOG: ChangelogEntry[] = [
   {
+    versie: '1.6.1',
+    datum: '6 september 2026',
+    label: 'Nieuw',
+    titel: 'Meerdere postvakken, een gedeeld postvak en regels',
+    beschrijving: 'Meer dan één mailbox in doen., een postvak dat van het team is, en regels die je inbox opruimen terwijl je iets anders doet.',
+    features: [
+      { titel: 'Meerdere postvakken', beschrijving: 'Een kiezer boven de mappen met een bolletje per postvak. Alles door elkaar, of één postvak tegelijk. In de composer kies je op de regel Van waar het bericht vandaan komt.' },
+      { titel: 'Gedeeld postvak', beschrijving: 'Info@ of verkoop@ als teampostvak. Wijs een gesprek toe aan een collega; zijn initialen staan in de lijst, zodat niemand twee keer antwoordt. Filters Van mij en Niet toegewezen erbij.' },
+      { titel: 'Interne notities', beschrijving: 'Een aantekening onder het gesprek die nooit naar de klant gaat. Noem een collega met @ en hij krijgt een melding.' },
+      { titel: 'Regels', beschrijving: 'Als de afzender, het onderwerp, het domein of het aan-adres iets bevat: archiveren, labelen, als gelezen markeren, aan een project koppelen of aan een collega geven. Sleep ze in volgorde; de bovenste die past, wint.' },
+      { titel: 'Eigen labels', beschrijving: 'Labels met een eigen naam en kleur, in het labelmenu en als filter onder de mappen. De vaste vier blijven bestaan.' },
+    ],
+  },
+  {
     versie: '1.6.0',
     datum: '6 september 2026',
     label: 'Nieuw',
