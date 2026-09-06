@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { ResponsiveDialog } from '@/components/ui/responsive-dialog'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
@@ -23,10 +23,6 @@ import { formatCurrency, cn } from '@/lib/utils'
 import { round2 } from '@/utils/budgetUtils'
 import { logger } from '@/utils/logger'
 import type { Offerte, OfferteItem, Project, Taak, Factuur } from '@/types'
-
-// Onder sm een lade van onderen, zoals OfferteVervolgDialog.
-const SHEET_OP_MOBIEL =
-  'sm:max-w-xl max-sm:top-auto max-sm:bottom-0 max-sm:left-0 max-sm:translate-x-0 max-sm:translate-y-0 max-sm:max-w-none max-sm:rounded-b-none max-sm:rounded-t-2xl max-sm:max-h-[92dvh] max-sm:overflow-y-auto max-sm:pb-[calc(env(safe-area-inset-bottom)+1.5rem)] max-sm:data-[state=open]:slide-in-from-bottom max-sm:data-[state=closed]:slide-out-to-bottom max-sm:data-[state=open]:slide-in-from-left-0 max-sm:data-[state=closed]:slide-out-to-left-0 max-sm:data-[state=open]:zoom-in-100 max-sm:data-[state=closed]:zoom-out-100'
 
 type Voorschot = Awaited<ReturnType<typeof getVoorschottenVoorOfferte>>[number]
 
@@ -237,14 +233,31 @@ export function WatFacturerenDialog({ open, onOpenChange, offerte, project, proj
   }
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!bezig) onOpenChange(o) }}>
-      <DialogContent className={cn(SHEET_OP_MOBIEL, 'gap-3')}>
-        <DialogHeader>
-          <DialogTitle className="text-base">Wat wil je factureren?</DialogTitle>
-          <DialogDescription className="text-xs">
-            Offerte {offerte.nummer} · {offerte.titel}
-          </DialogDescription>
-        </DialogHeader>
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={(o) => { if (!bezig) onOpenChange(o) }}
+      className="sm:max-w-xl gap-3"
+      titleClassName="text-base"
+      descriptionClassName="text-xs"
+      title="Wat wil je factureren?"
+      description={`Offerte ${offerte.nummer} · ${offerte.titel}`}
+      footer={(
+        <>
+          <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)} disabled={bezig} className="min-h-[44px] sm:min-h-0">
+            Annuleren
+          </Button>
+          <Button
+            size="sm"
+            onClick={handleFactureren}
+            disabled={bezig || laden || (gekozen.length === 0 && verrekenRegels.length === 0)}
+            className="bg-flame text-white hover:bg-flame/90 min-h-[44px] sm:min-h-0"
+          >
+            {bezig ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Receipt className="h-4 w-4 mr-1" />}
+            {doel === 'nieuw' ? 'Factuur maken' : 'Toevoegen'}
+          </Button>
+        </>
+      )}
+    >
 
         {laden ? (
           <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
@@ -382,24 +395,8 @@ export function WatFacturerenDialog({ open, onOpenChange, offerte, project, proj
                 )}
               </div>
             )}
-
-            <div className="flex justify-end gap-2 pt-1">
-              <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)} disabled={bezig} className="min-h-[44px] sm:min-h-0">
-                Annuleren
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleFactureren}
-                disabled={bezig || laden || (gekozen.length === 0 && verrekenRegels.length === 0)}
-                className="bg-flame text-white hover:bg-flame/90 min-h-[44px] sm:min-h-0"
-              >
-                {bezig ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Receipt className="h-4 w-4 mr-1" />}
-                {doel === 'nieuw' ? 'Factuur maken' : 'Toevoegen'}
-              </Button>
-            </div>
           </div>
         )}
-      </DialogContent>
-    </Dialog>
+    </ResponsiveDialog>
   )
 }

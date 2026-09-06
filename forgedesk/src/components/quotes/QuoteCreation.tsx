@@ -94,9 +94,9 @@ import { ForgeQuotePreview } from './ForgeQuotePreview'
 import { InkoopOffertePaneel } from './InkoopOffertePaneel'
 import { OfferteUitschrijvenDialog, type UitgeschrevenPost } from './OfferteUitschrijvenDialog'
 import { OfferteCheckDialog } from './OfferteCheckDialog'
-import { OfferteVervolgDialog, SHEET_OP_MOBIEL } from './OfferteVervolgDialog'
+import { OfferteVervolgDialog } from './OfferteVervolgDialog'
 import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { ResponsiveDialog } from '@/components/ui/responsive-dialog'
 import { useFunctie, useFunctieGetal } from '@/hooks/useFunctie'
 import { getOfferteCondities } from '@/services/offerteService'
 import type { OfferteConditie } from '@/types'
@@ -2974,17 +2974,17 @@ export function QuoteCreation() {
       <TrialGuardDialog open={showTrialDialog} onOpenChange={setShowTrialDialog} />
 
       {editOfferteId && geschiedenisAan && (
-        <Dialog open={showGeschiedenis} onOpenChange={setShowGeschiedenis}>
-          <DialogContent className={SHEET_OP_MOBIEL}>
-            <DialogHeader>
-              <DialogTitle>Geschiedenis<span className="text-flame">.</span></DialogTitle>
-              <DialogDescription>Wie wat deed op offerte {offerteNummer}.</DialogDescription>
-            </DialogHeader>
-            <div className="max-h-[60vh] overflow-y-auto -mt-4">
-              <AuditLogPanel entityType="offerte" entityId={editOfferteId} maxItems={20} defaultExpanded />
-            </div>
-          </DialogContent>
-        </Dialog>
+        <ResponsiveDialog
+          open={showGeschiedenis}
+          onOpenChange={setShowGeschiedenis}
+          className="sm:max-w-md"
+          title={<>Geschiedenis<span className="text-flame">.</span></>}
+          description={`Wie wat deed op offerte ${offerteNummer}.`}
+        >
+          <div className="md:max-h-[60vh] md:overflow-y-auto md:-mt-4">
+            <AuditLogPanel entityType="offerte" entityId={editOfferteId} maxItems={20} defaultExpanded />
+          </div>
+        </ResponsiveDialog>
       )}
 
       {editOfferteId && (

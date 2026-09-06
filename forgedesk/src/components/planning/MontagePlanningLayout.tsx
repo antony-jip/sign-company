@@ -13,6 +13,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -3097,11 +3098,20 @@ export function MontagePlanningLayout() {
         </ModuleToolbar>
 
         {weergavenAan && (
-          <Dialog open={weergaveDialogOpen} onOpenChange={setWeergaveDialogOpen}>
-            <DialogContent className="max-w-sm rounded-2xl p-6">
-              <DialogHeader>
-                <DialogTitle>Weergave opslaan</DialogTitle>
-              </DialogHeader>
+          <ResponsiveDialog
+            open={weergaveDialogOpen}
+            onOpenChange={setWeergaveDialogOpen}
+            className="max-w-sm rounded-2xl p-6"
+            title="Weergave opslaan"
+            footer={(
+              <>
+                <Button variant="outline" onClick={() => setWeergaveDialogOpen(false)}>Annuleren</Button>
+                <Button onClick={() => void handleWeergaveOpslaan()} disabled={weergaveBezig || !weergaveNaam.trim()}>
+                  {weergaveBezig ? 'Opslaan...' : 'Opslaan'}
+                </Button>
+              </>
+            )}
+          >
               <div className="space-y-4 py-1">
                 <div className="space-y-1.5">
                   <Label htmlFor="weergave-naam" className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Naam</Label>
@@ -3120,14 +3130,7 @@ export function MontagePlanningLayout() {
                   Delen met het team
                 </label>
               </div>
-              <DialogFooter className="gap-2">
-                <Button variant="outline" onClick={() => setWeergaveDialogOpen(false)}>Annuleren</Button>
-                <Button onClick={() => void handleWeergaveOpslaan()} disabled={weergaveBezig || !weergaveNaam.trim()}>
-                  {weergaveBezig ? 'Opslaan...' : 'Opslaan'}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          </ResponsiveDialog>
         )}
         {/* Conflict banner */}
         {conflicts.length > 0 && (

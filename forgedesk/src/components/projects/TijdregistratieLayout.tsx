@@ -17,6 +17,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -1107,13 +1108,22 @@ export function TijdregistratieLayout() {
       </Card>
 
       {/* Add/Edit Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-[520px]">
-          <DialogHeader>
-            <DialogTitle>
-              {editingId ? "Tijdregistratie bewerken" : "Nieuwe tijdregistratie"}
-            </DialogTitle>
-          </DialogHeader>
+      <ResponsiveDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        className="sm:max-w-[520px]"
+        title={editingId ? "Tijdregistratie bewerken" : "Nieuwe tijdregistratie"}
+        footer={(
+          <>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+              Annuleren
+            </Button>
+            <Button onClick={handleSave}>
+              {editingId ? "Bijwerken" : "Opslaan"}
+            </Button>
+          </>
+        )}
+      >
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="form-project">Project</Label>
@@ -1267,16 +1277,7 @@ export function TijdregistratieLayout() {
             </div>
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              Annuleren
-            </Button>
-            <Button onClick={handleSave}>
-              {editingId ? "Bijwerken" : "Opslaan"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      </ResponsiveDialog>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteConfirmId !== null} onOpenChange={() => setDeleteConfirmId(null)}>

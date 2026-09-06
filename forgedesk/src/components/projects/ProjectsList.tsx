@@ -34,6 +34,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog'
+import { ResponsiveDialog } from '@/components/ui/responsive-dialog'
 import { MedewerkerSelector } from '@/components/shared/MedewerkerSelector'
 import { ModuleIntro } from '@/components/shared/ModuleIntro'
 import { Button } from '@/components/ui/button'
@@ -1991,18 +1992,31 @@ export function ProjectsList() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!quickTaakProjectId} onOpenChange={(open) => { if (!open) { setQuickTaakProjectId(null); setQuickTaakTitel(''); setQuickTaakToegewezen(''); setQuickTaakDeadline('') } }}>
-        <DialogContent className="sm:max-w-[420px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ListPlus className="w-4 h-4 text-petrol dark:text-[#5AABB5]" />
-              Snelle taak
-            </DialogTitle>
-            <DialogDescription>
-              {projecten.find((p) => p.id === quickTaakProjectId)?.naam}
-            </DialogDescription>
-          </DialogHeader>
+      <ResponsiveDialog
+        open={!!quickTaakProjectId}
+        onOpenChange={(open) => { if (!open) { setQuickTaakProjectId(null); setQuickTaakTitel(''); setQuickTaakToegewezen(''); setQuickTaakDeadline('') } }}
+        className="sm:max-w-[420px]"
+        titleClassName="flex items-center gap-2"
+        title={(
+          <>
+            <ListPlus className="w-4 h-4 text-petrol dark:text-[#5AABB5]" />
+            Snelle taak
+          </>
+        )}
+        description={projecten.find((p) => p.id === quickTaakProjectId)?.naam}
+        footer={(
+          <>
+            <Button type="button" variant="outline" onClick={() => { setQuickTaakProjectId(null); setQuickTaakTitel(''); setQuickTaakToegewezen(''); setQuickTaakDeadline('') }}>
+              Annuleren
+            </Button>
+            <Button type="submit" form="quick-taak-form" disabled={!quickTaakTitel.trim() || quickTaakSaving}>
+              {quickTaakSaving ? 'Opslaan...' : 'Toevoegen'}
+            </Button>
+          </>
+        )}
+      >
           <form
+            id="quick-taak-form"
             onSubmit={(e) => { e.preventDefault(); handleQuickTaakSubmit() }}
             className="space-y-3"
           >
@@ -2089,17 +2103,8 @@ export function ProjectsList() {
                 })}
               </div>
             </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => { setQuickTaakProjectId(null); setQuickTaakTitel(''); setQuickTaakToegewezen(''); setQuickTaakDeadline('') }}>
-                Annuleren
-              </Button>
-              <Button type="submit" disabled={!quickTaakTitel.trim() || quickTaakSaving}>
-                {quickTaakSaving ? 'Opslaan...' : 'Toevoegen'}
-              </Button>
-            </DialogFooter>
           </form>
-        </DialogContent>
-      </Dialog>
+      </ResponsiveDialog>
     </div>
   )
 }

@@ -2,14 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { LayoutTemplate, Loader2 } from 'lucide-react'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { ResponsiveDialog } from '@/components/ui/responsive-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -68,37 +61,40 @@ export function ProjectSjabloonDialog({ open, onOpenChange, project, userId, aan
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <LayoutTemplate className="h-5 w-5 text-petrol" />
-            Opslaan als sjabloon
-          </DialogTitle>
-          <DialogDescription>
-            Beschrijving, budget, team en {aantalTaken} taken gaan mee. Klant, datums en uren niet.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-2 py-2">
-          <Label htmlFor="sjabloon-naam">Naam van het sjabloon</Label>
-          <Input
-            id="sjabloon-naam"
-            value={naam}
-            onChange={(e) => setNaam(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void opslaan() } }}
-            placeholder="Bijv. Gevelbelettering standaard"
-            className="h-11"
-            autoFocus
-          />
-        </div>
-        <DialogFooter>
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      className="sm:max-w-md"
+      titleClassName="flex items-center gap-2"
+      title={(
+        <>
+          <LayoutTemplate className="h-5 w-5 text-petrol" />
+          Opslaan als sjabloon
+        </>
+      )}
+      description={`Beschrijving, budget, team en ${aantalTaken} taken gaan mee. Klant, datums en uren niet.`}
+      footer={(
+        <>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={bezig}>Annuleren</Button>
           <Button onClick={() => void opslaan()} disabled={bezig || !naam.trim()}>
             {bezig ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <LayoutTemplate className="h-4 w-4 mr-1.5" />}
             {bezig ? 'Opslaan...' : 'Sjabloon opslaan'}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </>
+      )}
+    >
+      <div className="space-y-2 py-2">
+        <Label htmlFor="sjabloon-naam">Naam van het sjabloon</Label>
+        <Input
+          id="sjabloon-naam"
+          value={naam}
+          onChange={(e) => setNaam(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void opslaan() } }}
+          placeholder="Bijv. Gevelbelettering standaard"
+          className="h-11"
+          autoFocus
+        />
+      </div>
+    </ResponsiveDialog>
   )
 }
