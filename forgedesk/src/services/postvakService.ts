@@ -195,6 +195,9 @@ export interface PostvakInvoer {
   smtpPort: number
   imapHost: string
   imapPort: number
+  /** Team-inbox: iedereen in de organisatie leest en beantwoordt mee. Alleen
+   *  een beheerder mag dit; de server controleert dat en niet dit veld. */
+  gedeeld?: boolean
 }
 
 async function sessieToken(): Promise<string> {
@@ -225,6 +228,7 @@ export async function slaPostvakOp(invoer: PostvakInvoer): Promise<void> {
     body: JSON.stringify({
       ...(invoer.accountId ? { account_id: invoer.accountId } : {}),
       ...(invoer.nieuw ? { nieuw: true } : {}),
+      ...(invoer.gedeeld ? { soort: 'gedeeld' } : {}),
       gmail_address: invoer.adres,
       app_password: invoer.wachtwoord || 'UNCHANGED',
       smtp_host: invoer.smtpHost || 'smtp.gmail.com',

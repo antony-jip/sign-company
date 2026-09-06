@@ -222,7 +222,9 @@ async function leesPostvakken(userId: string, kolommen: string, kolommenVoor244:
     .select(kols)
     .eq('user_id', userId)
     .order('created_at', { ascending: true })
-  const met245 = await bouw(`id, is_standaard, ${kolommen}`)
+  // soort hoort bij de 245-laag: zonder die migratie bestaat de kolom niet en
+  // valt de ladder hieronder terug op de oudere kolomlijst.
+  const met245 = await bouw(`id, is_standaard, soort, ${kolommen}`)
   if (!met245.error) return (met245.data as unknown as Record<string, unknown>[]) ?? []
   if (!isKolomFout(met245.error)) return []
   const met244 = await bouw(`id, ${kolommen}`)
@@ -289,6 +291,8 @@ function naarAntwoord(rij: Record<string, unknown>) {
     auth_type: data.auth_type || 'wachtwoord',
     has_oauth: !!data.oauth_refresh_token_enc,
     is_standaard: data.is_standaard ?? true,
+    // Zodat de UI kan tonen dat dit een team-inbox is.
+    soort: (data as { soort?: string | null }).soort === 'gedeeld' ? 'gedeeld' : 'persoonlijk',
     smtp_host: data.smtp_host || 'smtp.gmail.com',
     smtp_port: data.smtp_port || 587,
     imap_host: data.imap_host || 'imap.gmail.com',
@@ -382,6 +386,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // is "één bestaand postvak" niet te onderscheiden van "postvak toevoegen",
     // en zou toevoegen het eerste postvak overschrijven.
     const wilNieuw = req.body?.nieuw === true
+    // Een gedeeld postvak (team-inbox) hoort bij de organisatie: iedereen leest
+    // en beantwoordt mee. Dat is een besluit van een beheerder, niet van elke
+    // gebruiker, dus de rol wordt hier gecontroleerd en niet in de UI.
+    const wilGedeeld = req.body?.soort === 'gedeeld'
 
     if (!gmail_address) {
       return res.status(400).json({ error: 'Email adres is verplicht' })
@@ -392,6 +400,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // dan nog steeds van mailbox wisselen, precies zoals nu). Zijn er meer, dan
     // beslist het adres, en anders is het een nieuw postvak — blind upserten op
     // user_id zou daar het verkeerde postvak overschrijven.
+    let orgVanGebruiker: string | null = null
+    if (wilGedeeld) {
+      const { data: profiel } = await supabaseAdmin
+        .from('profiles')
+        .select('rol, organisatie_id')
+        .eq('id', userId)
+        .maybeSingle()
+      const rij = profiel as { rol?: string | null; organisatie_id?: string | null } | null
+      if (rij?.rol !== 'admin') {
+        return res.status(403).json({ error: 'Alleen een beheerder kan een gedeeld postvak koppelen.' })
+      }
+      if (!rij?.organisatie_id) {
+        return res.status(400).json({ error: 'Je account hoort nog bij geen organisatie; een gedeeld postvak kan dan niet.' })
+      }
+      orgVanGebruiker = rij.organisatie_id
+      if (!wilNieuw) {
+        return res.status(400).json({ error: 'Een gedeeld postvak koppel je als nieuw postvak.' })
+      }
+    }
+
     const bestaandeRijen = await leesPostvakken(userId, INSTELLINGEN_KOLOMMEN, INSTELLINGEN_KOLOMMEN_VOOR_244)
     const opAdres = bestaandeRijen.find(
       (r) => String(r.gmail_address || '').toLowerCase() === String(gmail_address).toLowerCase(),
@@ -519,6 +547,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       oauth_refresh_token_enc: null,
       oauth_access_token_enc: null,
       oauth_token_verloopt_op: null,
+      // Gedeeld: de organisatie leest en beantwoordt mee. `soort` en
+      // `organisatie_id` komen uit migratie 245; ontbreken ze, dan valt
+      // nieuwPostvak terug op een rij zonder die velden en is het gewoon een
+      // persoonlijk postvak. Dat is de juiste terugval: liever te weinig
+      // gedeeld dan per ongeluk te veel.
+      ...(wilGedeeld ? { soort: 'gedeeld', organisatie_id: orgVanGebruiker } : {}),
     }
     const uitkomst = wordtNieuwPostvak
       ? await nieuwPostvak(velden, userId)
@@ -532,6 +566,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // zaken, dus geen rauwe Postgres-melding op het scherm.
       if (error.code === '23505') {
         return res.status(409).json({ error: 'Een tweede postvak kan pas nadat migratie 246 gedraaid is.' })
+      }
+      // Liever een duidelijke weigering dan stilletjes een persoonlijk postvak
+      // maken waar om een gedeeld postvak gevraagd is.
+      if (wilGedeeld && isKolomFout(error)) {
+        return res.status(400).json({ error: 'Gedeelde postvakken werken pas nadat migratie 245 gedraaid is.' })
       }
       if (error.code === 'POSTVAK_ONBEKEND') {
         return res.status(409).json({ error: error.message || 'Kies eerst welk postvak je bijwerkt.' })

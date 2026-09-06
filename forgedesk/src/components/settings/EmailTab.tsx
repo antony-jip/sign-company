@@ -1340,6 +1340,11 @@ function EmailSettingsInline({
   onAnnuleer?: () => void
 }) {
   const nieuw = stand === 'nieuw'
+  const { isAdmin } = useAuth()
+  // Team-inbox: alleen te kiezen bij een nieuw postvak en alleen door een
+  // beheerder. De server controleert de rol nog een keer; deze schakelaar is
+  // er om de keuze te tonen, niet om hem te bewaken.
+  const [gedeeld, setGedeeld] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isTesting, setIsTesting] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -1398,6 +1403,7 @@ function EmailSettingsInline({
         smtpPort: teBewaren.smtp_port,
         imapHost: teBewaren.imap_host,
         imapPort: teBewaren.imap_port,
+        gedeeld: nieuw && gedeeld,
       })
 
       // Wis de cache van de vorige mailbox zodat de inbox-view alleen nog
@@ -1639,6 +1645,29 @@ function EmailSettingsInline({
               </button>
             </div>
           </div>
+
+          {/* Team-inbox. Alleen bij een nieuw postvak en alleen voor een
+              beheerder: dit zet een mailbox open voor de hele organisatie. */}
+          {nieuw && isAdmin && (
+            <div className="rounded-lg border border-border bg-muted/30 p-3">
+              <label className="flex cursor-pointer items-start gap-2.5">
+                <input
+                  type="checkbox"
+                  checked={gedeeld}
+                  onChange={(e) => setGedeeld(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 accent-petrol"
+                />
+                <span className="space-y-0.5">
+                  <span className="block text-sm font-medium">Teampostvak</span>
+                  <span className="block text-xs text-muted-foreground">
+                    Iedereen in je organisatie leest en beantwoordt deze mailbox mee, met het
+                    wachtwoord dat je hier invult. Bedoeld voor een adres als info@ of studio@.
+                    Voor een persoonlijke mailbox laat je dit uit.
+                  </span>
+                </span>
+              </label>
+            </div>
+          )}
 
           {provider === 'gmail' && (
             <div className="rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-3">
