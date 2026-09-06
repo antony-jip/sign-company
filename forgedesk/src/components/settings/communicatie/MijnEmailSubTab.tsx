@@ -35,7 +35,10 @@ export function MijnEmailSubTab() {
       ? { Icoon: AlertTriangle, kleur: 'text-red-600 dark:text-red-400', kop: 'Synchronisatie uitgezet', regel: sync.laatsteFout || 'Verbind opnieuw onder Instellingen, E-mail.' }
       : sync.status === 'fout'
         ? { Icoon: AlertTriangle, kleur: 'text-amber-600 dark:text-amber-400', kop: 'Synchronisatie hapert', regel: `${sync.laatsteFout || 'Onbekende fout'}${laatst ? ` · laatst gelukt ${laatst}` : ''}` }
-        : { Icoon: CheckCircle2, kleur: 'text-green-600 dark:text-green-400', kop: laatst ? `Gesynchroniseerd · laatst ${laatst}` : 'Gekoppeld · eerste synchronisatie loopt', regel: '' }
+        // 'onbekend' is niet hetzelfde als goed: neutraal tonen, niet groen.
+        : sync.status === 'onbekend'
+          ? { Icoon: Info, kleur: 'text-muted-foreground', kop: 'Status onbekend', regel: laatst ? `Laatst gelukt ${laatst}` : 'De gezondheid van de koppeling is nu niet op te halen.' }
+          : { Icoon: CheckCircle2, kleur: 'text-green-600 dark:text-green-400', kop: laatst ? `Gesynchroniseerd · laatst ${laatst}` : 'Gekoppeld · eerste synchronisatie loopt', regel: '' }
 
   return (
     <div className="rounded-lg border border-border bg-card p-5 space-y-4">

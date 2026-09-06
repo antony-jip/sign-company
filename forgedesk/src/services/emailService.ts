@@ -193,7 +193,7 @@ function alsLijstItem(e: Record<string, unknown>): Email {
  * (datum, id) — stabiel bij nieuwe mail bovenin, geen offset-drift.
  * De data komt uit de eigen DB; de historie-backfill vult die aan.
  */
-export async function getEmailsPage(map: string, cursor: EmailPageCursor | null, limit = 100, accountId?: string | null): Promise<Email[]> {
+export async function getEmailsPage(map: string, cursor: EmailPageCursor | null, limit = 100, accountId?: string | null, metPostvakKolom = false): Promise<Email[]> {
   if (!isSupabaseConfigured() || !supabase) return []
   const client = supabase
   const uid = await eigenUserId()
@@ -259,7 +259,31 @@ export async function getEmailsPage(map: string, cursor: EmailPageCursor | null,
     .order('id', { ascending: false })
     .limit(limit)
   if (error) throw error
-  return ((data || []) as Array<Record<string, unknown>>).map(alsLijstItem)
+  const rijen = ((data || []) as Array<Record<string, unknown>>).map(alsLijstItem)
+  return metPostvakKolom ? await metAccountKolom(client, rijen) : rijen
+}
+
+/**
+ * emails_list_view kent `account_id` niet (migratie 245 voegt de kolom aan
+ * `emails` toe en laat de view ongemoeid), dus in de stand "Alle postvakken"
+ * zou een regel nooit weten uit welk postvak hij komt. Eén lichte query erbij
+ * vult dat aan. Alleen bij meer dan één postvak, anders is het een extra ronde
+ * voor niets, en defensief: zonder 245 bestaat de kolom nog niet en gaat het
+ * veld gewoon weer weg.
+ */
+async function metAccountKolom(client: NonNullable<typeof supabase>, rijen: Email[]): Promise<Email[]> {
+  if (rijen.length === 0 || accountKolomBekend === false) return rijen
+  const { data, error } = await client
+    .from('emails')
+    .select('id, account_id')
+    .in('id', rijen.map((r) => r.id))
+  if (error) {
+    if (isOnbekendeKolom(error)) accountKolomBekend = false
+    return rijen
+  }
+  accountKolomBekend = true
+  const perId = new Map(((data || []) as Array<{ id: string; account_id: string | null }>).map((r) => [r.id, r.account_id]))
+  return rijen.map((r) => (perId.has(r.id) ? { ...r, account_id: perId.get(r.id) ?? null } : r))
 }
 
 /** Alle berichten van één gesprek als lijst-items, oudste eerst. Concepten en prullenbak blijven eruit, net als in email_threads_view. */
@@ -437,9 +461,21 @@ type BodyRij = { email_id: string; body_html: string | null; body_text: string |
  * gedraaid is bestaat de tabel niet (42P01 of PGRST205) en staat de body nog
  * in emails.body_html. Zonder terugval was er dan geen enkele bron meer en
  * bleef elke mail leeg, want emails.body_html wordt nergens anders gelezen.
- * De uitkomst wordt onthouden zodat we niet elke ronde op een fout wachten.
+ * De uitkomst wordt onthouden zodat we niet elke ronde op een fout wachten,
+ * maar niet voorgoed: draait de migratie terwijl er een tab openstaat, dan
+ * bleef die tab uit `emails` lezen terwijl 244 body_html juist op NULL zet, en
+ * kreeg elke mail een lege body. Na de wachttijd probeert hij het opnieuw.
  */
-let bodiesTabelOntbreekt = false
+let bodiesTabelOntbreektTot = 0
+const TABEL_ONTBREEKT_WACHTTIJD_MS = 5 * 60 * 1000
+
+function bodiesTabelOntbreekt(): boolean {
+  return Date.now() < bodiesTabelOntbreektTot
+}
+
+function markeerBodiesTabelOntbreekt(): void {
+  bodiesTabelOntbreektTot = Date.now() + TABEL_ONTBREEKT_WACHTTIJD_MS
+}
 
 function tabelOntbreekt(fout: { code?: string; message?: string } | null | undefined): boolean {
   if (!fout) return false
@@ -472,13 +508,13 @@ export async function getEmailBodiesUitTabel(ids: string[]): Promise<EmailBody[]
   const blokken: string[][] = []
   for (let i = 0; i < ids.length; i += 100) blokken.push(ids.slice(i, i + 100))
   const resultaten = await Promise.all(blokken.map(async (blok) => {
-    if (bodiesTabelOntbreekt) return await bodiesUitEmailsRijen(blok)
+    if (bodiesTabelOntbreekt()) return await bodiesUitEmailsRijen(blok)
     const { data, error } = await client
       .from('email_bodies')
       .select('email_id, body_html, body_text, quoted_html')
       .in('email_id', blok)
     if (tabelOntbreekt(error)) {
-      bodiesTabelOntbreekt = true
+      markeerBodiesTabelOntbreekt()
       return await bodiesUitEmailsRijen(blok)
     }
     if (error) return []
@@ -497,7 +533,7 @@ export async function getEmailBody(id: string): Promise<{ body_html: string | nu
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const [bodyQ, metaQ] = await Promise.all([
-      bodiesTabelOntbreekt
+      bodiesTabelOntbreekt()
         ? Promise.resolve({ data: null, error: null } as { data: { body_html: string | null; body_text: string | null } | null; error: { code?: string; message?: string } | null })
         : supabase.from('email_bodies').select('body_html, body_text').eq('email_id', id).maybeSingle(),
       supabase.from('emails').select('body_text, inhoud, attachment_meta').eq('id', id).maybeSingle(),
@@ -506,8 +542,8 @@ export async function getEmailBody(id: string): Promise<{ body_html: string | nu
     if (!metaQ.data) return null
     let bodyHtml = bodyQ.data?.body_html ?? null
     let bodyTekst = bodyQ.data?.body_text ?? null
-    if (bodiesTabelOntbreekt || tabelOntbreekt(bodyQ.error)) {
-      bodiesTabelOntbreekt = true
+    if (bodiesTabelOntbreekt() || tabelOntbreekt(bodyQ.error)) {
+      markeerBodiesTabelOntbreekt()
       const terugval = (await bodiesUitEmailsRijen([id]))[0]
       bodyHtml = terugval?.body_html ?? null
       bodyTekst = terugval?.body_text ?? bodyTekst
@@ -545,14 +581,14 @@ export async function getEmailBodies(
   const resultaten = await Promise.all(
     blokken.map(async (blok) => {
       const [bodiesQ, metaQ] = await Promise.all([
-        bodiesTabelOntbreekt
+        bodiesTabelOntbreekt()
           ? Promise.resolve({ data: null, error: null } as { data: Array<{ email_id: string; body_html: string | null; body_text: string | null }> | null; error: { code?: string; message?: string } | null })
           : client.from('email_bodies').select('email_id, body_html, body_text').in('email_id', blok).not('body_html', 'is', null),
         client.from('emails').select('id, attachment_meta').in('id', blok),
       ])
       let rijen = (bodiesQ.data || []) as Array<{ email_id: string; body_html: string | null; body_text: string | null }>
-      if (bodiesTabelOntbreekt || tabelOntbreekt(bodiesQ.error)) {
-        bodiesTabelOntbreekt = true
+      if (bodiesTabelOntbreekt() || tabelOntbreekt(bodiesQ.error)) {
+        markeerBodiesTabelOntbreekt()
         rijen = (await bodiesUitEmailsRijen(blok)).filter((r) => r.body_html)
       } else if (bodiesQ.error) {
         return []

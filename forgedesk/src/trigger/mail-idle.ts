@@ -138,13 +138,16 @@ function ontsleutel(waarde: string): string {
 }
 
 /**
- * Kolommen uit migratie 245 (account_id, naam, soort) mogen ontbreken: de
- * migratie kan nog niet gedraaid zijn. Bij een onbekende kolom valt de select
- * terug op de kolommen die er sinds 244 zeker zijn.
+ * Kolommen uit een migratie die nog niet gedraaid hoeft te zijn mogen
+ * ontbreken. Bij een onbekende kolom valt de select een stap terug: eerst
+ * zonder is_verified, dan zonder `id` (migratie 245) en tenslotte ook zonder
+ * `auth_type` (migratie 244). Zonder die laatste stap vond de IDLE-worker op
+ * een database van vóór 244 stil nul postvakken.
  */
 async function haalPostvakken(supabase: SupabaseClient, userId?: string): Promise<Postvak[]> {
   const basis = 'user_id, gmail_address, imap_host, imap_port, auth_type, encrypted_app_password'
-  for (const kolommen of [`id, ${basis}, is_verified`, `id, ${basis}`, basis]) {
+  const zonderAuthType = 'user_id, gmail_address, imap_host, imap_port, encrypted_app_password'
+  for (const kolommen of [`id, ${basis}, is_verified`, `id, ${basis}`, zonderAuthType]) {
     let vraag = supabase.from('user_email_settings').select(kolommen)
     if (userId) vraag = vraag.eq('user_id', userId)
     const { data, error } = await vraag

@@ -159,9 +159,13 @@ function MailboxGezondheidKaart({ settings, isConnected }: { settings: EmailSett
       ? { kleur: 'rood' as const, kop: 'Synchronisatie uitgezet', regel: sync.laatsteFout || 'De mailserver weigerde te vaak. Controleer je wachtwoord en verbind opnieuw.' }
       : sync.status === 'fout'
         ? { kleur: 'oranje' as const, kop: 'Synchronisatie hapert', regel: `${sync.laatsteFout || 'Onbekende fout'}${laatst ? ` · laatst gelukt ${laatst}` : ''}` }
-        : laatst
-          ? { kleur: 'groen' as const, kop: `Gesynchroniseerd · laatst ${laatst}`, regel: 'Nieuwe mail komt binnen zonder dat je iets hoeft te doen.' }
-          : { kleur: 'neutraal' as const, kop: 'Gekoppeld · eerste synchronisatie loopt', regel: 'De eerste ronde haalt je inbox op. Dat duurt een paar minuten.' }
+        // 'onbekend' betekent dat de gezondheid niet op te halen was. Groen
+        // tonen zou "alles goed" beweren zonder dat iemand dat weet.
+        : sync.status === 'onbekend'
+          ? { kleur: 'neutraal' as const, kop: 'Status onbekend', regel: `De gezondheid van de koppeling is nu niet op te halen${laatst ? ` · laatst gelukt ${laatst}` : ''}.` }
+          : laatst
+            ? { kleur: 'groen' as const, kop: `Gesynchroniseerd · laatst ${laatst}`, regel: 'Nieuwe mail komt binnen zonder dat je iets hoeft te doen.' }
+            : { kleur: 'neutraal' as const, kop: 'Gekoppeld · eerste synchronisatie loopt', regel: 'De eerste ronde haalt je inbox op. Dat duurt een paar minuten.' }
 
   const stijl = {
     groen: 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300',

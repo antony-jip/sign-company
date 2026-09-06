@@ -191,6 +191,15 @@ class MailStore {
   }
 
   /** Het id waarop de lijst-query filtert; 'alle' of een onbekend postvak levert geen filter. */
+  /**
+   * "Alle postvakken" met meer dan één postvak: dan moet de lijstquery
+   * `account_id` erbij halen, want zonder postvakfilter komt dat veld niet uit
+   * emails_list_view. Met één postvak is dat een extra ronde voor niets.
+   */
+  private wilPostvakKolom(): boolean {
+    return this.postvakken.length > 1 && this.actiefAccountId() === null
+  }
+
   actiefAccountId(): string | null {
     if (this.actiefPostvak === 'alle') return null
     return this.postvakken.some((p) => p.id === this.actiefPostvak) ? this.actiefPostvak : null
@@ -419,7 +428,7 @@ class MailStore {
     if (!stand.geladen) await this.laadUitCache(map)
 
     try {
-      const pagina = await getEmailsPage(map, null, PAGINA_GROOTTE, this.actiefAccountId()) as unknown as EmailLijstItem[]
+      const pagina = await getEmailsPage(map, null, PAGINA_GROOTTE, this.actiefAccountId(), this.wilPostvakKolom()) as unknown as EmailLijstItem[]
       const nieuw = pagina.map((i) => this.neemOp(i))
       // Een mail met een lopende undo-actie staat op de server nog in deze map;
       // die mag niet zichtbaar terugspringen in de lijst.
@@ -462,7 +471,7 @@ class MailStore {
     this.zetStand(map, { laden: true })
     this.meld()
     try {
-      const pagina = await getEmailsPage(map, stand.cursor, PAGINA_GROOTTE, this.actiefAccountId()) as unknown as EmailLijstItem[]
+      const pagina = await getEmailsPage(map, stand.cursor, PAGINA_GROOTTE, this.actiefAccountId(), this.wilPostvakKolom()) as unknown as EmailLijstItem[]
       const huidig = this.stand(map)
       const bekend = new Set(huidig.ids)
       const toegevoegd: EmailLijstItem[] = []
@@ -688,6 +697,11 @@ class MailStore {
   voegToe(item: EmailLijstItem): void {
     const vorige = this.items.get(item.id)
     if (vorige) { this.patchVanServer(item.id, item); return }
+    // Kennen we hem niet meer maar wacht er wel een actie op, dan staat hij in
+    // een lopende definitieve verwijdering. Een realtime-UPDATE die daar
+    // doorheen komt mag hem niet zichtbaar terugzetten; de undo doet dat zelf,
+    // die haalt de id eerst uit `wachtend`.
+    if (this.wachtend.has(item.id)) return
     const opgenomen = this.neemOp(item)
     const geraakt = this.plaats(opgenomen)
     if (opgenomen.thread_id) {
@@ -788,6 +802,13 @@ class MailStore {
   }
 
   async label(ids: string[], label: string, aan: boolean): Promise<void> {
+    // Labelen heeft zelf geen undo-buffer, dus een wachtende archivering of
+    // verwijdering moet er eerst uit: die schrijft anders vijf seconden later
+    // zijn eigen `labels` terug, over het net gezette label heen. Doorschrijven
+    // en niet annuleren, want in tegenstelling tot herstel() is dit niet de
+    // tegenovergestelde actie: annuleren zou de mail in de UI gearchiveerd
+    // laten staan terwijl de server hem in de inbox houdt.
+    this.spoelWachtendDoor(ids)
     const perId = new Map<string, string[]>()
     for (const id of ids) {
       const item = this.items.get(id)
@@ -920,6 +941,20 @@ class MailStore {
    * de buffer van het archiveren vijf seconden later alsnog 'archief' weg,
    * over een herstel naar de inbox heen.
    */
+  /**
+   * Een actie zonder eigen undo-buffer laat de wachtende buffer eerst
+   * doorschrijven, zoals `buffer()` dat doet als er een tweede actie op
+   * dezelfde mail komt. Zonder dat overschrijft de late flush de wijziging.
+   */
+  private spoelWachtendDoor(ids: string[]): void {
+    const rijen = new Set<Wachtend>()
+    for (const id of ids) {
+      const rij = this.wachtend.get(id)
+      if (rij) rijen.add(rij)
+    }
+    for (const rij of rijen) { clearTimeout(rij.timer); rij.flush() }
+  }
+
   annuleerWachtend(ids: string[]): void {
     const perRij = new Map<Wachtend, string[]>()
     for (const id of ids) {

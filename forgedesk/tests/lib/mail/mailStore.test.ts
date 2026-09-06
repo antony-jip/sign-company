@@ -187,7 +187,7 @@ describe('mailStore: cursor-paginering', () => {
     await mailStore.laadMeer('inbox')
 
     const laatste = eerste[eerste.length - 1]
-    expect(mocks.getEmailsPage).toHaveBeenLastCalledWith('inbox', { datum: laatste.datum, id: laatste.id }, PAGINA_GROOTTE, null)
+    expect(mocks.getEmailsPage).toHaveBeenLastCalledWith('inbox', { datum: laatste.datum, id: laatste.id }, PAGINA_GROOTTE, null, false)
     const ids = mailStore.lijstItems('inbox').map((i) => i.id)
     expect(ids).toHaveLength(PAGINA_GROOTTE + 5)
     expect(new Set(ids).size).toBe(ids.length)
