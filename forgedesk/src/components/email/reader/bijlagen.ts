@@ -132,15 +132,15 @@ function naarOpgehaald(result: EmailAttachmentDownload, terugvalNaam: string, te
   throw new Error('Geen content of storage_url ontvangen')
 }
 
-export async function haalBijlage(uid: number, map: string, bestandsnaam: string, contentType?: string): Promise<OpgehaaldeBijlage> {
-  const result = await downloadEmailAttachment(uid, map, bestandsnaam)
+export async function haalBijlage(uid: number, map: string, bestandsnaam: string, contentType?: string, accountId?: string): Promise<OpgehaaldeBijlage> {
+  const result = await downloadEmailAttachment(uid, map, bestandsnaam, accountId)
   return naarOpgehaald(result, bestandsnaam, contentType)
 }
 
 /** Alle bijlagen in één serverronde; geeft alleen terug wat gevraagd is. */
-export async function haalAlleBijlagen(uid: number, map: string, gevraagd: EmailAttachment[]): Promise<OpgehaaldeBijlage[]> {
+export async function haalAlleBijlagen(uid: number, map: string, gevraagd: EmailAttachment[], accountId?: string): Promise<OpgehaaldeBijlage[]> {
   const namen = new Map(gevraagd.map((a) => [a.filename, a]))
-  const results = await downloadAllEmailAttachments(uid, map)
+  const results = await downloadAllEmailAttachments(uid, map, accountId)
   const uit: OpgehaaldeBijlage[] = []
   for (const r of results) {
     const meta = namen.get(r.filename)
@@ -173,9 +173,9 @@ async function alsBlob(bestand: OpgehaaldeBijlage): Promise<Blob> {
 export async function bewaarBijlageInProject(
   bijlage: BijlageMetBestemming,
   keuze: BijlageProjectKeuze,
-  bron: { uid: number; map: string; userId: string },
+  bron: { uid: number; map: string; userId: string; accountId?: string | null },
 ): Promise<'foto' | 'inkoop' | 'document'> {
-  const opgehaald = await haalBijlage(bron.uid, bron.map, bijlage.filename, bijlage.contentType)
+  const opgehaald = await haalBijlage(bron.uid, bron.map, bijlage.filename, bijlage.contentType, bron.accountId || undefined)
   try {
     const blob = await alsBlob(opgehaald)
     const naam = opgehaald.filename || bijlage.filename

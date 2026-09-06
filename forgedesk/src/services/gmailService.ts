@@ -43,18 +43,21 @@ export async function authenticateGmail(): Promise<boolean> {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session?.user?.id) return false
 
+  // Geen .single(): met een tweede postvak staan er twee rijen en dan gaf die
+  // PGRST116, waarna de app "nog geen mailbox gekoppeld" toonde terwijl er
+  // twee gekoppeld waren. De vraag is alleen of er er minstens één is.
   const { data, error } = await supabase
     .from('user_email_settings')
     .select('id')
     .eq('user_id', session.user.id)
-    .single()
+    .limit(1)
 
   if (error) {
     console.error('authenticateGmail: email settings ophalen mislukt:', error.message)
     return false
   }
 
-  return !!data
+  return (data?.length ?? 0) > 0
 }
 
 // ============ EMAIL OPERATIONS ============
@@ -102,16 +105,23 @@ async function enqueueOutbox(to: string, subject: string, body: string, options?
 
     // Dedup: nooit twee outbox-rijen voor dezelfde mail (dubbele clicks,
     // races, herhaalde fouten op rij).
-    const { data: bestaand } = await supabase
-      .from('ingeplande_berichten')
-      .select('id')
-      .eq('user_id', session.user.id)
-      .eq('ontvanger', to)
-      .eq('onderwerp', subject)
-      .eq('bron', 'outbox')
-      .in('status', ['wachtend', 'verwerken'])
-      .limit(1)
-    if (bestaand && bestaand.length > 0) return true
+    const dedupe = (metAccount: boolean) => {
+      const basis = supabase!
+        .from('ingeplande_berichten')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .eq('ontvanger', to)
+        .eq('onderwerp', subject)
+        .eq('bron', 'outbox')
+        .in('status', ['wachtend', 'verwerken'])
+      return (metAccount ? basis.eq('account_id', options!.account_id as string) : basis).limit(1)
+    }
+    // Ook op postvak: dezelfde mail vanuit een ánder postvak is geen duplicaat.
+    // Zonder dit filter kreeg de gebruiker "staat in de outbox" te zien terwijl
+    // de mail vanuit het verkeerde postvak zou vertrekken.
+    let dubbel = options?.account_id ? await dedupe(true) : await dedupe(false)
+    if (options?.account_id && isOnbekendeKolomFout(dubbel.error)) dubbel = await dedupe(false)
+    if (dubbel.data && dubbel.data.length > 0) return true
 
     const rij: Record<string, unknown> = {
       user_id: session.user.id,
@@ -506,6 +516,7 @@ export async function downloadEmailAttachment(
   uid: number,
   folder: string,
   filename: string,
+  accountId?: string,
 ): Promise<EmailAttachmentDownload> {
   const token = await getAuthToken()
 
@@ -515,7 +526,7 @@ export async function downloadEmailAttachment(
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`,
     },
-    body: JSON.stringify({ uid, folder, filename }),
+    body: JSON.stringify({ uid, folder, filename, account_id: accountId }),
   })
 
   if (!response.ok) {
@@ -529,6 +540,7 @@ export async function downloadEmailAttachment(
 export async function downloadAllEmailAttachments(
   uid: number,
   folder: string,
+  accountId?: string,
 ): Promise<EmailAttachmentDownload[]> {
   const token = await getAuthToken()
 
@@ -538,7 +550,7 @@ export async function downloadAllEmailAttachments(
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`,
     },
-    body: JSON.stringify({ uid, folder, all: true }),
+    body: JSON.stringify({ uid, folder, all: true, account_id: accountId }),
   })
 
   if (!response.ok) {

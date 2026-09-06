@@ -43,7 +43,7 @@ function haalGecached(bericht: EmailLijstItem, att: EmailAttachment): Promise<Op
   if (bezig) return bezig
   const uid = bijlageUid(bericht)
   if (!uid) return Promise.reject(new Error('Kan deze bijlage niet ophalen · geen geldig email-id'))
-  const belofte = haalBijlage(uid, imapMapVoor(bericht), att.filename, att.contentType)
+  const belofte = haalBijlage(uid, imapMapVoor(bericht), att.filename, att.contentType, bericht.account_id || undefined)
     .then((b) => { cacheVoor(bericht.id).set(att.filename, b); return b })
     .finally(() => lopend.delete(sleutel))
   lopend.set(sleutel, belofte)
@@ -77,7 +77,7 @@ export function Bijlagen({ bericht, compact }: BijlagenProps) {
     const uid = bijlageUid(bericht)
     if (!uid) return
     let actueel = true
-    haalAlleBijlagen(uid, imapMapVoor(bericht), ontbrekend)
+    haalAlleBijlagen(uid, imapMapVoor(bericht), ontbrekend, bericht.account_id || undefined)
       .then((bestanden) => {
         const m = cacheVoor(bericht.id)
         for (const b of bestanden) if (!m.has(b.filename)) m.set(b.filename, b)
@@ -118,7 +118,7 @@ export function Bijlagen({ bericht, compact }: BijlagenProps) {
     zetAllesBezig(true)
     let gelukt = 0
     try {
-      const bestanden = await haalAlleBijlagen(uid, imapMapVoor(bericht), lijst)
+      const bestanden = await haalAlleBijlagen(uid, imapMapVoor(bericht), lijst, bericht.account_id || undefined)
       const m = cacheVoor(bericht.id)
       for (const b of bestanden) {
         if (!m.has(b.filename)) m.set(b.filename, b)
@@ -153,7 +153,7 @@ export function Bijlagen({ bericht, compact }: BijlagenProps) {
     for (const [index, bijlage] of keuze.bestanden.entries()) {
       zetKoppelVoortgang(totaal > 1 ? `${index + 1} van ${totaal}` : null)
       try {
-        await bewaarBijlageInProject(bijlage, keuze, { uid, map: imapMapVoor(bericht), userId: user.id })
+        await bewaarBijlageInProject(bijlage, keuze, { uid, map: imapMapVoor(bericht), userId: user.id, accountId: bericht.account_id })
         gelukt.push(bijlage.filename)
       } catch (e) {
         logger.error('Bijlage aan project koppelen mislukt:', e)

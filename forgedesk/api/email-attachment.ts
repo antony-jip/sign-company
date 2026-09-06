@@ -83,28 +83,51 @@ function decryptPassword(encrypted: string): string {
 }
 
 interface EmailCredentials {
+  account_id: string | null
   gmail_address: string
   app_password: string
   imap_host: string
   imap_port: number
 }
 
-async function getEmailCredentials(userId: string): Promise<EmailCredentials> {
-  const { data, error } = await supabaseAdmin
+/** 42703 bij een select, PGRST204 als de kolom in een lading staat. */
+function isKolomFout(fout: { code?: string; message?: string } | null): boolean {
+  if (!fout) return false
+  return fout.code === '42703' || fout.code === 'PGRST204'
+    || /column .* does not exist|could not find the .* column/i.test(fout.message || '')
+}
+
+/**
+ * Geen .single(): met een tweede postvak zijn dat twee rijen, en dan waren
+ * bijlagen voor iedereen met twee postvakken dood. Volgorde: het meegestuurde
+ * postvak, anders het standaardpostvak, anders de oudste rij. is_standaard komt
+ * uit migratie 245, dus met terugval op de kolommen van daarvoor.
+ */
+async function getEmailCredentials(userId: string, accountId?: string | null): Promise<EmailCredentials> {
+  const KOLOMMEN = 'id, gmail_address, encrypted_app_password, imap_host, imap_port'
+  const haal = (kolommen: string) => supabaseAdmin
     .from('user_email_settings')
-    .select('gmail_address, encrypted_app_password, imap_host, imap_port')
+    .select(kolommen)
     .eq('user_id', userId)
-    .single()
+    .order('created_at', { ascending: true })
+  let uitkomst = await haal(`${KOLOMMEN}, is_standaard`)
+  if (isKolomFout(uitkomst.error)) uitkomst = await haal(KOLOMMEN)
+  const { data: rijen, error } = uitkomst
+  const lijst = (rijen || []) as unknown as Array<Record<string, unknown>>
+  const data = (accountId ? lijst.find((r) => r.id === accountId) : null)
+    ?? lijst.find((r) => r.is_standaard)
+    ?? lijst[0]
 
   if (error || !data?.gmail_address || !data?.encrypted_app_password) {
     throw new Error('Geen email instellingen gevonden')
   }
 
   return {
-    gmail_address: data.gmail_address,
-    app_password: decryptPassword(data.encrypted_app_password),
-    imap_host: data.imap_host || 'imap.gmail.com',
-    imap_port: data.imap_port || 993,
+    account_id: (data.id as string) ?? null,
+    gmail_address: data.gmail_address as string,
+    app_password: decryptPassword(data.encrypted_app_password as string),
+    imap_host: (data.imap_host as string) || 'imap.gmail.com',
+    imap_port: (data.imap_port as number) || 993,
   }
 }
 
@@ -280,11 +303,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   let client: ImapFlow | null = null
 
   try {
-    const { uid, folder = 'INBOX', filename, all } = req.body as {
+    const { uid, folder = 'INBOX', filename, all, account_id } = req.body as {
       uid?: number | string
       folder?: string
       filename?: string
       all?: boolean
+      account_id?: string
     }
     if (!uid || (!all && !filename)) {
       return res.status(400).json({ error: 'uid en filename (of all=true) zijn verplicht' })
@@ -297,15 +321,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // `map` en niet op `imap_folder`: die laatste bevat de server-specifieke
     // naam ('[Gmail]/Verzonden berichten'), die we hier nog niet kennen.
     const mapValue = folder.toUpperCase() === 'INBOX' ? 'inbox' : folder.toLowerCase()
-    const { data: emailRow } = await supabaseAdmin
-      .from('emails')
-      .select('id')
-      .eq('user_id', user_id)
-      .eq('uid', Number(uid))
-      .eq('map', mapValue)
-      .limit(1)
-      .maybeSingle()
-    const email_uuid = emailRow?.id || null
+    // Ook op postvak: uid 1234 bestaat in élke mailbox, dus zonder dit filter
+    // kan de bijlage aan de mail van het verkeerde postvak gehangen worden.
+    const zoekRij = (metAccount: boolean) => {
+      const basis = supabaseAdmin
+        .from('emails')
+        .select('id')
+        .eq('user_id', user_id)
+        .eq('uid', Number(uid))
+        .eq('map', mapValue)
+      return (metAccount ? basis.eq('account_id', account_id as string) : basis).limit(1).maybeSingle()
+    }
+    let rijUitkomst = account_id ? await zoekRij(true) : await zoekRij(false)
+    if (account_id && isKolomFout(rijUitkomst.error)) rijUitkomst = await zoekRij(false)
+    const email_uuid = rijUitkomst.data?.id || null
 
     // Cache-shortcut: single-filename via signed URL als attachment in cache zit.
     if (email_uuid && filename && !all) {
@@ -332,7 +361,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // IMAP-fallback: bestaande pad + cache-write voor volgende keer.
-    const creds = await getEmailCredentials(user_id)
+    const creds = await getEmailCredentials(user_id, account_id ?? null)
 
     client = new ImapFlow({
       host: creds.imap_host,
