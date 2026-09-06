@@ -734,6 +734,10 @@ async function meldToegangIngetrokken(userId: string, accountId?: string | null)
 // send-email, mail-oauth-token en cron-verzend-geplande-berichten.
 interface CredentialRij {
   id?: string | null
+  user_id?: string | null
+  /** 'persoonlijk' of 'gedeeld' (migratie 245). Ontbreekt de kolom, dan persoonlijk. */
+  soort?: string | null
+  organisatie_id?: string | null
   gmail_address: string | null
   encrypted_app_password: string | null
   smtp_host: string | null
@@ -746,8 +750,8 @@ interface CredentialRij {
   oauth_token_verloopt_op: string | null
 }
 
-const CREDENTIAL_KOLOMMEN_VOOR_244 = 'id, gmail_address, encrypted_app_password, smtp_host, smtp_port, imap_host, imap_port'
-const CREDENTIAL_KOLOMMEN = `${CREDENTIAL_KOLOMMEN_VOOR_244}, auth_type, oauth_refresh_token_enc, oauth_access_token_enc, oauth_token_verloopt_op`
+const CREDENTIAL_KOLOMMEN_VOOR_244 = 'id, user_id, gmail_address, encrypted_app_password, smtp_host, smtp_port, imap_host, imap_port'
+const CREDENTIAL_KOLOMMEN = `${CREDENTIAL_KOLOMMEN_VOOR_244}, auth_type, oauth_refresh_token_enc, oauth_access_token_enc, oauth_token_verloopt_op, soort, organisatie_id`
 
 function isKolomFout(fout: { code?: string; message?: string } | null): boolean {
   if (!fout) return false
@@ -773,11 +777,36 @@ async function leesMetAccount<T extends { error: { code?: string; message?: stri
   return await bouw(false)
 }
 
+// ── GEDEELD-POSTVAK-TOEGANG BEGIN ─────────────────────────────────────────
+// Een gedeeld postvak (migratie 245, `soort = 'gedeeld'`) hoort bij de
+// organisatie en niet bij één persoon. Een collega mag er dus bij, en dat kan
+// niet met een blind filter op user_id: dan is een gedeeld postvak alleen te
+// gebruiken door degene die het gekoppeld heeft.
+//
+// Daarom zoeken we bij een expliciet postvak op id en beoordelen we de toegang
+// daarna. De regel is streng: je eigen rij mag altijd, die van een ander alleen
+// als hij gedeeld is én bij jouw organisatie hoort. Ontbreekt `soort` (database
+// zonder 245), dan is er geen gedeeld postvak en blijft het antwoord nee.
+async function magBijPostvak(
+  rij: { user_id?: unknown; soort?: unknown; organisatie_id?: unknown },
+  userId: string,
+): Promise<boolean> {
+  if (rij.user_id === userId) return true
+  if (rij.soort !== 'gedeeld' || !rij.organisatie_id) return false
+  const { data } = await supabaseAdmin.from('profiles').select('organisatie_id').eq('id', userId).maybeSingle()
+  const eigenOrg = (data as { organisatie_id?: string | null } | null)?.organisatie_id
+  return !!eigenOrg && eigenOrg === rij.organisatie_id
+}
+// ── GEDEELD-POSTVAK-TOEGANG EINDE ─────────────────────────────────────────
+
 async function leesCredentialRij(userId: string, accountId?: string | null): Promise<CredentialRij | null> {
   async function haalRij(keuze: 'account' | 'standaard' | 'enige') {
     const bouw = (kolommen: string) => {
-      let vraag = supabaseAdmin.from('user_email_settings').select(kolommen).eq('user_id', userId)
-      if (keuze === 'account') vraag = vraag.eq('id', accountId as string)
+      // Bij een expliciet postvak zoeken we op id, niet op user_id: een gedeeld
+      // postvak staat op naam van een collega. magBijPostvak beslist daarna.
+      let vraag = keuze === 'account'
+        ? supabaseAdmin.from('user_email_settings').select(kolommen).eq('id', accountId as string)
+        : supabaseAdmin.from('user_email_settings').select(kolommen).eq('user_id', userId)
       if (keuze === 'standaard') vraag = vraag.eq('is_standaard', true)
       return vraag.maybeSingle()
     }
@@ -796,6 +825,9 @@ async function leesCredentialRij(userId: string, accountId?: string | null): Pro
   if (accountId) {
     const uitkomst = await haalRij('account')
     if (uitkomst.fout || !uitkomst.rij) {
+      throw new Error('Dit postvak bestaat niet of hoort niet bij jou. Kies een ander postvak onder Instellingen > E-mail.')
+    }
+    if (!(await magBijPostvak(uitkomst.rij as unknown as Record<string, unknown>, userId))) {
       throw new Error('Dit postvak bestaat niet of hoort niet bij jou. Kies een ander postvak onder Instellingen > E-mail.')
     }
     return uitkomst.rij

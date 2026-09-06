@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback, useImperativeHandle, forwardRef } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import {
@@ -45,7 +45,18 @@ const ACTIONS: { id: RewriteAction; label: string; icon: React.ElementType }[] =
   { id: 'vertaal-nl', label: 'Naar Nederlands', icon: Languages },
 ]
 
-export function AIContentEditableToolbar({ editorRef, onContentChange, disabled, skipTone }: AIContentEditableToolbarProps) {
+/** Wat een knop buiten deze balk ermee kan doen. */
+export interface AIHerschrijfHandle {
+  /**
+   * Open de acties. Staat er iets geselecteerd, dan gaat het daarover; anders
+   * over het hele bericht. Zonder dit kon je de AI alleen bereiken door precies
+   * genoeg tekst te selecteren, en dan wist niemand dat hij bestond.
+   */
+  openen: () => void
+}
+
+export const AIContentEditableToolbar = forwardRef<AIHerschrijfHandle, AIContentEditableToolbarProps>(
+function AIContentEditableToolbar({ editorRef, onContentChange, disabled, skipTone }, buitenRef) {
   const { settings } = useAppSettings()
   const heeftSchrijfstijl = !!(settings.ai_tone_of_voice && settings.ai_tone_of_voice.trim())
   const toneActive = heeftSchrijfstijl && !skipTone
@@ -81,6 +92,45 @@ export function AIContentEditableToolbar({ editorRef, onContentChange, disabled,
     setSavedRange(null)
   }, [])
 
+  useImperativeHandle(buitenRef, () => ({
+    openen: () => {
+      const editor = editorRef.current
+      if (!editor || disabled) return
+      const selectie = window.getSelection()
+      const heeftEigenSelectie = !!selectie
+        && selectie.rangeCount > 0
+        && editor.contains(selectie.getRangeAt(0).commonAncestorContainer)
+        && selectie.toString().trim().length >= 3
+
+      let bereik: Range
+      let tekst: string
+      if (heeftEigenSelectie) {
+        bereik = selectie!.getRangeAt(0).cloneRange()
+        tekst = selectie!.toString().trim()
+      } else {
+        // Niets geselecteerd: dan gaat het over het hele bericht. Dat is wat
+        // je bedoelt als je op "Herschrijven" drukt zonder eerst te slepen.
+        bereik = document.createRange()
+        bereik.selectNodeContents(editor)
+        tekst = (editor.textContent || '').trim()
+      }
+      if (tekst.length < 3) {
+        toast.error('Schrijf eerst wat tekst om te laten herschrijven.')
+        return
+      }
+      clearHideTimeout()
+      setSelectedText(tekst)
+      setSavedRange(bereik)
+      const rect = bereik.getBoundingClientRect()
+      setToolbarPos({
+        top: rect.top - 8,
+        left: rect.left + rect.width / 2,
+      })
+      setShowToolbar(true)
+      setShowActions(true)
+    },
+  }), [editorRef, disabled, clearHideTimeout])
+
   // Detect text selection in the contentEditable
   useEffect(() => {
     const editor = editorRef.current
@@ -111,8 +161,11 @@ export function AIContentEditableToolbar({ editorRef, onContentChange, disabled,
 
       // Position toolbar above selection
       const rect = range.getBoundingClientRect()
+      // Geen window.scrollY erbij: de balk staat op position fixed en
+      // getBoundingClientRect geeft al viewport-coördinaten. Optellen schoof
+      // hem op een gescrolde pagina onder het scherm.
       setToolbarPos({
-        top: rect.top - 8 + window.scrollY,
+        top: rect.top - 8,
         left: rect.left + rect.width / 2,
       })
       setShowToolbar(true)
@@ -404,4 +457,4 @@ export function AIContentEditableToolbar({ editorRef, onContentChange, disabled,
   )
 
   return createPortal(toolbar, document.body)
-}
+})

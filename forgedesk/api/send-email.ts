@@ -394,19 +394,44 @@ async function getEmailCredentials(userId: string, accountId?: string | null): P
   // eerst de volledige select, en bij een kolomfout opnieuw met de kolommen van
   // vóór 244. Zie dezelfde helper in fetch-emails, read-email,
   // prefetch-email-bodies, email-imap-action en email-settings.
-  const KOLOMMEN_VOOR_244 = 'id, gmail_address, encrypted_app_password, smtp_host, smtp_port, imap_host, imap_port'
-  const KOLOMMEN = `${KOLOMMEN_VOOR_244}, auth_type, oauth_refresh_token_enc, oauth_access_token_enc, oauth_token_verloopt_op`
+  const KOLOMMEN_VOOR_244 = 'id, user_id, gmail_address, encrypted_app_password, smtp_host, smtp_port, imap_host, imap_port'
+  const KOLOMMEN = `${KOLOMMEN_VOOR_244}, auth_type, oauth_refresh_token_enc, oauth_access_token_enc, oauth_token_verloopt_op, soort, organisatie_id`
   const isKolomFout = (fout: { code?: string; message?: string } | null): boolean => {
     if (!fout) return false
     if (fout.code === '42703' || fout.code === 'PGRST204') return true
     return /column .* does not exist|could not find the .* column/i.test(fout.message || '')
   }
+// ── GEDEELD-POSTVAK-TOEGANG BEGIN ─────────────────────────────────────────
+// Een gedeeld postvak (migratie 245, `soort = 'gedeeld'`) hoort bij de
+// organisatie en niet bij één persoon. Een collega mag er dus bij, en dat kan
+// niet met een blind filter op user_id: dan is een gedeeld postvak alleen te
+// gebruiken door degene die het gekoppeld heeft.
+//
+// Daarom zoeken we bij een expliciet postvak op id en beoordelen we de toegang
+// daarna. De regel is streng: je eigen rij mag altijd, die van een ander alleen
+// als hij gedeeld is én bij jouw organisatie hoort. Ontbreekt `soort` (database
+// zonder 245), dan is er geen gedeeld postvak en blijft het antwoord nee.
+async function magBijPostvak(
+  rij: { user_id?: unknown; soort?: unknown; organisatie_id?: unknown },
+  userId: string,
+): Promise<boolean> {
+  if (rij.user_id === userId) return true
+  if (rij.soort !== 'gedeeld' || !rij.organisatie_id) return false
+  const { data } = await supabaseAdmin.from('profiles').select('organisatie_id').eq('id', userId).maybeSingle()
+  const eigenOrg = (data as { organisatie_id?: string | null } | null)?.organisatie_id
+  return !!eigenOrg && eigenOrg === rij.organisatie_id
+}
+// ── GEDEELD-POSTVAK-TOEGANG EINDE ─────────────────────────────────────────
+
   type Rij = Record<string, unknown>
 
   async function haalRij(keuze: 'account' | 'standaard' | 'enige') {
     const bouw = (kolommen: string) => {
-      let vraag = supabaseAdmin.from('user_email_settings').select(kolommen).eq('user_id', userId)
-      if (keuze === 'account') vraag = vraag.eq('id', accountId as string)
+      // Bij een expliciet postvak zoeken we op id, niet op user_id: een gedeeld
+      // postvak staat op naam van een collega. magBijPostvak beslist daarna.
+      let vraag = keuze === 'account'
+        ? supabaseAdmin.from('user_email_settings').select(kolommen).eq('id', accountId as string)
+        : supabaseAdmin.from('user_email_settings').select(kolommen).eq('user_id', userId)
       if (keuze === 'standaard') vraag = vraag.eq('is_standaard', true)
       return vraag.maybeSingle()
     }
@@ -423,6 +448,13 @@ async function getEmailCredentials(userId: string, accountId?: string | null): P
   if (accountId) {
     const uitkomst = await haalRij('account')
     if (uitkomst.fout || !uitkomst.rij) {
+      throw new Error('Dit postvak bestaat niet of hoort niet bij jou. Kies een ander postvak onder Instellingen > E-mail.')
+    }
+    // Deze poort hoort hier net zo hard als in de andere zes bestanden. De
+    // query filtert niet meer op user_id (dat kan niet, een gedeeld postvak
+    // staat op naam van een collega), dus zonder deze regel is het kennen van
+    // een UUID genoeg om mail namens een willekeurige mailbox te versturen.
+    if (!(await magBijPostvak(uitkomst.rij, userId))) {
       throw new Error('Dit postvak bestaat niet of hoort niet bij jou. Kies een ander postvak onder Instellingen > E-mail.')
     }
     data = uitkomst.rij
@@ -697,8 +729,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Hier stond een terugval op gmail_address en app_password uit de
     // request-body. Die is weg, en bewust helemaal: hij maakte de controle op
     // account_id omzeilbaar. Vraag je een postvak op dat niet van jou is, dan
-    // gooit getEmailCredentials, en precies dán viel de oude code terug op de
-    // afzender die de aanvrager zelf meestuurde. Verzenden liep dan langs elke
+    // gooit getEmailCredentials (via magBijPostvak), en precies dán viel de
+    // oude code terug op de afzender die de aanvrager zelf meestuurde. Verzenden liep dan langs elke
     // postvakcontrole heen, met een adres en wachtwoord naar keuze. Geen enkele
     // client heeft die velden ooit gestuurd (zie sendEmail in
     // src/services/gmailService.ts): de mailbox staat op de server, en wie er

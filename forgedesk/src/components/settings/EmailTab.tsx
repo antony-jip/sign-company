@@ -60,6 +60,9 @@ import type { Medewerker } from '@/types'
 import { SubTabNav } from './SubTabNav'
 import { MailRegelsKaart } from './MailRegelsKaart'
 import { HandtekeningEditor } from './HandtekeningEditor'
+import { SignatureImageUpload } from './SignatureImageUpload'
+import { HandtekeningenBeheer } from './HandtekeningenBeheer'
+import { handtekeningenBeschikbaar } from '@/services/handtekeningService'
 import {
   handtekeningNaarHtml,
   handtekeningBreedte,
@@ -653,148 +656,6 @@ function EmailTemplatesBeheerTab() {
   )
 }
 
-function SignatureImageUpload({
-  imageUrl,
-  imageLink,
-  onImageLinkChange,
-  onImageChange,
-  imageSize,
-  onImageSizeChange,
-  label = 'Afbeelding in handtekening',
-}: {
-  imageUrl: string
-  onImageChange: (url: string) => void
-  imageLink?: string
-  onImageLinkChange?: (link: string) => void
-  imageSize?: number
-  onImageSizeChange?: (size: number) => void
-  label?: string
-}) {
-  const { user } = useAuth()
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [isUploading, setIsUploading] = useState(false)
-  const currentSize = handtekeningBreedte(imageSize)
-
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    if (!file.type.startsWith('image/')) {
-      toast.error('Selecteer een afbeelding (PNG, JPG, SVG)')
-      return
-    }
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error('Afbeelding mag maximaal 2MB zijn')
-      return
-    }
-    try {
-      setIsUploading(true)
-      // Upload path must start with user_id for Supabase RLS policies
-      const userId = user?.id || 'local'
-      const path = `${userId}/handtekeningen/${Date.now()}_${sanitizeStorageFilename(file.name)}`
-      // Naar de PUBLIEKE bucket, niet de private: zie de opmerking hieronder.
-      await uploadPubliekeMailAfbeelding(file, path)
-      // Bewust een blijvende publieke URL: deze afbeelding komt in de
-      // e-mailhandtekening en moet laden bij de ontvanger, ook maanden later.
-      const url = await getPubliekeMailUrl(path)
-      onImageChange(url)
-      toast.success('Afbeelding geüpload')
-    } catch (err) {
-      logger.error('Fout bij uploaden afbeelding:', err)
-      toast.error('Kon afbeelding niet uploaden. Controleer of Supabase Storage is geconfigureerd.')
-    } finally {
-      setIsUploading(false)
-      // Reset file input so the same file can be uploaded again
-      if (fileInputRef.current) fileInputRef.current.value = ''
-    }
-  }
-
-  return (
-    <div className="space-y-2">
-      <Label>{label}</Label>
-      <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
-        Voeg een bedrijfslogo of profielfoto toe aan de handtekening (max 2MB)
-      </p>
-      {imageUrl ? (
-        <div className="space-y-3">
-          <div className="flex items-start gap-3">
-            <div className="relative border border-border rounded-lg p-2 bg-card">
-              <img
-                src={imageUrl}
-                alt="Handtekening afbeelding"
-                style={{ maxWidth: `${currentSize}px`, maxHeight: `${currentSize}px` }}
-                className="object-contain"
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
-                <Upload className="w-3.5 h-3.5 mr-1.5" />
-                {isUploading ? 'Uploaden...' : 'Vervangen'}
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => onImageChange('')} className="text-destructive hover:text-destructive">
-                <X className="w-3.5 h-3.5 mr-1.5" />
-                Verwijderen
-              </Button>
-            </div>
-          </div>
-          {onImageLinkChange && (
-            <div className="space-y-1.5">
-              <Label htmlFor="handtekening-link" className="text-xs">Link achter de afbeelding</Label>
-              <Input
-                id="handtekening-link"
-                type="url"
-                inputMode="url"
-                value={imageLink ?? ''}
-                onChange={(e) => onImageLinkChange(e.target.value)}
-                placeholder="https://jouwsite.nl/onze-merken"
-              />
-              <p className="text-xs text-muted-foreground dark:text-muted-foreground/60">
-                Ontvangers komen hier terecht als ze op de afbeelding klikken. Leeg laten = niet klikbaar.
-              </p>
-            </div>
-          )}
-          {onImageSizeChange && (
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <Label className="text-xs">Breedte in de mail</Label>
-                <span className="text-xs text-muted-foreground">{currentSize}px breed</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Minus className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                <input
-                  type="range"
-                  min={HANDTEKENING_BREEDTE_MIN}
-                  max={HANDTEKENING_BREEDTE_MAX}
-                  step={10}
-                  value={currentSize}
-                  onChange={(e) => onImageSizeChange(Number(e.target.value))}
-                  className="w-full accent-primary"
-                />
-                <Plus className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-              </div>
-            </div>
-          )}
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={isUploading}
-          className="flex items-center gap-3 w-full p-4 border-2 border-dashed rounded-lg hover:border-primary/50 hover:bg-muted/50 transition-colors cursor-pointer disabled:opacity-50"
-        >
-          <div className="p-2 bg-muted rounded-lg">
-            <ImageIcon className="w-5 h-5 text-muted-foreground" />
-          </div>
-          <div className="text-left">
-            <p className="text-sm font-medium">{isUploading ? 'Uploaden...' : 'Afbeelding toevoegen'}</p>
-            <p className="text-xs text-muted-foreground">PNG, JPG of SVG · bijv. bedrijfslogo of foto</p>
-          </div>
-        </button>
-      )}
-      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
-    </div>
-  )
-}
-
 function SignaturePreview({
   naam,
   handtekening,
@@ -838,6 +699,19 @@ export function EmailTab() {
   const { refreshSettings, refreshProfile, profile, emailFetchLimit: currentFetchLimit } = useAppSettings()
   const initialSub = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('sub') || 'verbinding' : 'verbinding'
   const [subTab, setSubTab] = useState(initialSub)
+  // Migratie 248 zet meerdere handtekeningen aan. Zonder die migratie blijft
+  // alles zoals het was: één handtekening op het profiel.
+  // null = nog onbekend. Bewust drie standen: bij `false` verschijnt de oude
+  // handtekening-editor en mag "toepassen op iedereen", en dat mag geen van
+  // beide gebeuren zolang we het antwoord niet hebben.
+  const [meerHandtekeningen, setMeerHandtekeningen] = useState<boolean | null>(null)
+  useEffect(() => {
+    let actueel = true
+    handtekeningenBeschikbaar()
+      .then((ja) => { if (actueel) setMeerHandtekeningen(ja) })
+      .catch(() => {})
+    return () => { actueel = false }
+  }, [])
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
 
@@ -916,12 +790,19 @@ export function EmailTab() {
       setIsSaving(true)
       // updateAppSettings sluist per-user velden (handtekening, afzender_naam)
       // automatisch door naar updateProfile. Daarna profile + settings refreshen.
+      // Zodra het handtekeningbeheer leidt, schrijft dat de standaard naar het
+      // profiel. Deze knop stuurde dan de waarde mee die bij het openen van de
+      // pagina geladen was en draaide die spiegeling stil terug: je offertes en
+      // facturen vielen terug op je vorige handtekening. Alleen de velden
+      // meesturen die deze knop ook echt beheert.
       await updateAppSettings(user.id, {
-        email_handtekening: emailHandtekening,
         afzender_naam: afzenderNaam,
-        handtekening_afbeelding: handtekeningAfbeelding,
-        handtekening_afbeelding_grootte: afbeeldingGrootte,
-        handtekening_afbeelding_link: afbeeldingLink.trim(),
+        ...(meerHandtekeningen === false ? {
+          email_handtekening: emailHandtekening,
+          handtekening_afbeelding: handtekeningAfbeelding,
+          handtekening_afbeelding_grootte: afbeeldingGrootte,
+          handtekening_afbeelding_link: afbeeldingLink.trim(),
+        } : {}),
       })
       await Promise.all([refreshProfile(), refreshSettings()])
       toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
@@ -972,6 +853,19 @@ export function EmailTab() {
   }
 
   const handleApplyToAll = async () => {
+    // Met meerdere handtekeningen (migratie 248) schrijft dit de handtekening
+    // van elk teamlid over, óók de standaard die hij zelf heeft ingesteld en
+    // waarmee zijn offertes en facturen ondertekenen. Dat is niet wat "toepassen
+    // op iedereen" belooft, dus dan liever helemaal niet.
+    // Alleen doorgaan als we zéker weten dat het beheer niet aanstaat. Bij een
+    // netwerkhikje blijft de vlag op null, en dan zou dit het profiel van elk
+    // teamlid overschrijven terwijl hun eigen handtekeningen blijven staan.
+    if (meerHandtekeningen !== false) {
+      toast.error(meerHandtekeningen
+        ? 'Iedereen beheert nu zijn eigen handtekeningen. Vraag je collega om er een over te nemen.'
+        : 'Even wachten, de handtekeningen worden nog geladen.')
+      return
+    }
     if (!emailHandtekening && !handtekeningAfbeelding) {
       toast.error('Stel eerst je eigen handtekening in')
       return
@@ -1134,31 +1028,42 @@ export function EmailTab() {
                 </p>
               </div>
 
-              <SignatureImageUpload
-                imageUrl={handtekeningAfbeelding}
-                onImageChange={setHandtekeningAfbeelding}
-                imageSize={afbeeldingGrootte}
-                onImageSizeChange={setAfbeeldingGrootte}
-                imageLink={afbeeldingLink}
-                onImageLinkChange={setAfbeeldingLink}
-              />
+              {/* Zodra migratie 248 gedraaid is beheer je de handtekeningen
+                  in de kaart hieronder. Deze velden blijven staan zolang dat
+                  niet zo is; twee plekken die hetzelfde bewerken zou betekenen
+                  dat je nooit weet welke wint. */}
+              {meerHandtekeningen === false && (
+                <>
+                  <SignatureImageUpload
+                    imageUrl={handtekeningAfbeelding}
+                    onImageChange={setHandtekeningAfbeelding}
+                    imageSize={afbeeldingGrootte}
+                    onImageSizeChange={setAfbeeldingGrootte}
+                    imageLink={afbeeldingLink}
+                    onImageLinkChange={setAfbeeldingLink}
+                  />
 
-              <div className="space-y-2">
-                <Label>Handtekening</Label>
-                <HandtekeningEditor
-                  waarde={emailHandtekening}
-                  onChange={setEmailHandtekening}
-                />
-              </div>
+                  <div className="space-y-2">
+                    <Label>Handtekening</Label>
+                    <HandtekeningEditor
+                      waarde={emailHandtekening}
+                      onChange={setEmailHandtekening}
+                    />
+                  </div>
 
-              <SignaturePreview
-                naam={afzenderNaam}
-                handtekening={emailHandtekening}
-                afbeelding={handtekeningAfbeelding}
-                afbeeldingGrootte={afbeeldingGrootte}
-              />
+                  <SignaturePreview
+                    naam={afzenderNaam}
+                    handtekening={emailHandtekening}
+                    afbeelding={handtekeningAfbeelding}
+                    afbeeldingGrootte={afbeeldingGrootte}
+                  />
+                </>
+              )}
             </CardContent>
           </Card>
+
+          {meerHandtekeningen === true && <HandtekeningenBeheer />}
+
           {saveButton}
         </div>
       )}
@@ -1458,6 +1363,11 @@ function EmailSettingsInline({
   onAnnuleer?: () => void
 }) {
   const nieuw = stand === 'nieuw'
+  const { isAdmin } = useAuth()
+  // Team-inbox: alleen te kiezen bij een nieuw postvak en alleen door een
+  // beheerder. De server controleert de rol nog een keer; deze schakelaar is
+  // er om de keuze te tonen, niet om hem te bewaken.
+  const [gedeeld, setGedeeld] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isTesting, setIsTesting] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -1516,6 +1426,7 @@ function EmailSettingsInline({
         smtpPort: teBewaren.smtp_port,
         imapHost: teBewaren.imap_host,
         imapPort: teBewaren.imap_port,
+        gedeeld: nieuw && gedeeld,
       })
 
       // Wis de cache van de vorige mailbox zodat de inbox-view alleen nog
@@ -1757,6 +1668,29 @@ function EmailSettingsInline({
               </button>
             </div>
           </div>
+
+          {/* Team-inbox. Alleen bij een nieuw postvak en alleen voor een
+              beheerder: dit zet een mailbox open voor de hele organisatie. */}
+          {nieuw && isAdmin && (
+            <div className="rounded-lg border border-border bg-muted/30 p-3">
+              <label className="flex cursor-pointer items-start gap-2.5">
+                <input
+                  type="checkbox"
+                  checked={gedeeld}
+                  onChange={(e) => setGedeeld(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 accent-petrol"
+                />
+                <span className="space-y-0.5">
+                  <span className="block text-sm font-medium">Teampostvak</span>
+                  <span className="block text-xs text-muted-foreground">
+                    Iedereen in je organisatie leest en beantwoordt deze mailbox mee, met het
+                    wachtwoord dat je hier invult. Bedoeld voor een adres als info@ of studio@.
+                    Voor een persoonlijke mailbox laat je dit uit.
+                  </span>
+                </span>
+              </label>
+            </div>
+          )}
 
           {provider === 'gmail' && (
             <div className="rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-3">

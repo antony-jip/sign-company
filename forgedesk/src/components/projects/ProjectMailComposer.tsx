@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, forwardRef, useImperativeHandle, useCallback } from 'react'
+import { useEffect, useMemo, useRef, useState, forwardRef, useImperativeHandle, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Paperclip, Send, X, FileText, Image as ImageIcon, File, Bold, Italic, Underline, List, Link as LinkIcon, Loader2, Receipt, CreditCard, Wrench, Check, Plus, ChevronDown, Clock } from 'lucide-react'
 import { cn, getInitials } from '@/lib/utils'
@@ -23,7 +23,8 @@ import { isSupabaseConfigured } from '@/services/supabaseClient'
 import type { Project, Klant, Contactpersoon, Document, Offerte, Factuur, Werkbon, OfferteItem, SigningVisualisatie } from '@/types'
 import { useOntvangerZoeker, OntvangerLijst, type Ontvanger } from '@/components/shared/OntvangerVeld'
 import { getAvatarStyle } from '@/components/email/emailHelpers'
-import { handtekeningAfbeeldingHtml, handtekeningBreedte } from '@/utils/handtekening'
+import { bouwHandtekeningHtml, handtekeningBreedte } from '@/utils/handtekening'
+import { AITextToolbar } from '@/components/ui/AITextToolbar'
 import { VerzendKnop } from '@/components/email/composer/VerzendKnop'
 
 const MAX_BIJLAGE_BYTES = 20 * 1024 * 1024
@@ -333,12 +334,34 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
   const voornaam = defaultNaam.split(' ')[0] || defaultNaam
   const aanhef = voornaam ? `Beste ${voornaam}` : 'Beste'
   const defaultSubject = `[${project.project_nummer || 'PRJ'}] ${project.naam}`
-  const hasPngSignature = !!handtekeningAfbeelding?.trim()
-  const textSignatuur = !hasPngSignature && emailHandtekening?.trim() ? emailHandtekening.trim() : ''
-  const signatuurBlok = textSignatuur ? `\n\n${textSignatuur}` : ''
-  const defaultBody = `${aanhef},\n\n${signatuurBlok}`
+  // De handtekening staat bewust NIET in het tekstvak. Hij stond daar als
+  // platte tekst en werd er bij verzenden weer afgeknipt met endsWith, en dat
+  // faalt bij elke gewone bewerking: één spatie erachter, of de tekst zelf
+  // aanpassen. Dan bleef hij staan én kwam de opgemaakte versie eronder, en
+  // omdat de markdown-omzetter de tags escapet zag de klant eerst de broncode
+  // van je handtekening en daarna je handtekening. Nu staat hij als voorbeeld
+  // onder het vak, net als in de mailmodule, en gaat hij altijd precies één
+  // keer als HTML mee.
+  const defaultBody = `${aanhef},\n\n`
+  // Eén bouwer, dezelfde als bij verzenden: wat je hier ziet is wat de klant
+  // krijgt.
+  const handtekeningVoorbeeld = useMemo(() => bouwHandtekeningHtml({
+    tekst: emailHandtekening,
+    afbeeldingUrl: handtekeningAfbeelding,
+    afbeeldingLink: handtekeningAfbeeldingLink,
+    afbeeldingBreedte: handtekeningAfbeeldingGrootte,
+    afbeeldingStyle: 'display:block;',
+  }), [emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingLink, handtekeningAfbeeldingGrootte])
 
-  const draftKey = `doen_mail_draft_${project.id}`
+  // v2: de handtekening staat niet langer in de body. Een concept van vóór die
+  // wijziging heeft hem daar wél staan, en zou bij verzenden eerst de broncode
+  // van de handtekening tonen en daarna de handtekening zelf. Een nieuwe sleutel
+  // laat die concepten liggen in plaats van ze verkeerd te herstellen; de oude
+  // ruimen we meteen op zodat er niets blijft rondslingeren.
+  const draftKey = `doen_mail_draft_v2_${project.id}`
+  useEffect(() => {
+    try { localStorage.removeItem(`doen_mail_draft_${project.id}`) } catch { /* niets aan te doen */ }
+  }, [project.id])
 
   const [toEmails, setToEmails] = useState<string[]>(defaultEmail ? [defaultEmail] : [])
   const [ccEmails, setCcEmails] = useState<string[]>([])
@@ -530,10 +553,10 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
   const pasTemplateToe = useCallback((tmpl: EmailTemplate) => {
     if (tmpl.onderwerp.trim()) setSubject(vulProjectvelden(tmpl.onderwerp))
     const tekst = vulProjectvelden(templateNaarPlattetekst(tmpl.body))
-    setBody(`${tekst}${signatuurBlok}`)
+    setBody(tekst)
     setTemplateOpen(false)
     toast.success(<>Template toegepast<span style={{ color: '#F15025' }}>.</span></>)
-  }, [vulProjectvelden, signatuurBlok])
+  }, [vulProjectvelden])
 
   // Inplan-popover sluiten bij klik buiten
 
@@ -915,15 +938,20 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
         return
       }
 
+      // De handtekening staat als platte tekst onderaan het tekstvak zodat je
+      // hem daar kunt bijschaven. Voor de HTML-versie knippen we hem er weer af
+      // en bouwen we hem opnieuw op: door de markdown-omzetter verloor hij zijn
+      // opmaak, en met een banner viel de tekst helemaal weg.
       const bodyHtml = markdownNaarHtml(body)
-      const sigImg = handtekeningAfbeeldingHtml({
-        url: handtekeningAfbeelding,
-        link: handtekeningAfbeeldingLink,
-        breedte: handtekeningAfbeeldingGrootte,
-        extraStyle: 'display:block;',
+      const sig = bouwHandtekeningHtml({
+        tekst: emailHandtekening,
+        afbeeldingUrl: handtekeningAfbeelding,
+        afbeeldingLink: handtekeningAfbeeldingLink,
+        afbeeldingBreedte: handtekeningAfbeeldingGrootte,
+        afbeeldingStyle: 'display:block;',
       })
-      const signaturImg = sigImg ? `<br/><br/>${sigImg}` : ''
-      const html = `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;line-height:1.5;color:#1A1A1A">${bodyHtml}${signaturImg}</div>`
+      const sigHtml = sig ? `<br/><br/>${sig}` : ''
+      const html = `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;line-height:1.5;color:#1A1A1A">${bodyHtml}${sigHtml}</div>`
 
       const toStr = toEmails.join(', ')
       // Antwoorden haakt aan het lopende gesprek: hetzelfde thread_id binnen
@@ -1233,13 +1261,24 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
             className="w-full bg-transparent border-0 outline-none text-[13px] text-foreground placeholder:text-muted-foreground resize-none leading-relaxed focus:ring-0 focus:outline-none focus-visible:outline-none focus-visible:ring-0 p-0 overflow-hidden"
             style={{ boxShadow: 'none' }}
           />
+          {/* Dit veld is een kale textarea en niet de gedeelde Textarea, dus
+              het AI-herschrijven kwam hier niet vanzelf mee. Overal waar je
+              mailt hoort het te kunnen. */}
+          <AITextToolbar
+            textareaRef={textareaRef}
+            onReplace={(nieuweTekst, van, tot) => {
+              setBody((huidig) => huidig.slice(0, van) + nieuweTekst + huidig.slice(tot))
+            }}
+          />
 
-          {handtekeningAfbeelding?.trim() && (
-            <img
-              src={handtekeningAfbeelding}
-              alt="Handtekening"
-              style={{ maxWidth: variant === 'paneel' ? Math.min(240, handtekeningBreedte(handtekeningAfbeeldingGrootte)) : handtekeningBreedte(handtekeningAfbeeldingGrootte) }}
-              className="object-contain max-w-full"
+          {/* Voorbeeld van wat er onder de mail komt. Niet bewerkbaar: de
+              handtekening pas je aan onder Instellingen, en dan klopt hij
+              meteen voor al je mail. */}
+          {handtekeningVoorbeeld && (
+            <div
+              className="border-t border-dashed border-border/70 pt-2 text-[12px] leading-[1.5] text-foreground/60 [&_img]:max-w-full [&_img]:h-auto [&_a]:text-petrol/70"
+              title="Handtekening uit je instellingen"
+              dangerouslySetInnerHTML={{ __html: handtekeningVoorbeeld }}
             />
           )}
         </div>

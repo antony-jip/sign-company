@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, ChevronDown, Loader2, Paperclip, Send, Settings, Sparkles, X } from 'lucide-react'
+import { ArrowLeft, ChevronDown, Loader2, Paperclip, Send, Settings, Sparkles, Wand2, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -10,10 +10,10 @@ import { useVisueleViewport } from '@/hooks/useVisueleViewport'
 import { getEmailTemplates, createEmailTemplate, getWachtendeEmailNaarAdres, cancelIngeplandBericht, type EmailTemplate } from '@/services/emailService'
 import { verwijderConcept } from '@/services/conceptService'
 import { callForgie } from '@/services/forgieService'
-import { handtekeningAfbeeldingHtml, handtekeningNaarHtml } from '@/utils/handtekening'
+import { bouwHandtekeningHtml } from '@/utils/handtekening'
 import { sendInBackground } from '@/utils/sendInBackground'
 import { logger } from '@/utils/logger'
-import { AIContentEditableToolbar } from '@/components/ui/AIContentEditableToolbar'
+import { AIContentEditableToolbar, type AIHerschrijfHandle } from '@/components/ui/AIContentEditableToolbar'
 import { InlineSuggestie } from '@/components/email/InlineSuggestie'
 import { MailStatusToast } from '@/components/shared/MailStatusToast'
 import { OntvangerChips } from '@/components/shared/OntvangerVeld'
@@ -25,7 +25,9 @@ import type { ComposerBijlage, ComposerDocument, Ontvanger } from '@/lib/mail/ty
 import { Editor, type EditorHandle } from './Editor'
 import { Werkbalk } from './Werkbalk'
 import { VerzendKnop } from './VerzendKnop'
-import { BijlagenLijst, CitaatBlok } from './Onderdelen'
+import { BijlagenLijst, CitaatBlok, MiniSchakelaar } from './Onderdelen'
+import { HandtekeningKiezer } from './HandtekeningKiezer'
+import type { Handtekening } from '@/services/handtekeningService'
 import { useAutosave } from './useAutosave'
 import { alleenTekst, bestandSleutel, INVOEGVELDEN, isGeldigEmail, metCitaat, ontvangerLabel, splitsCitaat } from './document'
 import { bouwVerzending, verstuurPayload, verzendMetBedenktijd } from './verzenden'
@@ -86,26 +88,6 @@ function dragHeeftBestanden(e: React.DragEvent): boolean {
   return Array.from(e.dataTransfer.types).includes('Files')
 }
 
-function MiniSchakelaar({ aan, onChange, label, titel }: { aan: boolean; onChange: (v: boolean) => void; label: string; titel?: string }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={aan}
-      title={titel}
-      onClick={() => onChange(!aan)}
-      className={cn(
-        'inline-flex items-center gap-1.5 h-7 px-1.5 rounded-lg text-[12px] font-medium transition-colors select-none',
-        aan ? 'text-petrol' : 'text-muted-foreground hover:text-foreground',
-      )}
-    >
-      <span className={cn('relative inline-block h-4 w-7 rounded-full transition-colors', aan ? 'bg-petrol' : 'bg-[#D4D2CC] dark:bg-white/20')}>
-        <span className={cn('absolute top-0.5 h-3 w-3 rounded-full bg-white shadow transition-all', aan ? 'left-3.5' : 'left-0.5')} />
-      </span>
-      {label}
-    </button>
-  )
-}
 
 function IngeplandToast({ label, onBewerk }: { label: string; onBewerk?: () => void }) {
   return (
@@ -136,6 +118,7 @@ export function Composer({ document: initieel, variant, onVerzonden, onSluiten, 
   const citaat = useMemo(() => splitsCitaat(doc.html).citaat, [doc.html])
 
   const editorRef = useRef<HTMLDivElement>(null)
+  const herschrijfRef = useRef<AIHerschrijfHandle>(null)
   const editorHandle = useRef<EditorHandle>(null)
   const linkKnopRef = useRef<LinkInvoegHandle>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -169,14 +152,17 @@ export function Composer({ document: initieel, variant, onVerzonden, onSluiten, 
     bestandenRef,
   })
 
-  const handtekeningHtml = useMemo(() => {
-    const delen: string[] = []
-    if (emailHandtekening) delen.push(handtekeningNaarHtml(emailHandtekening))
-    const img = handtekeningAfbeeldingHtml({ url: handtekeningAfbeelding, link: handtekeningAfbeeldingLink, breedte: handtekeningAfbeeldingGrootte })
-    if (img) delen.push(img)
-    if (!delen.length && bedrijfsnaam) delen.push(bedrijfsnaam)
-    return delen.join('<br>')
-  }, [emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, handtekeningAfbeeldingLink, bedrijfsnaam])
+  // Heb je meerdere handtekeningen (migratie 248), dan wint de gekozene. Heb je
+  // er geen of staat die migratie nog niet, dan blijft dit letterlijk de
+  // handtekening uit je instellingen.
+  const [handtekening, setHandtekening] = useState<Handtekening | null>(null)
+  const handtekeningHtml = useMemo(() => bouwHandtekeningHtml({
+    tekst: handtekening ? handtekening.inhoud : emailHandtekening,
+    afbeeldingUrl: handtekening ? handtekening.afbeeldingUrl : handtekeningAfbeelding,
+    afbeeldingLink: handtekening ? handtekening.afbeeldingLink : handtekeningAfbeeldingLink,
+    afbeeldingBreedte: handtekening ? handtekening.afbeeldingBreedte : handtekeningAfbeeldingGrootte,
+    terugval: bedrijfsnaam || '',
+  }), [handtekening, emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingGrootte, handtekeningAfbeeldingLink, bedrijfsnaam])
 
   useEffect(() => {
     getEmailTemplates().then(setTemplates).catch(() => {})
@@ -476,14 +462,17 @@ export function Composer({ document: initieel, variant, onVerzonden, onSluiten, 
       {/* Inhoud · overflow-x dicht: een brede handtekening trok anders het paneel scheef */}
       <div className={cn('min-w-0', (variant !== 'inline' || losstaand) && 'flex-1 min-h-0 overflow-y-auto overflow-x-hidden')}>
         <div className={cn('min-w-0 max-w-full', variant === 'inline' ? (losstaand ? 'px-4' : 'px-1') : 'px-4 md:px-5')}>
+          {/* Alleen bij een tweede postvak. Met één mailbox is er niets te
+              kiezen en zou deze regel alleen maar ruimte kosten. */}
           {postvakken.meerdere && (
             <div className={veldRijCls}>
-              <span className={veldLabelCls}>Van</span>
+              <span className={veldLabelCls}>{isAntwoord ? 'Antwoord als' : 'Van'}</span>
               <PostvakKiezer
                 postvakken={postvakken.postvakken}
                 actief={doc.accountId ?? postvakken.postvakken[0]?.id ?? 'alle'}
                 onKies={(keuze) => { if (keuze !== 'alle') patch({ accountId: keuze }) }}
                 metAlle={false}
+                adresEerst
                 className="min-w-0 flex-1"
               />
             </div>
@@ -655,9 +644,29 @@ export function Composer({ document: initieel, variant, onVerzonden, onSluiten, 
               )}
             </div>
 
+            {/* Herschrijven werkte alleen als je precies genoeg tekst
+                selecteerde, en dan wist niemand dat het bestond. Deze knop
+                doet hetzelfde: over je selectie, of anders over het hele
+                bericht. */}
+            <button
+              type="button"
+              onClick={() => herschrijfRef.current?.openen()}
+              className={aiChipCls}
+              title="Laat de AI je tekst herschrijven, korter maken, of vertalen"
+            >
+              <Wand2 className="h-3 w-3" />
+              Herschrijven
+            </button>
+
             {handtekeningHtml && (
               <div className="ml-auto">
-                <MiniSchakelaar aan={doc.handtekening} onChange={(v) => patch({ handtekening: v })} label="Handtekening" titel="Handtekening onder het bericht" />
+                <HandtekeningKiezer
+                  aan={doc.handtekening}
+                  onChange={(v) => patch({ handtekening: v })}
+                  accountId={doc.accountId}
+                  gekozenId={handtekening?.id}
+                  onKies={setHandtekening}
+                />
               </div>
             )}
           </div>
@@ -671,7 +680,7 @@ export function Composer({ document: initieel, variant, onVerzonden, onSluiten, 
             minHoogteClass={losstaand ? 'min-h-[280px]' : variant === 'inline' ? 'min-h-[160px]' : 'min-h-[240px]'}
             className="py-2"
           />
-          <AIContentEditableToolbar editorRef={editorRef} onContentChange={() => dispatch({ type: 'eigenHtml', html: editorRef.current?.innerHTML || '' })} />
+          <AIContentEditableToolbar ref={herschrijfRef} editorRef={editorRef} onContentChange={() => dispatch({ type: 'eigenHtml', html: editorRef.current?.innerHTML || '' })} />
           <InlineSuggestie
             editorRef={editorRef}
             actief={!daanBezig}

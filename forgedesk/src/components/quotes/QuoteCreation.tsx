@@ -85,6 +85,7 @@ import { getBedrijfsprofielen } from '@/services/bedrijfsprofielService'
 import { sendEmail } from '@/services/gmailService'
 import { supabase } from '@/services/supabaseClient'
 import { offerteVerzendTemplate } from '@/services/emailTemplateService'
+import { AITextToolbar } from '@/components/ui/AITextToolbar'
 import { cn, formatCurrency } from '@/lib/utils'
 import { initAutofillDefaults, saveAutofillValue, labelToAutofillField } from '@/utils/autofillUtils'
 import { OntvangerInput } from '@/components/shared/OntvangerVeld'
@@ -284,6 +285,7 @@ export function QuoteCreation() {
   const location = useLocation()
   // Vooraan zodat de tab-saver hem kan aanroepen (flush pending autosave bij tab-wissel)
   const performAutoSaveRef = useRef<() => Promise<void>>(async () => {})
+  const offerteMailRef = useRef<HTMLTextAreaElement>(null)
   const { setDirty } = useTabDirtyState(() => performAutoSaveRef.current())
   const [searchParams] = useSearchParams()
   const { id: routeId } = useParams<{ id: string }>()
@@ -2758,11 +2760,21 @@ export function QuoteCreation() {
                     {/* Geen opmaak-toolbar: dit is een platte textarea, execCommand
                         deed hier niets. De mail gaat als platte tekst de deur uit. */}
                     <textarea
+                      ref={offerteMailRef}
                       value={email.emailBody}
                       onChange={(e) => email.setEmailBody(e.target.value)}
                       rows={8}
                       className="w-full text-sm px-3 py-3 bg-transparent focus:outline-none resize-y leading-relaxed border-none"
                       placeholder="Schrijf je bericht..."
+                    />
+                    {/* Kale textarea, dus het AI-herschrijven kwam hier niet
+                        vanzelf mee zoals bij de gedeelde Textarea. */}
+                    <AITextToolbar
+                      textareaRef={offerteMailRef}
+                      onReplace={(nieuweTekst, van, tot) => {
+                        const huidig = email.emailBody || ''
+                        email.setEmailBody(huidig.slice(0, van) + nieuweTekst + huidig.slice(tot))
+                      }}
                     />
                     {handtekeningAfbeelding && (
                       <div className="px-3 pb-3">
