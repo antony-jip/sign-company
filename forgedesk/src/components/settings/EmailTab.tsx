@@ -136,17 +136,24 @@ function MailboxGezondheidKaart({ settings, isConnected }: { settings: EmailSett
     }
     setHerstelt(true)
     try {
-      const { saveEmailSettingsToDb } = await import('@/services/gmailService')
+      const { saveEmailSettingsToDb, loadEmailSettingsFromDb } = await import('@/services/gmailService')
+      // De banner toont de slechtste stand van álle postvakken, dus herstel het
+      // postvak dat die stand veroorzaakt en niet blind het standaardpostvak.
+      // Anders meldt de kaart postvak 2 en repareert de knop postvak 1.
+      const doelPostvak = sync.postvakId || null
+      const doel = doelPostvak ? await loadEmailSettingsFromDb(doelPostvak).catch(() => null) : null
       await saveEmailSettingsToDb({
-        gmail_address: settings.gmail_address,
+        gmail_address: doel?.gmail_address || settings.gmail_address,
+        account_id: doel?.account_id ?? doelPostvak ?? undefined,
         app_password: '',
-        smtp_host: settings.smtp_host,
-        smtp_port: settings.smtp_port,
-        imap_host: settings.imap_host,
-        imap_port: settings.imap_port,
+        smtp_host: doel?.smtp_host || settings.smtp_host,
+        smtp_port: doel?.smtp_port || settings.smtp_port,
+        imap_host: doel?.imap_host || settings.imap_host,
+        imap_port: doel?.imap_port || settings.imap_port,
       })
       await mailStore.laadSyncStatus()
-      toast.success(<>Opnieuw verbonden<span style={{ color: '#F15025' }}>.</span> De volgende synchronisatie start direct.</>)
+      const naam = doel?.gmail_address && doel.gmail_address !== settings.gmail_address ? ` (${doel.gmail_address})` : ''
+      toast.success(<>Opnieuw verbonden{naam}<span style={{ color: '#F15025' }}>.</span> De volgende synchronisatie start direct.</>)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Opnieuw verbinden mislukt')
     } finally {

@@ -15,17 +15,23 @@ export type BackfillTarget = '1jaar' | '5jaar' | 'alles'
 /** Hoe ver de historie-backfill teruggaat (instelling leeft op email_sync_state). */
 export async function getBackfillTarget(): Promise<BackfillTarget> {
   if (!isSupabaseConfigured() || !supabase) return '1jaar'
+  // Geen maybeSingle: met twee postvakken zijn dat twee inbox-rijen en dan viel
+  // de instelling stil terug op '1jaar'. Het doel is een gebruikersinstelling
+  // die voor alle postvakken geldt, dus de eerste rij met een waarde volstaat.
   const { data } = await supabase
     .from('email_sync_state')
     .select('backfill_target')
     .eq('folder', 'inbox')
-    .maybeSingle()
-  return (data?.backfill_target as BackfillTarget) || '1jaar'
+  const rijen = (data || []) as Array<{ backfill_target?: string | null }>
+  const gevonden = rijen.find((r) => !!r.backfill_target)?.backfill_target
+  return (gevonden as BackfillTarget) || '1jaar'
 }
 
 /**
  * Zet het backfill-doel voor inbox + verzonden en heropent de backfill
- * (backfill_done = false) zodat een ruimer doel direct verder graaft.
+ * (backfill_done = false) zodat een ruimer doel direct verder graaft. Het doel
+ * geldt voor alle postvakken van de gebruiker; er is bewust geen instelling per
+ * postvak.
  */
 export async function setBackfillTarget(target: BackfillTarget): Promise<void> {
   if (!isSupabaseConfigured() || !supabase) return
@@ -442,35 +448,46 @@ export async function getThreadInfos(threadIds: string[], accountId?: string | n
 export async function getSyncStatus(): Promise<SyncStatus> {
   const standaard: SyncStatus = { status: 'ok' }
   if (!isSupabaseConfigured() || !supabase) return standaard
+  const client = supabase
   const uid = await eigenUserId()
   if (!uid) return standaard
   // Geen maybeSingle: met twee postvakken staan er twee inbox-rijen en dan gaf
   // die PGRST116, waarna de banner permanent op "onbekend" stond. De slechtste
   // stand van de postvakken telt, want dat is de mailbox waar iets aan de hand
   // is.
-  const { data, error } = await supabase
+  const haal = (kolommen: string) => client
     .from('email_sync_state')
-    .select('status, laatste_fout, laatste_succes_op')
+    .select(kolommen)
     .eq('user_id', uid)
     .eq('folder', 'inbox')
+  // account_id komt uit migratie 245; zonder die kolom faalt de hele select.
+  let uitkomst = await haal('status, laatste_fout, laatste_succes_op, account_id')
+  if (isOnbekendeKolom(uitkomst.error)) uitkomst = await haal('status, laatste_fout, laatste_succes_op')
+  const { data, error } = uitkomst
   // Een fout hier is geen "alles goed": zonder migratie 244 bestaan deze
   // kolommen niet, en terugvallen op ok liet de banner zwijgen terwijl de sync
   // stilstond. Geen rij is wél normaal: die mailbox heeft nog nooit gesynct.
   if (error) return { status: 'onbekend', laatsteFout: 'Gezondheid niet op te halen' }
-  type StatusRij = { status: string | null; laatste_fout: string | null; laatste_succes_op: string | null }
-  const rijen = (data || []) as StatusRij[]
+  type StatusRij = { status: string | null; laatste_fout: string | null; laatste_succes_op: string | null; account_id?: string | null }
+  const rijen = (data || []) as unknown as StatusRij[]
   if (rijen.length === 0) return standaard
-  const RANG: Record<string, number> = { ok: 0, traag: 1, achter: 2, onbekend: 3, fout: 4, uitgezet: 5 }
-  const ergste = rijen.reduce((a, b) => ((RANG[b.status || 'ok'] ?? 3) > (RANG[a.status || 'ok'] ?? 3) ? b : a))
+  // De CHECK in migratie 244 laat alleen ok, fout en uitgezet toe. Een waarde
+  // die daar niet in staat komt tussen ok en fout: niet groen beweren, maar ook
+  // geen storing melden die er niet is.
+  const RANG: Record<string, number> = { ok: 0, fout: 2, uitgezet: 3 }
+  const rang = (r: StatusRij) => RANG[r.status || 'ok'] ?? 1
+  const ergste = rijen.reduce((a, b) => (rang(b) > rang(a) ? b : a))
   const successen = rijen
     .map((r) => r.laatste_succes_op)
     .filter((d): d is string => !!d)
     .sort()
   const laatsteSucces = successen[successen.length - 1]
+  const bekend = ergste.status === 'ok' || ergste.status === 'fout' || ergste.status === 'uitgezet'
   return {
-    status: (ergste.status as SyncStatus['status']) || 'ok',
+    status: bekend ? (ergste.status as SyncStatus['status']) : (ergste.status ? 'onbekend' : 'ok'),
     laatsteFout: ergste.laatste_fout || undefined,
     laatsteSucces: laatsteSucces || undefined,
+    postvakId: ergste.account_id ?? null,
   }
 }
 

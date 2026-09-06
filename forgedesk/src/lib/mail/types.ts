@@ -123,6 +123,12 @@ export interface SyncStatus {
   status: 'ok' | 'fout' | 'uitgezet' | 'onbekend'
   laatsteFout?: string
   laatsteSucces?: string
+  /**
+   * Welk postvak deze stand veroorzaakt. Met twee postvakken toont de banner de
+   * slechtste van de twee, en dan moet "Opnieuw verbinden" dát postvak
+   * herstellen en niet blind het standaardpostvak.
+   */
+  postvakId?: string | null
 }
 
 export type PostvakSoort = 'persoonlijk' | 'gedeeld'
