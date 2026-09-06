@@ -228,12 +228,14 @@ export async function slaPostvakOp(invoer: PostvakInvoer): Promise<void> {
       imap_port: invoer.imapPort || 993,
     }),
   })
-  if (!res.ok) {
-    const fout: { error?: string } = await res.json().catch(() => ({}))
-    throw new Error(fout?.error || `Opslaan mislukt: ${res.status}`)
-  }
+  const antwoord: { error?: string; account_id?: string | null } = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(antwoord?.error || `Opslaan mislukt: ${res.status}`)
 
   if (invoer.accountId || vooraf.length === 0) return
+  const bekend = new Set(vooraf.map((p) => p.id))
+  if (antwoord.account_id && bekend.has(antwoord.account_id)) {
+    throw new Error('De server heeft je bestaande postvak bijgewerkt in plaats van er een toe te voegen. Een tweede postvak kan pas nadat migratie 246 gedraaid is; controleer het adres van je postvak hierboven.')
+  }
   const na = await getPostvakken().catch(() => [])
   if (na.length <= vooraf.length) {
     throw new Error('De server heeft geen tweede postvak aangemaakt. Controleer je bestaande postvak: mogelijk is dat bijgewerkt in plaats van dat er een postvak bij kwam.')
