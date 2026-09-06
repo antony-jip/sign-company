@@ -68,10 +68,10 @@ const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || ''
 const ROUTE_NAME = 'inkoopfactuur-extract'
 const INKOOP_EXTRACT_MONTHLY_CAP = 500
 
-// Anthropic pricing per 1M tokens — Sonnet 4.6 (verifieer bij prijswijziging)
-// Bron: https://www.anthropic.com/pricing — laatst gecheckt: 2026-05-10
-const SONNET_46_INPUT_PRICE = 3
-const SONNET_46_OUTPUT_PRICE = 15
+// Anthropic pricing per 1M tokens, Sonnet 5 (verifieer bij prijswijziging)
+// Bron: https://www.anthropic.com/pricing, laatst gecheckt: 2026-09-06
+const SONNET_46_INPUT_PRICE = 2
+const SONNET_46_OUTPUT_PRICE = 10
 
 // ── Rate limiting (inline; Vercel bundelt geen lokale imports in api/) ──
 const rlConfigured = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
