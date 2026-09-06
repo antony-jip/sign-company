@@ -96,7 +96,7 @@ import {
   updateProject,
   createProject,
   getTakenByProject,
-  getDocumenten,
+  getDocumentenByProject,
   createTaak,
   updateTaak,
   deleteTaak,
@@ -1170,8 +1170,7 @@ export function ProjectDetail() {
   const fetchDocumenten = useCallback(async () => {
     if (!id) return
     try {
-      const allDocs = await getDocumenten()
-      setProjectDocumenten(allDocs.filter((d) => d.project_id === id))
+      setProjectDocumenten(await getDocumentenByProject(id))
     } catch (err) {
       logger.error('Fout bij ophalen documenten:', err)
     }
@@ -1231,10 +1230,10 @@ export function ProjectDetail() {
       if (!id) return
       setIsLoading(true)
       try {
-        const [projectData, takenData, allDocumenten, offertesData, goedkeuringenData, tijdData, medewerkersData, toewijzingenData, werkbonnenData, montageData, fotosData, facturenData, uitgavenData, inkoopData] = await Promise.all([
+        const [projectData, takenData, documentenData, offertesData, goedkeuringenData, tijdData, medewerkersData, toewijzingenData, werkbonnenData, montageData, fotosData, facturenData, uitgavenData, inkoopData] = await Promise.all([
           getProject(id),
           getTakenByProject(id),
-          getDocumenten(),
+          getDocumentenByProject(id),
           getOffertesByProject(id),
           getTekeningGoedkeuringen(id),
           getTijdregistratiesByProject(id),
@@ -1250,7 +1249,7 @@ export function ProjectDetail() {
         if (!cancelled) {
           setProject(projectData)
           setProjectTaken(takenData)
-          setProjectDocumenten(allDocumenten.filter((d) => d.project_id === id))
+          setProjectDocumenten(documentenData)
           setProjectOffertes(offertesData)
           setGoedkeuringen(goedkeuringenData)
           setProjectTijdregistraties(tijdData)
