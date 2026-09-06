@@ -839,6 +839,42 @@ function isMailboxBreed(omschrijving: string): boolean {
   return omschrijving === 'Wachtwoord geweigerd' || omschrijving === 'Time-out' || omschrijving === 'Server onbereikbaar'
 }
 
+// ── GEDEELD-MET-API: sync-state zonder 244 ────────────────────────────────
+// status, laatste_fout, laatste_fout_op en laatste_succes_op komen uit
+// migratie 244. Zolang die niet gedraaid is faalt de HELE write, en dan
+// schuift last_seen_uid nooit op: elke ronde begint dan weer vooraan en de
+// waterlijn blijft staan. Daarom bij een kolomfout opnieuw schrijven zonder
+// die vier velden; de sync werkt dan gewoon door, alleen zonder gezondheid.
+const GEZONDHEIDSVELDEN = ['status', 'laatste_fout', 'laatste_fout_op', 'laatste_succes_op']
+
+function zonderGezondheid(rij: Record<string, unknown>): Record<string, unknown> {
+  const uit: Record<string, unknown> = {}
+  for (const [sleutel, waarde] of Object.entries(rij)) {
+    if (!GEZONDHEIDSVELDEN.includes(sleutel)) uit[sleutel] = waarde
+  }
+  return uit
+}
+
+type SchrijfUitkomst = { error: { message: string; code?: string } | null }
+
+async function upsertSyncState(rij: Record<string, unknown>): Promise<SchrijfUitkomst> {
+  const eerste = await supabaseAdmin.from('email_sync_state').upsert(rij, { onConflict: 'user_id,folder' })
+  if (!eerste.error || !isKolomFout(eerste.error)) return eerste as SchrijfUitkomst
+  const zonder = zonderGezondheid(rij)
+  if (Object.keys(zonder).length === Object.keys(rij).length) return eerste as SchrijfUitkomst
+  return await supabaseAdmin.from('email_sync_state').upsert(zonder, { onConflict: 'user_id,folder' }) as SchrijfUitkomst
+}
+
+async function updateSyncState(user_id: string, folder: string, rij: Record<string, unknown>): Promise<SchrijfUitkomst> {
+  const eerste = await supabaseAdmin.from('email_sync_state').update(rij).eq('user_id', user_id).eq('folder', folder)
+  if (!eerste.error || !isKolomFout(eerste.error)) return eerste as SchrijfUitkomst
+  const zonder = zonderGezondheid(rij)
+  // Blijft er niets over, dan viel er zonder 244 ook niets te schrijven.
+  if (Object.keys(zonder).length === 0 || Object.keys(zonder).length === Object.keys(rij).length) return eerste as SchrijfUitkomst
+  return await supabaseAdmin.from('email_sync_state').update(zonder).eq('user_id', user_id).eq('folder', folder) as SchrijfUitkomst
+}
+// ── GEDEELD-MET-API EINDE: sync-state zonder 244 ──────────────────────────
+
 async function schrijfGezondheid(
   user_id: string,
   folder: string,
@@ -849,11 +885,7 @@ async function schrijfGezondheid(
     if (uitkomst.ok) {
       // Partieel: bestaat de rij niet, dan is dat een no-op en zet de
       // state-upsert verderop hem alsnog neer.
-      await supabaseAdmin
-        .from('email_sync_state')
-        .update({ status: 'ok', laatste_fout: null, laatste_succes_op: nu })
-        .eq('user_id', user_id)
-        .eq('folder', folder)
+      await updateSyncState(user_id, folder, { status: 'ok', laatste_fout: null, laatste_succes_op: nu })
       return
     }
     // Upsert: een mailbox die nooit geslaagd is heeft nog geen rij, en juist
@@ -861,16 +893,14 @@ async function schrijfGezondheid(
     // volgende ronde bootstrapt gewoon.
     const doelen = isMailboxBreed(uitkomst.omschrijving) && folder !== 'inbox' ? [folder, 'inbox'] : [folder]
     for (const doel of doelen) {
-      await supabaseAdmin
-        .from('email_sync_state')
-        .upsert({
-          user_id,
-          folder: doel,
-          status: 'fout',
-          laatste_fout: uitkomst.omschrijving,
-          laatste_fout_op: nu,
-          updated_at: nu,
-        }, { onConflict: 'user_id,folder' })
+      await upsertSyncState({
+        user_id,
+        folder: doel,
+        status: 'fout',
+        laatste_fout: uitkomst.omschrijving,
+        laatste_fout_op: nu,
+        updated_at: nu,
+      })
     }
   } catch (err) {
     console.warn('[fetch-emails] gezondheid schrijven mislukt:', err instanceof Error ? err.message : err)
@@ -1458,9 +1488,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         stateRow.backfill_low_uid = minUidGezien > 0 ? minUidGezien : null
         stateRow.backfill_done = false
       }
-      const { error: stateErr } = await supabaseAdmin
-        .from('email_sync_state')
-        .upsert(stateRow, { onConflict: 'user_id,folder' })
+      const { error: stateErr } = await upsertSyncState(stateRow)
       if (stateErr) {
         console.warn('[fetch-emails] sync-state opslaan mislukt (migratie 131 gedraaid?):', stateErr.message)
       }
@@ -1481,11 +1509,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // een upsert met last_seen_uid erbij: die waarde komt uit een read van
       // eerder in deze functie, en terugschrijven zou precies de reset-race
       // introduceren die dit blok moet vermijden.
-      const { error: tikErr } = await supabaseAdmin
-        .from('email_sync_state')
-        .update({ updated_at: new Date().toISOString(), status: 'ok', laatste_fout: null, laatste_succes_op: new Date().toISOString() })
-        .eq('user_id', user_id)
-        .eq('folder', mapValue)
+      const nuIso = new Date().toISOString()
+      const { error: tikErr } = await updateSyncState(user_id, mapValue, {
+        updated_at: nuIso, status: 'ok', laatste_fout: null, laatste_succes_op: nuIso,
+      })
       if (tikErr) {
         console.warn('[fetch-emails] sync-tijdstip bijwerken mislukt:', tikErr.message)
       }
