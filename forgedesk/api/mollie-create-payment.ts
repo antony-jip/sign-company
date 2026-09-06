@@ -74,6 +74,26 @@ function isAllowedRedirectUrl(url: string): boolean {
 
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
+function getClientIp(req: VercelRequest): string {
+  // x-real-ip wordt door Vercel gezet en is niet client-spoofbaar; de linkerkant
+  // van x-forwarded-for is dat wel. Val daarom terug op de LAATSTE waarde.
+  const real = req.headers['x-real-ip']
+  if (typeof real === 'string' && real.trim()) return real.trim()
+  const fwd = req.headers['x-forwarded-for']
+  if (typeof fwd === 'string') {
+    const parts = fwd.split(',').map((p) => p.trim()).filter(Boolean)
+    if (parts.length) return parts[parts.length - 1]
+  }
+  if (Array.isArray(fwd) && fwd.length) return fwd[fwd.length - 1]
+  return 'unknown'
+}
+
+async function isRateLimited(key: string, maxCount: number, windowSeconds: number): Promise<boolean> {
+  const { data, error } = await supabaseAdmin.rpc('check_rate_limit', { p_key: key, p_max_count: maxCount, p_window_seconds: windowSeconds })
+  if (error) console.error('[mollie-create-payment] check_rate_limit faalde:', error)
+  return data === true
+}
+
 async function verifyUser(req: VercelRequest): Promise<string | null> {
   const authHeader = req.headers.authorization
   if (!authHeader?.startsWith('Bearer ')) return null
@@ -129,7 +149,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       factuurTotaal = Number(eigenFactuur.totaal) || 0
       factuurBetaald = Number(eigenFactuur.betaald_bedrag) || 0
     } else if (betaal_token) {
-      // Publieke flow: verifieer factuur via betaal_token
+      // Publieke flow: verifieer factuur via betaal_token. Anoniem pad, dus
+      // per IP remmen voordat er een factuur-lookup of Mollie-call gebeurt.
+      if (await isRateLimited(`mollie-create-payment:${getClientIp(req)}`, 10, 3600)) {
+        return res.status(429).json({ error: 'Te veel verzoeken. Probeer het later opnieuw.' })
+      }
       const { data: factuur } = await supabaseAdmin
         .from('facturen')
         .select('id, user_id, organisatie_id, betaal_token_verloopt_op, status, mollie_payment_id, totaal, betaald_bedrag')
