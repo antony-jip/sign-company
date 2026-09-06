@@ -115,3 +115,21 @@ export interface SyncStatus {
   laatsteFout?: string
   laatsteSucces?: string
 }
+
+export type PostvakSoort = 'persoonlijk' | 'gedeeld'
+
+/**
+ * Eén gekoppelde mailbox (`user_email_settings`). Zolang migratie 245 niet
+ * gedraaid is levert postvakService er precies één, met `naam` = het adres.
+ */
+export interface Postvak {
+  id: string
+  adres: string
+  naam: string
+  soort: PostvakSoort
+  isStandaard: boolean
+  organisatieId?: string
+}
+
+/** Het actieve postvak in de shell: één id, of alle postvakken door elkaar. */
+export type PostvakKeuze = string | 'alle'
