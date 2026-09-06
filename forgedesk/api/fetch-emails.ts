@@ -415,6 +415,8 @@ async function verifyUser(req: VercelRequest): Promise<string> {
 }
 
 interface EmailCredentials {
+  /** Rij-id van het postvak; pas gevuld als migratie 245 gedraaid is. */
+  account_id: string | null
   gmail_address: string
   app_password: string
   user_id: string
@@ -619,6 +621,7 @@ async function meldToegangIngetrokken(userId: string): Promise<void> {
 // Dezelfde helper hoort in fetch-emails, read-email, prefetch-email-bodies,
 // email-imap-action, email-settings, send-email en de twee mail-oauth-routes.
 interface CredentialRij {
+  id?: string | null
   gmail_address: string | null
   encrypted_app_password: string | null
   smtp_host: string | null
@@ -631,7 +634,7 @@ interface CredentialRij {
   oauth_token_verloopt_op: string | null
 }
 
-const CREDENTIAL_KOLOMMEN_VOOR_244 = 'gmail_address, encrypted_app_password, smtp_host, smtp_port, imap_host, imap_port'
+const CREDENTIAL_KOLOMMEN_VOOR_244 = 'id, gmail_address, encrypted_app_password, smtp_host, smtp_port, imap_host, imap_port'
 const CREDENTIAL_KOLOMMEN = `${CREDENTIAL_KOLOMMEN_VOOR_244}, auth_type, oauth_refresh_token_enc, oauth_access_token_enc, oauth_token_verloopt_op`
 
 function isKolomFout(fout: { code?: string; message?: string } | null): boolean {
@@ -681,6 +684,7 @@ async function getEmailCredentials(userId: string): Promise<EmailCredentials> {
   }
 
   return {
+    account_id: (data.id as string) ?? null,
     gmail_address: data.gmail_address,
     app_password: data.encrypted_app_password ? decryptPassword(data.encrypted_app_password) : '',
     user_id: userId,
@@ -1132,6 +1136,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       newEmails.push({
         user_id,
         organisatie_id: mailOrgId,
+        // Uit welk postvak deze mail komt. Zonder migratie 245 bestaat de kolom
+        // niet; de upsert hieronder haalt hem er dan uit.
+        ...(creds?.account_id ? { account_id: creds.account_id } : {}),
         uid: message.uid,
         // Zonder vlag letterlijk het oude gedrag: `messageId || null`. Met vlag
         // vult messageIdVoorRij het NULL-geval met een deterministisch id, zodat
@@ -1338,6 +1345,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (!error) {
           synced += ingevoegd?.length ?? 0
           continue
+        }
+
+        // account_id komt uit migratie 245; zolang die niet gedraaid is faalt de
+        // hele batch op die ene kolom. Opnieuw zonder dat veld.
+        if (isKolomFout(error) && batch.some((r) => 'account_id' in r)) {
+          const zonderAccount = batch.map((r) => { const kopie = { ...r }; delete (kopie as Record<string, unknown>).account_id; return kopie })
+          const tweede = await supabaseAdmin
+            .from('emails')
+            .upsert(zonderAccount, { onConflict: 'user_id,message_id', ignoreDuplicates: true })
+            .select('id')
+          if (!tweede.error) { synced += tweede.data?.length ?? 0; continue }
         }
 
         // Batch upsert failed — try individual inserts

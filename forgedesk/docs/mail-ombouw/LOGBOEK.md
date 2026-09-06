@@ -247,3 +247,8 @@ Op Trigger.dev (dashboard, environment prod) voor de IDLE-werker:
 - Restpunten (6198a0d9): `label()` spoelt de wachtende undo-buffer door (niet annuleren: labelen is niet de tegenovergestelde actie, annuleren zou de archivering nooit wegschrijven); `voegToe` negeert een serverrij voor een id die nog in `wachtend` staat maar niet meer in de store; de `email_bodies`-ontbreekt-vlag vervalt na vijf minuten; de laatste kolom-terugval in `mail-idle` laat ook `auth_type` weg; `account_id` komt bij meer dan één postvak zonder postvakfilter uit een extra lichte query op `emails`; sync-status `onbekend` is neutraal in plaats van groen.
 - Afwijking van de review: `LIST_VIEW_COLUMNS` kan `account_id` niet bevatten. `emails_list_view` (106/159/163) selecteert kolommen expliciet en migratie 245 raakt de view niet aan, dus die kolom bestaat daar ook ná 245 niet. Vandaar de extra query op `emails` in plaats van een kolom erbij. Wil de view hem wél hebben, dan hoort er een migratie bij; die schrijft de hoofdsessie.
 - Poorten: tsc 28, typecheck:api 1, build groen, 674 tests groen.
+
+## Reviewfixes derde ronde (regie)
+
+- `api/fetch-emails.ts` schrijft nu `account_id` op nieuwe mail (uit de credential-rij, met `id` in de select). Zonder migratie 245 bestaat de kolom niet en valt de batch terug op een tweede upsert zonder dat veld. Zonder dit hadden threads na 245 gesplitst en was nieuwe mail in een gedeeld postvak onzichtbaar gebleven.
+- Migratie 245 herbouwt `emails_list_view` met `account_id`, `toegewezen_aan` en `toegewezen_op` erin. De view somt zijn kolommen expliciet op, dus die kwamen er anders nooit bij en moest de client een tweede query doen.
