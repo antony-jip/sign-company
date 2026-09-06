@@ -427,6 +427,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       wacht_op_reactie = false,
       // Threading: meegegeven door de frontend bij reply/forward
       in_reply_to,
+      references,
       thread_id,
     } = req.body as {
       to: string
@@ -439,6 +440,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       scheduledAt?: string
       wacht_op_reactie?: boolean
       in_reply_to?: string
+      references?: string[]
       thread_id?: string
     }
 
@@ -534,11 +536,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       to,
       subject,
     }
-    // Threading SMTP headers zodat ontvangers de mail correct threaden
+    // Threading SMTP headers zodat ontvangers de mail correct threaden. De
+    // References-keten komt van de composer; ontbreekt hij, dan is de ouder
+    // zelf de keten.
     if (in_reply_to) {
       mailOptions.inReplyTo = in_reply_to
-      mailOptions.references = in_reply_to
     }
+    const referentieKeten = Array.isArray(references)
+      ? references.filter((r): r is string => typeof r === 'string' && r.length > 0)
+      : []
+    if (in_reply_to && !referentieKeten.includes(in_reply_to)) referentieKeten.push(in_reply_to)
+    if (referentieKeten.length > 0) mailOptions.references = referentieKeten.join(' ')
     // Als er HTML is, gebruik die als primaire content. Plain text alleen als fallback.
     if (processedHtml) {
       mailOptions.html = processedHtml
