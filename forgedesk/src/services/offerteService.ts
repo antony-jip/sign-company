@@ -16,6 +16,7 @@ import type {
   Project,
   OfferteConditie,
   CalculatieProductStaffel,
+  OfferteHandtekening,
 } from '@/types'
 import { berekenMarkupPercentage } from '@/utils/margeBerekening'
 import { partitionOfferteItemSync } from '@/utils/offerteItemSync'
@@ -73,6 +74,22 @@ export async function getOfferte(id: string): Promise<Offerte | null> {
   const offerte = offertes.find((o) => o.id === id)
   if (!offerte) return null
   return { ...offerte, klant_naam: klanten.find((k) => k.id === offerte.klant_id)?.bedrijfsnaam || '' }
+}
+
+/**
+ * Handtekening bij online akkoord (migratie 240, eigen tabel). Apart en lazy
+ * ophalen: de PNG is tot 200 kB en hoort niet in elke offerte-select.
+ */
+export async function getOfferteHandtekening(offerteId: string): Promise<OfferteHandtekening | null> {
+  assertId(offerteId, 'offerte_id')
+  if (!(isSupabaseConfigured() && supabase)) return null
+  const { data, error } = await supabase
+    .from('offerte_handtekeningen')
+    .select('*')
+    .eq('offerte_id', offerteId)
+    .maybeSingle()
+  if (error) throw error
+  return data
 }
 
 /**

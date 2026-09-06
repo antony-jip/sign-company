@@ -1,3 +1,11 @@
+/**
+ * Klant-akkoord op een publieke offerte-link.
+ *
+ * Body: { token, naam, gekozen_items?, gekozen_varianten?, handtekening?, via? }
+ * - handtekening: PNG data-URL, max 200 kB, gaat naar offerte_handtekeningen
+ *   (migratie 240). Verplicht (400 als hij ontbreekt), behalve als via 'portaal'
+ *   is: daar geeft een ingelogde klant akkoord en is de portaalreactie het bewijs.
+ */
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createTransport } from 'nodemailer'
 import crypto from 'crypto'
@@ -172,21 +180,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!(await enforceRateLimit(getClientIp(req), res))) return
 
   try {
-    const { token, naam, gekozen_items, gekozen_varianten, handtekening } = req.body as {
+    const { token, naam, gekozen_items, gekozen_varianten, handtekening, via } = req.body as {
       token: string
       naam: string
       gekozen_items?: string[]
       gekozen_varianten?: Record<string, string>
       handtekening?: string
+      via?: string
     }
 
     if (!token) return res.status(400).json({ error: 'Token is verplicht' })
     if (!naam || naam.trim().length < 2) {
       return res.status(400).json({ error: 'Naam is verplicht (minimaal 2 tekens)' })
     }
-    // Handtekening (migratie 235): PNG als data-URL, max 200 kB. De publieke
-    // pagina maakt hem verplicht; hier alleen de vorm en de grootte bewaken.
+    // Handtekening: PNG als data-URL, max 200 kB, opgeslagen in
+    // offerte_handtekeningen (migratie 240). Server-side verplicht, zodat een
+    // akkoord zonder handtekening niet langs de publieke pagina heen kan.
+    // Uitzondering: via 'portaal', waar de klant ingelogd akkoord geeft en de
+    // portaalreactie het bewijs is.
     const MAX_HANDTEKENING_BYTES = 200 * 1024
+    if (handtekening === undefined && via !== 'portaal') {
+      return res.status(400).json({ error: 'Handtekening is verplicht' })
+    }
     if (handtekening !== undefined) {
       if (typeof handtekening !== 'string' || !handtekening.startsWith('data:image/png;base64,')) {
         return res.status(400).json({ error: 'Handtekening moet een PNG data-URL zijn' })
@@ -233,7 +248,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     if (gekozen_items) updateData.gekozen_items = gekozen_items
     if (gekozen_varianten) updateData.gekozen_varianten = gekozen_varianten
-    if (handtekening) updateData.handtekening_data = handtekening
 
     // Bij keuzes (optionele items en/of prijsvarianten): materialiseer de door
     // de klant gekozen configuratie op de items en herbereken de offerte-
@@ -287,7 +301,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       offerte.totaal = totalen.totaal
     }
 
-    await supabaseAdmin.from('offertes').update(updateData).eq('id', offerte.id)
+    const { error: updateError } = await supabaseAdmin.from('offertes').update(updateData).eq('id', offerte.id)
+    if (updateError) throw updateError
+
+    if (handtekening) {
+      const handtekeningOrgId = offerte.organisatie_id
+        || (await supabaseAdmin.from('profiles').select('organisatie_id').eq('id', offerte.user_id).maybeSingle()).data?.organisatie_id
+      if (!handtekeningOrgId) {
+        console.error('[offerte-accepteren] handtekening niet opgeslagen: geen organisatie bij offerte', offerte.id)
+      } else {
+        const { error: handtekeningError } = await supabaseAdmin
+          .from('offerte_handtekeningen')
+          .upsert(
+            { offerte_id: offerte.id, organisatie_id: handtekeningOrgId, naam: naam.trim(), data: handtekening, getekend_op: nu },
+            { onConflict: 'offerte_id' }
+          )
+        if (handtekeningError) {
+          console.error('[offerte-accepteren] handtekening opslaan mislukt:', handtekeningError.message)
+        }
+      }
+    }
 
     // Update gekoppeld portaal item + maak reactie aan
     const { data: portaalItems } = await supabaseAdmin

@@ -341,6 +341,8 @@ export interface Taak {
   offerte_id?: string;
   /** Bewerking waar de taak uit voortkomt; uren op de taak erven dit (migratie 233). */
   urenveld?: string | null;
+  /** Taak van een projectsjabloon (migratie 240); blijft buiten de takenlijst. */
+  is_sjabloon?: boolean;
   bijlagen?: string[];
   created_at: string;
   updated_at: string;
@@ -453,10 +455,27 @@ export interface Offerte {
   conditie_id?: string | null;
   /** Spoed: project krijgt bij akkoord prioriteit (migratie 235). */
   spoed?: boolean;
-  /** Handtekening van de klant bij online akkoord, data-URL (migratie 235). */
-  handtekening_data?: string | null;
   /** Referentie of PO-nummer van de klant (migratie 237). */
   klant_referentie?: string | null;
+  /**
+   * @deprecated Kolom is weg (migratie 240); altijd undefined. Lees de
+   * handtekening via getOfferteHandtekening. Verdwijnt zodra QuoteCreation
+   * daarop over is.
+   */
+  handtekening_data?: string | null;
+}
+
+/**
+ * Handtekening van de klant bij online akkoord (migratie 240). Eigen tabel,
+ * één rij per offerte; de PNG-data-URL reist zo niet mee in elke offerte-select.
+ * Alleen api/offerte-accepteren schrijft hier (service_role).
+ */
+export interface OfferteHandtekening {
+  offerte_id: string;
+  organisatie_id: string;
+  naam?: string | null;
+  data: string;
+  getekend_op: string;
 }
 
 export interface OfferteActiviteit {
