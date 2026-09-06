@@ -265,13 +265,18 @@ export const onboardingSequence = schemaTask({
 
     logger.info("Onboarding stap 1: welkomstmail", { userId, userEmail });
 
+    // Idempotency-key per gebruiker en stap: een retry of herstart van de
+    // sequence (wait.for overleeft een deploy niet altijd) mag nooit
+    // dezelfde mail twee keer bezorgen.
+    const idempotencyKey = (stap: number) => `onboarding:${userId}:${stap}`;
+
     const welcomeEmail = buildWelcomeEmail(voornaam);
     await resend.emails.send({
       from: FROM,
       to: userEmail,
       subject: welcomeEmail.subject,
       html: buildOnboardingHtml(welcomeEmail),
-    });
+    }, { idempotencyKey: idempotencyKey(1) });
 
     logger.info("Welkomstmail verstuurd", { userId });
 
@@ -300,7 +305,7 @@ export const onboardingSequence = schemaTask({
       to: emailDay3,
       subject: portaalEmail.subject,
       html: buildOnboardingHtml(portaalEmail),
-    });
+    }, { idempotencyKey: idempotencyKey(2) });
 
     logger.info("Portaal email verstuurd", { userId });
 
@@ -329,7 +334,7 @@ export const onboardingSequence = schemaTask({
       to: emailDay7,
       subject: daanEmail.subject,
       html: buildOnboardingHtml(daanEmail),
-    });
+    }, { idempotencyKey: idempotencyKey(3) });
 
     logger.info("Daan email verstuurd, onboarding sequence compleet", { userId });
 
