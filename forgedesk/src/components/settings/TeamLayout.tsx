@@ -59,7 +59,7 @@ import {
 } from '@/services/supabaseService';
 import { getMedewerkerContracten, upsertMedewerkerContract } from '@/services/planningService';
 import type { Medewerker, Verlof, MedewerkerContract } from '@/types';
-import { contractOpDatum, contractUrenPerWeek, datumPlusDagen } from '@/utils/contracturen';
+import { contractOpDatum, contractUrenPerWeek, datumPlusDagen, lokaleIso } from '@/utils/contracturen';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { useAuth } from '@/contexts/AuthContext';
 import { isAdminUser } from '@/utils/authHelpers';
@@ -131,7 +131,7 @@ const UREN_VELDEN = ['uren_ma', 'uren_di', 'uren_wo', 'uren_do', 'uren_vr', 'ure
 const STANDAARD_UREN = [8, 8, 8, 8, 8, 0, 0];
 
 function vandaagIso(): string {
-  return new Date().toISOString().slice(0, 10);
+  return lokaleIso(new Date());
 }
 
 function formatUren(n: number): string {
@@ -170,7 +170,7 @@ function blankMedewerker(): Omit<Medewerker, 'id' | 'user_id' | 'created_at' | '
     status: 'actief',
     rol: 'medewerker',
     vaardigheden: [],
-    start_datum: new Date().toISOString().slice(0, 10),
+    start_datum: vandaagIso(),
     notities: '',
   };
 }

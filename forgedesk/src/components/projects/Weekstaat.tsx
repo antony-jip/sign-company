@@ -12,7 +12,7 @@ import { stuurUrenWeekMelding } from '@/services/urenWeekService'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { getProjectUrenBudget, type ProjectUrenBudget } from '@/services/projectUrenService'
 import { kostprijsVoor, uurtariefVoorkeuze } from '@/utils/kostprijs'
-import { contractOpDatum, contractUrenOpDag, datumPlusDagen, maandagVan } from '@/utils/contracturen'
+import { contractOpDatum, contractUrenOpDag, datumPlusDagen, lokaleIso, maandagVan } from '@/utils/contracturen'
 import { isPseudoMedewerker, koppelbaarMedewerkerId } from '@/utils/medewerkerKoppeling'
 import type { AppSettings, Medewerker, MedewerkerContract, Project, Tijdregistratie } from '@/types'
 
@@ -28,8 +28,7 @@ export function weekNummer(datumIso: string): number {
 }
 
 export function vandaagIso(): string {
-  const d = new Date()
-  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10)
+  return lokaleIso(new Date())
 }
 
 /** Maandag van de week met offset t.o.v. deze week. */
