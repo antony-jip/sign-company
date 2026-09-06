@@ -60,7 +60,10 @@ import {
   Share2,
   MinusCircle,
   Paperclip,
-  Info, AlertCircle,} from 'lucide-react'
+  Info, AlertCircle, RefreshCw,} from 'lucide-react'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { usePullToRefresh, useScrollContainer } from '@/hooks/usePullToRefresh'
+import { hapticLight } from '@/utils/haptic'
 import {
   getFacturen,
   getFactuur,
@@ -2303,8 +2306,34 @@ export function FacturenLayout() {
     )
   }
 
+  const isMobiel = useMediaQuery('(max-width: 767px)')
+  const paginaRef = useRef<HTMLDivElement>(null)
+  const scrollDoel = useScrollContainer(paginaRef)
+  const { afstand: trekAfstand, bezig: trekBezig, gereed: trekGereed } = usePullToRefresh({
+    doel: scrollDoel,
+    actief: isMobiel && !editingFactuur && !viewingFactuur,
+    onRefresh: async () => {
+      hapticLight()
+      await stilVerversen()
+    },
+  })
+
   return (
-    <div className="-m-3 sm:-m-4 md:-m-6">
+    <div ref={paginaRef} className="relative -m-3 sm:-m-4 md:-m-6">
+      {(trekAfstand > 0 || trekBezig) && (
+        <div
+          className="md:hidden absolute inset-x-0 top-0 z-20 flex items-center justify-center pointer-events-none"
+          style={{ height: trekAfstand }}
+        >
+          <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card border border-border shadow-[0_2px_8px_rgba(0,0,0,0.08)] text-[11px] font-medium text-muted-foreground">
+            <RefreshCw
+              className={cn('h-3.5 w-3.5', trekBezig && 'animate-spin')}
+              style={trekBezig ? undefined : { transform: `rotate(${trekAfstand * 4}deg)` }}
+            />
+            {trekBezig ? 'Ophalen' : trekGereed ? 'Loslaten om te verversen' : 'Trek om te verversen'}
+          </span>
+        </div>
+      )}
 
       {/* ── Content ── */}
       <div>

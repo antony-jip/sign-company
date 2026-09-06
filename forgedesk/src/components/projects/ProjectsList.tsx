@@ -49,7 +49,9 @@ import {
 import { exportCSV, exportExcel } from '@/lib/export'
 import { PaginationControls } from '@/components/ui/pagination-controls'
 import { DatePicker } from '@/components/ui/date-picker'
-import { AlertCircle, Activity, Receipt, CheckCircle } from 'lucide-react'
+import { AlertCircle, Activity, Receipt, CheckCircle, RefreshCw } from 'lucide-react'
+import { usePullToRefresh, useScrollContainer } from '@/hooks/usePullToRefresh'
+import { hapticLight } from '@/utils/haptic'
 import { getProjecten, getKlanten, getOffertes, updateProject, createProjectFoto, deleteProject, getProjectKoppelingen, deleteProjectMetKoppelingen, ProjectHeeftFacturenError, getMedewerkers as fetchMedewerkers, createOfferte, createOfferteItem, updateOfferte, updateOfferteItem, getOfferteItems, deleteOfferte } from '@/services/supabaseService'
 import type { ProjectKoppelingen } from '@/services/projectService'
 import { getCached, fetchQuery } from '@/lib/queryCache'
@@ -977,8 +979,34 @@ export function ProjectsList() {
     'on-hold': '#F0EFEC',
   }
 
+
+  const paginaRef = useRef<HTMLDivElement>(null)
+  const scrollDoel = useScrollContainer(paginaRef)
+  const { afstand: trekAfstand, bezig: trekBezig, gereed: trekGereed } = usePullToRefresh({
+    doel: scrollDoel,
+    actief: isMobiel,
+    onRefresh: async () => {
+      hapticLight()
+      await fetchData()
+    },
+  })
+
   return (
-    <div className="-m-3 sm:-m-4 md:-m-6">
+    <div ref={paginaRef} className="relative -m-3 sm:-m-4 md:-m-6">
+      {(trekAfstand > 0 || trekBezig) && (
+        <div
+          className="md:hidden absolute inset-x-0 top-0 z-20 flex items-center justify-center pointer-events-none"
+          style={{ height: trekAfstand }}
+        >
+          <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card border border-border shadow-[0_2px_8px_rgba(0,0,0,0.08)] text-[11px] font-medium text-muted-foreground">
+            <RefreshCw
+              className={cn('h-3.5 w-3.5', trekBezig && 'animate-spin')}
+              style={trekBezig ? undefined : { transform: `rotate(${trekAfstand * 4}deg)` }}
+            />
+            {trekBezig ? 'Ophalen' : trekGereed ? 'Loslaten om te verversen' : 'Trek om te verversen'}
+          </span>
+        </div>
+      )}
       {/* Inline keyframes for pulse + stagger + hover glow */}
       <style>{`
         @keyframes doen-pulse { 0%,100% { opacity:1 } 50% { opacity:.35 } }

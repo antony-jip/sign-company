@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 const DREMPEL = 64
 const MAX = 96
@@ -86,4 +86,23 @@ export function usePullToRefresh({ doel, onRefresh, actief = true }: Opties) {
   }, [doel, actief])
 
   return { afstand, bezig, gereed: afstand >= DREMPEL }
+}
+
+/**
+ * De modulepagina's scrollen in de app-shell, niet in de lijst zelf. Vanaf een
+ * anker in de pagina de dichtstbijzijnde voorouder zoeken die echt scrolt,
+ * zodat de `scrollTop`-check hierboven klopt en niet elke veeg een sync start.
+ */
+export function useScrollContainer(anker: React.RefObject<HTMLElement>): React.RefObject<HTMLElement> {
+  const doel = useRef<HTMLElement | null>(null)
+  useLayoutEffect(() => {
+    let el = anker.current?.parentElement ?? null
+    while (el) {
+      const { overflowY } = getComputedStyle(el)
+      if (overflowY === 'auto' || overflowY === 'scroll') break
+      el = el.parentElement
+    }
+    doel.current = el ?? (document.scrollingElement as HTMLElement | null)
+  }, [anker])
+  return doel
 }
