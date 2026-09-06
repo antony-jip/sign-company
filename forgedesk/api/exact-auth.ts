@@ -132,14 +132,10 @@ async function updateAppSettingsOrgFirst(
 }
 
 async function verifyUser(req: VercelRequest): Promise<string> {
-  // Accept token via Authorization header or query param (for redirects)
-  let token = ''
+  // Alleen de Authorization-header: een sessietoken in de query-string
+  // belandt in logs, referrers en browsergeschiedenis.
   const authHeader = req.headers.authorization
-  if (authHeader?.startsWith('Bearer ')) {
-    token = authHeader.split(' ')[1]
-  } else if (typeof req.query.token === 'string') {
-    token = req.query.token
-  }
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : ''
   if (!token) throw new Error('Niet geautoriseerd')
   const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
   if (error || !user) throw new Error('Ongeldige sessie')
