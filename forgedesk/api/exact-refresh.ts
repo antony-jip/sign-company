@@ -47,7 +47,7 @@ const INT_KEY = process.env.INTEGRATION_ENCRYPTION_KEY || ''
  * leesbaar; een rij schuift pas op naar g1 zodra hij opnieuw wordt weggeschreven.
  */
 function encryptSecret(text: string): string {
-  if (!INT_KEY) return text
+  if (!INT_KEY) throw new Error('INTEGRATION_ENCRYPTION_KEY niet geconfigureerd')
   const salt = crypto.randomBytes(16)
   const key = crypto.scryptSync(INT_KEY, salt, 32)
   const iv = crypto.randomBytes(12)
