@@ -13,6 +13,7 @@ import { logCreate } from '@/utils/auditLogger'
 import { logger } from '@/utils/logger'
 import { cn } from '@/lib/utils'
 import type { Offerte } from '@/types'
+import { WatFacturerenDialog } from '@/components/invoices/WatFacturerenDialog'
 
 const AFWIJS_REDENEN = ['Te duur', 'Te late levering', 'Iets anders'] as const
 type AfwijsReden = (typeof AFWIJS_REDENEN)[number]
@@ -36,6 +37,8 @@ export function OfferteVervolgDialog({ open, onOpenChange, offerteId, onBijgewer
   const prospectWordtKlant = useFunctie('prospect_wordt_klant')
   const [offerte, setOfferte] = useState<Offerte | null>(null)
   const [bezig, setBezig] = useState<'project' | 'factuur' | 'afwijzen' | null>(null)
+  const deelfactuurAan = useFunctie('factuur_deelfactuur')
+  const [watFacturerenOpen, setWatFacturerenOpen] = useState(false)
   const [afwijzenOpen, setAfwijzenOpen] = useState(false)
   const [reden, setReden] = useState<AfwijsReden | null>(null)
   const [toelichting, setToelichting] = useState('')
@@ -95,6 +98,10 @@ export function OfferteVervolgDialog({ open, onOpenChange, offerteId, onBijgewer
 
   const handleDirectFactureren = () => {
     if (!offerte) return
+    if (deelfactuurAan) {
+      setWatFacturerenOpen(true)
+      return
+    }
     const params = new URLSearchParams({ offerte_id: offerte.id, klant_id: offerte.klant_id })
     if (offerte.project_id) params.set('project_id', offerte.project_id)
     if (offerte.titel) params.set('titel', offerte.titel)
@@ -123,6 +130,7 @@ export function OfferteVervolgDialog({ open, onOpenChange, offerteId, onBijgewer
   const keuzeCls = 'w-full flex items-center gap-3 min-h-[52px] px-3.5 py-2.5 rounded-xl border border-[rgba(26,83,92,0.12)] dark:border-white/10 text-left hover:border-petrol/40 hover:bg-petrol/[0.04] dark:hover:bg-white/[0.04] transition-colors disabled:opacity-50'
 
   return (
+    <>
     <Dialog open={open} onOpenChange={(v) => { if (!v) sluit(); else onOpenChange(v) }}>
       <DialogContent className={SHEET_OP_MOBIEL}>
         <DialogHeader>
@@ -215,5 +223,13 @@ export function OfferteVervolgDialog({ open, onOpenChange, offerteId, onBijgewer
         </div>
       </DialogContent>
     </Dialog>
+      {offerte && deelfactuurAan && (
+        <WatFacturerenDialog
+          open={watFacturerenOpen}
+          onOpenChange={(o) => { setWatFacturerenOpen(o); if (!o) onOpenChange(false) }}
+          offerte={offerte}
+        />
+      )}
+    </>
   )
 }

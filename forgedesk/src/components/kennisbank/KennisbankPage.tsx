@@ -1,10 +1,10 @@
-import { useState, useMemo, type ReactNode } from 'react'
+import { useState, useMemo, useEffect, type ReactNode } from 'react'
 import {
   Search, BookOpen, FolderKanban, FileText, Receipt, Users, ClipboardCheck,
   Calendar, CheckCircle, Mail, Globe, PiggyBank, Sparkles, ChevronRight,
   Wrench, ArrowLeft, Zap, Shield, BarChart3, Palette, Bell,
 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { moduleUitgezet } from '@/lib/featureFlags'
 import { useFeatureFlags } from '@/contexts/FeatureFlagsContext'
@@ -511,6 +511,14 @@ export function KennisbankPage() {
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [activeArticle, setActiveArticle] = useState<KbArticle | null>(null)
+  // Deep link vanuit de functies-schakelaars: /kennisbank?artikel=<id>
+  const [searchParams] = useSearchParams()
+  const artikelParam = searchParams.get('artikel')
+  useEffect(() => {
+    if (!artikelParam) return
+    const gevonden = ARTICLES.find((a) => a.id === artikelParam)
+    if (gevonden) setActiveArticle(gevonden)
+  }, [artikelParam])
 
   const filtered = useMemo(() => {
     let list = ARTICLES

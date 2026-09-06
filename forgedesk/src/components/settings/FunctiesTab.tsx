@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
 import { Input } from '@/components/ui/input'
@@ -40,7 +41,7 @@ export function FunctiesTab() {
       </div>
 
       {FUNCTIE_GROEPEN.map((groep) => {
-        const items = FUNCTIES.filter((f) => f.groep === groep.id)
+        const items = FUNCTIES.filter((f) => f.groep === groep.id && !f.binnenkort)
         if (items.length === 0) return null
         return (
           <Card key={groep.id}>
@@ -55,7 +56,15 @@ export function FunctiesTab() {
                   <div key={f.sleutel} className="flex items-start justify-between gap-4 py-3 first:pt-0 last:pb-0">
                     <div className="min-w-0 flex-1">
                       <Label htmlFor={`functie-${f.sleutel}`} className="text-sm font-medium">{f.label}</Label>
-                      <p className="text-xs text-muted-foreground mt-0.5">{f.uitleg}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {f.uitleg}
+                        {f.artikel && (
+                          <>
+                            {' '}
+                            <Link to={`/kennisbank?artikel=${f.artikel}`} className="text-petrol underline-offset-2 hover:underline">Lees meer</Link>
+                          </>
+                        )}
+                      </p>
                       {f.getal && aan && (
                         <div className="mt-2 flex items-center gap-2">
                           <Label htmlFor={`getal-${f.getal.sleutel}`} className="text-xs text-muted-foreground whitespace-nowrap">{f.getal.label}</Label>

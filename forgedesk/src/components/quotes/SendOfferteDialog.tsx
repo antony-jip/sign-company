@@ -387,6 +387,11 @@ export function SendOfferteDialog({
             {mode === 'follow-up'
               ? `Verstuur opvolg-bericht voor ${offerte.nummer} met PDF bijlage.`
               : `Verstuur ${offerte.nummer} als email met PDF bijlage.`}
+            {klant?.verzendvoorkeur && klant.verzendvoorkeur !== 'email' && (
+              <span className="block mt-1 text-amber-700 dark:text-amber-400">
+                Voorkeur van deze klant: {klant.verzendvoorkeur === 'post' ? 'per post' : 'via het portaal'}.
+              </span>
+            )}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
