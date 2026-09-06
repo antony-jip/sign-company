@@ -679,8 +679,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!(await enforceRateLimit(user_id, res))) return
 
-    let gmail_address: string, app_password: string, smtp_host: string, smtp_port: number
-    let imap_host: string, imap_port: number
     // Bij auth_type google of microsoft gaat er een access-token over de lijn
     // in plaats van een wachtwoord (XOAUTH2), zowel naar SMTP als naar de
     // IMAP-APPEND in Verzonden.
@@ -694,27 +692,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       credsFout = err instanceof Error ? err.message : null
       creds = null
     }
-    if (creds) {
-      gmail_address = creds.gmail_address
-      app_password = creds.app_password
-      smtp_host = creds.smtp_host
-      smtp_port = creds.smtp_port
-      imap_host = creds.imap_host
-      imap_port = creds.imap_port
-      if (isOauthKoppeling(creds.auth_type)) {
-        oauthCreds = creds
-        access_token = await haalToegangstoken(creds)
-      }
-    } else {
-      gmail_address = req.body.gmail_address
-      app_password = req.body.app_password
-      smtp_host = req.body.smtp_host || 'smtp.gmail.com'
-      smtp_port = req.body.smtp_port || 587
-      imap_host = req.body.imap_host || 'imap.gmail.com'
-      imap_port = req.body.imap_port || 993
-      if (!gmail_address || !app_password) {
-        return res.status(400).json({ error: credsFout || 'Geen email instellingen gevonden. Koppel je mailbox onder Instellingen > Koppelingen > E-mail.' })
-      }
+    // Hier stond een terugval op gmail_address en app_password uit de
+    // request-body. Die is weg, en bewust helemaal: hij maakte de controle op
+    // account_id omzeilbaar. Vraag je een postvak op dat niet van jou is, dan
+    // gooit getEmailCredentials, en precies dán viel de oude code terug op de
+    // afzender die de aanvrager zelf meestuurde. Verzenden liep dan langs elke
+    // postvakcontrole heen, met een adres en wachtwoord naar keuze. Geen enkele
+    // client heeft die velden ooit gestuurd (zie sendEmail in
+    // src/services/gmailService.ts): de mailbox staat op de server, en wie er
+    // geen heeft koppelt er eerst één.
+    if (!creds) {
+      return res.status(400).json({ error: credsFout || 'Geen email instellingen gevonden. Koppel je mailbox onder Instellingen > Koppelingen > E-mail.' })
+    }
+    const gmail_address = creds.gmail_address
+    const app_password = creds.app_password
+    const smtp_host = creds.smtp_host
+    const smtp_port = creds.smtp_port
+    const imap_host = creds.imap_host
+    const imap_port = creds.imap_port
+    if (isOauthKoppeling(creds.auth_type)) {
+      oauthCreds = creds
+      access_token = await haalToegangstoken(creds)
     }
 
     const {
