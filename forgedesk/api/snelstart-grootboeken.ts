@@ -90,12 +90,22 @@ async function verifyUser(req: VercelRequest): Promise<string> {
 const SNELSTART_AUTH_URL = 'https://auth.snelstart.nl/b2b/token'
 const SNELSTART_API_BASE = 'https://b2bapi.snelstart.nl/v2'
 
+async function isRateLimited(key: string, maxCount: number, windowSeconds: number): Promise<boolean> {
+  const { data, error } = await supabaseAdmin.rpc('check_rate_limit', { p_key: key, p_max_count: maxCount, p_window_seconds: windowSeconds })
+  if (error) console.error('[snelstart-grootboeken] check_rate_limit faalde:', error)
+  return data === true
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
   try {
     const user_id = await verifyUser(req)
+
+    if (await isRateLimited(`snelstart-grootboeken:${user_id}`, 30, 60)) {
+      return res.status(429).json({ error: 'Te veel verzoeken. Probeer het later opnieuw.' })
+    }
 
     const subscriptionKey = process.env.SNELSTART_SUBSCRIPTION_KEY
     if (!subscriptionKey) {

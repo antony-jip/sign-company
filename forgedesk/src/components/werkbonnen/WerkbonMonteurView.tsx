@@ -21,7 +21,7 @@ import {
   getWerkbon, updateWerkbon,
   getWerkbonItems,
   getWerkbonFotos, createWerkbonFoto, deleteWerkbonFoto,
-  getKlanten, getProjecten, getOffertes,
+  getKlant, getProject, getOfferte,
   getMontageAfspraak, updateMontageAfspraak,
 } from '@/services/supabaseService'
 import { uploadFile } from '@/services/storageService'
@@ -148,12 +148,12 @@ export function WerkbonMonteurView() {
         setKlantNaamGetekend(wb.klant_naam_getekend || '')
         setHandtekeningData(wb.klant_handtekening)
 
-        const [wbItems, wbFotos, klanten, projecten, offertes] = await Promise.all([
+        const [wbItems, wbFotos, wbKlant, wbProject, wbOfferte] = await Promise.all([
           getWerkbonItems(wb.id),
           getWerkbonFotos(wb.id),
-          getKlanten(),
-          getProjecten(),
-          getOffertes(),
+          wb.klant_id ? getKlant(wb.klant_id).catch(() => null) : Promise.resolve(null),
+          wb.project_id ? getProject(wb.project_id).catch(() => null) : Promise.resolve(null),
+          wb.offerte_id ? getOfferte(wb.offerte_id).catch(() => null) : Promise.resolve(null),
         ])
         if (cancelled) return
         for (const item of wbItems) {
@@ -166,9 +166,9 @@ export function WerkbonMonteurView() {
         }
         setWerkbonItems(wbItems)
         setFotos(wbFotos)
-        setKlant(klanten.find((k) => k.id === wb.klant_id) || null)
-        setProject(wb.project_id ? projecten.find((p) => p.id === wb.project_id) || null : null)
-        setOfferte(wb.offerte_id ? offertes.find((o) => o.id === wb.offerte_id) || null : null)
+        setKlant(wbKlant)
+        setProject(wbProject)
+        setOfferte(wbOfferte)
       } catch (err) {
         logger.error('Fout bij laden werkbon:', err)
         if (!cancelled) toast.error('Fout bij laden werkbon')

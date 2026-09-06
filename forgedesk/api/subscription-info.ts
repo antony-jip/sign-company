@@ -12,6 +12,12 @@ const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
 // Leest de lopende incasso rechtstreeks bij Mollie in plaats van de datum in
 // onze eigen database te dupliceren: Mollie is hier de bron van waarheid en
 // schuift de datum zelf op na elke geslaagde incasso.
+async function isRateLimited(key: string, maxCount: number, windowSeconds: number): Promise<boolean> {
+  const { data, error } = await supabaseAdmin.rpc('check_rate_limit', { p_key: key, p_max_count: maxCount, p_window_seconds: windowSeconds })
+  if (error) console.error('[subscription-info] check_rate_limit faalde:', error)
+  return data === true
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
@@ -23,14 +29,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
     if (authError || !user) return res.status(401).json({ error: 'Niet ingelogd' })
 
+    if (await isRateLimited(`subscription-info:${user.id}`, 10, 3600)) {
+      return res.status(429).json({ error: 'Te veel verzoeken. Probeer het later opnieuw.' })
+    }
+
     const { data: profile } = await supabaseAdmin
       .from('profiles')
-      .select('organisatie_id')
+      .select('organisatie_id, rol')
       .eq('id', user.id)
       .maybeSingle()
 
     const organisatieId = profile?.organisatie_id
     if (!organisatieId) return res.status(403).json({ error: 'Geen organisatie' })
+    if (profile?.rol !== 'admin') return res.status(403).json({ error: 'Alleen admins kunnen abonnementsgegevens bekijken' })
 
     const { data: org } = await supabaseAdmin
       .from('organisaties')

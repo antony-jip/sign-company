@@ -14,6 +14,7 @@
 //   prefetchQuery(key, fetcher)   // fire-and-forget, slaat over als al gecachet
 
 const cache = new Map<string, unknown>()
+const cachedAt = new Map<string, number>()
 const inflight = new Map<string, Promise<unknown>>()
 
 export function getCached<T>(key: string): T | undefined {
@@ -22,21 +23,34 @@ export function getCached<T>(key: string): T | undefined {
 
 export function setCached<T>(key: string, value: T): void {
   cache.set(key, value)
+  cachedAt.set(key, Date.now())
 }
 
 export function clearQueryCache(): void {
   cache.clear()
+  cachedAt.clear()
   inflight.clear()
 }
 
 // Dedup-bewuste fetch: bestaat er al een vlucht voor deze key, deel die;
-// anders fetchen, cachen en de vlucht opruimen. Altijd vers (alleen
-// gelijktijdige calls worden gedeeld) — geschikt voor revalidatie.
-export function fetchQuery<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
+// anders fetchen, cachen en de vlucht opruimen. Zonder maxAgeMs altijd vers
+// (alleen gelijktijdige calls worden gedeeld) — geschikt voor revalidatie.
+// Met maxAgeMs wordt een cache-waarde jonger dan die leeftijd teruggegeven
+// zonder request.
+export function fetchQuery<T>(
+  key: string,
+  fetcher: () => Promise<T>,
+  opties?: { maxAgeMs?: number },
+): Promise<T> {
   const existing = inflight.get(key)
   if (existing) return existing as Promise<T>
+  const maxAgeMs = opties?.maxAgeMs
+  if (maxAgeMs !== undefined && cache.has(key)) {
+    const leeftijd = Date.now() - (cachedAt.get(key) ?? 0)
+    if (leeftijd < maxAgeMs) return Promise.resolve(cache.get(key) as T)
+  }
   const p = fetcher()
-    .then((v) => { cache.set(key, v); inflight.delete(key); return v })
+    .then((v) => { setCached(key, v); inflight.delete(key); return v })
     .catch((e) => { inflight.delete(key); throw e })
   inflight.set(key, p)
   return p

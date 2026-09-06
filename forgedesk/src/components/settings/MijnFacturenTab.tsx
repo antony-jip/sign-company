@@ -30,6 +30,7 @@ export function MijnFacturenTab() {
   const { session } = useAuth()
   const [facturen, setFacturen] = useState<Factuurrij[]>([])
   const [laden, setLaden] = useState(true)
+  const [alleenAdmin, setAlleenAdmin] = useState(false)
 
   useEffect(() => {
     if (!session?.access_token) return
@@ -38,7 +39,10 @@ export function MijnFacturenTab() {
     fetch('/api/abonnement-facturen', {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
-      .then(r => (r.ok ? r.json() : null))
+      .then(r => {
+        if (r.status === 403 && !geannuleerd) setAlleenAdmin(true)
+        return r.ok ? r.json() : null
+      })
       .then(d => { if (!geannuleerd && Array.isArray(d?.facturen)) setFacturen(d.facturen) })
       .catch(() => { /* lege lijst is een prima eindstand */ })
       .finally(() => { if (!geannuleerd) setLaden(false) })
@@ -54,7 +58,9 @@ export function MijnFacturenTab() {
         </p>
       </div>
 
-      {laden ? (
+      {alleenAdmin ? (
+        <p className="text-[13px] text-muted-foreground">Alleen een admin van je organisatie ziet de abonnementsfacturen.</p>
+      ) : laden ? (
         <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />
           Facturen ophalen...

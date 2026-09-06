@@ -157,6 +157,15 @@ export const daanNachtploegCron = schedules.task({
     }
 
     const supabase = getSupabaseAdmin();
+    // Onder de maxDuration van 900 s blijven: een org die niet meer past
+    // wacht een nacht, in plaats van dat de run halverwege een ronde sterft.
+    const gestart = Date.now();
+    const DEADLINE_MS = 700_000;
+    const tijdOp = (fase: string, gedaan: number, totaal: number) => {
+      if (Date.now() - gestart <= DEADLINE_MS) return false;
+      logger.warn("Nachtploeg: tijd op, rest wacht tot morgen", { fase, gedaan, totaal });
+      return true;
+    };
 
     // Retentie: sporen zijn wegwerpmateriaal na de bewaartermijn.
     const grens = new Date(Date.now() - SPOREN_RETENTIE_DAGEN * 24 * 3600 * 1000).toISOString();
@@ -182,7 +191,8 @@ export const daanNachtploegCron = schedules.task({
     let rondes = 0;
     let overgeslagen = 0;
 
-    for (const orgId of orgIds) {
+    for (const [orgIndex, orgId] of orgIds.entries()) {
+      if (tijdOp("consolidatie", orgIndex, orgIds.length)) break;
       const { data: sporen } = await supabase
         .from("ai_sporen")
         .select("id, agent, klant_id, inhoud, created_at")
@@ -368,8 +378,9 @@ export const daanNachtploegCron = schedules.task({
     let briefingFouten = 0;
     let laatsteBriefingFout = "";
 
-    for (const org of alleOrgs ?? []) {
+    for (const [orgIndex, org] of (alleOrgs ?? []).entries()) {
       const orgId = org.id as string;
+      if (tijdOp("briefing", orgIndex, alleOrgs?.length ?? 0)) break;
       try {
         // Herdraai-guard: bestaat de briefing van vandaag al (retry na een
         // timeout of deploy-kill), dan geen tweede Sonnet-call en geen

@@ -18,6 +18,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
+import { getCached, fetchQuery } from '@/lib/queryCache'
 import { useAuth } from '@/contexts/AuthContext'
 import { useMedewerkers } from '@/contexts/MedewerkersContext'
 import { logCreate } from '@/utils/auditLogger'
@@ -141,10 +142,12 @@ export function WerkbonDetail() {
     async function loadData() {
       try {
         setIsLoading(true)
+        // De keuzelijsten van de editor uit de gedeelde cache (zelfde keys als
+        // coreData); alleen vers ophalen als de la nog leeg is.
         const [kl, pr, off] = await Promise.all([
-          getKlanten(),
-          getProjecten(),
-          getOffertes(),
+          getCached<Klant[]>('klanten') ?? fetchQuery('klanten', getKlanten),
+          getCached<Project[]>('projecten') ?? fetchQuery('projecten', getProjecten),
+          getCached<Offerte[]>('offertes') ?? fetchQuery('offertes', getOffertes),
         ])
         if (cancelled) return
         setKlanten(kl)

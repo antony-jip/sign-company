@@ -7,6 +7,105 @@ import { createDecipheriv, createHash } from "crypto";
 const ENCRYPTION_KEY = process.env.INKOOPFACTUUR_ENCRYPTION_KEY || "";
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || "";
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
+const DEADLINE_MS = 240_000;
+
+// Zelfde budgetlogica als api/inkoopfactuur-extract.ts: som van ai_usage_org
+// over alle routes van de maand tegen de staffel op de organisatie.
+const ROUTE_NAME = "inkoopfactuur-intake";
+const STANDAARD_MAANDLIMIET_EUR = 15.0;
+const USD_NAAR_EUR = 0.92;
+const SONNET_INPUT_USD = 2;
+const SONNET_OUTPUT_USD = 10;
+
+function getCurrentMonth(): string {
+  const now = new Date();
+  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+function kolomOntbreekt(fout: { code?: string }): boolean {
+  return fout.code === "42703" || fout.code === "PGRST204";
+}
+
+async function haalMaandlimiet(
+  supabase: ReturnType<typeof getSupabaseAdmin>,
+  organisatieId: string,
+  maand: string
+): Promise<{ limiet: number; betrouwbaar: boolean }> {
+  const { data: org, error: orgFout } = await supabase
+    .from("organisaties")
+    .select("ai_maandlimiet")
+    .eq("id", organisatieId)
+    .maybeSingle();
+  if (orgFout && !kolomOntbreekt(orgFout)) {
+    logger.error("haalMaandlimiet: organisatie onleesbaar", { organisatieId, error: orgFout.message });
+    return { limiet: STANDAARD_MAANDLIMIET_EUR, betrouwbaar: false };
+  }
+  const uitStaffel = Number(org?.ai_maandlimiet ?? NaN);
+  if (Number.isFinite(uitStaffel) && uitStaffel >= 0) {
+    return { limiet: uitStaffel, betrouwbaar: true };
+  }
+
+  const { data: rijen, error: rijenFout } = await supabase
+    .from("ai_usage_org")
+    .select("maandlimiet")
+    .eq("organisatie_id", organisatieId)
+    .eq("maand", maand);
+  if (rijenFout) {
+    logger.error("haalMaandlimiet: ai_usage_org onleesbaar", { organisatieId, error: rijenFout.message });
+    return { limiet: STANDAARD_MAANDLIMIET_EUR, betrouwbaar: false };
+  }
+  if (rijen && rijen.length > 0) {
+    return {
+      limiet: Math.max(...rijen.map((r) => Number(r.maandlimiet ?? STANDAARD_MAANDLIMIET_EUR))),
+      betrouwbaar: true,
+    };
+  }
+  return { limiet: STANDAARD_MAANDLIMIET_EUR, betrouwbaar: true };
+}
+
+async function aiBudgetBereikt(
+  supabase: ReturnType<typeof getSupabaseAdmin>,
+  organisatieId: string
+): Promise<boolean> {
+  const maand = getCurrentMonth();
+  const { data: rows, error: verbruikFout } = await supabase
+    .from("ai_usage_org")
+    .select("geschatte_kosten")
+    .eq("organisatie_id", organisatieId)
+    .eq("maand", maand);
+  if (verbruikFout) {
+    logger.error("aiBudgetBereikt: verbruik onleesbaar", { organisatieId, error: verbruikFout.message });
+    return false;
+  }
+  const huidig = (rows ?? []).reduce((s, r) => s + Number(r.geschatte_kosten ?? 0), 0);
+  const { limiet, betrouwbaar } = await haalMaandlimiet(supabase, organisatieId, maand);
+  // Beide kanten moeten kloppen voordat we een organisatie tegenhouden.
+  if (!betrouwbaar || huidig + 0.01 <= limiet) return false;
+  await supabase
+    .from("ai_usage_org")
+    .update({ geblokkeerd_op: new Date().toISOString() })
+    .eq("organisatie_id", organisatieId)
+    .eq("maand", maand)
+    .is("geblokkeerd_op", null);
+  return true;
+}
+
+async function schrijfOrgUsage(
+  supabase: ReturnType<typeof getSupabaseAdmin>,
+  organisatieId: string,
+  inputTokens: number,
+  outputTokens: number
+): Promise<void> {
+  const kosten = ((inputTokens / 1_000_000) * SONNET_INPUT_USD + (outputTokens / 1_000_000) * SONNET_OUTPUT_USD) * USD_NAAR_EUR;
+  const { error } = await supabase.rpc("ai_usage_org_bijschrijf", {
+    p_organisatie_id: organisatieId,
+    p_route: ROUTE_NAME,
+    p_maand: getCurrentMonth(),
+    p_kosten: Number(kosten.toFixed(4)),
+    p_calls: 1,
+  });
+  if (error) logger.error("schrijfOrgUsage: bijschrijven mislukt", { organisatieId, error: error.message });
+}
 
 function decrypt(encrypted: string): string {
   const buf = Buffer.from(encrypted, "base64");
@@ -53,8 +152,15 @@ export const inkoopfactuurIntakeCron = schedules.task({
     }
 
     let totaalVerwerkt = 0;
+    const gestart = Date.now();
 
     for (const config of configs as InboxConfig[]) {
+      // Ruim binnen maxDuration (300 s) stoppen; de rest pakt het kwartier
+      // hierna op, en laatste_uid zorgt dat er niets dubbel binnenkomt.
+      if (Date.now() - gestart > DEADLINE_MS) {
+        logger.warn("Inkoopfactuur intake: tijd op, rest wacht op de volgende run", { orgId: config.organisatie_id });
+        break;
+      }
       try {
         const verwerkt = await processInbox(supabase, config);
         totaalVerwerkt += verwerkt;
@@ -214,7 +320,7 @@ async function triggerExtract(
   factuurId: string,
   storagePath: string,
   supabase: ReturnType<typeof getSupabaseAdmin>,
-  _organisatieId: string
+  organisatieId: string
 ): Promise<void> {
   if (!ANTHROPIC_API_KEY) {
     logger.warn("ANTHROPIC_API_KEY niet gezet, extractie overgeslagen");
@@ -222,6 +328,21 @@ async function triggerExtract(
   }
 
   try {
+    if (await aiBudgetBereikt(supabase, organisatieId)) {
+      // inkoopfacturen kent geen aparte status hiervoor: de pdf blijft op
+      // 'nieuw' staan met een leesbare reden, zodat de gebruiker hem
+      // handmatig kan invullen of na de maandwissel opnieuw kan laten lezen.
+      logger.warn("AI-budget van de organisatie bereikt, extractie overgeslagen", { factuurId, organisatieId });
+      await supabase
+        .from("inkoopfacturen")
+        .update({
+          extractie_opmerkingen: "AI-budget van de organisatie is deze maand op; automatisch uitlezen overgeslagen.",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", factuurId);
+      return;
+    }
+
     const { data: fileData, error: downloadError } = await supabase.storage
       .from("inkoopfacturen")
       .download(storagePath);
@@ -289,6 +410,10 @@ Bedragen altijd als number, niet string met comma.`;
 
     const data = await response.json();
     const textContent = data.content?.find((c: { type: string }) => c.type === "text")?.text || "";
+
+    if (data.usage) {
+      await schrijfOrgUsage(supabase, organisatieId, Number(data.usage.input_tokens ?? 0), Number(data.usage.output_tokens ?? 0));
+    }
 
     let cleaned = textContent.trim();
     if (cleaned.startsWith("```")) {

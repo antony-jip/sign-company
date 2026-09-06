@@ -465,7 +465,15 @@ export function IntegratiesTab() {
         toast.error('Niet ingelogd')
         return
       }
-      window.location.href = `/api/exact-auth?token=${encodeURIComponent(token)}`
+      const antwoord = await fetch('/api/exact-auth', {
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+      })
+      const start = await antwoord.json().catch(() => null) as { url?: string; reason?: string } | null
+      if (!antwoord.ok || !start?.url) {
+        window.location.href = `/instellingen?tab=integraties&exact=error&reason=${encodeURIComponent(start?.reason || 'unknown')}`
+        return
+      }
+      window.location.href = start.url
     } catch (err) {
       logger.error('Fout bij starten Exact Online OAuth:', err)
       toast.error('Kon niet verbinden met Exact Online')

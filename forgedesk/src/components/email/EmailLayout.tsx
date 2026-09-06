@@ -1651,12 +1651,12 @@ export function EmailLayout() {
   // Niet tijdens lezen of opstellen: een sync opent een IMAP-verbinding en
   // haalt daarna bodies op, en dat gaat precies ten koste van de mail die op
   // dat moment onder je duim staat. De tik erna haalt het alsnog op.
-  // Mobiel tikt vaker: daar is dit vaak de enige sync die draait, en de
-  // snelle variant kost de server nu ook veel minder.
+  // Mobiel tikt vaker: daar is dit vaak de enige sync die draait. De echte
+  // IMAP-sync doet de cron; deze poll is alleen een vangnet, dus hij mag traag.
   const viewModeRef = useRef(viewMode)
   viewModeRef.current = viewMode
   useEffect(() => {
-    const tempo = isDesktop ? 180_000 : 90_000
+    const tempo = isDesktop ? 600_000 : 300_000
     pollingRef.current = setInterval(() => {
       if (viewModeRef.current !== 'idle') return
       handleRefresh(selectedFolder, true)

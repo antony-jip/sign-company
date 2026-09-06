@@ -144,6 +144,7 @@ import { OntvangerInput } from '@/components/shared/OntvangerVeld'
 import { factuurVerzendTemplate, factuurHerinneringTemplate } from '@/services/emailTemplateService'
 import { exBtw } from '@/utils/btwWeergave'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
+import { getCached, fetchQuery } from '@/lib/queryCache'
 import { factuurBetaalTokenExpiry } from '@/lib/tokenExpiry'
 import { vierEenmalig, isMijlpaalGehaald, MIJLPAAL_COPY } from '@/lib/mijlpaal'
 import { logger } from '../../utils/logger'
@@ -499,6 +500,14 @@ function generateFactuurNummer(prefix: string, existing: { nummer: string }[], s
   return buildFactuurNummer(prefix, nextNr)
 }
 
+// Kernlijst uit de gedeelde cache (zelfde keys als coreData); alleen vers
+// ophalen als de la nog leeg is. Fouten geven een lege lijst, zoals voorheen.
+function uitCacheOfVers<T>(key: string, fetcher: () => Promise<T[]>): Promise<T[]> {
+  const cached = getCached<T[]>(key)
+  if (cached) return Promise.resolve(cached)
+  return fetchQuery(key, fetcher).catch(() => [])
+}
+
 function generateTypedNummer(existing: { nummer: string }[], prefix: string): string {
   const year = new Date().getFullYear()
   const schoonPrefix = prefix.replace(/-+$/, '')
@@ -696,13 +705,13 @@ export function FactuurEditor() {
       try {
         setIsLoading(true)
         const [klantenData, facturenData, herinneringData, offertesData, grootboekData, kostenplaatsenData, projectenData] = await Promise.all([
-          getKlanten().catch(() => []),
-          getFacturen().catch(() => []),
+          uitCacheOfVers('klanten', getKlanten),
+          uitCacheOfVers('facturen', getFacturen),
           getHerinneringTemplates().catch(() => []),
-          getOffertes().catch(() => []),
+          uitCacheOfVers('offertes', getOffertes),
           getGrootboek().catch(() => []),
           getKostenplaatsen().catch(() => []),
-          getProjecten().catch(() => []),
+          uitCacheOfVers('projecten', getProjecten),
         ])
         if (!cancelled) {
           setKlanten(klantenData)

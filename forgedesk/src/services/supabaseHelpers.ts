@@ -48,7 +48,11 @@ export const UUID_FIELDS = [
 export async function withUserId<T extends object>(data: T): Promise<T & { user_id: string }> {
   if ((data as any).user_id && typeof (data as any).user_id === 'string') return data as T & { user_id: string }
   if (!supabase) return data as T & { user_id: string }
-  const { data: { user } } = await supabase.auth.getUser()
+  // getSession leest lokaal; getUser is een netwerkrondje per insert en
+  // blijft alleen het vangnet als er geen sessie in het geheugen staat.
+  const { data: { session } } = await supabase.auth.getSession()
+  let user = session?.user ?? null
+  if (!user) user = (await supabase.auth.getUser()).data.user
   if (!user) throw new Error('Niet ingelogd — kan user_id niet bepalen')
   return { ...data, user_id: user.id }
 }

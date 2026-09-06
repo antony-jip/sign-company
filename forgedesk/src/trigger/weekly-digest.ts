@@ -341,9 +341,15 @@ export const weeklyDigestTask = schedules.task({
     let skipped = 0;
     let failed = 0;
 
-    // Process all users (run in parallel with allSettled to avoid one failure blocking all)
-    const results = await Promise.allSettled(
-      users.map(async (user) => {
+    // In groepjes van acht: één mislukking blokkeert de rest niet, en bij
+    // 50+ organisaties hangen er nooit honderden Supabase- en Resend-calls
+    // tegelijk open.
+    const CHUNK = 8;
+    const results: PromiseSettledResult<{ status: "sent" | "failed"; error?: string } | undefined>[] = [];
+    for (let i = 0; i < users.length; i += CHUNK) {
+      const chunk = users.slice(i, i + CHUNK);
+      results.push(...(await Promise.allSettled(
+      chunk.map(async (user) => {
         if (!user.gmail_address) {
           skipped++;
           return;
@@ -371,7 +377,8 @@ export const weeklyDigestTask = schedules.task({
           return { status: "failed" as const, error: result.error };
         }
       })
-    );
+      )));
+    }
 
     for (const result of results) {
       if (result.status === "rejected") {

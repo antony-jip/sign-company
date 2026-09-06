@@ -23,12 +23,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const { data: profile } = await supabaseAdmin
       .from('profiles')
-      .select('organisatie_id')
+      .select('organisatie_id, rol')
       .eq('id', user.id)
       .maybeSingle()
 
     const organisatieId = profile?.organisatie_id
     if (!organisatieId) return res.status(200).json({ facturen: [] })
+    if (profile?.rol !== 'admin') return res.status(403).json({ error: 'Alleen admins kunnen abonnementsfacturen bekijken' })
 
     const { data: facturen, error } = await supabaseAdmin
       .from('abonnement_facturen')

@@ -38,15 +38,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
+  // x-real-ip is door Vercel gezet (niet client-spoofbaar); anders de LAATSTE
+  // x-forwarded-for-waarde, nooit de eerste, zodat de rate-limit-key niet te faken is
   const ip =
-    (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim() ||
+    (req.headers['x-real-ip'] as string | undefined)?.trim() ||
+    (req.headers['x-forwarded-for'] as string | undefined)?.split(',').pop()?.trim() ||
     (req.socket?.remoteAddress ?? 'onbekend')
 
-  if (limiter) {
-    const { success } = await limiter.limit(ip)
-    if (!success) {
-      return res.status(429).json({ error: 'Te veel aanvragen. Probeer het over een uur opnieuw.' })
-    }
+  // Zonder rem geen demo-sessies: dit endpoint deelt anoniem sessies uit en
+  // is zonder limiet een open kraan. Liever een tijdelijke 503 dan open.
+  if (!limiter) {
+    console.error('ratelimit niet geconfigureerd: api/demo-sessie.ts')
+    return res.status(503).json({ error: 'Demo is tijdelijk niet beschikbaar' })
+  }
+  const { success } = await limiter.limit(ip)
+  if (!success) {
+    return res.status(429).json({ error: 'Te veel aanvragen. Probeer het over een uur opnieuw.' })
   }
 
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {

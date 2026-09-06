@@ -13,7 +13,8 @@ const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || ''
 // ── Rate limiting (inline; Vercel bundelt geen lokale imports in api/) ──
 const rlConfigured = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
 if (!rlConfigured) {
-  console.warn('[ratelimit] UPSTASH env vars missing for ai, requests will not be rate limited')
+  if (process.env.VERCEL_ENV === 'production') console.error('ratelimit niet geconfigureerd: api/ai.ts')
+  else console.warn('[ratelimit] UPSTASH env vars missing for ai, requests will not be rate limited')
 }
 const ratelimit = rlConfigured
   ? new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(10, '3600 s'), prefix: 'rl:ai', timeout: 2000 })
@@ -46,6 +47,123 @@ async function verifyUser(req: VercelRequest): Promise<string> {
   return user.id
 }
 
+function getCurrentMonth(): string {
+  const now = new Date()
+  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`
+}
+
+const MAANDEN_NL = ['januari', 'februari', 'maart', 'april', 'mei', 'juni',
+  'juli', 'augustus', 'september', 'oktober', 'november', 'december']
+
+function resetTekst(): string {
+  const nu = new Date()
+  const volgende = new Date(Date.UTC(nu.getUTCFullYear(), nu.getUTCMonth() + 1, 1))
+  return `1 ${MAANDEN_NL[volgende.getUTCMonth()]}`
+}
+
+// Houd gelijk aan de DEFAULT van ai_usage_org.maandlimiet (migratie 161).
+const STANDAARD_MAANDLIMIET_EUR = 15.0
+const USD_NAAR_EUR = 0.92
+// Sonnet 5: $2/M input, $10/M output.
+const SONNET_INPUT_USD = 2
+const SONNET_OUTPUT_USD = 10
+
+function kolomOntbreekt(fout: { code?: string }): boolean {
+  return fout.code === '42703' || fout.code === 'PGRST204'
+}
+
+async function haalMaandlimiet(
+  organisatieId: string,
+  maand: string
+): Promise<{ limiet: number; betrouwbaar: boolean }> {
+  const { data: org, error: orgFout } = await supabase
+    .from('organisaties')
+    .select('ai_maandlimiet')
+    .eq('id', organisatieId)
+    .maybeSingle()
+  if (orgFout && !kolomOntbreekt(orgFout)) {
+    console.error('haalMaandlimiet: organisatie onleesbaar', organisatieId, orgFout)
+    return { limiet: STANDAARD_MAANDLIMIET_EUR, betrouwbaar: false }
+  }
+  const uitStaffel = Number(org?.ai_maandlimiet ?? NaN)
+  if (Number.isFinite(uitStaffel) && uitStaffel >= 0) {
+    return { limiet: uitStaffel, betrouwbaar: true }
+  }
+
+  const { data: rijen, error: rijenFout } = await supabase
+    .from('ai_usage_org')
+    .select('maandlimiet')
+    .eq('organisatie_id', organisatieId)
+    .eq('maand', maand)
+  if (rijenFout) {
+    console.error('haalMaandlimiet: ai_usage_org onleesbaar', organisatieId, rijenFout)
+    return { limiet: STANDAARD_MAANDLIMIET_EUR, betrouwbaar: false }
+  }
+  if (rijen && rijen.length > 0) {
+    return {
+      limiet: Math.max(...rijen.map(r => Number(r.maandlimiet ?? STANDAARD_MAANDLIMIET_EUR))),
+      betrouwbaar: true,
+    }
+  }
+  return { limiet: STANDAARD_MAANDLIMIET_EUR, betrouwbaar: true }
+}
+
+async function checkAIBudget(
+  organisatieId: string,
+  geschatteKosten: number
+): Promise<{ geblokkeerd: boolean; reden?: string }> {
+  const maand = getCurrentMonth()
+  const { data: rows, error: verbruikFout } = await supabase
+    .from('ai_usage_org')
+    .select('geschatte_kosten')
+    .eq('organisatie_id', organisatieId)
+    .eq('maand', maand)
+  if (verbruikFout) {
+    console.error('checkAIBudget: verbruik onleesbaar', organisatieId, verbruikFout)
+  }
+  const huidig = (rows ?? []).reduce((s, r) => s + Number(r.geschatte_kosten ?? 0), 0)
+  const { limiet, betrouwbaar } = await haalMaandlimiet(organisatieId, maand)
+  if (!verbruikFout && betrouwbaar && huidig + geschatteKosten > limiet) {
+    await supabase
+      .from('ai_usage_org')
+      .update({ geblokkeerd_op: new Date().toISOString() })
+      .eq('organisatie_id', organisatieId)
+      .eq('maand', maand)
+      .is('geblokkeerd_op', null)
+    return { geblokkeerd: true, reden: 'maandlimiet_bereikt' }
+  }
+  return { geblokkeerd: false }
+}
+
+async function resolveOrgId(userId: string): Promise<string | null> {
+  const { data } = await supabase
+    .from('profiles')
+    .select('organisatie_id')
+    .eq('id', userId)
+    .maybeSingle()
+  return (data?.organisatie_id as string | null) ?? null
+}
+
+async function logOrgUsage(
+  organisatieId: string,
+  route: string,
+  inputTokens: number,
+  outputTokens: number,
+  inputPrice: number,
+  outputPrice: number
+): Promise<void> {
+  const maand = getCurrentMonth()
+  const kostenDelta = ((inputTokens / 1_000_000) * inputPrice + (outputTokens / 1_000_000) * outputPrice) * USD_NAAR_EUR
+  const { error } = await supabase.rpc('ai_usage_org_bijschrijf', {
+    p_organisatie_id: organisatieId,
+    p_route: route,
+    p_maand: maand,
+    p_kosten: Number(kostenDelta.toFixed(4)),
+    p_calls: 1,
+  })
+  if (error) console.error('logOrgUsage: bijschrijven mislukt', organisatieId, route, error)
+}
+
 interface ChatMessage {
   role: 'system' | 'user' | 'assistant'
   content: string
@@ -74,7 +192,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // max_tokens komt uit de client: server-side clampen zodat een trial-account
     // niet met een torenhoge waarde het Anthropic-tegoed kan leegtrekken.
-    const max_tokens = Math.min(Math.max(1, Number(maxTokensRaw) || 2000), 4000)
+    const max_tokens = Math.min(Math.max(1, Number(maxTokensRaw) || 2000), 2000)
+
+    const orgIdForBudget = await resolveOrgId(userId)
+    if (orgIdForBudget) {
+      const budget = await checkAIBudget(orgIdForBudget, 0.01)
+      if (budget.geblokkeerd) {
+        return res.status(403).json({
+          error: 'ai_budget_bereikt',
+          bericht: `Het gedeelde AI-budget van je organisatie is op voor deze maand. Op ${resetTekst()} staat de teller weer op nul.`,
+          redirect: '/instellingen?tab=daan-ai',
+        })
+      }
+    }
 
     // Extract system prompt from messages
     const systemMessages = messages.filter((m: ChatMessage) => m.role === 'system')
@@ -105,7 +235,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({})) as Record<string, unknown>
       if (response.status === 429) {
-        return res.status(429).json({ error: 'Te veel verzoeken. Probeer het later opnieuw.' })
+        const anthropicType = (errorData?.error as { type?: string } | undefined)?.type
+        if (anthropicType === 'enforced_spend_limit') {
+          console.error('[anthropic-spend-limit] ai: Anthropic-budget van doen. bereikt')
+          return res.status(429).json({ error: 'AI-budget van doen. is bereikt, we zijn ermee bezig.', type: anthropicType })
+        }
+        return res.status(429).json({ error: 'Te veel verzoeken, probeer zo opnieuw.', type: anthropicType ?? 'rate_limit_error' })
       }
       if (response.status === 401) {
         return res.status(500).json({ error: 'Ongeldige Anthropic API key.' })
@@ -120,6 +255,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       usage: { input_tokens: number; output_tokens: number }
     }
     const resultText = data.content?.[0]?.text || ''
+
+    if (orgIdForBudget && data.usage) {
+      try {
+        await logOrgUsage(orgIdForBudget, 'ai', data.usage.input_tokens, data.usage.output_tokens, SONNET_INPUT_USD, SONNET_OUTPUT_USD)
+      } catch {
+        // Org-usage tracking is niet-kritiek
+      }
+    }
 
     // Sla chat op in database (compatibel formaat)
     const lastUserMsg = messages[messages.length - 1]

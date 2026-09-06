@@ -159,6 +159,23 @@ zonder nummer, zonder transactie.
 Regel voor nieuwe datamigraties: maak eerst een `*_backup_<datum>`-tabel, zet de
 restore-query in een comment, en draai de migratie in één `BEGIN/COMMIT`.
 
+## Wat de audit van 6 september 2026 eraan toevoegt
+
+- Storage (13 buckets) zit niet in de Supabase-back-up. Zonder eigen kopie is
+  een verwijderd pdf of werkbonfoto definitief weg. Nachtelijke mirror naar
+  een S3-compatibele opslag (rclone) is de goedkoopste route.
+- PITR staat nog niet aan; vereist Compute Small ($15/mnd) plus PITR 7 dagen
+  ($100/mnd). Daarmee gaat de RPO van 24 uur naar ongeveer 2 minuten.
+- De drie encryptiesleutels en de VAPID- en service-role-sleutel staan alleen
+  in Vercel en Trigger.dev. Zet ze in een kluis met datum; zonder die sleutels
+  zijn alle mailboxen en boekhoudkoppelingen na een restore dood.
+- Realistische RTO nu: 4 tot 8 uur, ongetest. Met PITR en een geoefende
+  procedure: 2 tot 4 uur. Plan de eerste restore-test naar een leeg project.
+- Eerlijke belofte richting klanten: 99,5% per maand, storingen binnen twee
+  werkuren gemeld, herstel binnen een werkdag. Niet beloven: 99,9%, geen
+  dataverlies, herstel van een door de gebruiker verwijderd bestand, offline
+  werken buiten werkbonfoto's, AI-verwerking binnen de EU.
+
 ## Wat dit draaiboek niet dekt
 
 - **Trigger.dev** deployt niet mee met Vercel. Na een herstel van de repo moet

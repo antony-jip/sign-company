@@ -132,24 +132,32 @@ async function updateAppSettingsOrgFirst(
 }
 
 async function verifyUser(req: VercelRequest): Promise<string> {
-  // Accept token via Authorization header or query param (for redirects)
-  let token = ''
+  // Alleen de Authorization-header. De oude ?token=-variant zette het sessie-
+  // token in logs en referrers; de client vraagt nu eerst de URL op als JSON
+  // en navigeert daarna zelf naar Exact.
   const authHeader = req.headers.authorization
-  if (authHeader?.startsWith('Bearer ')) {
-    token = authHeader.split(' ')[1]
-  } else if (typeof req.query.token === 'string') {
-    token = req.query.token
-  }
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : ''
   if (!token) throw new Error('Niet geautoriseerd')
   const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
   if (error || !user) throw new Error('Ongeldige sessie')
   return user.id
 }
 
+// De client roept deze route met fetch aan (Accept: application/json) en krijgt
+// dan {url} of {error, reason}; een kale paginanavigatie krijgt nog steeds een
+// redirect, zodat een verlopen sessie nooit als JSON op een blanke pagina eindigt.
+function antwoord(res: VercelResponse, wilJson: boolean, url: string, reason?: string) {
+  if (wilJson) {
+    return reason ? res.status(400).json({ error: 'Exact-koppeling kon niet starten', reason }) : res.status(200).json({ url })
+  }
+  return res.redirect(302, url)
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
+  const wilJson = (req.headers.accept ?? '').includes('application/json')
   try {
     const user_id = await verifyUser(req)
 
@@ -167,18 +175,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Altijd terugsturen naar Instellingen met een reason-code die daar naar een
     // leesbare melding wordt omgezet.
     if (!clientId) {
-      return res.redirect(302, `${APP_URL}/instellingen?tab=integraties&exact=error&reason=no_credentials`)
+      return antwoord(res, wilJson, `${APP_URL}/instellingen?tab=integraties&exact=error&reason=no_credentials`, 'no_credentials')
     }
 
     // Alleen de eigenaar mag opnieuw verbinden: een tweede OAuth op hetzelfde
     // Exact-bedrijfsaccount verbreekt diens sessie en daarmee de koppeling voor
     // de hele organisatie. De UI verbergt de knop al, maar deze route is direct
-    // aanroepbaar met een token in de query, dus de check hoort ook hier.
+    // aanroepbaar, dus de check hoort ook hier.
     // Ontkoppelen (waarmee het eigenaarschap vrijkomt) loopt via
     // /api/exact-disconnect.
     const eigenaarId = settings?.exact_owner_user_id as string | null | undefined
     if (eigenaarId && eigenaarId !== user_id) {
-      return res.redirect(302, `${APP_URL}/instellingen?tab=integraties&exact=error&reason=not_owner`)
+      return antwoord(res, wilJson, `${APP_URL}/instellingen?tab=integraties&exact=error&reason=not_owner`, 'not_owner')
     }
 
     // Eerste koppeling (nog geen eigenaar): alleen een admin mag die leggen,
@@ -190,7 +198,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .eq('id', user_id)
         .maybeSingle()
       if ((profiel as { rol?: string } | null)?.rol !== 'admin') {
-        return res.redirect(302, `${APP_URL}/instellingen?tab=integraties&exact=error&reason=not_owner`)
+        return antwoord(res, wilJson, `${APP_URL}/instellingen?tab=integraties&exact=error&reason=not_owner`, 'not_owner')
       }
     }
 
@@ -202,7 +210,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       force_login: '0',
     })
 
-    return res.redirect(302, `${EXACT_AUTH_URL}?${params.toString()}`)
+    return antwoord(res, wilJson, `${EXACT_AUTH_URL}?${params.toString()}`)
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Onbekende fout'
     console.error('Exact auth error:', message)
@@ -210,6 +218,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Ook hier geen JSON: deze catch vangt óók een verlopen sessie, en dan stond
     // de gebruiker met {"error":"Ongeldige sessie"} op een blanke pagina.
     const reason = message === 'Niet geautoriseerd' || message === 'Ongeldige sessie' ? 'sessie' : 'unknown'
-    return res.redirect(302, `${APP_URL}/instellingen?tab=integraties&exact=error&reason=${reason}`)
+    return antwoord(res, wilJson, `${APP_URL}/instellingen?tab=integraties&exact=error&reason=${reason}`, reason)
   }
 }

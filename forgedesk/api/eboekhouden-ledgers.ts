@@ -90,12 +90,22 @@ async function verifyUser(req: VercelRequest): Promise<string> {
 const EBOEKHOUDEN_API_BASE = 'https://api.e-boekhouden.nl/v1'
 const EBOEKHOUDEN_SOURCE = 'doen'
 
+async function isRateLimited(key: string, maxCount: number, windowSeconds: number): Promise<boolean> {
+  const { data, error } = await supabaseAdmin.rpc('check_rate_limit', { p_key: key, p_max_count: maxCount, p_window_seconds: windowSeconds })
+  if (error) console.error('[eboekhouden-ledgers] check_rate_limit faalde:', error)
+  return data === true
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
   try {
     const user_id = await verifyUser(req)
+
+    if (await isRateLimited(`eboekhouden-ledgers:${user_id}`, 30, 60)) {
+      return res.status(429).json({ error: 'Te veel verzoeken. Probeer het later opnieuw.' })
+    }
 
     const settings = await loadAppSettingsOrgFirst(supabaseAdmin, user_id, 'eboekhouden_api_token')
     const apiToken = decryptSecret((settings?.eboekhouden_api_token as string | null) ?? '')

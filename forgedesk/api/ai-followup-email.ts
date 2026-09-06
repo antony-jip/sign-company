@@ -245,7 +245,7 @@ async function checkUsageLimit(userId: string, organisatieId: string | null): Pr
 
 async function updateUsage(userId: string, inputTokens: number, outputTokens: number): Promise<void> {
   const maand = getCurrentMonth()
-  const kosten = ((inputTokens / 1_000_000 * 3) + (outputTokens / 1_000_000 * 15)) * USD_NAAR_EUR
+  const kosten = ((inputTokens / 1_000_000 * 2) + (outputTokens / 1_000_000 * 10)) * USD_NAAR_EUR
   // Atomair bijschrijven via de RPC (migratie 178), zelfde reden als bij de
   // org-teller: een read-modify-write laat twee gelijktijdige calls over elkaar
   // heen schrijven en de teller loopt structureel achter.
@@ -402,7 +402,8 @@ export const config = { maxDuration: 30 }
 // ── Rate limiting (inline; Vercel bundelt geen lokale imports in api/) ──
 const rlConfigured = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
 if (!rlConfigured) {
-  console.warn('[ratelimit] UPSTASH env vars missing for ai-followup-email, requests will not be rate limited')
+  if (process.env.VERCEL_ENV === 'production') console.error('ratelimit niet geconfigureerd: api/ai-followup-email.ts')
+  else console.warn('[ratelimit] UPSTASH env vars missing for ai-followup-email, requests will not be rate limited')
 }
 const ratelimit = rlConfigured
   ? new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(20, '60 s'), prefix: 'rl:ai-followup-email', timeout: 2000 })
@@ -517,7 +518,12 @@ Afzender naam: ${context.afzender_naam}`
       const errorData = await response.json().catch(() => ({})) as Record<string, unknown>
       console.error('Anthropic API fout:', response.status, errorData)
       if (response.status === 429) {
-        return res.status(429).json({ error: 'Te veel verzoeken. Probeer het later opnieuw.' })
+        const anthropicType = (errorData?.error as { type?: string } | undefined)?.type
+        if (anthropicType === 'enforced_spend_limit') {
+          console.error('[anthropic-spend-limit] ai-followup-email: Anthropic-budget van doen. bereikt')
+          return res.status(429).json({ error: 'AI-budget van doen. is bereikt, we zijn ermee bezig.', type: anthropicType })
+        }
+        return res.status(429).json({ error: 'Te veel verzoeken, probeer zo opnieuw.', type: anthropicType ?? 'rate_limit_error' })
       }
       return res.status(response.status).json({
         error: (errorData?.error as Record<string, string>)?.message || 'Anthropic API fout',
@@ -555,7 +561,7 @@ Afzender naam: ${context.afzender_naam}`
 
     if (orgIdForBudget) {
       try {
-        await logOrgUsage(orgIdForBudget, 'ai-followup-email', data.usage.input_tokens, data.usage.output_tokens, 3, 15)
+        await logOrgUsage(orgIdForBudget, 'ai-followup-email', data.usage.input_tokens, data.usage.output_tokens, 2, 10)
       } catch {
         // Org-usage tracking is niet-kritiek
       }

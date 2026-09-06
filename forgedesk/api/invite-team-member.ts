@@ -128,15 +128,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const userId = await verifyUser(req)
     if (!(await enforceRateLimit(userId, res))) return
 
-    const { email, rol, organisatie_id, uitgenodigd_door } = req.body as {
+    const { email, rol, organisatie_id } = req.body as {
       email: string
       rol: string
       organisatie_id: string
-      uitgenodigd_door: string
     }
+    // Altijd de ingelogde gebruiker; de body kan hier iedereen invullen.
+    const uitgenodigd_door = userId
 
     // Validatie
-    if (!email || !rol || !organisatie_id || !uitgenodigd_door) {
+    if (!email || !rol || !organisatie_id) {
       return res.status(400).json({ error: 'Alle velden zijn verplicht' })
     }
 
@@ -279,6 +280,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (inviteError) {
       console.error('invite-team-member invite error:', inviteError)
+      // Anders blijft er een uitnodiging 'verstuurd' staan die nooit is
+      // verstuurd en telt hij mee in het gebruikersplafond.
+      await supabaseAdmin.from('uitnodigingen').delete().eq('id', uitnodiging.id)
       return res.status(500).json({ error: 'Kon uitnodiging niet versturen: ' + inviteError.message })
     }
 

@@ -20,9 +20,9 @@ export function buildKey(
 /**
  * Insert (organisatie_id, key) in email_send_idempotency. Returns true als
  * de rij nieuw was (caller mag versturen), false als er al een rij stond
- * (duplicaat, caller moet skippen). Bij onverwachte DB-errors: fail-open
- * met return true, zodat een mogelijke dubbele mail acceptabeler is dan
- * een gemiste mail bij infrastructuur-flap.
+ * (duplicaat, caller moet skippen). Bij onverwachte DB-errors: fail-closed
+ * met return false. Een gemiste mail haalt de volgende run in; een dubbele
+ * mail aan een klant is niet terug te draaien.
  */
 export async function checkAndMark(
   organisatieId: string,
@@ -38,12 +38,12 @@ export async function checkAndMark(
   // 23505 = unique_violation in Postgres
   if (error.code === "23505") return false;
 
-  logger.error("Idempotency-mark faalde, fail-open", {
+  logger.error("Idempotency-mark faalde, verzending overgeslagen", {
     error: error.message,
     code: error.code,
     key,
   });
-  return true;
+  return false;
 }
 
 /**

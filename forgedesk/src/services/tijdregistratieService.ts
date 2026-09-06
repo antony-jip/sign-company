@@ -41,6 +41,23 @@ export async function getTijdregistraties(limit = 50000): Promise<Tijdregistrati
   return getLocalData<Tijdregistratie>('tijdregistraties')
 }
 
+export async function getTijdregistratiesVoorProjecten(projectIds: string[]): Promise<Tijdregistratie[]> {
+  if (projectIds.length === 0) return []
+  const sb = supabase
+  if (isSupabaseConfigured() && sb) {
+    return fetchAllPages<Tijdregistratie>((van, tot) =>
+      sb
+        .from('tijdregistraties')
+        .select('*')
+        .in('project_id', projectIds)
+        .order('datum', { ascending: false })
+        .order('id', { ascending: true })
+        .range(van, tot))
+  }
+  const doel = new Set(projectIds)
+  return getLocalData<Tijdregistratie>('tijdregistraties').filter((t) => doel.has(t.project_id))
+}
+
 export async function createTijdregistratie(entry: Omit<Tijdregistratie, 'id' | 'created_at' | 'updated_at'>): Promise<Tijdregistratie> {
   const newEntry: Tijdregistratie = { ...sanitizeDates(entry), id: generateId(), created_at: now(), updated_at: now() } as Tijdregistratie
   if (isSupabaseConfigured() && supabase) {
@@ -107,6 +124,20 @@ export async function getTijdregistratiesByMedewerker(medewerkerId: string): Pro
 }
 
 /** Zet meerdere regels in één keer op een andere status (week indienen, goedkeuren, terugsturen). */
+export async function markeerGefactureerd(ids: string[], factuurId: string): Promise<void> {
+  if (ids.length === 0) return
+  assertId(factuurId, 'factuur_id')
+  const updates = { gefactureerd: true, factuur_id: factuurId }
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('tijdregistraties').update({ ...updates, updated_at: now() }).in('id', ids)
+    if (error) throw error
+    return
+  }
+  const items = getLocalData<Tijdregistratie>('tijdregistraties')
+  const doel = new Set(ids)
+  setLocalData('tijdregistraties', items.map((t) => (doel.has(t.id) ? { ...t, ...updates, updated_at: now() } : t)))
+}
+
 export async function zetUrenStatus(
   ids: string[],
   updates: Pick<Tijdregistratie, 'status'> & Partial<Pick<Tijdregistratie, 'definitief_op' | 'goedgekeurd_door_id' | 'goedgekeurd_op'>>,

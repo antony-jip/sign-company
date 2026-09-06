@@ -404,6 +404,33 @@ Verder, voordat iemand hieraan begint:
 - [ ] Bewaartermijnen. De AVG vraagt niet alleen om uitvoer en
       verwijdering op verzoek, maar ook om niet eeuwig bewaren zonder
       grondslag. Er is nu geen enkele automatische opschoning.
-- [ ] Verwerkersovereenkomst en de lijst subverwerkers (Supabase, Vercel,
-      Resend, Mollie, Anthropic, Upstash, Sentry) horen bij dit dossier,
-      maar staan hier nog niet in.
+- [x] Lijst subverwerkers: zie sectie 6 (6 sep 2026). Verwerkersovereenkomsten
+      zelf tekenen blijft open: Anthropic (DPA), fal.ai (DPA), Google
+      (service-account met volledige drive-scope: per klant beperken).
+
+## 6. Subverwerkers en waar welke gegevens staan
+
+Stand 6 september 2026, uit de betrouwbaarheidsaudit voor 50 organisaties.
+Per plek: wat er staat, welke persoonsgegevens, regio en bewaartermijn.
+
+| Verwerker | Wat | Persoonsgegevens | Regio en bewaring |
+|---|---|---|---|
+| Supabase (Postgres) | alle tabellen: klanten, offertes, facturen, werkbonnen, uren, mailkopie (`emails`), notificaties, tokens versleuteld | ja | EU (eu-west-1); dagelijkse back-up, PITR pas na aanzetten |
+| Supabase (Storage, 13 buckets) | pdf's (facturen, inkoopfacturen, abonnement), werkbonfoto's en documenten, maatjes, mailbijlagen-cache, portaaluploads, handtekeningen en briefpapier, klantpandfoto's, avatars | ja | EU; **niet in de database-back-up** |
+| Vercel | hosting, api-routes, crons, geheimen (env), functielogs | ja (logs) | geen vaste regio ingesteld |
+| Trigger.dev | achtergrondtaken (nachtploeg, herinneringen, mailintake, Drive-sync), runlogs met payloads, kopie van de env | ja | cloud, logs 7 tot 30 dagen naar plan |
+| Resend | transactiemail, notificaties, nieuwsbrieven; `api/nieuwsbrief-contacten-sync.ts` zet klantnamen en adressen in een Resend Audience | ja | verzendregio EU instelbaar; logs 30 dagen |
+| Sentry | foutrapporten client en api, met scrubbing van headers, e-mail en tokens | beperkt | EU-ingest (de.sentry.io) |
+| Mollie | betalingen van klantfacturen, doen.-abonnementen; klant = orgnaam plus e-mail van de gebruiker | ja | NL |
+| Anthropic | inhoud van binnengekomen klantmail (aanvraagherkenning, samenvatten), leveranciers-pdf's (inkoopfactuur-extractie), offerteteksten, Daan-context | ja | VS; 30 dagen retentie, geen training |
+| fal.ai | klantpand- en voertuigfoto's plus logo voor mockups | ja | payloads 30 dagen, media minimaal 7 dagen |
+| Google Drive | projectdocumenten naar de schijf van de klant, via één service-account | ja | bij de klant zelf |
+| KVK, Upstash, Open-Meteo | zoekopdrachten; rate-limit-sleutels met user-id; weer per plaats | beperkt tot geen | NL / cloud |
+| Browser van de gebruiker | localStorage `doen_*` (concepten, voorkeuren, in fallback-modus hele datasets), IndexedDB `doen-mail` (maillijsten en HTML, 7 dagen), `doen_offline` (werkbonfoto's in de wachtrij) | ja | toestel; wordt bij uitloggen niet volledig gewist |
+
+Aandachtspunten uit dezelfde audit: bucket `project-fotos` is publiek zonder
+organisatie in het pad; `portaal-bestanden` staat in migratie 036 op publiek;
+oude `b64:`-mailwachtwoorden zijn niet versleuteld (hersleutelen); de drie
+encryptiesleutels (`EMAIL_ENCRYPTION_KEY`, `INTEGRATION_ENCRYPTION_KEY`,
+`INKOOPFACTUUR_ENCRYPTION_KEY`) bestaan alleen in Vercel en Trigger.dev en horen
+in een kluis.

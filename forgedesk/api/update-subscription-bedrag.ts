@@ -64,6 +64,12 @@ async function verifyUser(req: VercelRequest): Promise<{ id: string }> {
   return { id: user.id }
 }
 
+async function isRateLimited(key: string, maxCount: number, windowSeconds: number): Promise<boolean> {
+  const { data, error } = await supabaseAdmin.rpc('check_rate_limit', { p_key: key, p_max_count: maxCount, p_window_seconds: windowSeconds })
+  if (error) console.error('[update-subscription-bedrag] check_rate_limit faalde:', error)
+  return data === true
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
@@ -74,6 +80,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const user = await verifyUser(req)
+
+    if (await isRateLimited(`update-subscription-bedrag:${user.id}`, 10, 3600)) {
+      return res.status(429).json({ error: 'Te veel verzoeken. Probeer het later opnieuw.' })
+    }
 
     const { organisatie_id } = req.body as { organisatie_id: string }
     if (!organisatie_id) {

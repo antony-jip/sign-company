@@ -69,12 +69,15 @@ export function useTijdSessies({ projectId, projectNaam, medewerker }: Opties) {
     if (!isSupabaseConfigured() || !supabase) return
     // Unieke kanaalnaam: de hook draait tegelijk in de projectkaart en in de
     // bovenbalk, en twee abonnementen op dezelfde naam verdragen elkaar niet.
+    // Zolang het realtime-kanaal staat, is de poll overbodig; hij is alleen
+    // het vangnet voor als de socket wegvalt.
+    let realtimeActief = false
     const kanaal = supabase
       .channel(`tijd-sessies-${kanaalIdRef.current}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tijd_sessies' }, () => herlaad())
-      .subscribe()
+      .subscribe((status) => { realtimeActief = status === 'SUBSCRIBED' })
 
-    const poll = setInterval(herlaad, POLL_MS)
+    const poll = setInterval(() => { if (!realtimeActief) herlaad() }, POLL_MS)
     function bijZichtbaar() {
       if (document.visibilityState === 'visible') herlaad()
     }

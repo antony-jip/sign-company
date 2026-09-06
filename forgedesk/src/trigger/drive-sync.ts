@@ -28,6 +28,9 @@ import {
 const BUCKET = "documenten-prive";
 const MAX_POGINGEN = 5;
 const PER_RONDE = 50;
+// Hoe lang een geclaimde rij onzichtbaar blijft voor een parallelle run;
+// ruim boven wat één bestand kost, ruim onder de maxDuration.
+const CLAIM_MS = 10 * 60 * 1000;
 
 interface WachtrijRij {
   id: string;
@@ -105,6 +108,22 @@ export const driveSyncCron = schedules.task({
     let mislukt = 0;
 
     for (const rij of rijen as WachtrijRij[]) {
+      // Claim: de status-CHECK (migratie 218) kent geen 'bezig', dus de claim
+      // schuift volgende_poging vooruit onder de voorwaarde dat de rij nog
+      // open en aan de beurt is. Een parallelle run ziet hem dan niet meer;
+      // sterft deze run, dan komt de rij vanzelf weer aan de beurt.
+      const { data: geclaimd, error: claimFout } = await supabase
+        .from("drive_sync_wachtrij")
+        .update({ volgende_poging: new Date(Date.now() + CLAIM_MS).toISOString(), updated_at: new Date().toISOString() })
+        .eq("id", rij.id)
+        .eq("status", "open")
+        .lte("volgende_poging", new Date().toISOString())
+        .select("id");
+      if (claimFout || !geclaimd || geclaimd.length === 0) {
+        overgeslagen++;
+        if (claimFout) logger.warn("Drive-sync claim mislukt", { documentId: rij.document_id, fout: claimFout.message });
+        continue;
+      }
       try {
         const uitkomst = await verwerkRij(supabase, token, rij, instellingCache, mappenCache);
         if (uitkomst === "klaar") gelukt++;

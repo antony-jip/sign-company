@@ -30,12 +30,22 @@ async function verifyUser(req: VercelRequest): Promise<string> {
   return user.id
 }
 
+async function isRateLimited(key: string, maxCount: number, windowSeconds: number): Promise<boolean> {
+  const { data, error } = await supabase.rpc('check_rate_limit', { p_key: key, p_max_count: maxCount, p_window_seconds: windowSeconds })
+  if (error) console.error('[inkoopfactuur-test-connection] check_rate_limit faalde:', error)
+  return data === true
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   try {
     const userId = await verifyUser(req)
+
+    if (await isRateLimited(`inkoopfactuur-test-connection:${userId}`, 5, 300)) {
+      return res.status(429).json({ error: 'Te veel verzoeken. Probeer het later opnieuw.' })
+    }
 
     const { imap_host, imap_port, imap_user, imap_password, gmail_label, use_stored } = req.body as {
       imap_host: string

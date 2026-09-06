@@ -97,11 +97,21 @@ export function leesMapId(invoer: string): string {
   return schoon
 }
 
+async function isRateLimited(key: string, maxCount: number, windowSeconds: number): Promise<boolean> {
+  const { data, error } = await supabase.rpc('check_rate_limit', { p_key: key, p_max_count: maxCount, p_window_seconds: windowSeconds })
+  if (error) console.error('[drive-status] check_rate_limit faalde:', error)
+  return data === true
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
 
   try {
-    await verifyUser(req)
+    const userId = await verifyUser(req)
+
+    if (await isRateLimited(`drive-status:${userId}`, 30, 60)) {
+      return res.status(429).json({ error: 'Te veel verzoeken. Probeer het later opnieuw.' })
+    }
 
     const account = leesServiceAccount()
     if (!account) {
