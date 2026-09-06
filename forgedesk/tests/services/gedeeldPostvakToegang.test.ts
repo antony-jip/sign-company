@@ -42,6 +42,23 @@ describe('toegang tot een gedeeld postvak loopt overal gelijk', () => {
     expect(blok(pad)).toBe(bron)
   })
 
+  // Deze is belangrijker dan hij lijkt. De vorige versie vergeleek alleen de
+  // tekst van het blok, en toen ontbrak in send-email de aanroep terwijl de
+  // definitie er wel stond: zeven definities, zes controles. Precies in het
+  // bestand waar mail namens iemand anders de deur uit gaat.
+  it.each(BESTANDEN)('%s roept de poort ook echt aan', (pad) => {
+    const inhoud = readFileSync(`${WORTEL}/${pad}`, 'utf8')
+    const naBlok = inhoud.slice(inhoud.indexOf(EINDE))
+    expect(naBlok).toMatch(/await magBijPostvak\(/)
+  })
+
+  it.each(BESTANDEN)('%s weigert zodra de poort nee zegt', (pad) => {
+    const inhoud = readFileSync(`${WORTEL}/${pad}`, 'utf8')
+    // De aanroep moet een weigering zijn, geen logregel: !(await ...) gevolgd
+    // door een throw of een return van null.
+    expect(inhoud).toMatch(/!\(await magBijPostvak\(/)
+  })
+
   it.each(BESTANDEN)('%s eist gedeeld én dezelfde organisatie', (pad) => {
     const b = blok(pad)
     // Eigen rij mag altijd.

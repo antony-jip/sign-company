@@ -450,6 +450,13 @@ async function magBijPostvak(
     if (uitkomst.fout || !uitkomst.rij) {
       throw new Error('Dit postvak bestaat niet of hoort niet bij jou. Kies een ander postvak onder Instellingen > E-mail.')
     }
+    // Deze poort hoort hier net zo hard als in de andere zes bestanden. De
+    // query filtert niet meer op user_id (dat kan niet, een gedeeld postvak
+    // staat op naam van een collega), dus zonder deze regel is het kennen van
+    // een UUID genoeg om mail namens een willekeurige mailbox te versturen.
+    if (!(await magBijPostvak(uitkomst.rij, userId))) {
+      throw new Error('Dit postvak bestaat niet of hoort niet bij jou. Kies een ander postvak onder Instellingen > E-mail.')
+    }
     data = uitkomst.rij
   }
   if (!data) {
@@ -722,8 +729,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Hier stond een terugval op gmail_address en app_password uit de
     // request-body. Die is weg, en bewust helemaal: hij maakte de controle op
     // account_id omzeilbaar. Vraag je een postvak op dat niet van jou is, dan
-    // gooit getEmailCredentials, en precies dán viel de oude code terug op de
-    // afzender die de aanvrager zelf meestuurde. Verzenden liep dan langs elke
+    // gooit getEmailCredentials (via magBijPostvak), en precies dán viel de
+    // oude code terug op de afzender die de aanvrager zelf meestuurde. Verzenden liep dan langs elke
     // postvakcontrole heen, met een adres en wachtwoord naar keuze. Geen enkele
     // client heeft die velden ooit gestuurd (zie sendEmail in
     // src/services/gmailService.ts): de mailbox staat op de server, en wie er

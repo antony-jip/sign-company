@@ -415,8 +415,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ error: 'Je account hoort nog bij geen organisatie; een gedeeld postvak kan dan niet.' })
       }
       orgVanGebruiker = rij.organisatie_id
-      if (!wilNieuw) {
-        return res.status(400).json({ error: 'Een gedeeld postvak koppel je als nieuw postvak.' })
+      // Ook geen account_id: met nieuw=true én een account_id wint verderop de
+      // tak die op dat id bijwerkt, en dan zou deze poort een bestaand
+      // persoonlijk postvak alsnog omzetten naar gedeeld. Daarmee komt de hele
+      // organisatie in een privémailbox.
+      if (!wilNieuw || gevraagdAccountId) {
+        return res.status(400).json({ error: 'Een gedeeld postvak koppel je als nieuw postvak, niet door een bestaand postvak om te zetten.' })
       }
     }
 
