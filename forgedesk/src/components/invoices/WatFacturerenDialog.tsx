@@ -16,9 +16,8 @@ import {
   updateFactuur,
   type NieuweFactuurRegel,
 } from '@/services/factuurService'
-import { updateProject, updateTaak } from '@/services/supabaseService'
 import { getMeetellendeVarianten } from '@/utils/offerteTotalen'
-import { schrijfFactuurPrefill, type FactuurPrefill } from '@/components/invoices/factuurPrefill'
+import { schrijfFactuurPrefill, voerPrefillTevensUit, type FactuurPrefill, type PrefillTevens } from '@/components/invoices/factuurPrefill'
 import { formatCurrency, cn } from '@/lib/utils'
 import { round2 } from '@/utils/budgetUtils'
 import { logger } from '@/utils/logger'
@@ -147,25 +146,21 @@ export function WatFacturerenDialog({ open, onOpenChange, offerte, project, proj
     btw_percentage: btwVanVoorschot(v),
   }))
 
+  // De "tevens"-acties gebeuren pas als de factuur bestaat: bij een concept
+  // direct na de write, bij een nieuwe factuur via de prefill in de editor.
+  const tevens = (): PrefillTevens | undefined => {
+    const t: PrefillTevens = {}
+    if (tevensProject && project) { t.project_id = project.id; t.project_status = projectStatus }
+    if (tevensTaken && openTaken.length > 0) t.taak_ids = openTaken.map((x) => x.id)
+    return t.project_id || t.taak_ids ? t : undefined
+  }
+
   const voerTevensUit = async () => {
-    if (tevensProject && project) {
-      try {
-        const bijgewerkt = await updateProject(project.id, { status: projectStatus })
-        onProjectBijgewerkt?.(bijgewerkt)
-      } catch (err) {
-        logger.error('Projectstatus zetten mislukt:', err)
-        toast.error('Kon de projectstatus niet bijwerken')
-      }
-    }
-    if (tevensTaken && openTaken.length > 0) {
-      try {
-        await Promise.all(openTaken.map((t) => updateTaak(t.id, { status: 'klaar' })))
-        onTakenAfgerond?.()
-      } catch (err) {
-        logger.error('Taken afronden mislukt:', err)
-        toast.error('Kon niet alle taken afronden')
-      }
-    }
+    const uitkomst = await voerPrefillTevensUit(tevens())
+    if (uitkomst.project) onProjectBijgewerkt?.(uitkomst.project)
+    else if (tevensProject && project) toast.error('Kon de projectstatus niet bijwerken')
+    if (uitkomst.takenAfgerond) onTakenAfgerond?.()
+    else if (tevensTaken && openTaken.length > 0) toast.error('Kon niet alle taken afronden')
   }
 
   const handleFactureren = async () => {
@@ -175,7 +170,6 @@ export function WatFacturerenDialog({ open, onOpenChange, offerte, project, proj
     }
     setBezig(true)
     try {
-      await voerTevensUit()
       if (doel === 'nieuw') {
         const prefill: FactuurPrefill = {
           offerte_id: offerte.id,
@@ -183,6 +177,7 @@ export function WatFacturerenDialog({ open, onOpenChange, offerte, project, proj
           volledig,
           verrekenRegels,
           verrekende_voorschot_ids: voorschotten.map((v) => v.id),
+          tevens: tevens(),
         }
         schrijfFactuurPrefill(prefill)
         const params = new URLSearchParams({
@@ -210,6 +205,7 @@ export function WatFacturerenDialog({ open, onOpenChange, offerte, project, proj
         ? { factuur_type: 'eindafrekening', verrekende_voorschot_ids: [...(concept.verrekende_voorschot_ids || []), ...voorschotten.map((v) => v.id)] }
         : {}
       await voegRegelsToeAanConcept(concept.id, regels, user?.id || '', extra)
+      await voerTevensUit()
       for (const v of voorschotten) {
         await updateFactuur(v.id, { is_voorschot_verrekend: true }).catch((err) => logger.error('Voorschot afvinken mislukt:', err))
       }
