@@ -1270,6 +1270,11 @@ export interface Tijdregistratie {
   factuur_id?: string;
   created_at: string;
   updated_at: string;
+  /** Weekstaat (migratie 241): concept, definitief (week ingediend), goedgekeurd. Default goedgekeurd. */
+  status?: 'concept' | 'definitief' | 'goedgekeurd';
+  definitief_op?: string | null;
+  goedgekeurd_door_id?: string | null;
+  goedgekeurd_op?: string | null;
 }
 
 // Een lopende inklok-sessie. Bestaat alleen zolang iemand ingeklokt staat;
@@ -1326,7 +1331,7 @@ export interface Notificatie {
   id: string;
   user_id?: string;
   organisatie_id?: string;
-  type: 'offerte_bekeken' | 'offerte_verlopen' | 'offerte_geaccepteerd' | 'offerte_wijziging' | 'factuur_vervallen' | 'deadline_nadert' | 'nieuwe_email' | 'taak_voltooid' | 'montage_gepland' | 'betaling_ontvangen' | 'budget_waarschuwing' | 'booking_nieuw' | 'algemeen' | 'goedkeuring' | 'herinnering' | 'portaal_goedkeuring' | 'portaal_revisie' | 'portaal_bericht' | 'portaal_bekeken' | 'portaal_herinnering' | 'website_chat' | 'website_aanvraag' | 'taak_toegewezen' | 'offerte_check_gevraagd' | 'offerte_check_afgehandeld' | 'offerte_check_wijzigingen' | 'genoemd' | 'uren_herinnering' | 'conceptfacturen_klaar';
+  type: 'offerte_bekeken' | 'offerte_verlopen' | 'offerte_geaccepteerd' | 'offerte_wijziging' | 'factuur_vervallen' | 'deadline_nadert' | 'nieuwe_email' | 'taak_voltooid' | 'montage_gepland' | 'betaling_ontvangen' | 'budget_waarschuwing' | 'booking_nieuw' | 'algemeen' | 'goedkeuring' | 'herinnering' | 'portaal_goedkeuring' | 'portaal_revisie' | 'portaal_bericht' | 'portaal_bekeken' | 'portaal_herinnering' | 'website_chat' | 'website_aanvraag' | 'taak_toegewezen' | 'offerte_check_gevraagd' | 'offerte_check_afgehandeld' | 'offerte_check_wijzigingen' | 'genoemd' | 'uren_herinnering' | 'conceptfacturen_klaar' | 'uren_week_ingediend' | 'uren_week_goedgekeurd';
   titel: string;
   bericht: string;
   link?: string;
@@ -2674,5 +2679,23 @@ export interface PlanningWeergave {
 export interface MontageHerhaling {
   frequentie: 'wekelijks' | 'tweewekelijks' | 'maandelijks';
   tot: string;
+}
+
+/** Contracturen per weekdag (migratie 241). medewerker_id is een medewerkers.id of 'profile-<uuid>'. */
+export interface MedewerkerContract {
+  id: string;
+  organisatie_id?: string;
+  medewerker_id: string;
+  geldig_van: string;
+  geldig_tot?: string | null;
+  uren_ma: number;
+  uren_di: number;
+  uren_wo: number;
+  uren_do: number;
+  uren_vr: number;
+  uren_za: number;
+  uren_zo: number;
+  created_at?: string;
+  updated_at?: string;
 }
 

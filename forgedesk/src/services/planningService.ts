@@ -3,7 +3,7 @@ import {
   assertId, getLocalData, setLocalData, generateId, now,
   withUserId, getOrgId, sanitizeDates, fetchAllPages,
 } from './supabaseHelpers'
-import type { CalendarEvent, MontageAfspraak, MontageHerhaling, Verlof, Bedrijfssluitingsdag, DagNotitie, VrijPatroon, Afwezigheid, PlanningWeergave } from '@/types'
+import type { CalendarEvent, MontageAfspraak, MontageHerhaling, Verlof, Bedrijfssluitingsdag, DagNotitie, VrijPatroon, Afwezigheid, PlanningWeergave, MedewerkerContract } from '@/types'
 
 // ============ EVENTS (CALENDAR) ============
 
@@ -458,4 +458,42 @@ export async function deleteAfwezigheid(id: string): Promise<void> {
   }
   const items = getLocalData<Afwezigheid>('afwezigheid')
   setLocalData('afwezigheid', items.filter((a) => a.id !== id))
+}
+
+// ── Contracturen (migratie 241) ──
+
+export async function getMedewerkerContracten(): Promise<MedewerkerContract[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('medewerker_contracten').select('*').order('geldig_van', { ascending: false })
+    if (error) throw error
+    return (data || []) as MedewerkerContract[]
+  }
+  return getLocalData<MedewerkerContract>('medewerker_contracten')
+}
+
+export async function upsertMedewerkerContract(contract: Omit<MedewerkerContract, 'id' | 'created_at' | 'updated_at'> & { id?: string }): Promise<MedewerkerContract> {
+  if (isSupabaseConfigured() && supabase) {
+    const orgId = await getOrgId()
+    const payload = { ...contract, organisatie_id: contract.organisatie_id ?? orgId ?? undefined, updated_at: now() }
+    const { data, error } = contract.id
+      ? await supabase.from('medewerker_contracten').update(payload).eq('id', contract.id).select().single()
+      : await supabase.from('medewerker_contracten').insert(payload).select().single()
+    if (error) throw error
+    return data as MedewerkerContract
+  }
+  const items = getLocalData<MedewerkerContract>('medewerker_contracten')
+  const rij = { ...contract, id: contract.id ?? generateId(), created_at: now(), updated_at: now() } as MedewerkerContract
+  setLocalData('medewerker_contracten', [...items.filter((c) => c.id !== rij.id), rij])
+  return rij
+}
+
+export async function deleteMedewerkerContract(id: string): Promise<void> {
+  assertId(id, 'contract_id')
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('medewerker_contracten').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const items = getLocalData<MedewerkerContract>('medewerker_contracten')
+  setLocalData('medewerker_contracten', items.filter((c) => c.id !== id))
 }

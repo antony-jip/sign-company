@@ -48,6 +48,9 @@ export const FUNCTIES: FunctieDefinitie[] = [
   // Planning
   { sleutel: 'planning_weergaven', groep: 'planning', label: 'Opgeslagen planningweergaven', uitleg: 'Bewaar een filter als weergave, bijvoorbeeld "Ploeg Noord deze week".', standaard: true, artikel: 'planning-weergaven-herhalen' },
   { sleutel: 'planning_herhalen', groep: 'planning', label: 'Herhaald inplannen', uitleg: 'Een montageafspraak wekelijks of maandelijks laten terugkomen, met einddatum.', standaard: false, artikel: 'planning-weergaven-herhalen' },
+  { sleutel: 'uren_weekstaat', groep: 'planning', label: 'Weekstaat', uitleg: 'Uren per dag in een weekraster, met de dagnorm uit het contract ernaast. Naast het inklokken, niet in plaats van.', standaard: true, artikel: 'uren-weekstaat' },
+  { sleutel: 'uren_goedkeuren', groep: 'planning', label: 'Uren goedkeuren', uitleg: 'Medewerkers dienen hun week in, een beheerder keurt goed. Alleen goedgekeurde uren gaan naar de factuur. Uit: elk uur telt meteen mee.', standaard: false, artikel: 'uren-weekstaat' },
+  { sleutel: 'planning_bezetting', groep: 'planning', label: 'Bezetting per week', uitleg: 'Per medewerker gepland tegenover beschikbaar, uit contracturen min verlof en afwezigheid. Vier weken vooruit.', standaard: true, artikel: 'planning-bezetting' },
   { sleutel: 'uren_herinnering', groep: 'planning', label: 'Herinnering als er nog geen uren staan', uitleg: 'Aan het eind van de werkdag een melding voor wie vandaag nog niets schreef.', standaard: false, getal: { sleutel: 'uren_herinnering_uur', label: 'Om hoe laat', standaard: 16, eenheid: 'uur' }, artikel: 'meldingen-noemen' },
   // Facturen
   { sleutel: 'factuur_stepper', groep: 'facturen', label: 'Opvolgstappen bovenin de factuur', uitleg: 'Factuur, herinnering, aanmaning als stappen, met de actieve stap gekleurd.', standaard: true, artikel: 'factuur-opvolging-stepper' },
