@@ -425,10 +425,38 @@ export async function getEmail(id: string): Promise<Email | null> {
 type BodyRij = { email_id: string; body_html: string | null; body_text: string | null; quoted_html: string | null }
 
 /**
+ * Migratie 244 verhuist de bodies naar email_bodies. Zolang die migratie niet
+ * gedraaid is bestaat de tabel niet (42P01 of PGRST205) en staat de body nog
+ * in emails.body_html. Zonder terugval was er dan geen enkele bron meer en
+ * bleef elke mail leeg, want emails.body_html wordt nergens anders gelezen.
+ * De uitkomst wordt onthouden zodat we niet elke ronde op een fout wachten.
+ */
+let bodiesTabelOntbreekt = false
+
+function tabelOntbreekt(fout: { code?: string; message?: string } | null | undefined): boolean {
+  if (!fout) return false
+  if (fout.code === '42P01' || fout.code === 'PGRST205' || fout.code === '42703' || fout.code === 'PGRST204') return true
+  return /relation .* does not exist|could not find the table/i.test(fout.message || '')
+}
+
+/** Terugval voor een database zonder 244: de body zoals die er al staat. */
+async function bodiesUitEmailsRijen(ids: string[]): Promise<BodyRij[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase
+    .from('emails')
+    .select('id, body_html, body_text')
+    .in('id', ids)
+  if (error) return []
+  return ((data || []) as Array<{ id: string; body_html: string | null; body_text: string | null }>)
+    .map((r) => ({ email_id: r.id, body_html: r.body_html, body_text: r.body_text, quoted_html: null }))
+}
+
+/**
  * Leest bodies uit email_bodies (migratie 244). emails.body_html is sinds die
  * migratie leeg; wie daar nog leest krijgt altijd NULL en valt onnodig terug
  * op IMAP. Alleen rijen die bestaan komen terug: geen rij betekent "nog nooit
- * geparsed", en dat hoort via prefetch of read-email te lopen.
+ * geparsed", en dat hoort via prefetch of read-email te lopen. Bestaat de
+ * tabel nog niet, dan leest bodiesUitEmailsRijen wat er al in emails staat.
  */
 export async function getEmailBodiesUitTabel(ids: string[]): Promise<EmailBody[]> {
   if (!ids.length || !isSupabaseConfigured() || !supabase) return []
@@ -436,10 +464,15 @@ export async function getEmailBodiesUitTabel(ids: string[]): Promise<EmailBody[]
   const blokken: string[][] = []
   for (let i = 0; i < ids.length; i += 100) blokken.push(ids.slice(i, i + 100))
   const resultaten = await Promise.all(blokken.map(async (blok) => {
+    if (bodiesTabelOntbreekt) return await bodiesUitEmailsRijen(blok)
     const { data, error } = await client
       .from('email_bodies')
       .select('email_id, body_html, body_text, quoted_html')
       .in('email_id', blok)
+    if (tabelOntbreekt(error)) {
+      bodiesTabelOntbreekt = true
+      return await bodiesUitEmailsRijen(blok)
+    }
     if (error) return []
     return (data || []) as BodyRij[]
   }))
@@ -456,14 +489,24 @@ export async function getEmailBody(id: string): Promise<{ body_html: string | nu
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
     const [bodyQ, metaQ] = await Promise.all([
-      supabase.from('email_bodies').select('body_html, body_text').eq('email_id', id).maybeSingle(),
+      bodiesTabelOntbreekt
+        ? Promise.resolve({ data: null, error: null } as { data: { body_html: string | null; body_text: string | null } | null; error: { code?: string; message?: string } | null })
+        : supabase.from('email_bodies').select('body_html, body_text').eq('email_id', id).maybeSingle(),
       supabase.from('emails').select('body_text, inhoud, attachment_meta').eq('id', id).maybeSingle(),
     ])
     if (metaQ.error) throw metaQ.error
     if (!metaQ.data) return null
+    let bodyHtml = bodyQ.data?.body_html ?? null
+    let bodyTekst = bodyQ.data?.body_text ?? null
+    if (bodiesTabelOntbreekt || tabelOntbreekt(bodyQ.error)) {
+      bodiesTabelOntbreekt = true
+      const terugval = (await bodiesUitEmailsRijen([id]))[0]
+      bodyHtml = terugval?.body_html ?? null
+      bodyTekst = terugval?.body_text ?? bodyTekst
+    }
     return {
-      body_html: bodyQ.data?.body_html ?? null,
-      body_text: bodyQ.data?.body_text ?? metaQ.data.body_text ?? null,
+      body_html: bodyHtml,
+      body_text: bodyTekst ?? metaQ.data.body_text ?? null,
       inhoud: metaQ.data.inhoud || '',
       attachment_meta: metaQ.data.attachment_meta,
     }
@@ -494,12 +537,20 @@ export async function getEmailBodies(
   const resultaten = await Promise.all(
     blokken.map(async (blok) => {
       const [bodiesQ, metaQ] = await Promise.all([
-        client.from('email_bodies').select('email_id, body_html, body_text').in('email_id', blok).not('body_html', 'is', null),
+        bodiesTabelOntbreekt
+          ? Promise.resolve({ data: null, error: null } as { data: Array<{ email_id: string; body_html: string | null; body_text: string | null }> | null; error: { code?: string; message?: string } | null })
+          : client.from('email_bodies').select('email_id, body_html, body_text').in('email_id', blok).not('body_html', 'is', null),
         client.from('emails').select('id, attachment_meta').in('id', blok),
       ])
-      if (bodiesQ.error) return []
+      let rijen = (bodiesQ.data || []) as Array<{ email_id: string; body_html: string | null; body_text: string | null }>
+      if (bodiesTabelOntbreekt || tabelOntbreekt(bodiesQ.error)) {
+        bodiesTabelOntbreekt = true
+        rijen = (await bodiesUitEmailsRijen(blok)).filter((r) => r.body_html)
+      } else if (bodiesQ.error) {
+        return []
+      }
       const meta = new Map(((metaQ.data || []) as Array<{ id: string; attachment_meta: unknown[] | null }>).map((r) => [r.id, r.attachment_meta]))
-      return ((bodiesQ.data || []) as Array<{ email_id: string; body_html: string | null; body_text: string | null }>).map((r) => ({
+      return rijen.map((r) => ({
         id: r.email_id,
         body_html: r.body_html,
         body_text: r.body_text,
