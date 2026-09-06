@@ -17,6 +17,7 @@ import {
   getWerkbonnen,
 } from '@/services/supabaseService'
 import type { Klant, Project, Offerte, Factuur, Taak, Document, Email, Werkbon } from '@/types'
+import { getCached, fetchQuery } from '@/lib/queryCache'
 import { logger } from '../../utils/logger'
 
 interface SearchResult {
@@ -59,12 +60,14 @@ async function loadAllData() {
     return dataCache
   }
 
+  // Uit de gedeelde cache (zelfde keys als de modules); alleen vers als de la
+  // nog leeg is.
   const [facturen, taken, documenten, werkbonnen] =
     await Promise.all([
-      getFacturen(),
-      getTaken(),
-      getDocumenten(),
-      getWerkbonnen(),
+      getCached<Factuur[]>('facturen') ?? fetchQuery('facturen', getFacturen),
+      getCached<Taak[]>('taken') ?? fetchQuery('taken', getTaken),
+      getCached<Document[]>('documenten') ?? fetchQuery('documenten', getDocumenten),
+      getCached<Werkbon[]>('werkbonnen') ?? fetchQuery('werkbonnen', getWerkbonnen),
     ])
   // Mail en klanten zitten hier bewust niet bij. Dat zijn de twee grootste
   // tabellen (18.515 en 1905 rijen bij de grootste organisatie) en ze werden

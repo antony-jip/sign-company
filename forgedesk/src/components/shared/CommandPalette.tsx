@@ -18,6 +18,7 @@ import {
   Loader2,
 } from 'lucide-react'
 import { getOffertes, getKlanten, getProjecten } from '@/services/supabaseService'
+import { getCached, fetchQuery } from '@/lib/queryCache'
 import type { Offerte, Klant, Project } from '@/types'
 import { logger } from '../../utils/logger'
 
@@ -109,10 +110,12 @@ export function CommandPalette() {
     async function loadData() {
       setIsLoading(true)
       try {
+        // Uit de gedeelde cache (zelfde keys als coreData); alleen vers als de
+        // la nog leeg is.
         const [offertes, klanten, projecten] = await Promise.all([
-          getOffertes(),
-          getKlanten(),
-          getProjecten(),
+          getCached<Offerte[]>('offertes') ?? fetchQuery('offertes', getOffertes),
+          getCached<Klant[]>('klanten') ?? fetchQuery('klanten', getKlanten),
+          getCached<Project[]>('projecten') ?? fetchQuery('projecten', getProjecten),
         ])
         if (!cancelled) {
           setOfferteItems(mapOffertesToItems(offertes))
