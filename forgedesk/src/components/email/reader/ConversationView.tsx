@@ -269,7 +269,7 @@ export function ConversationView({ emailId, onSluiten, onAntwoord, onVolgende, o
       <header className={cn('flex-shrink-0 border-b border-border', compact ? 'px-3 py-2.5' : 'px-6 py-4')}>
         <div className="flex items-start gap-2">
           <div className="min-w-0 flex-1">
-            <h1 className={cn('font-semibold tracking-[-0.3px] text-foreground', compact ? 'text-[15px] leading-tight' : 'text-[18px] leading-snug')}>
+            <h1 className={cn('font-semibold tracking-[-0.3px] text-foreground [overflow-wrap:anywhere]', compact ? 'text-[15px] leading-tight' : 'text-[18px] leading-snug')}>
               {mail.onderwerp || '(geen onderwerp)'}
             </h1>
             <p className="mt-0.5 truncate text-[12px] text-muted-foreground">
@@ -285,8 +285,15 @@ export function ConversationView({ emailId, onSluiten, onAntwoord, onVolgende, o
                 <KopKnop label="Volgende mail" onClick={onVolgende}><ChevronDown className="h-4 w-4" /></KopKnop>
               </>
             )}
-            <EmailActionsPopover email={alsEmail(mail, geselecteerdeBody)} openKlantSignal={klantSignal} onOpenProjectDialog={() => zetKoppelOpen(true)} />
             <KopKnop label="Sluiten" onClick={onSluiten}><X className="h-4 w-4" /></KopKnop>
+          </div>
+        </div>
+
+        {/* De maak-acties staan op hun eigen regel: in een smal leesvenster
+            duwden ze het onderwerp anders tot één letter per regel. */}
+        <div className="mt-2 -mx-1 overflow-x-auto scrollbar-none">
+          <div className="px-1">
+            <EmailActionsPopover email={alsEmail(mail, geselecteerdeBody)} openKlantSignal={klantSignal} onOpenProjectDialog={() => zetKoppelOpen(true)} />
           </div>
         </div>
 

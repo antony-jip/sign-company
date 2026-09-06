@@ -147,11 +147,11 @@ export const Bericht = forwardRef<HTMLDivElement, BerichtProps>(function Bericht
         </button>
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2">
-            <button type="button" onClick={onToggle} className="min-w-0 truncate text-left text-[14px] font-semibold text-foreground">
+            <button type="button" onClick={onToggle} className="max-w-full flex-shrink-0 truncate text-left text-[14px] font-semibold text-foreground">
               {naam}
             </button>
             {adres && adres !== naam && !compact && (
-              <span className="min-w-0 truncate text-[12px] text-muted-foreground">{adres}</span>
+              <span className="min-w-0 flex-1 truncate text-[12px] text-muted-foreground">{adres}</span>
             )}
           </div>
           <div className="mt-0.5 flex items-center gap-1.5 text-[12px] text-muted-foreground">
@@ -165,9 +165,9 @@ export const Bericht = forwardRef<HTMLDivElement, BerichtProps>(function Bericht
           <time
             dateTime={bericht.datum}
             title={volledigeDatum(bericht.datum)}
-            className="font-mono text-[11px] text-muted-foreground"
+            className="font-mono text-[11px] text-muted-foreground whitespace-nowrap"
           >
-            {compact ? formatShortDate(bericht.datum) : volledigeDatum(bericht.datum)}
+            {formatShortDate(bericht.datum)}
           </time>
           {!compact && (
             <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">

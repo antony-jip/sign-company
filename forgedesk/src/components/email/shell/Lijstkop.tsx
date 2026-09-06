@@ -50,14 +50,16 @@ export function Lijstkop(p: Props) {
             </span>
           )}
         </div>
+        {/* De mappenrail draagt de primaire actie; hier alleen het icoon, zodat
+            er niet twee Flame-knoppen naast elkaar staan. */}
         <button
           type="button"
           onClick={p.onNieuw}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-semibold text-white bg-flame hover:bg-[#D8421F] transition-colors duration-200"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors duration-200 hover:bg-muted hover:text-foreground"
           title="Nieuw bericht (c)"
+          aria-label="Nieuw bericht"
         >
-          <Pencil className="h-3.5 w-3.5" />
-          Nieuw bericht
+          <Pencil className="h-4 w-4" />
         </button>
       </div>
 

@@ -122,7 +122,7 @@ export function KoppelPopover({ open, onOpenChange, onKoppel, gekoppeld = [], ch
             )}
           >
             <Link2 className="h-3.5 w-3.5" />
-            Koppelen
+            {gekoppeld.length ? 'Nog een koppeling' : 'Koppelen aan klant of project'}
           </button>
         )}
       </PopoverTrigger>
