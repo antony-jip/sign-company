@@ -60,6 +60,21 @@ export async function setBackfillTarget(target: BackfillTarget): Promise<void> {
 const LIST_VIEW_COLUMNS = 'id,gmail_id,uid,message_id,van,aan,to_addresses,cc_addresses,onderwerp,datum,gelezen,starred,labels,bijlagen,map,from_name,from_address,imap_folder,pinned,snoozed_until,thread_id,attachment_meta,has_attachments,body_text,created_at,is_aanvraag,aanvraag_zekerheid,aanvraag_samenvatting,aanvraag_verborgen'
 
 /**
+ * Migratie 245 herbouwt emails_list_view mét `account_id`. Zolang die niet
+ * gedraaid is kent de view de kolom niet en moest het postvak per lijstlading
+ * uit een tweede query komen (`metAccountKolom`). Vragen we hem gewoon op, dan
+ * is dat straks één query in plaats van twee; ontbreekt hij nog, dan valt deze
+ * module terug op de oude kolomlijst en die tweede query.
+ */
+const LIST_VIEW_COLUMNS_MET_ACCOUNT = `${LIST_VIEW_COLUMNS},account_id`
+
+let viewHeeftAccount: boolean | null = null
+
+function lijstKolommen(): string {
+  return viewHeeftAccount === false ? LIST_VIEW_COLUMNS : LIST_VIEW_COLUMNS_MET_ACCOUNT
+}
+
+/**
  * De mailbox is persoonlijk. RLS op `emails` staat naast de eigenaar-policy
  * ook toe dat teamleden mail lezen die via `email_project_koppelingen` aan een
  * project van de organisatie hangt (migratie 109). Dat is gewenst binnen een
@@ -75,20 +90,21 @@ async function eigenUserId(): Promise<string | null> {
 
 export async function getEmails(limit = 200): Promise<Email[]> {
   if (isSupabaseConfigured() && supabase) {
+    const client = supabase
     const uid = await eigenUserId()
     if (!uid) return []
-    const { data, error } = await supabase
+    const { data, error } = await lijstQuery<Record<string, unknown>>(null, (kolommen) => client
       .from('emails_list_view')
-      .select(LIST_VIEW_COLUMNS)
+      .select(kolommen)
       .eq('user_id', uid)
       .order('datum', { ascending: false })
-      .limit(limit)
+      .limit(limit) as unknown as PromiseLike<Uitkomst<Record<string, unknown>>>)
     if (error) throw error
     return (data || []).map(e => ({
       ...e,
       inhoud: '',
       body_html: null,
-    }))
+    })) as unknown as Email[]
   }
   return getLocalData<Email>('emails')
 }
@@ -180,6 +196,28 @@ async function metPostvak<T>(
   return eerste
 }
 
+/**
+ * Een query op emails_list_view met de kolomlijst en het postvakfilter die op
+ * dit moment mogelijk zijn. Ontbreekt `account_id` nog, dan gaat dezelfde query
+ * opnieuw zonder de kolom en zonder het filter.
+ */
+async function lijstQuery<T>(
+  accountId: string | null | undefined,
+  bouw: (kolommen: string, accountId: string | null) => PromiseLike<Uitkomst<T>>,
+): Promise<Uitkomst<T>> {
+  const gekozen = accountId && accountKolomBekend !== false ? accountId : null
+  const eerste = await bouw(lijstKolommen(), gekozen)
+  if (!eerste.error) {
+    if (viewHeeftAccount === null) viewHeeftAccount = true
+    if (gekozen) accountKolomBekend = true
+    return eerste
+  }
+  if (!isOnbekendeKolom(eerste.error)) return eerste
+  viewHeeftAccount = false
+  if (gekozen) accountKolomBekend = false
+  return bouw(LIST_VIEW_COLUMNS, null)
+}
+
 function metCursor(q: LijstBouwer, cursor: EmailPageCursor | null): LijstBouwer {
   if (!cursor) return q
   return q.or(`datum.lt."${cursor.datum}",and(datum.eq."${cursor.datum}",id.lt."${cursor.id}")`)
@@ -251,10 +289,10 @@ export async function getEmailsPage(map: string, cursor: EmailPageCursor | null,
     type Vlaggen = { id: string; account_id?: string | null; wacht_op_reactie?: boolean; beantwoord?: boolean; toegewezen_aan?: string | null; toegewezen_op?: string | null }
     const vlaggen = new Map(((treffers || []) as unknown as Vlaggen[]).map((r, i) => [r.id, { i, r }]))
     if (vlaggen.size === 0) return []
-    const { data: rijen, error: rijenErr } = await client
+    const { data: rijen, error: rijenErr } = await lijstQuery<Record<string, unknown>>(null, (kolommen) => client
       .from('emails_list_view')
-      .select(LIST_VIEW_COLUMNS)
-      .in('id', [...vlaggen.keys()])
+      .select(kolommen)
+      .in('id', [...vlaggen.keys()]) as unknown as PromiseLike<Uitkomst<Record<string, unknown>>>)
     if (rijenErr) throw rijenErr
     return ((rijen || []) as Array<Record<string, unknown>>)
       .sort((a, b) => (vlaggen.get(a.id as string)?.i ?? 0) - (vlaggen.get(b.id as string)?.i ?? 0))
@@ -271,24 +309,28 @@ export async function getEmailsPage(map: string, cursor: EmailPageCursor | null,
       })
   }
 
-  const basis = pasMapFilterToe(
-    client.from('emails_list_view').select(LIST_VIEW_COLUMNS).eq('user_id', uid) as unknown as LijstBouwer,
-    map,
-  )
-  if (!basis) return []
-  const { data, error } = await metCursor(basis, cursor)
-    .order('datum', { ascending: false })
-    .order('id', { ascending: false })
-    .limit(limit)
+  const { data, error } = await lijstQuery<Record<string, unknown>>(null, (kolommen) => {
+    const basis = pasMapFilterToe(
+      client.from('emails_list_view').select(kolommen).eq('user_id', uid) as unknown as LijstBouwer,
+      map,
+    )
+    if (!basis) return Promise.resolve({ data: [], error: null })
+    return metCursor(basis, cursor)
+      .order('datum', { ascending: false })
+      .order('id', { ascending: false })
+      .limit(limit) as unknown as PromiseLike<Uitkomst<Record<string, unknown>>>
+  })
   if (error) throw error
   const rijen = ((data || []) as Array<Record<string, unknown>>).map(alsLijstItem)
-  return metPostvakKolom ? await metAccountKolom(client, rijen) : rijen
+  // Heeft de view account_id al, dan zit het postvak in de rijen hierboven en
+  // is de tweede query overbodig.
+  return metPostvakKolom && viewHeeftAccount === false ? await metAccountKolom(client, rijen) : rijen
 }
 
 /**
- * emails_list_view kent `account_id` niet (migratie 245 voegt de kolom aan
- * `emails` toe en laat de view ongemoeid), dus in de stand "Alle postvakken"
- * zou een regel nooit weten uit welk postvak hij komt. Eén lichte query erbij
+ * Terugval zolang emails_list_view `account_id` niet kent (migratie 245 bouwt
+ * de view opnieuw op mét die kolom): in de stand "Alle postvakken" zou een
+ * regel anders nooit weten uit welk postvak hij komt. Eén lichte query erbij
  * vult dat aan. Alleen bij meer dan één postvak, anders is het een extra ronde
  * voor niets, en defensief: zonder 245 bestaat de kolom nog niet en gaat het
  * veld gewoon weer weg.
@@ -314,10 +356,10 @@ export async function getThreadItems(threadId: string, accountId?: string | null
   const client = supabase
   const uid = await eigenUserId()
   if (!uid) return []
-  const { data, error } = await metPostvak<Record<string, unknown>>(accountId, (acc) => {
+  const { data, error } = await lijstQuery<Record<string, unknown>>(accountId, (kolommen, acc) => {
     const basis = client
       .from('emails_list_view')
-      .select(LIST_VIEW_COLUMNS)
+      .select(kolommen)
       .eq('user_id', uid)
       .eq('thread_id', threadId)
       .not('map', 'in', '("prullenbak","concepten")') as unknown as LijstBouwer
@@ -470,10 +512,10 @@ export async function searchEmailsFTS(query: string, limit = 50, offset = 0, acc
 
   if (ids.length === 0) return []
 
-  const { data: rijen, error: rijenErr } = await client
+  const { data: rijen, error: rijenErr } = await lijstQuery<Record<string, unknown>>(null, (kolommen) => client
     .from('emails_list_view')
-    .select(LIST_VIEW_COLUMNS)
-    .in('id', ids)
+    .select(kolommen)
+    .in('id', ids) as unknown as PromiseLike<Uitkomst<Record<string, unknown>>>)
   if (rijenErr) throw rijenErr
 
   const volgorde = new Map(ids.map((id, i) => [id, i]))
@@ -689,10 +731,10 @@ export async function getEmailsMetAdres(adres: string, limit = 20, accountId?: s
   if (!bareEmail) return []
   if (isSupabaseConfigured() && supabase) {
     const client = supabase
-    const { data, error } = await metPostvak<Record<string, unknown>>(accountId, (acc) => {
+    const { data, error } = await lijstQuery<Record<string, unknown>>(accountId, (kolommen, acc) => {
       const basis = client
         .from('emails_list_view')
-        .select(LIST_VIEW_COLUMNS)
+        .select(kolommen)
         .or(`from_address.ilike.%${bareEmail}%,van.ilike.%${bareEmail}%,aan.ilike.%${bareEmail}%`) as unknown as LijstBouwer
       return (acc ? basis.eq('account_id', acc) : basis)
         .order('datum', { ascending: false })
