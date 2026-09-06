@@ -1,8 +1,11 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import { useAuth } from './AuthContext'
 import { getProjecten, getOffertes, getFacturen, getTaken, getMontageAfspraken, getKlanten, getMedewerkers, getEvents } from '@/services/supabaseService'
 import { getCached, fetchQuery } from '@/lib/queryCache'
 import type { Project, Offerte, Factuur, Taak, MontageAfspraak, Klant, Medewerker, CalendarEvent } from '@/types'
+
+const VERS_MS = 60_000
+const POLL_MS = 300_000
 
 interface DashboardData {
   projecten: Project[]
@@ -31,17 +34,23 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [isLoading, setIsLoading] = useState(() => getCached('klanten') === undefined)
 
-  const fetchAll = useCallback(async () => {
+  const laatsteFetchRef = useRef(0)
+
+  // Een expliciete refresh() (na een mutatie) haalt altijd vers; de mount,
+  // de timer en de focus-listener nemen genoegen met data jonger dan VERS_MS.
+  const fetchAll = useCallback(async (geforceerd = false) => {
     if (!user?.id) return
+    laatsteFetchRef.current = Date.now()
+    const opties = geforceerd ? undefined : { maxAgeMs: VERS_MS }
     try {
       const [p, o, f, t, m, k, md, e] = await Promise.all([
-        fetchQuery('projecten', getProjecten),
-        fetchQuery('offertes', getOffertes),
-        fetchQuery('facturen', getFacturen),
-        fetchQuery('taken', getTaken),
-        fetchQuery('montageAfspraken', getMontageAfspraken),
-        fetchQuery('klanten', getKlanten),
-        fetchQuery('medewerkers', getMedewerkers),
+        fetchQuery('projecten', getProjecten, opties),
+        fetchQuery('offertes', getOffertes, opties),
+        fetchQuery('facturen', getFacturen, opties),
+        fetchQuery('taken', getTaken, opties),
+        fetchQuery('montageAfspraken', getMontageAfspraken, opties),
+        fetchQuery('klanten', getKlanten, opties),
+        fetchQuery('medewerkers', getMedewerkers, opties),
         getEvents(),
       ])
       setProjecten(p)
@@ -64,32 +73,37 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
   }, [fetchAll])
 
   // Houd de dashboard-data fris zonder volledige page-refresh:
-  //  - bij tab-/window-focus (gebruiker komt terug uit een andere tab)
-  //  - en als de tab > 60s open blijft (achtergrond-polling)
+  //  - bij tab-/window-focus (gebruiker komt terug uit een andere tab),
+  //    maar alleen als de laatste fetch ouder is dan VERS_MS
+  //  - en als de tab > 5 min open blijft (achtergrond-polling)
   // Polling pauzeert wanneer de tab niet zichtbaar is, om onnodig
   // verkeer te voorkomen.
   useEffect(() => {
     if (!user?.id) return
 
-    const handleVisibility = () => {
-      if (document.visibilityState === 'visible') fetchAll()
+    const bijTerugkeer = () => {
+      if (document.visibilityState !== 'visible') return
+      if (Date.now() - laatsteFetchRef.current < VERS_MS) return
+      fetchAll()
     }
-    document.addEventListener('visibilitychange', handleVisibility)
-    window.addEventListener('focus', fetchAll)
+    document.addEventListener('visibilitychange', bijTerugkeer)
+    window.addEventListener('focus', bijTerugkeer)
 
     const interval = window.setInterval(() => {
       if (document.visibilityState === 'visible') fetchAll()
-    }, 60_000)
+    }, POLL_MS)
 
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibility)
-      window.removeEventListener('focus', fetchAll)
+      document.removeEventListener('visibilitychange', bijTerugkeer)
+      window.removeEventListener('focus', bijTerugkeer)
       window.clearInterval(interval)
     }
   }, [fetchAll, user?.id])
 
+  const refresh = useCallback(() => { void fetchAll(true) }, [fetchAll])
+
   return (
-    <DashboardDataContext.Provider value={{ projecten, offertes, facturen, taken, montages, klanten, medewerkers, events, isLoading, refresh: fetchAll }}>
+    <DashboardDataContext.Provider value={{ projecten, offertes, facturen, taken, montages, klanten, medewerkers, events, isLoading, refresh }}>
       {children}
     </DashboardDataContext.Provider>
   )
