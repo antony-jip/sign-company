@@ -52,6 +52,20 @@ const APP_FEATURES = [
 
 const CHANGELOG: ChangelogEntry[] = [
   {
+    versie: '1.5.2',
+    datum: '6 september 2026',
+    label: 'Verbeterd',
+    titel: 'Sneller, zuiniger en steviger voor grotere teams',
+    beschrijving: 'Doorlichting voor 50 organisaties. Niets nieuws om aan te zetten; je merkt het aan een rustiger dashboard en snellere schermen.',
+    features: [
+      { titel: 'Rustiger dashboard', beschrijving: 'Ververst elke vijf minuten in plaats van elke minuut, en direct na een wijziging. Scheelt tot 80 procent dataverkeer.' },
+      { titel: 'Gericht laden', beschrijving: 'Projectkaart, klantkaart, werkbon op de telefoon, zoeken en de factuureditor halen alleen op wat ze tonen.' },
+      { titel: 'Uren factureren in één keer', beschrijving: 'Alle regels en registraties in één stap, dus geen halve factuur meer als de verbinding wegvalt.' },
+      { titel: 'Achtergrondwerk per organisatie', beschrijving: 'Herinneringen en opvolging gaan door als het bij één organisatie misgaat. Alle crons melden fouten.' },
+      { titel: 'Abonnement en koppelingen voor admins', beschrijving: 'Abonnementsgegevens, boekhoudkoppelingen en de inkoop-mailbox zijn alleen door een admin in te zien en te wijzigen.' },
+    ],
+  },
+  {
     versie: '1.5.1',
     datum: '6 september 2026',
     label: 'Nieuw',

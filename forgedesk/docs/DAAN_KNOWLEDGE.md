@@ -1319,6 +1319,8 @@ drukke maand verandert de factuur niet. Alle modules zitten in elke maat; er
 gaat niets achter een duurder pakket zitten. Boven de 35 gebruikers: mail
 antony@signcompany.nl. De actuele stand staat op de pagina Abonnement.
 
+**Wie ziet het abonnement?** Alleen een admin van de organisatie ziet de abonnementsgegevens en de abonnementsfacturen (Instellingen > Abonnement en Mijn facturen). Een medewerker of monteur die daar kijkt, krijgt een korte uitleg. Hetzelfde geldt voor boekhoudkoppelingen (Exact, Moneybird, SnelStart, e-Boekhouden) en de inkoop-mailbox: alleen een admin kan die koppelen of wijzigen. De eigenaar van de organisatie kan niet door een andere admin worden gedegradeerd; overdragen van eigenaarschap gaat via support.
+
 ## Hoe werkt de proefperiode van 30 dagen?
 
 Na het aanmaken van je account heb je **30 dagen gratis** met volledige toegang
