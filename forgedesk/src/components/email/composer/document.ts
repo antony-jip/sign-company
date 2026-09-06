@@ -272,3 +272,8 @@ export function isLeegDocument(doc: ComposerDocument): boolean {
 export function koppelingVan(doc: ComposerDocument, soort: KoppelingSoort): string | undefined {
   return doc.koppelingen.find((k) => k.soort === soort)?.doelId
 }
+
+/** Sleutel waaronder de composer het File-object achter een upload-bijlage bewaart. */
+export function bestandSleutel(naam: string, grootte: number): string {
+  return `${naam}::${grootte}`
+}
