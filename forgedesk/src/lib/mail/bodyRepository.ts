@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { EmailBody, EmailLijstItem } from './types'
 import { mailStore } from './mailStore'
 import { splitsCitaat } from './quoted'
@@ -27,7 +27,32 @@ interface Taak {
 
 const geheugen = new Map<string, EmailBody>()
 const taken = new Map<string, Taak>()
+/**
+ * Wat niet op te halen was, met het tijdstip erbij. Zonder deze markering ging
+ * een onhaalbare body bij elke storemutatie opnieuw de wachtrij in, en dat is
+ * per keer een IndexedDB-lees, twee queries en een IMAP-ronde. De markering
+ * vervalt na een minuut, of eerder als de gebruiker zelf "Opnieuw" kiest.
+ */
+const mislukkingen = new Map<string, { op: number; reden: string }>()
+const MISLUKT_WACHTTIJD_MS = 60_000
 let actief = 0
+
+/** De reden zolang de wachttijd loopt, anders null (en de markering vervalt). */
+function recentMislukt(emailId: string): string | null {
+  const eerder = mislukkingen.get(emailId)
+  if (!eerder) return null
+  if (Date.now() - eerder.op >= MISLUKT_WACHTTIJD_MS) {
+    mislukkingen.delete(emailId)
+    return null
+  }
+  return eerder.reden
+}
+
+/** Handmatig opnieuw proberen: zonder id de hele lijst. */
+export function vergeetMislukt(emailId?: string): void {
+  if (emailId) mislukkingen.delete(emailId)
+  else mislukkingen.clear()
+}
 
 export function bodyUitGeheugen(emailId: string): EmailBody | undefined {
   return geheugen.get(emailId)
@@ -56,6 +81,8 @@ export function haalBody(emailId: string, prioriteit: BodyPrioriteit): Promise<E
     if (RANG[prioriteit] < RANG[lopend.prioriteit]) lopend.prioriteit = prioriteit
     return lopend.belofte
   }
+  const eerderMislukt = recentMislukt(emailId)
+  if (eerderMislukt) return Promise.reject(new Error(eerderMislukt))
   let klaar!: Taak['klaar']
   let mislukt!: Taak['mislukt']
   const belofte = new Promise<EmailBody>((resolve, reject) => { klaar = resolve; mislukt = reject })
@@ -66,7 +93,7 @@ export function haalBody(emailId: string, prioriteit: BodyPrioriteit): Promise<E
 
 export function prefetchBodies(ids: string[], prioriteit: 'zichtbaar' | 'later'): void {
   for (const id of ids) {
-    if (geheugen.has(id) || taken.has(id)) continue
+    if (geheugen.has(id) || taken.has(id) || recentMislukt(id)) continue
     void haalBody(id, prioriteit).catch(() => {})
   }
 }
@@ -96,11 +123,13 @@ function rond(taak: Taak, body: EmailBody): void {
   const compleet = metCitaat(body)
   geheugen.set(taak.id, compleet)
   taken.delete(taak.id)
+  mislukkingen.delete(taak.id)
   taak.klaar(compleet)
 }
 
 function faal(taak: Taak, reden: string): void {
   taken.delete(taak.id)
+  mislukkingen.set(taak.id, { op: Date.now(), reden })
   taak.mislukt(new Error(reden))
 }
 
@@ -180,12 +209,18 @@ function imapMapVoor(item: EmailLijstItem | undefined): string {
   return IMAP_MAP[item.map] || 'INBOX'
 }
 
-export function useBody(emailId: string | null): { body: EmailBody | null; laden: boolean; fout?: string } {
+export function useBody(emailId: string | null): { body: EmailBody | null; laden: boolean; fout?: string; opnieuw: () => void } {
+  const [poging, zetPoging] = useState(0)
   const [stand, zetStand] = useState<{ id: string | null; body: EmailBody | null; laden: boolean; fout?: string }>(() => ({
     id: emailId,
     body: emailId ? geheugen.get(emailId) ?? null : null,
     laden: !!emailId && !geheugen.has(emailId),
   }))
+  const opnieuw = useCallback(() => {
+    if (!emailId) return
+    vergeetMislukt(emailId)
+    zetPoging((n) => n + 1)
+  }, [emailId])
   useEffect(() => {
     if (!emailId) { zetStand({ id: null, body: null, laden: false }); return }
     const bekend = geheugen.get(emailId)
@@ -196,7 +231,7 @@ export function useBody(emailId: string | null): { body: EmailBody | null; laden
       .then((body) => { if (actueel) zetStand({ id: emailId, body, laden: false }) })
       .catch((e: Error) => { if (actueel) zetStand({ id: emailId, body: null, laden: false, fout: e.message }) })
     return () => { actueel = false }
-  }, [emailId])
-  if (stand.id !== emailId) return { body: null, laden: !!emailId }
-  return { body: stand.body, laden: stand.laden, fout: stand.fout }
+  }, [emailId, poging])
+  if (stand.id !== emailId) return { body: null, laden: !!emailId, opnieuw }
+  return { body: stand.body, laden: stand.laden, fout: stand.fout, opnieuw }
 }

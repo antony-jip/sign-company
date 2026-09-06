@@ -153,12 +153,15 @@ gepatcht in de store; geen volledige herlaad.
 
 ```ts
 // bodyRepository.ts
-export function useBody(emailId: string | null): { body: EmailBody | null; laden: boolean; fout?: string }
+export function useBody(emailId: string | null): { body: EmailBody | null; laden: boolean; fout?: string; opnieuw: () => void }
+export function vergeetMislukt(emailId?: string): void   // wist de mislukt-markering, zodat 'Opnieuw' meteen weer probeert
 export function prefetchBodies(ids: string[], prioriteit: 'zichtbaar' | 'later'): void
 export function haalBody(emailId: string, prioriteit: 'nu' | 'zichtbaar' | 'later'): Promise<EmailBody>
 ```
 Eén wachtrij met prioriteit (geselecteerd > zichtbaar > rest), bronnen in
 volgorde: geheugen, IndexedDB, `email_bodies`, server-prefetch, `read-email`.
+Wat mislukt krijgt een markering met tijdstempel: 60 seconden lang gaat die id
+niet opnieuw de wachtrij in, tenzij de gebruiker zelf `opnieuw()` kiest.
 `quoted.ts` splitst html in eigen deel en geciteerd deel (blockquote,
 `.gmail_quote`, "Op ... schreef", "From:"/"Van:"-blok, "-----Original Message-----").
 
