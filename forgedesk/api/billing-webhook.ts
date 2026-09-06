@@ -917,6 +917,52 @@ function leesPaymentId(body: unknown): string | null {
   return null
 }
 
+function getClientIp(req: VercelRequest): string {
+  // x-real-ip wordt door Vercel gezet en is niet client-spoofbaar; de linkerkant
+  // van x-forwarded-for is dat wel. Val daarom terug op de LAATSTE waarde.
+  const real = req.headers['x-real-ip']
+  if (typeof real === 'string' && real.trim()) return real.trim()
+  const fwd = req.headers['x-forwarded-for']
+  if (typeof fwd === 'string') {
+    const parts = fwd.split(',').map((p) => p.trim()).filter(Boolean)
+    if (parts.length) return parts[parts.length - 1]
+  }
+  if (Array.isArray(fwd) && fwd.length) return fwd[fwd.length - 1]
+  return 'unknown'
+}
+
+async function isRateLimited(ip: string): Promise<boolean> {
+  const { data, error } = await getSupabase().rpc('check_rate_limit', {
+    p_key: `billing-webhook:${ip}`,
+    p_max_count: 30,
+    p_window_seconds: 60,
+  })
+  if (error) console.error('[billing-webhook] check_rate_limit faalde:', error)
+  return data === true
+}
+
+/**
+ * Eerste-betaling- en termijn-id's komen pas via deze webhook bij ons binnen,
+ * dus een onbekend id moet nog wél bij Mollie geverifieerd worden. Wat we wel
+ * zonder Mollie-call kunnen afdoen: een id dat al volledig verwerkt is (factuur
+ * verstuurd, of credits al geclaimd). Dan is elke herlevering een no-op.
+ */
+async function isAlVerwerkt(paymentId: string): Promise<boolean> {
+  const supabase = getSupabase()
+  const { data: factuur } = await supabase
+    .from('abonnement_facturen')
+    .select('verstuurd_op')
+    .eq('mollie_payment_id', paymentId)
+    .maybeSingle()
+  if (factuur?.verstuurd_op) return true
+  const { data: credits } = await supabase
+    .from('credit_transacties')
+    .select('id')
+    .eq('stripe_session_id', paymentId)
+    .limit(1)
+  return !!credits && credits.length > 0
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
@@ -936,6 +982,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!MOLLIE_API_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
       console.error('[billing-webhook] Mollie of Supabase niet geconfigureerd')
       return res.status(500).json({ error: 'Webhook niet geconfigureerd' })
+    }
+
+    if (await isRateLimited(getClientIp(req))) {
+      return res.status(429).json({ error: 'Te veel verzoeken. Probeer het later opnieuw.' })
+    }
+
+    if (await isAlVerwerkt(paymentId)) {
+      console.log(`[billing-webhook] payment ${paymentId} al volledig verwerkt, skip`)
+      return res.status(200).json({ received: true })
     }
 
     // De payload is alleen een id; de payment zelf is de bron van waarheid
