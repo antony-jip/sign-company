@@ -353,7 +353,15 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
     afbeeldingStyle: 'display:block;',
   }), [emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingLink, handtekeningAfbeeldingGrootte])
 
-  const draftKey = `doen_mail_draft_${project.id}`
+  // v2: de handtekening staat niet langer in de body. Een concept van vóór die
+  // wijziging heeft hem daar wél staan, en zou bij verzenden eerst de broncode
+  // van de handtekening tonen en daarna de handtekening zelf. Een nieuwe sleutel
+  // laat die concepten liggen in plaats van ze verkeerd te herstellen; de oude
+  // ruimen we meteen op zodat er niets blijft rondslingeren.
+  const draftKey = `doen_mail_draft_v2_${project.id}`
+  useEffect(() => {
+    try { localStorage.removeItem(`doen_mail_draft_${project.id}`) } catch { /* niets aan te doen */ }
+  }, [project.id])
 
   const [toEmails, setToEmails] = useState<string[]>(defaultEmail ? [defaultEmail] : [])
   const [ccEmails, setCcEmails] = useState<string[]>([])

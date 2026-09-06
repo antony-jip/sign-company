@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
+import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { HandtekeningEditor } from './HandtekeningEditor'
 import { SignatureImageUpload } from './SignatureImageUpload'
 import {
@@ -24,6 +25,11 @@ import type { Postvak } from '@/lib/mail/types'
  * mailt, anders de standaard.
  */
 export function HandtekeningenBeheer({ onGeladen }: { onGeladen?: (aantal: number) => void }) {
+  // De standaardhandtekening wordt naar het profiel gespiegeld, want de
+  // offerte-, factuur- en projectmail lezen daaruit. Zonder deze verversing
+  // klopt de database wel maar de draaiende sessie niet, en verstuur je tot de
+  // volgende herlading nog de oude.
+  const { refreshProfile } = useAppSettings()
   const [lijst, setLijst] = useState<Handtekening[]>([])
   const [postvakken, setPostvakken] = useState<Postvak[]>([])
   const [open, setOpen] = useState<string | null>(null)
@@ -45,7 +51,7 @@ export function HandtekeningenBeheer({ onGeladen }: { onGeladen?: (aantal: numbe
     setBezig(true)
     try {
       await bewaarHandtekening(h)
-      await laad()
+      await Promise.all([laad(), refreshProfile()])
       toast.success(<>Handtekening opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Opslaan mislukt')
@@ -58,10 +64,13 @@ export function HandtekeningenBeheer({ onGeladen }: { onGeladen?: (aantal: numbe
     setBezig(true)
     try {
       const gemaakt = await bewaarHandtekening({
-        naam: `Handtekening ${lijst.length + 1}`,
+        naam: lijst.length === 0 ? 'Standaard' : `Handtekening ${lijst.length + 1}`,
         inhoud: '',
-        // Nooit meteen standaard: dat zou de handtekening die je vandaag
-        // gebruikt stilletjes vervangen door een lege.
+        // Nooit meteen standaard als er al een is: dat zou de handtekening die
+        // je vandaag gebruikt stilletjes vervangen door een lege. Is het je
+        // eerste, dan moet hij het juist wél worden, anders zien je offertes en
+        // facturen hem nooit.
+        isStandaard: lijst.length === 0,
         volgorde: lijst.length,
       })
       await laad()
@@ -81,7 +90,7 @@ export function HandtekeningenBeheer({ onGeladen }: { onGeladen?: (aantal: numbe
     setBezig(true)
     try {
       await verwijderHandtekening(h.id)
-      await laad()
+      await Promise.all([laad(), refreshProfile()])
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Verwijderen mislukt')
     } finally {
@@ -93,7 +102,7 @@ export function HandtekeningenBeheer({ onGeladen }: { onGeladen?: (aantal: numbe
     setBezig(true)
     try {
       await zetStandaard(h.id)
-      await laad()
+      await Promise.all([laad(), refreshProfile()])
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Standaard zetten mislukt')
     } finally {

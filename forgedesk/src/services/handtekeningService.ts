@@ -158,6 +158,10 @@ export async function bewaarHandtekening(h: Partial<Handtekening> & { naam: stri
     account_id: h.accountId ?? null,
     volgorde: h.volgorde ?? 0,
     updated_at: new Date().toISOString(),
+    // Alleen meesturen als de aanroeper er iets over zegt. Een bewerking mag de
+    // standaardvlag niet per ongeluk omzetten; die wisselt via zetStandaard,
+    // dat de unieke index respecteert.
+    ...(h.isStandaard === undefined ? {} : { is_standaard: h.isStandaard }),
   }
   const uitkomst = h.id
     ? await supabase.from('email_handtekeningen').update(velden).eq('id', h.id).select().single()
@@ -183,6 +187,11 @@ export async function zetStandaard(id: string): Promise<void> {
   if (!isSupabaseConfigured() || !supabase) return
   const { data: { user } } = await supabase.auth.getUser()
   if (!user?.id) throw new Error('Niet ingelogd')
+  // Wie het wás, vóórdat we alles uitzetten. Achteraf opvragen kan niet meer:
+  // dan staat er geen enkele standaard en zou de terugval een willekeurige
+  // andere handtekening tot standaard maken.
+  const vorige = await huidigeStandaard()
+
   const uit = await supabase
     .from('email_handtekeningen')
     .update({ is_standaard: false })
@@ -191,11 +200,14 @@ export async function zetStandaard(id: string): Promise<void> {
   if (uit.error) throw new Error(uit.error.message)
   const aan = await supabase.from('email_handtekeningen').update({ is_standaard: true }).eq('id', id)
   if (aan.error) {
-    // De andere staan nu al uit. Zet er meteen weer één aan, anders heeft de
-    // gebruiker geen standaard meer en weet hij dat niet: de melding zegt
-    // alleen dat het mislukte.
-    const terug = await huidigeStandaard()
-    if (terug) await supabase.from('email_handtekeningen').update({ is_standaard: true }).eq('id', terug.id)
+    // De andere staan nu al uit. Zet de vorige terug, anders heeft de gebruiker
+    // geen standaard meer en weet hij dat niet: de melding zegt alleen dat het
+    // mislukte. Lukt ook dat niet, dan valt kiesHandtekening terug op de eerste
+    // uit de lijst, dus er wordt nooit zonder handtekening verstuurd.
+    if (vorige) {
+      const herstel = await supabase.from('email_handtekeningen').update({ is_standaard: true }).eq('id', vorige.id)
+      if (!herstel.error) await spiegelNaarProfiel(vorige)
+    }
     throw new Error(aan.error.message)
   }
   await spiegelNaarProfiel(await huidigeStandaard())

@@ -701,7 +701,10 @@ export function EmailTab() {
   const [subTab, setSubTab] = useState(initialSub)
   // Migratie 248 zet meerdere handtekeningen aan. Zonder die migratie blijft
   // alles zoals het was: één handtekening op het profiel.
-  const [meerHandtekeningen, setMeerHandtekeningen] = useState(false)
+  // null = nog onbekend. Bewust drie standen: bij `false` verschijnt de oude
+  // handtekening-editor en mag "toepassen op iedereen", en dat mag geen van
+  // beide gebeuren zolang we het antwoord niet hebben.
+  const [meerHandtekeningen, setMeerHandtekeningen] = useState<boolean | null>(null)
   useEffect(() => {
     let actueel = true
     handtekeningenBeschikbaar()
@@ -787,12 +790,19 @@ export function EmailTab() {
       setIsSaving(true)
       // updateAppSettings sluist per-user velden (handtekening, afzender_naam)
       // automatisch door naar updateProfile. Daarna profile + settings refreshen.
+      // Zodra het handtekeningbeheer leidt, schrijft dat de standaard naar het
+      // profiel. Deze knop stuurde dan de waarde mee die bij het openen van de
+      // pagina geladen was en draaide die spiegeling stil terug: je offertes en
+      // facturen vielen terug op je vorige handtekening. Alleen de velden
+      // meesturen die deze knop ook echt beheert.
       await updateAppSettings(user.id, {
-        email_handtekening: emailHandtekening,
         afzender_naam: afzenderNaam,
-        handtekening_afbeelding: handtekeningAfbeelding,
-        handtekening_afbeelding_grootte: afbeeldingGrootte,
-        handtekening_afbeelding_link: afbeeldingLink.trim(),
+        ...(meerHandtekeningen ? {} : {
+          email_handtekening: emailHandtekening,
+          handtekening_afbeelding: handtekeningAfbeelding,
+          handtekening_afbeelding_grootte: afbeeldingGrootte,
+          handtekening_afbeelding_link: afbeeldingLink.trim(),
+        }),
       })
       await Promise.all([refreshProfile(), refreshSettings()])
       toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
@@ -847,8 +857,13 @@ export function EmailTab() {
     // van elk teamlid over, óók de standaard die hij zelf heeft ingesteld en
     // waarmee zijn offertes en facturen ondertekenen. Dat is niet wat "toepassen
     // op iedereen" belooft, dus dan liever helemaal niet.
-    if (meerHandtekeningen) {
-      toast.error('Iedereen beheert nu zijn eigen handtekeningen. Vraag je collega om er een over te nemen.')
+    // Alleen doorgaan als we zéker weten dat het beheer niet aanstaat. Bij een
+    // netwerkhikje blijft de vlag op null, en dan zou dit het profiel van elk
+    // teamlid overschrijven terwijl hun eigen handtekeningen blijven staan.
+    if (meerHandtekeningen !== false) {
+      toast.error(meerHandtekeningen
+        ? 'Iedereen beheert nu zijn eigen handtekeningen. Vraag je collega om er een over te nemen.'
+        : 'Even wachten, de handtekeningen worden nog geladen.')
       return
     }
     if (!emailHandtekening && !handtekeningAfbeelding) {
@@ -1017,7 +1032,7 @@ export function EmailTab() {
                   in de kaart hieronder. Deze velden blijven staan zolang dat
                   niet zo is; twee plekken die hetzelfde bewerken zou betekenen
                   dat je nooit weet welke wint. */}
-              {!meerHandtekeningen && (
+              {meerHandtekeningen === false && (
                 <>
                   <SignatureImageUpload
                     imageUrl={handtekeningAfbeelding}
@@ -1047,7 +1062,7 @@ export function EmailTab() {
             </CardContent>
           </Card>
 
-          {meerHandtekeningen && <HandtekeningenBeheer />}
+          {meerHandtekeningen === true && <HandtekeningenBeheer />}
 
           {saveButton}
         </div>
