@@ -947,14 +947,13 @@ async function isRateLimited(ip: string): Promise<boolean> {
  * zonder Mollie-call kunnen afdoen: een id dat al volledig verwerkt is (factuur
  * verstuurd, of credits al geclaimd). Dan is elke herlevering een no-op.
  */
+// Alleen de credits-tak telt als "al verwerkt": een credit-aankoop kent geen
+// vervolgstatus. Een abonnementstermijn wel: een betaalde termijn kan weken
+// later nog een chargeback-webhook krijgen voor hetzelfde payment-id, en die
+// moet de org op 'verlopen' zetten. Daarom nooit vroeg stoppen op
+// abonnement_facturen.verstuurd_op; de per-IP-limiet vangt replays al af.
 async function isAlVerwerkt(paymentId: string): Promise<boolean> {
   const supabase = getSupabase()
-  const { data: factuur } = await supabase
-    .from('abonnement_facturen')
-    .select('verstuurd_op')
-    .eq('mollie_payment_id', paymentId)
-    .maybeSingle()
-  if (factuur?.verstuurd_op) return true
   const { data: credits } = await supabase
     .from('credit_transacties')
     .select('id')
