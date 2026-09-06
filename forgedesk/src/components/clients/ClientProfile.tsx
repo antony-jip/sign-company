@@ -81,12 +81,10 @@ import {
   getKlant,
   getKlanten,
   getProjectenByKlant,
-  getEmails,
   getOffertesByKlant,
   getFacturenByKlant,
   getDocumentenByKlant,
   getDealsByKlant,
-  getTijdregistratiesByProject,
   updateKlant,
   getContactpersonenByKlant,
   deleteContactpersoonDB,
@@ -97,7 +95,12 @@ import {
   getMedewerkers,
 } from '@/services/supabaseService'
 import type { DaanGeheugenRegel } from '@/services/supabaseService'
+import { getEmailsMetAdres } from '@/services/emailService'
+import { getTijdregistratiesVoorProjecten } from '@/services/tijdregistratieService'
 import { AddEditClient } from './AddEditClient'
+
+// Zelfde plafond als getEmails() had toen de hele lijst in JS werd gefilterd.
+const KLANT_EMAILS_MAX = 200
 import { KlantHistorieTab } from './KlantHistorieTab'
 import type { Klant, Project, Email, Document as DocType, Offerte, Contactpersoon, ContactpersoonRecord, Vestiging, Factuur, Deal, Tijdregistratie, Medewerker } from '@/types'
 import { confirm } from '@/components/shared/ConfirmDialog'
@@ -233,23 +236,16 @@ export function ClientProfile() {
       setClientDeals(deals)
       setImportedContacts(contactpersonen)
 
-      // Emails filteren op klant email · moet nog via getEmails() want er is geen getEmailsByKlant
+      // Mail op klant-adres via de database-filter, niet de hele tabel in JS
       if (klantData?.email) {
-        const email = klantData.email.toLowerCase()
-        const allEmails = await getEmails().catch(() => [])
-        if (!cancelled) {
-          setClientEmails(allEmails.filter(e =>
-            (e.van?.toLowerCase()?.includes(email) ?? false) ||
-            (e.aan?.toLowerCase()?.includes(email) ?? false)
-          ))
-        }
+        const klantEmails = await getEmailsMetAdres(klantData.email, KLANT_EMAILS_MAX).catch(() => [])
+        if (!cancelled) setClientEmails(klantEmails)
       }
 
-      // Tijdregistraties per project
       const projectIds = projecten.map(p => p.id)
       if (projectIds.length > 0) {
-        const tijdResults = await Promise.all(projectIds.map(pid => getTijdregistratiesByProject(pid).catch(() => [])))
-        if (!cancelled) setClientTijdregistraties(tijdResults.flat())
+        const tijd = await getTijdregistratiesVoorProjecten(projectIds).catch(() => [])
+        if (!cancelled) setClientTijdregistraties(tijd)
       }
 
       if (!cancelled) setIsLoading(false)

@@ -41,6 +41,23 @@ export async function getTijdregistraties(limit = 50000): Promise<Tijdregistrati
   return getLocalData<Tijdregistratie>('tijdregistraties')
 }
 
+export async function getTijdregistratiesVoorProjecten(projectIds: string[]): Promise<Tijdregistratie[]> {
+  if (projectIds.length === 0) return []
+  const sb = supabase
+  if (isSupabaseConfigured() && sb) {
+    return fetchAllPages<Tijdregistratie>((van, tot) =>
+      sb
+        .from('tijdregistraties')
+        .select('*')
+        .in('project_id', projectIds)
+        .order('datum', { ascending: false })
+        .order('id', { ascending: true })
+        .range(van, tot))
+  }
+  const doel = new Set(projectIds)
+  return getLocalData<Tijdregistratie>('tijdregistraties').filter((t) => doel.has(t.project_id))
+}
+
 export async function createTijdregistratie(entry: Omit<Tijdregistratie, 'id' | 'created_at' | 'updated_at'>): Promise<Tijdregistratie> {
   const newEntry: Tijdregistratie = { ...sanitizeDates(entry), id: generateId(), created_at: now(), updated_at: now() } as Tijdregistratie
   if (isSupabaseConfigured() && supabase) {
