@@ -301,10 +301,12 @@ export const mailIdleWerker: MailIdleTaak = task({
     let samenvoeger: NodeJS.Timeout | null = null
 
     const vraagSync = async (aanleiding: string) => {
+      // Vlag vóór het wachten omhoog: anders glipt een tweede event binnen de
+      // wachttijd langs de poort en staan er twee syncs naast elkaar.
       if (bezig) return
+      bezig = true
       const wachten = Math.max(0, MINIMAAL_TUSSEN_SYNCS_MS - (Date.now() - laatsteSync))
       if (wachten > 0) await new Promise((r) => setTimeout(r, wachten))
-      bezig = true
       try {
         laatsteSync = Date.now()
         const respons = await fetch(`${basisUrl()}/api/fetch-emails`, {
