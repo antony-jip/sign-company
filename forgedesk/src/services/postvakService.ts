@@ -136,6 +136,65 @@ export async function hernoem(id: string, naam: string): Promise<void> {
   if (error) throw new Error(vertaalFout(error))
 }
 
+export interface PostvakInvoer {
+  /** Bestaand postvak bijwerken. Leeg laten koppelt er een nieuwe. */
+  accountId?: string
+  adres: string
+  /** Leeg = wachtwoord ongewijzigd; de server houdt de opgeslagen versie. */
+  wachtwoord: string
+  smtpHost: string
+  smtpPort: number
+  imapHost: string
+  imapPort: number
+}
+
+async function sessieToken(): Promise<string> {
+  if (!supabase) throw new Error('Geen verbinding')
+  const { data: { session } } = await supabase.auth.getSession()
+  const token = session?.access_token
+  if (!token) throw new Error('Niet ingelogd')
+  return token
+}
+
+/**
+ * Opslaan loopt via api/email-settings: alleen de server heeft de sleutel om
+ * het wachtwoord te versleutelen. Met `accountId` werkt hij dat ene postvak
+ * bij, zonder id maakt hij een nieuwe rij als er al één staat.
+ *
+ * Een server die dat laatste nog niet kan zou de bestaande rij bijwerken in
+ * plaats van er een toe te voegen. Dat gaat hier niet stil voorbij: bij een
+ * nieuw postvak telt deze functie de postvakken vóór en na, en meldt het als
+ * er niets bijgekomen is.
+ */
+export async function slaPostvakOp(invoer: PostvakInvoer): Promise<void> {
+  const token = await sessieToken()
+  const vooraf = invoer.accountId ? [] : await getPostvakken().catch(() => [])
+
+  const res = await fetch('/api/email-settings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({
+      ...(invoer.accountId ? { account_id: invoer.accountId } : {}),
+      gmail_address: invoer.adres,
+      app_password: invoer.wachtwoord || 'UNCHANGED',
+      smtp_host: invoer.smtpHost || 'smtp.gmail.com',
+      smtp_port: invoer.smtpPort || 587,
+      imap_host: invoer.imapHost || 'imap.gmail.com',
+      imap_port: invoer.imapPort || 993,
+    }),
+  })
+  if (!res.ok) {
+    const fout: { error?: string } = await res.json().catch(() => ({}))
+    throw new Error(fout?.error || `Opslaan mislukt: ${res.status}`)
+  }
+
+  if (invoer.accountId || vooraf.length === 0) return
+  const na = await getPostvakken().catch(() => [])
+  if (na.length <= vooraf.length) {
+    throw new Error('De server heeft geen tweede postvak aangemaakt. Controleer je bestaande postvak: mogelijk is dat bijgewerkt in plaats van dat er een postvak bij kwam.')
+  }
+}
+
 function vertaalFout(fout: unknown): string {
   if (isZonder245(fout)) return 'Meerdere postvakken staan nog niet aan in de database'
   return (fout as { message?: string })?.message || 'Opslaan mislukt'

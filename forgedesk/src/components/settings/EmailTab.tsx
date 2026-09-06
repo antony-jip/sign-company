@@ -47,7 +47,7 @@ import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useFunctie } from '@/hooks/useFunctie'
 import { useSyncStatus } from '@/lib/mail/hooks'
 import { mailStore } from '@/lib/mail/mailStore'
-import { getPostvakken, hernoem, postvakkenUitgebreid, zetStandaard } from '@/services/postvakService'
+import { getPostvakken, hernoem, postvakkenUitgebreid, slaPostvakOp, zetStandaard } from '@/services/postvakService'
 import type { Postvak } from '@/lib/mail/types'
 import { getBackfillTarget, setBackfillTarget, type BackfillTarget } from '@/services/emailService'
 import { getProfile, getProfielenVoorTeam, getAppSettings, updateAppSettings, getMedewerkers, getEmailTemplates, createEmailTemplate, updateEmailTemplate, deleteEmailTemplate, type EmailTemplate } from '@/services/supabaseService'
@@ -1005,6 +1005,10 @@ export function EmailTab() {
   useEffect(() => { void laadPostvakken() }, [laadPostvakken])
 
   const toonPostvakkenLijst = emailConnected && (postvakken.length > 1 || postvakkenUitgebreid())
+  // Het postvak waar het formulier bij hoort: de rij waarvan de server de
+  // instellingen teruggaf. Zonder treffer blijft het leeg en werkt opslaan als
+  // vanouds op de enige rij van deze gebruiker.
+  const bewerktAccountId = postvakken.find((p) => p.adres && p.adres === emailSettings.gmail_address)?.id
 
   const checkEmailStatus = useCallback(() => {
     setEmailConnected(!!emailSettings.gmail_address && (!!emailSettings.has_password || !!emailSettings.app_password))
@@ -1317,6 +1321,7 @@ export function EmailTab() {
               setSettings={setEmailSettings}
               isConnected={emailConnected}
               stand="bewerken"
+              accountId={bewerktAccountId}
             />
           )}
         </div>
@@ -1405,6 +1410,7 @@ function EmailSettingsInline({
   setSettings,
   isConnected,
   stand = 'bewerken',
+  accountId,
   onAnnuleer,
 }: {
   onSaved: () => void
@@ -1413,6 +1419,8 @@ function EmailSettingsInline({
   isConnected: boolean
   /** 'nieuw' koppelt een extra postvak; 'bewerken' werkt het bestaande bij. */
   stand?: 'bewerken' | 'nieuw'
+  /** Welk postvak bijgewerkt wordt. Leeg bij een nieuw postvak of vóór migratie 245. */
+  accountId?: string
   onAnnuleer?: () => void
 }) {
   const nieuw = stand === 'nieuw'
@@ -1461,15 +1469,18 @@ function EmailSettingsInline({
 
     setIsSaving(true)
     try {
-      // Save via API endpoint (server-side encryptie, supabaseAdmin bypass RLS)
-      const { saveEmailSettingsToDb, clearEmailCache } = await import('@/services/gmailService')
-      await saveEmailSettingsToDb({
-        gmail_address: teBewaren.gmail_address,
-        app_password: teBewaren.app_password,
-        smtp_host: teBewaren.smtp_host,
-        smtp_port: teBewaren.smtp_port,
-        imap_host: teBewaren.imap_host,
-        imap_port: teBewaren.imap_port,
+      // Save via API endpoint (server-side encryptie, supabaseAdmin bypass RLS).
+      // Het account_id bepaalt wélk postvak wordt bijgewerkt; bij een nieuw
+      // postvak gaat het niet mee en maakt de server er een bij.
+      const { clearEmailCache } = await import('@/services/gmailService')
+      await slaPostvakOp({
+        accountId: nieuw ? undefined : accountId,
+        adres: teBewaren.gmail_address,
+        wachtwoord: teBewaren.app_password,
+        smtpHost: teBewaren.smtp_host,
+        smtpPort: teBewaren.smtp_port,
+        imapHost: teBewaren.imap_host,
+        imapPort: teBewaren.imap_port,
       })
 
       // Wis de cache van de vorige mailbox zodat de inbox-view alleen nog
@@ -1487,7 +1498,8 @@ function EmailSettingsInline({
       setSuccess(nieuw ? 'Postvak toegevoegd. De eerste synchronisatie start vanzelf.' : 'E-mailinstellingen opgeslagen!')
       onSaved()
     } catch (err: unknown) {
-      setError(`Opslaan mislukt: ${err instanceof Error ? err.message : 'Onbekende fout'}`)
+      const melding = err instanceof Error ? err.message : 'Onbekende fout'
+      setError(nieuw ? melding : `Opslaan mislukt: ${melding}`)
     } finally {
       setIsSaving(false)
     }
