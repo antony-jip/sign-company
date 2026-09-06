@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import {
+  createOrganisatie,
   updateOrganisatie,
   getOrganisatie,
   getProfile,
@@ -612,9 +613,32 @@ export function OnboardingWizard() {
   const handleStep1Next = async () => {
     if (!gegevens.naam.trim() || !gegevens.voornaam.trim()) return
     setIsSaving(true)
+
+    // Zonder organisatie sloeg deze stap stil niets op en liep de wizard
+    // gewoon door: je vult je bedrijfsgegevens in, drukt op Volgende, en ze
+    // zijn weg zonder melding. De organisatie komt normaal van een
+    // database-trigger, maar die kan traag zijn of falen. Dan maken we hem hier
+    // alsnog aan; de RLS-policy uit migratie 085 staat dat toe voor je eerste.
+    let orgId = effectiveOrgId
+    if (!orgId && user?.id) {
+      try {
+        const nieuweOrg = await createOrganisatie(gegevens.naam.trim(), user.id)
+        orgId = nieuweOrg.id
+        setLocalOrgId(nieuweOrg.id)
+        await refreshOrganisatie()
+      } catch (err) {
+        logger.error('Onboarding: organisatie alsnog aanmaken mislukt:', err)
+      }
+    }
+    if (!orgId) {
+      setIsSaving(false)
+      toast.error('Je account wordt nog klaargezet. Probeer het over een paar seconden opnieuw.')
+      return
+    }
+
     try {
-      if (effectiveOrgId) {
-        await updateOrganisatie(effectiveOrgId, {
+      if (orgId) {
+        await updateOrganisatie(orgId, {
           naam: gegevens.naam.trim(),
           adres: gegevens.adres,
           postcode: gegevens.postcode,
@@ -628,8 +652,8 @@ export function OnboardingWizard() {
     } catch (err) {
       logger.error('Update organisatie stap 1:', err)
       try {
-        if (effectiveOrgId) {
-          await updateOrganisatie(effectiveOrgId, {
+        if (orgId) {
+          await updateOrganisatie(orgId, {
             naam: gegevens.naam.trim(),
             adres: gegevens.adres,
             postcode: gegevens.postcode,
