@@ -69,6 +69,8 @@ interface SendEmailOptions {
   wacht_op_reactie?: boolean
   // Threading
   in_reply_to?: string
+  /** Message-ID-keten voor de References-header; send-email pakt hem op zodra hij hem kent. */
+  references?: string[]
   thread_id?: string
 }
 
@@ -156,6 +158,7 @@ export async function sendEmail(
         scheduledAt: options?.scheduledAt,
         wacht_op_reactie: options?.wacht_op_reactie,
         in_reply_to: options?.in_reply_to,
+        references: options?.references,
         thread_id: options?.thread_id,
       }),
     })
