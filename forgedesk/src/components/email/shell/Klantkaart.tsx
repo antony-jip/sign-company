@@ -150,7 +150,14 @@ export function Klantkaart({ mail, open, onSluiten, onZoekKlant, onSelectMail, e
   if (!open) return null
 
   return (
-    <aside className="hidden lg:flex w-[320px] flex-shrink-0 flex-col border-l border-border bg-card overflow-hidden" aria-label="Klantkaart">
+    <aside
+      className={cn(
+        'absolute inset-y-0 right-0 z-30 hidden w-[340px] max-w-[85vw] flex-col border-l border-border bg-card lg:flex',
+        'shadow-[-14px_0_36px_rgba(13,52,60,0.10)] overflow-hidden',
+        'motion-safe:animate-in motion-safe:slide-in-from-right-4 motion-safe:duration-200',
+      )}
+      aria-label="Klantkaart"
+    >
       <div className="flex items-center justify-between px-4 h-[52px] border-b border-border/70">
         <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Klantkaart</p>
         <button type="button" onClick={onSluiten} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" aria-label="Klantkaart sluiten" title="Klantkaart sluiten">

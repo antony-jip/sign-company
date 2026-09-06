@@ -53,6 +53,8 @@ export interface ConversationViewProps {
   compact?: boolean
   /** Actief postvak is gedeeld: toewijzen aan een collega en interne notities. */
   gedeeld?: boolean
+  /** Knoppen van de shell in de kop, links van vorige/volgende. */
+  kopActies?: ReactNode
 }
 
 /** EmailLijstItem heeft geen `inhoud`; de bestaande afzender-hooks verwachten een Email. */
@@ -141,7 +143,7 @@ export function useKoppelingen(emailId: string | null, threadId: string | null |
   return { chips, ververs }
 }
 
-export function ConversationView({ emailId, onSluiten, onAntwoord, onVolgende, onVorige, voet, onKoppel, compact, gedeeld }: ConversationViewProps) {
+export function ConversationView({ emailId, onSluiten, onAntwoord, onVolgende, onVorige, voet, onKoppel, compact, gedeeld, kopActies }: ConversationViewProps) {
   const { user } = useAuth()
   const { navigateWithTab } = useNavigateWithTab()
   const mailUitStore = useMail(emailId)
@@ -284,6 +286,7 @@ export function ConversationView({ emailId, onSluiten, onAntwoord, onVolgende, o
             </p>
           </div>
           <div className="flex flex-shrink-0 items-center gap-0.5">
+            {kopActies}
             <LabelMenu
               huidig={mail.labels || []}
               onWissel={(label, aan) => { void mailStore.label([mail.id], label, aan) }}
@@ -316,7 +319,9 @@ export function ConversationView({ emailId, onSluiten, onAntwoord, onVolgende, o
           </div>
         </div>
 
-        <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+        {/* De koppel-knop staat al in de actiebalk hierboven; hier alleen de
+            chips, met de popover als onzichtbaar anker. */}
+        <div className="mt-2.5 flex flex-wrap items-center gap-1.5 empty:hidden">
           {chips.map((chip) => (
             <Chip key={chip.koppeling.id} chip={chip} onOpen={() => openChip(chip)} onOntkoppel={() => handleOntkoppel(chip)} />
           ))}
@@ -326,6 +331,7 @@ export function ConversationView({ emailId, onSluiten, onAntwoord, onVolgende, o
             onKoppel={handleKoppel}
             gekoppeld={chips.map((c) => ({ soort: c.soort, doelId: c.koppeling.doel_id }))}
             compact={compact}
+            alleenAnker={chips.length === 0}
           />
         </div>
 

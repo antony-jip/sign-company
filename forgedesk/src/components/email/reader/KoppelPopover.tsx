@@ -59,9 +59,11 @@ interface KoppelPopoverProps {
   gekoppeld?: { soort: KoppelingSoort; doelId: string }[]
   children?: ReactNode
   compact?: boolean
+  /** Alleen als anker voor de actiebalk hierboven: geen eigen knop tonen. */
+  alleenAnker?: boolean
 }
 
-export function KoppelPopover({ open, onOpenChange, onKoppel, gekoppeld = [], children, compact }: KoppelPopoverProps) {
+export function KoppelPopover({ open, onOpenChange, onKoppel, gekoppeld = [], children, compact, alleenAnker }: KoppelPopoverProps) {
   const [term, zetTerm] = useState('')
   const [resultaten, zetResultaten] = useState<KoppelDoel[]>([])
   const [zoeken, zetZoeken] = useState(false)
@@ -113,7 +115,9 @@ export function KoppelPopover({ open, onOpenChange, onKoppel, gekoppeld = [], ch
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild>
-        {children ?? (
+        {children ?? (alleenAnker ? (
+          <span className="sr-only" aria-hidden="true" />
+        ) : (
           <button
             type="button"
             className={cn(
@@ -122,9 +126,9 @@ export function KoppelPopover({ open, onOpenChange, onKoppel, gekoppeld = [], ch
             )}
           >
             <Link2 className="h-3.5 w-3.5" />
-            {gekoppeld.length ? 'Nog een koppeling' : 'Koppelen aan klant of project'}
+            Nog een koppeling
           </button>
-        )}
+        ))}
       </PopoverTrigger>
       <PopoverContent align="start" className={cn('w-[360px] p-0', compact && 'w-[calc(100vw-24px)]')}>
         <div className="flex items-center gap-2 border-b border-border px-3 py-2">

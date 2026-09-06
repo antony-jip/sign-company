@@ -15,12 +15,14 @@ interface Props {
   /** De inline composer, of niets. Op mobiel zonder composer staat hier één grote Beantwoorden-knop. */
   voet: ReactNode
   onBeantwoorden?: () => void
+  /** Knoppen van de shell in de leeskop, bijvoorbeeld de klantkaart. */
+  kopActies?: ReactNode
   /** Gedeeld postvak: toewijzen en interne notities in het leesvenster. */
   gedeeld?: boolean
 }
 
 /** De naad tussen shell en reader: één plek die ConversationView aanroept. */
-export function Leesvenster({ emailId, compact, onSluiten, onVolgende, onVorige, onAntwoord, voet, onBeantwoorden, gedeeld }: Props) {
+export function Leesvenster({ emailId, compact, onSluiten, onVolgende, onVorige, onAntwoord, voet, onBeantwoorden, gedeeld, kopActies }: Props) {
   const mobieleVoet = compact && !voet && onBeantwoorden ? (
     <div className="px-4 py-3 pb-[calc(env(safe-area-inset-bottom)+12px)] bg-card border-t border-border">
       <button
@@ -43,6 +45,7 @@ export function Leesvenster({ emailId, compact, onSluiten, onVolgende, onVorige,
       onVorige={onVorige}
       voet={mobieleVoet}
       compact={compact}
+      kopActies={kopActies}
       gedeeld={gedeeld}
     />
   )

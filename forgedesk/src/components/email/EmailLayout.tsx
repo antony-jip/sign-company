@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Mails, PanelRight } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuth } from '@/contexts/AuthContext'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
@@ -74,7 +74,7 @@ export function EmailLayout() {
   const [dichtheid, zetDichtheid] = useVoorkeur<Dichtheid>(VOORKEUR.dichtheid, 'comfortabel', ['comfortabel', 'compact'])
   const [swipeLinks] = useVoorkeur<SwipeLinks>(VOORKEUR.swipeLinks, 'archiveren', ['archiveren', 'verwijderen'])
   const [railLabels, zetRailLabels] = useBoolVoorkeur(VOORKEUR.railLabels, true)
-  const [klantkaartAan, zetKlantkaartAan] = useBoolVoorkeur(VOORKEUR.klantkaart, true)
+  const [klantkaartAan, zetKlantkaartAan] = useBoolVoorkeur(VOORKEUR.klantkaart, false)
   const [focusModus, zetFocusModus] = useBoolVoorkeur(VOORKEUR.focusModus, false)
 
   // ── Schermstand ──
@@ -208,7 +208,7 @@ export function EmailLayout() {
     if (map === 'concepten') {
       void (async () => {
         const doc = await getConcept(item.id)
-        if (doc) zetComposer({ document: documentUitConcept(doc), variant: isDesktop ? 'paneel' : 'volledig' })
+        if (doc) { zetGeselecteerd(null); zetComposer({ document: documentUitConcept(doc), variant: isDesktop ? 'inline' : 'volledig' }) }
         else toast.error('Concept kon niet worden geopend')
       })()
       return
@@ -295,8 +295,11 @@ export function EmailLayout() {
     if (mail) void openAntwoord(modus, mail, null)
   }, [geselecteerd, zichtbaar, focusIndex, openAntwoord])
 
+  // In de mailmodule schrijf je in het rechterscherm; het schuifpaneel hoort bij
+  // het projectbord, waar het bord zichtbaar moet blijven.
   const nieuwBericht = useCallback((initieel?: Partial<ComposerDocument>) => {
-    zetComposer({ document: documentVoorNieuw(initieel), variant: isDesktop ? 'paneel' : 'volledig' })
+    zetGeselecteerd(null)
+    zetComposer({ document: documentVoorNieuw(initieel), variant: isDesktop ? 'inline' : 'volledig' })
   }, [isDesktop])
 
   const sluitComposer = useCallback(() => {
@@ -412,7 +415,7 @@ export function EmailLayout() {
       variant={composer.variant}
       onVerzonden={naVerzenden}
       onSluiten={sluitComposer}
-      onHeropen={(doc) => zetComposer({ document: doc, variant: isDesktop ? 'paneel' : 'volledig' })}
+      onHeropen={(doc) => zetComposer({ document: doc, variant: isDesktop ? 'inline' : 'volledig' })}
     />
   ) : null
 
@@ -427,13 +430,28 @@ export function EmailLayout() {
       voet={composer?.variant === 'inline' ? composerNode : null}
       onBeantwoorden={() => antwoordOpHuidige('antwoord')}
       gedeeld={gedeeld}
+      kopActies={isDesktop ? (
+        <button
+          type="button"
+          onClick={() => zetKlantkaartAan(!klantkaartAan)}
+          aria-pressed={klantkaartAan}
+          title="Klantkaart tonen of verbergen"
+          className={cn(
+            'inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[12.5px] font-semibold transition-colors',
+            klantkaartAan ? 'bg-petrol/10 text-petrol' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+          )}
+        >
+          <PanelRight className="h-4 w-4" strokeWidth={1.75} />
+          Klantkaart
+        </button>
+      ) : undefined}
     />
   ) : null
 
   // ── Mobiel ──
   if (!isDesktop) {
     return (
-      <div className="flex-1 flex flex-col min-h-0 bg-background">
+      <div className="h-full flex flex-col min-h-0 overflow-hidden bg-background">
         {!geselecteerdId && !composer && (
           <EmailMobileTopBar
             onOpenDrawer={() => zetLadeOpen(true)}
@@ -482,7 +500,7 @@ export function EmailLayout() {
 
   // ── Desktop ──
   return (
-    <div className="flex-1 flex min-h-0 bg-background">
+    <div className="h-full flex min-h-0 overflow-hidden bg-background">
       <Mappenrail
         actieveMap={map}
         tellers={railTellers}
@@ -511,11 +529,14 @@ export function EmailLayout() {
         </Suspense>
       ) : map === 'ingepland' ? (
         <Suspense fallback={<Laden />}>
-          <IngeplandeBerichtenLijst onBewerk={(doc) => zetComposer({ document: doc, variant: 'paneel' })} />
+          <IngeplandeBerichtenLijst onBewerk={(doc) => zetComposer({ document: doc, variant: 'inline' })} />
         </Suspense>
       ) : (
         <>
-          <div className="flex flex-col min-w-0 border-r border-border/70" style={{ width: geselecteerdId ? 470 : undefined, flex: geselecteerdId ? '0 0 auto' : '1 1 auto' }}>
+          {/* De lijst houdt altijd dezelfde breedte en het leesvenster staat er
+              altijd naast. Een lijst die over de volle breedte uitrekt leest
+              als een muur tekst. */}
+          <div className="flex w-[470px] max-w-[46%] flex-shrink-0 flex-col border-r border-border/70">
             <div className="px-3 pt-3 pb-2 border-b border-border/60 flex-shrink-0">
               <Zoekbalk
                 tekst={zoektekst}
@@ -549,7 +570,7 @@ export function EmailLayout() {
               laatsteSync={laatsteSync}
               nu={nu}
               onNieuw={() => nieuwBericht()}
-              breed={!geselecteerdId}
+              breed={false}
               splitTabs={splitAan && map === 'inbox' && !zoekt}
               splitTab={splitTab}
               onSplitTab={(t) => { zetSplitTab(t); zetGeselecteerd(null) }}
@@ -561,26 +582,36 @@ export function EmailLayout() {
             {lijst}
           </div>
 
-          {geselecteerdId && (
-            <div className="flex-1 flex flex-col min-w-[420px]">
-              {leesvenster}
-            </div>
-          )}
-
-          {klantkaartAan && geselecteerd && !composer && (
-            <Klantkaart
-              mail={geselecteerd}
-              open
-              onSluiten={() => zetKlantkaartAan(false)}
-              onZoekKlant={(klantId, label) => navigateWithTab({ path: `/klanten/${klantId}`, label, id: `/klanten/${klantId}` })}
-              onSelectMail={(id) => { const m = mailStore.item(id); if (m) openMail(m) }}
-              eigenAdres={eigenAdres ?? undefined}
-            />
-          )}
+          <div className="relative flex-1 flex flex-col min-w-[420px]">
+            {!geselecteerdId && composer?.variant === 'inline' ? (
+              <div className="flex-1 min-h-0 overflow-y-auto">{composerNode}</div>
+            ) : geselecteerdId ? (
+              <>
+                {leesvenster}
+                {klantkaartAan && geselecteerd && (
+                  <Klantkaart
+                    mail={geselecteerd}
+                    open
+                    onSluiten={() => zetKlantkaartAan(false)}
+                    onZoekKlant={(klantId, label) => navigateWithTab({ path: `/klanten/${klantId}`, label, id: `/klanten/${klantId}` })}
+                    onSelectMail={(id) => { const m = mailStore.item(id); if (m) openMail(m) }}
+                    eigenAdres={eigenAdres ?? undefined}
+                  />
+                )}
+              </>
+            ) : (
+              <div className="flex flex-1 flex-col items-center justify-center gap-2 px-8 text-center">
+                <Mails className="h-7 w-7 text-petrol/25" strokeWidth={1.5} />
+                <p className="text-[14px] font-semibold text-foreground/70">Kies een mail</p>
+                <p className="max-w-[280px] text-[12.5px] text-muted-foreground">
+                  Met j en k loop je door de lijst, Enter opent. Druk op ? voor alle toetsen.
+                </p>
+              </div>
+            )}
+          </div>
         </>
       )}
 
-      {composer?.variant === 'paneel' && composerNode}
 
       <SnoozeMenu
         open={snoozeOpen}

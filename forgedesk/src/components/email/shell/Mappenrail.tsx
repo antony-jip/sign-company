@@ -37,7 +37,9 @@ function tellerVoor(map: MailMap, tellers: Partial<Record<MailMap, number>>): nu
 }
 
 export function Mappenrail({ actieveMap, tellers, onKies, onNieuw, labels, onLabels, focusModus, onFocusModus, onInstellingen, postvakken, actiefPostvak, onPostvak, labelFilter, onLabelFilter }: RailProps) {
-  const { keuzes: labelKeuzes } = useLabels()
+  // Alleen eigen labels krijgen een plek in de rail: de vier vaste staan in
+  // het labelmenu van een mail, en als vaste lijst maakten ze de kolom onrustig.
+  const { eigen: labelKeuzes } = useLabels()
   return (
     <div
       className={cn(
