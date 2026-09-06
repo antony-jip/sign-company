@@ -3,7 +3,7 @@ import { Reply, ReplyAll, Forward, Pin, MailOpen, Mail, Paperclip, Loader2 } fro
 import { cn } from '@/lib/utils'
 import type { EmailBody, EmailLijstItem } from '@/lib/mail/types'
 import { mailStore } from '@/lib/mail/mailStore'
-import { bodyUitGeheugen, haalBody } from '@/lib/mail/bodyRepository'
+import { bodyUitGeheugen, haalBody, vergeetMislukt } from '@/lib/mail/bodyRepository'
 import { extractSenderEmail, extractSenderName, formatShortDate, getAvatarStyle, ontvangerLabel } from '@/components/email/emailHelpers'
 import { kortePreview } from './thread'
 
@@ -49,7 +49,10 @@ function useBerichtBody(emailId: string | null): { body: EmailBody | null; laden
       .catch((e: Error) => { if (actueel) zetStand({ id: emailId, body: null, laden: false, fout: e.message }) })
     return () => { actueel = false }
   }, [emailId, poging])
-  const opnieuw = useCallback(() => zetPoging((n) => n + 1), [])
+  const opnieuw = useCallback(() => {
+    if (emailId) vergeetMislukt(emailId)
+    zetPoging((n) => n + 1)
+  }, [emailId])
   if (stand.id !== emailId) return { body: null, laden: !!emailId, opnieuw }
   return { body: stand.body, laden: stand.laden, fout: stand.fout, opnieuw }
 }

@@ -81,6 +81,9 @@ export function haalBody(emailId: string, prioriteit: BodyPrioriteit): Promise<E
     if (RANG[prioriteit] < RANG[lopend.prioriteit]) lopend.prioriteit = prioriteit
     return lopend.belofte
   }
+  // Prioriteit 'nu' is een gebruiker die deze mail wil openen; die mag nooit
+  // op de negatieve markering van een eerdere achtergrondpoging stuklopen.
+  if (prioriteit === 'nu') mislukkingen.delete(emailId)
   const eerderMislukt = recentMislukt(emailId)
   if (eerderMislukt) return Promise.reject(new Error(eerderMislukt))
   let klaar!: Taak['klaar']
