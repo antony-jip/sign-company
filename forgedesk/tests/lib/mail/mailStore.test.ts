@@ -100,6 +100,22 @@ describe('mailStore: optimistische patch met undo', () => {
     expect(mailStore.lijstItems('prullenbak').map((i) => i.id)).toEqual(['p1'])
   })
 
+  it('herstel annuleert de wachtende archiveer-actie', async () => {
+    mocks.getEmailsPage.mockResolvedValueOnce(pagina(2))
+    await mailStore.laadMap('inbox')
+
+    mailStore.archiveer(['m0000'])
+    vi.advanceTimersByTime(2000)
+    await mailStore.herstel(['m0000'])
+    vi.advanceTimersByTime(UNDO_MS + 10)
+
+    expect(mocks.updateEmail).toHaveBeenCalledTimes(1)
+    expect(mocks.updateEmail).toHaveBeenCalledWith('m0000', { map: 'inbox', labels: [] })
+    expect(mocks.imapActie).not.toHaveBeenCalledWith('archive', ['m0000'], undefined, { keepalive: false })
+    expect(mailStore.item('m0000')?.map).toBe('inbox')
+    expect(mailStore.lijstItems('inbox').map((i) => i.id)).toEqual(['m0000', 'm0001'])
+  })
+
   it('zetGelezen schrijft direct en zet seen op de server', async () => {
     mocks.getEmailsPage.mockResolvedValueOnce(pagina(1))
     await mailStore.laadMap('inbox')
@@ -132,6 +148,21 @@ describe('mailStore: realtime', () => {
     expect(mailStore.lijstItems('inbox').map((i) => i.id)).toEqual(['m0000', 'm0001', 'nieuw', 'm0002'])
     verwerkWijziging({ eventType: 'DELETE', old: { id: 'nieuw' } })
     expect(mailStore.lijstItems('inbox').map((i) => i.id)).toEqual(['m0000', 'm0001', 'm0002'])
+  })
+
+  it('UPDATE zet een lopende optimistische map-wissel niet terug', async () => {
+    mocks.getEmailsPage.mockResolvedValueOnce(pagina(2)).mockResolvedValueOnce([])
+    await mailStore.laadMap('inbox')
+    await mailStore.laadMap('archief')
+
+    mailStore.archiveer(['m0001'])
+    // De sync werkt binnen de bedenktijd `gelezen` bij en stuurt de hele rij mee.
+    verwerkWijziging({ eventType: 'UPDATE', new: { ...mail('m0001', mailStore.item('m0001')!.datum), map: 'inbox', gelezen: true } })
+
+    expect(mailStore.item('m0001')?.map).toBe('archief')
+    expect(mailStore.item('m0001')?.gelezen).toBe(true)
+    expect(mailStore.lijstItems('inbox').map((i) => i.id)).toEqual(['m0000'])
+    expect(mailStore.lijstItems('archief').map((i) => i.id)).toEqual(['m0001'])
   })
 
   it('snooze via UPDATE verhuist van inbox naar gesnoozed', async () => {
