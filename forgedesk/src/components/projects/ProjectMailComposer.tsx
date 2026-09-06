@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, forwardRef, useImperativeHandle, useCallback } from 'react'
+import { useEffect, useMemo, useRef, useState, forwardRef, useImperativeHandle, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Paperclip, Send, X, FileText, Image as ImageIcon, File, Bold, Italic, Underline, List, Link as LinkIcon, Loader2, Receipt, CreditCard, Wrench, Check, Plus, ChevronDown, Clock } from 'lucide-react'
 import { cn, getInitials } from '@/lib/utils'
@@ -334,12 +334,24 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
   const voornaam = defaultNaam.split(' ')[0] || defaultNaam
   const aanhef = voornaam ? `Beste ${voornaam}` : 'Beste'
   const defaultSubject = `[${project.project_nummer || 'PRJ'}] ${project.naam}`
-  const hasPngSignature = !!handtekeningAfbeelding?.trim()
-  // Ook mét een banner hoort de tekst in het vak te staan: hij gaat straks als
-  // HTML mee, en je wilt hem kunnen aanpassen voor je verstuurt.
-  const textSignatuur = emailHandtekening?.trim() || ''
-  const signatuurBlok = textSignatuur ? `\n\n${textSignatuur}` : ''
-  const defaultBody = `${aanhef},\n\n${signatuurBlok}`
+  // De handtekening staat bewust NIET in het tekstvak. Hij stond daar als
+  // platte tekst en werd er bij verzenden weer afgeknipt met endsWith, en dat
+  // faalt bij elke gewone bewerking: één spatie erachter, of de tekst zelf
+  // aanpassen. Dan bleef hij staan én kwam de opgemaakte versie eronder, en
+  // omdat de markdown-omzetter de tags escapet zag de klant eerst de broncode
+  // van je handtekening en daarna je handtekening. Nu staat hij als voorbeeld
+  // onder het vak, net als in de mailmodule, en gaat hij altijd precies één
+  // keer als HTML mee.
+  const defaultBody = `${aanhef},\n\n`
+  // Eén bouwer, dezelfde als bij verzenden: wat je hier ziet is wat de klant
+  // krijgt.
+  const handtekeningVoorbeeld = useMemo(() => bouwHandtekeningHtml({
+    tekst: emailHandtekening,
+    afbeeldingUrl: handtekeningAfbeelding,
+    afbeeldingLink: handtekeningAfbeeldingLink,
+    afbeeldingBreedte: handtekeningAfbeeldingGrootte,
+    afbeeldingStyle: 'display:block;',
+  }), [emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingLink, handtekeningAfbeeldingGrootte])
 
   const draftKey = `doen_mail_draft_${project.id}`
 
@@ -533,10 +545,10 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
   const pasTemplateToe = useCallback((tmpl: EmailTemplate) => {
     if (tmpl.onderwerp.trim()) setSubject(vulProjectvelden(tmpl.onderwerp))
     const tekst = vulProjectvelden(templateNaarPlattetekst(tmpl.body))
-    setBody(`${tekst}${signatuurBlok}`)
+    setBody(tekst)
     setTemplateOpen(false)
     toast.success(<>Template toegepast<span style={{ color: '#F15025' }}>.</span></>)
-  }, [vulProjectvelden, signatuurBlok])
+  }, [vulProjectvelden])
 
   // Inplan-popover sluiten bij klik buiten
 
@@ -922,10 +934,7 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
       // hem daar kunt bijschaven. Voor de HTML-versie knippen we hem er weer af
       // en bouwen we hem opnieuw op: door de markdown-omzetter verloor hij zijn
       // opmaak, en met een banner viel de tekst helemaal weg.
-      const bodyZonderHandtekening = signatuurBlok && body.endsWith(signatuurBlok)
-        ? body.slice(0, -signatuurBlok.length)
-        : body
-      const bodyHtml = markdownNaarHtml(bodyZonderHandtekening)
+      const bodyHtml = markdownNaarHtml(body)
       const sig = bouwHandtekeningHtml({
         tekst: emailHandtekening,
         afbeeldingUrl: handtekeningAfbeelding,
@@ -1254,12 +1263,14 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
             }}
           />
 
-          {handtekeningAfbeelding?.trim() && (
-            <img
-              src={handtekeningAfbeelding}
-              alt="Handtekening"
-              style={{ maxWidth: variant === 'paneel' ? Math.min(240, handtekeningBreedte(handtekeningAfbeeldingGrootte)) : handtekeningBreedte(handtekeningAfbeeldingGrootte) }}
-              className="object-contain max-w-full"
+          {/* Voorbeeld van wat er onder de mail komt. Niet bewerkbaar: de
+              handtekening pas je aan onder Instellingen, en dan klopt hij
+              meteen voor al je mail. */}
+          {handtekeningVoorbeeld && (
+            <div
+              className="border-t border-dashed border-border/70 pt-2 text-[12px] leading-[1.5] text-foreground/60 [&_img]:max-w-full [&_img]:h-auto [&_a]:text-petrol/70"
+              title="Handtekening uit je instellingen"
+              dangerouslySetInnerHTML={{ __html: handtekeningVoorbeeld }}
             />
           )}
         </div>
