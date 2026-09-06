@@ -127,6 +127,53 @@ async function herstelSyncStatus(userId: string): Promise<void> {
   }
 }
 
+// ── GEDEELD-MET-API: credentials zonder 244 ───────────────────────────────
+// auth_type en de oauth-kolommen komen uit migratie 244. Zolang die niet
+// gedraaid is antwoordt PostgREST met 42703 of PGRST204 en faalt de HELE
+// select, waarna deze GET 404 gaf en Instellingen "geen mailbox gekoppeld"
+// meldde terwijl de mailbox gewoon bestond. Daarom eerst de volledige select,
+// en pas bij een kolomfout opnieuw met de kolommen van vóór 244.
+// Dezelfde helper hoort in fetch-emails, read-email, prefetch-email-bodies,
+// email-imap-action, send-email en de twee mail-oauth-routes.
+interface InstellingenRij {
+  gmail_address: string | null
+  encrypted_app_password: string | null
+  smtp_host: string | null
+  smtp_port: number | null
+  imap_host: string | null
+  imap_port: number | null
+  auth_type: string | null
+  oauth_refresh_token_enc: string | null
+}
+
+const INSTELLINGEN_KOLOMMEN_VOOR_244 = 'gmail_address, encrypted_app_password, smtp_host, smtp_port, imap_host, imap_port'
+const INSTELLINGEN_KOLOMMEN = `${INSTELLINGEN_KOLOMMEN_VOOR_244}, auth_type, oauth_refresh_token_enc`
+
+function isKolomFout(fout: { code?: string; message?: string } | null): boolean {
+  if (!fout) return false
+  if (fout.code === '42703' || fout.code === 'PGRST204') return true
+  return /column .* does not exist|could not find the .* column/i.test(fout.message || '')
+}
+
+/** Kolommen uit 244 mogen ontbreken; de rij zelf moet dan nog wel terugkomen. */
+async function leesInstellingenRij(userId: string, kolommen: string, kolommenVoor244: string): Promise<Record<string, unknown> | null> {
+  const volledig = await supabaseAdmin
+    .from('user_email_settings')
+    .select(kolommen)
+    .eq('user_id', userId)
+    .maybeSingle()
+  if (!volledig.error) return (volledig.data as unknown as Record<string, unknown> | null) ?? null
+  if (!isKolomFout(volledig.error)) return null
+  const oud = await supabaseAdmin
+    .from('user_email_settings')
+    .select(kolommenVoor244)
+    .eq('user_id', userId)
+    .maybeSingle()
+  if (oud.error || !oud.data) return null
+  return { ...(oud.data as unknown as Record<string, unknown>), auth_type: 'wachtwoord', oauth_refresh_token_enc: null }
+}
+// ── GEDEELD-MET-API EINDE: credentials zonder 244 ─────────────────────────
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
 
@@ -136,17 +183,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'GET') {
     try {
       const userId = await verifyUser(req)
-      const { data, error } = await supabaseAdmin
-        .from('user_email_settings')
-        // is_verified stond hier ooit bij, maar die kolom bestaat niet in de
-        // database (migratie 004 is nooit gedraaid) en niets schreef hem ooit.
-        // De select faalde daardoor volledig, waarna deze GET een 401 gaf en de
-        // instellingenpagina terugviel op localStorage.
-        .select('gmail_address, encrypted_app_password, smtp_host, smtp_port, imap_host, imap_port, auth_type, oauth_refresh_token_enc')
-        .eq('user_id', userId)
-        .single()
+      // is_verified stond hier ooit bij, maar die kolom bestaat niet in de
+      // database (migratie 004 is nooit gedraaid) en niets schreef hem ooit.
+      // De select faalde daardoor volledig, waarna deze GET een 401 gaf en de
+      // instellingenpagina terugviel op localStorage.
+      const data = await leesInstellingenRij(userId, INSTELLINGEN_KOLOMMEN, INSTELLINGEN_KOLOMMEN_VOOR_244) as InstellingenRij | null
 
-      if (error || !data) {
+      if (!data) {
         return res.status(404).json({ error: 'Geen email instellingen gevonden' })
       }
 
@@ -215,11 +258,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!wijzigtWachtwoord) {
       // Geen nieuw wachtwoord: vereist dat er al één is opgeslagen, of een
       // OAuth-koppeling die het wachtwoord vervangt.
-      const { data: bestaand } = await supabaseAdmin
-        .from('user_email_settings')
-        .select('encrypted_app_password, auth_type, oauth_refresh_token_enc')
-        .eq('user_id', userId)
-        .maybeSingle()
+      const bestaand = await leesInstellingenRij(
+        userId,
+        'encrypted_app_password, auth_type, oauth_refresh_token_enc',
+        'encrypted_app_password',
+      ) as { encrypted_app_password?: string | null; auth_type?: string | null; oauth_refresh_token_enc?: string | null } | null
       const heeftOauth = (bestaand?.auth_type === 'google' || bestaand?.auth_type === 'microsoft')
         && !!bestaand?.oauth_refresh_token_enc
       if (!bestaand?.encrypted_app_password && !heeftOauth) {

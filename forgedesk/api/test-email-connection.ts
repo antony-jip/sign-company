@@ -282,12 +282,29 @@ async function enforceRateLimit(identifier: string, res: VercelResponse): Promis
  * 401, dan gaat de mailbox uit met "Toegang ingetrokken, koppel opnieuw" —
  * dezelfde melding die de gezondheidskaart toont.
  */
+// ── GEDEELD-MET-API: credentials zonder 244 ───────────────────────────────
+// auth_type en de oauth-kolommen komen uit migratie 244. Zolang die niet
+// gedraaid is antwoordt PostgREST met 42703 of PGRST204 op de hele select.
+// Er is dan per definitie geen koppeling met Google of Microsoft, dus dit pad
+// hoeft niet terug te vallen: het moet alleen niet omvallen en niet als
+// storing gelezen worden. Het wachtwoordpad hieronder leest niets uit de
+// database (de velden komen uit het formulier) en raakt 244 dus niet.
+function isKolomFout(fout: { code?: string; message?: string } | null): boolean {
+  if (!fout) return false
+  if (fout.code === '42703' || fout.code === 'PGRST204') return true
+  return /column .* does not exist|could not find the .* column/i.test(fout.message || '')
+}
+// ── GEDEELD-MET-API EINDE: credentials zonder 244 ─────────────────────────
+
 async function testOauthKoppeling(userId: string, res: VercelResponse) {
   const { data, error } = await supabaseAdmin
     .from('user_email_settings')
     .select('user_id, gmail_address, auth_type, imap_host, imap_port, smtp_host, smtp_port, oauth_refresh_token_enc, oauth_access_token_enc, oauth_token_verloopt_op')
     .eq('user_id', userId)
     .maybeSingle()
+  if (isKolomFout(error)) {
+    return res.status(400).json({ imap_ok: false, smtp_ok: false, error: 'Koppelen met Google of Microsoft is nog niet beschikbaar. Gebruik een app-wachtwoord.' })
+  }
   if (error || !data || !isOauthKoppeling(data.auth_type as string)) {
     return res.status(400).json({ imap_ok: false, smtp_ok: false, error: 'Geen koppeling met Google of Microsoft gevonden' })
   }
