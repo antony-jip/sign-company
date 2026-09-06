@@ -601,6 +601,8 @@ function classificeerSmtpFout(err: unknown): SmtpFoutSoort {
 
 async function schrijfOutboxRij(rij: {
   user_id: string
+  /** Postvak waaruit dit bericht moet (migratie 245); de cron leest hem terug. */
+  account_id?: string | null
   to: string
   cc?: string
   bcc?: string
@@ -613,26 +615,23 @@ async function schrijfOutboxRij(rij: {
   wacht_op_reactie: boolean
 }): Promise<string | null> {
   try {
-    const { data, error } = await supabaseAdmin
-      .from('ingeplande_berichten')
-      .insert({
-        user_id: rij.user_id,
-        ontvanger: rij.to,
-        cc: rij.cc || null,
-        bcc: rij.bcc || null,
-        onderwerp: rij.subject,
-        body: rij.body || null,
-        html: rij.html || null,
-        bijlagen: rij.bijlagen,
-        scheduled_at: new Date().toISOString(),
-        status: 'verwerken',
-        bron: 'outbox',
-        in_reply_to: rij.in_reply_to || null,
-        thread_id: rij.thread_id || null,
-        wacht_op_reactie: rij.wacht_op_reactie,
-      })
-      .select('id')
-      .single()
+    const { data, error } = await insertMetAccountTerugval('ingeplande_berichten', {
+      user_id: rij.user_id,
+      ...(rij.account_id ? { account_id: rij.account_id } : {}),
+      ontvanger: rij.to,
+      cc: rij.cc || null,
+      bcc: rij.bcc || null,
+      onderwerp: rij.subject,
+      body: rij.body || null,
+      html: rij.html || null,
+      bijlagen: rij.bijlagen,
+      scheduled_at: new Date().toISOString(),
+      status: 'verwerken',
+      bron: 'outbox',
+      in_reply_to: rij.in_reply_to || null,
+      thread_id: rij.thread_id || null,
+      wacht_op_reactie: rij.wacht_op_reactie,
+    })
     if (error) {
       console.warn('[send-email] outbox-rij schrijven mislukt:', error.message)
       return null
@@ -649,6 +648,25 @@ async function werkOutboxBij(id: string | null, patch: Record<string, unknown>):
   const { error } = await supabaseAdmin.from('ingeplande_berichten').update(patch).eq('id', id)
   if (error) console.warn('[send-email] outbox-rij bijwerken mislukt:', error.message)
 }
+
+// ── GEDEELD-MET-API: insert met account-terugval ──────────────────────────
+// account_id komt uit migratie 245. Zolang die niet gedraaid is faalt een
+// insert met dat veld in zijn geheel op 42703, en dan zou een mail die al
+// verstuurd is niet meer opgeslagen worden. Eén keer opnieuw zonder het veld.
+function isAccountKolomFout(fout: { code?: string; message?: string } | null): boolean {
+  if (!fout) return false
+  return fout.code === '42703' || fout.code === 'PGRST204'
+    || /column .* does not exist|could not find the .* column/i.test(fout.message || '')
+}
+
+async function insertMetAccountTerugval(tabel: string, rij: Record<string, unknown>) {
+  const eerste = await supabaseAdmin.from(tabel).insert(rij).select('id').single()
+  if (!eerste.error || !('account_id' in rij) || !isAccountKolomFout(eerste.error)) return eerste
+  const zonder = { ...rij }
+  delete zonder.account_id
+  return await supabaseAdmin.from(tabel).insert(zonder).select('id').single()
+}
+// ── GEDEELD-MET-API EINDE: insert met account-terugval ────────────────────
 
 export const config = { maxDuration: 30 }
 
@@ -741,25 +759,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ error: 'scheduledAt moet in de toekomst liggen' })
       }
 
-      const { data: ingepland, error: insertError } = await supabaseAdmin
-        .from('ingeplande_berichten')
-        .insert({
-          user_id,
-          ontvanger: to,
-          cc: cc || null,
-          bcc: bcc || null,
-          onderwerp: subject,
-          body: body || null,
-          html: html || null,
-          bijlagen: attachments || [],
-          scheduled_at: verzendDatum.toISOString(),
-          status: 'wachtend',
-          in_reply_to: in_reply_to || null,
-          thread_id: thread_id || null,
-          wacht_op_reactie,
-        })
-        .select('id')
-        .single()
+      const { data: ingepland, error: insertError } = await insertMetAccountTerugval('ingeplande_berichten', {
+        user_id,
+        ...(creds?.account_id ? { account_id: creds.account_id } : {}),
+        ontvanger: to,
+        cc: cc || null,
+        bcc: bcc || null,
+        onderwerp: subject,
+        body: body || null,
+        html: html || null,
+        bijlagen: attachments || [],
+        scheduled_at: verzendDatum.toISOString(),
+        status: 'wachtend',
+        in_reply_to: in_reply_to || null,
+        thread_id: thread_id || null,
+        wacht_op_reactie,
+      })
 
       if (insertError || !ingepland) {
         console.error('[send-email] Ingepland bericht aanmaken mislukt:', insertError)
@@ -901,7 +916,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // op 'mislukt' met een melding. Bijlage-inhoud gaat niet mee: deze rij
     // wordt nooit door de cron opnieuw verstuurd, hij is administratie.
     const outboxId = await schrijfOutboxRij({
-      user_id, to, cc, bcc, subject, body, html,
+      user_id, account_id: creds?.account_id ?? null, to, cc, bcc, subject, body, html,
       bijlagen: (attachments || []).map(({ content: _content, ...rest }) => rest),
       in_reply_to, thread_id, wacht_op_reactie,
     })

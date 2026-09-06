@@ -87,6 +87,25 @@ function decryptPassword(encrypted: string): string {
   }
 }
 
+// ── GEDEELD-MET-API: insert met account-terugval ──────────────────────────
+// account_id komt uit migratie 245. Zolang die niet gedraaid is faalt een
+// insert met dat veld in zijn geheel op 42703, en dan zou een mail die al
+// verstuurd is niet meer opgeslagen worden. Eén keer opnieuw zonder het veld.
+function isAccountKolomFout(fout: { code?: string; message?: string } | null): boolean {
+  if (!fout) return false
+  return fout.code === '42703' || fout.code === 'PGRST204'
+    || /column .* does not exist|could not find the .* column/i.test(fout.message || '')
+}
+
+async function insertMetAccountTerugval(tabel: string, rij: Record<string, unknown>) {
+  const eerste = await supabaseAdmin.from(tabel).insert(rij).select('id').single()
+  if (!eerste.error || !('account_id' in rij) || !isAccountKolomFout(eerste.error)) return eerste
+  const zonder = { ...rij }
+  delete zonder.account_id
+  return await supabaseAdmin.from(tabel).insert(zonder).select('id').single()
+}
+// ── GEDEELD-MET-API EINDE: insert met account-terugval ────────────────────
+
 function extractBareEmail(address: string): string {
   const trimmed = address.trim()
   const match = trimmed.match(/<([^>]+)>/)
@@ -432,7 +451,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           .maybeSingle()
         if (!claimed) continue
 
-        const creds = await getUserCreds(bericht.user_id)
+        // account_id staat op de rij sinds migratie 245; ontbreekt de kolom of
+        // is de rij ouder, dan valt getUserCreds terug op het standaardpostvak.
+        const creds = await getUserCreds(bericht.user_id, (bericht.account_id as string | null) ?? null)
         if (!creds) {
           throw new Error('Geen email instellingen gevonden voor user')
         }
@@ -582,9 +603,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             .select('organisatie_id')
             .eq('id', bericht.user_id)
             .maybeSingle()
-          const { data: insertedMail } = await supabaseAdmin.from('emails').insert({
+          const { data: insertedMail } = await insertMetAccountTerugval('emails', {
             user_id: bericht.user_id,
             organisatie_id: (orgProfiel?.organisatie_id as string | null) ?? null,
+            // Zonder account_id is verzonden mail uit een gedeeld postvak
+            // onzichtbaar voor het team (migratie 245).
+            ...(creds.account_id ? { account_id: creds.account_id } : {}),
             message_id: sentMessageId,
             in_reply_to: bericht.in_reply_to || null,
             thread_id: effectiveThreadId,
@@ -607,7 +631,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             cached_at: new Date().toISOString(),
             wacht_op_reactie: wachtOpReactie,
             beantwoord: false,
-          }).select('id').single()
+          })
 
           // Sales Inbox: vervangen-niet-stapelen — sluit eerdere openstaande
           // wacht-mails naar hetzelfde adres af (gelijk aan api/send-email.ts).
