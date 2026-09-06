@@ -9,8 +9,6 @@ import {
 } from './factuurService'
 import { getKlant } from './klantService'
 import { factuurVerzendTemplate } from './emailTemplateService'
-import { genereerEnUploadFactuurPdf, downloadFactuurPdfFromStorage } from './factuurPdfService'
-import { generateFactuurPDF } from './pdfService'
 import { sendEmail } from './gmailService'
 import supabase from './supabaseClient'
 import { formatDate } from '@/lib/utils'
@@ -45,8 +43,8 @@ export class FactuurKetenFout extends Error {
 }
 
 export type FactuurVerzendStijl = {
-  bedrijfsProfiel: Parameters<typeof generateFactuurPDF>[3]
-  documentStyle?: Parameters<typeof generateFactuurPDF>[4]
+  bedrijfsProfiel: Parameters<typeof import('./pdfService').generateFactuurPDF>[3]
+  documentStyle?: Parameters<typeof import('./pdfService').generateFactuurPDF>[4]
   bedrijfsnaam: string
   primaireKleur: string
   emailHandtekening?: string
@@ -306,6 +304,13 @@ export async function verwerkEnVerzendFactuur(opts: {
     factuur_postcode: factuur.factuur_postcode || undefined,
     factuur_plaats: factuur.factuur_plaats || undefined,
   }
+
+  // De PDF-modules (jsPDF, ~400 kB) pas laden bij verzenden: een statische
+  // import trok ze via de services-chunk in de eerste bundle.
+  const [{ genereerEnUploadFactuurPdf, downloadFactuurPdfFromStorage }, { generateFactuurPDF }] = await Promise.all([
+    import('./factuurPdfService'),
+    import('./pdfService'),
+  ])
 
   // Een bestaande Storage-PDF is bevroren: dat is het exemplaar dat (mogelijk)
   // al aan Exact hangt en eerder naar de klant ging. Die hergebruiken we; we
