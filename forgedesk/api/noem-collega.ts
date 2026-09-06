@@ -90,6 +90,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .from('app_settings')
       .select('functies')
       .eq('organisatie_id', afzender.organisatie_id)
+      .order('updated_at', { ascending: false })
+      .limit(1)
       .maybeSingle()
     const functies = (instellingen?.functies ?? {}) as Record<string, unknown>
     if (functies.noemen === false) return res.status(200).json({ gemeld: 0, uit: true })
@@ -109,6 +111,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { error } = await supabaseAdmin.from('notificaties').insert(
       geldigeDoelen.map((doel) => ({
         user_id: doel,
+        organisatie_id: afzender.organisatie_id,
         type: 'genoemd',
         titel,
         bericht,

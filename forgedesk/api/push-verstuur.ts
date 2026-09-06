@@ -80,6 +80,8 @@ async function pushToegestaan(userId: string, categorie: string | undefined): Pr
     .from('app_settings')
     .select('functies')
     .eq('organisatie_id', profiel.organisatie_id)
+    .order('updated_at', { ascending: false })
+    .limit(1)
     .maybeSingle()
   const functies = (instellingen?.functies ?? {}) as Record<string, unknown>
   return functies.meldingen_voorkeuren === false

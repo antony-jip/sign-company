@@ -4,8 +4,9 @@
  * Draait elk uur op :05. Per organisatie met de schakelaar uren_herinnering
  * aan (app_settings.functies, migratie 234) kijkt hij of het ingestelde uur
  * (uren_herinnering_uur, standaard 16) in Europe/Amsterdam is bereikt. Wie
- * vandaag al een herinnering kreeg, krijgt er geen tweede: dat is de
- * eenmaal-per-dag-rem. Weekend en bedrijfssluitingsdagen slaan we over.
+ * vandaag al een herinnering kreeg, krijgt er geen tweede: de rem is
+ * medewerkers.uren_herinnerd_op (migratie 240), gezet vóór het melden.
+ * Weekend, bedrijfssluitingsdagen, verlof en hele-dag-afwezigheid slaan we over.
  *
  * "Uren geschreven" is: een tijdregistratie van vandaag, een lopende
  * tijd_sessie, of een werkbon die vandaag is getekend of afgerond.
@@ -100,21 +101,31 @@ async function verwerkOrganisatie(orgId: string, nu: AmsterdamNu): Promise<OrgUi
 
   const { data: medewerkers } = await supabaseAdmin
     .from('medewerkers')
-    .select('id, user_id')
+    .select('id, user_id, uren_herinnerd_op')
     .eq('organisatie_id', orgId)
     .eq('status', 'actief')
     .not('user_id', 'is', null)
-  const doelen = (medewerkers ?? []) as { id: string; user_id: string }[]
+  const doelen = ((medewerkers ?? []) as { id: string; user_id: string; uren_herinnerd_op: string | null }[])
+    .filter((m) => m.uren_herinnerd_op !== nu.datum)
   if (doelen.length === 0) return { organisatie_id: orgId, herinnerd: 0 }
-  const userIds = doelen.map((m) => m.user_id)
 
-  const [alGemeld, registraties, sessies, werkbonnen] = await Promise.all([
+  const [verlof, afwezigheid, registraties, sessies, werkbonnen] = await Promise.all([
     supabaseAdmin
-      .from('notificaties')
-      .select('user_id')
-      .eq('type', 'uren_herinnering')
-      .gte('created_at', nu.dagStartUtc)
-      .in('user_id', userIds),
+      .from('verlof')
+      .select('medewerker_id')
+      .eq('organisatie_id', orgId)
+      .neq('status', 'afgewezen')
+      .lte('start_datum', nu.datum)
+      .gte('eind_datum', nu.datum),
+    // medewerker_id is TEXT (migratie 127): een medewerkers-id of 'profile-<user_id>'.
+    // Alleen hele dagen (start_tijd NULL); wie een middag weg is schrijft wel uren.
+    supabaseAdmin
+      .from('planning_afwezigheid')
+      .select('medewerker_id')
+      .eq('organisatie_id', orgId)
+      .is('start_tijd', null)
+      .lte('start_datum', nu.datum)
+      .gte('eind_datum', nu.datum),
     supabaseAdmin
       .from('tijdregistraties')
       .select('medewerker_id, user_id')
@@ -131,7 +142,13 @@ async function verwerkOrganisatie(orgId: string, nu: AmsterdamNu): Promise<OrgUi
       .or(`getekend_op.gte.${nu.dagStartUtc},and(status.eq.afgerond,updated_at.gte.${nu.dagStartUtc})`),
   ])
 
-  const gemeld = new Set((alGemeld.data ?? []).map((n) => n.user_id as string))
+  const afwezig = new Set<string>([
+    ...(verlof.data ?? []).map((v) => `m:${v.medewerker_id}`),
+    ...(afwezigheid.data ?? []).map((a) => {
+      const id = String(a.medewerker_id ?? '')
+      return id.startsWith('profile-') ? `u:${id.slice('profile-'.length)}` : `m:${id}`
+    }),
+  ])
   const actief = new Set<string>()
   for (const rij of [...(registraties.data ?? []), ...(sessies.data ?? [])] as { medewerker_id?: string | null; user_id?: string | null }[]) {
     if (rij.medewerker_id) actief.add(`m:${rij.medewerker_id}`)
@@ -141,14 +158,27 @@ async function verwerkOrganisatie(orgId: string, nu: AmsterdamNu): Promise<OrgUi
     if (rij.user_id) actief.add(`u:${rij.user_id}`)
   }
 
-  const zonderUren = doelen.filter((m) => !gemeld.has(m.user_id) && !actief.has(`m:${m.id}`) && !actief.has(`u:${m.user_id}`))
+  const zonderUren = doelen.filter((m) =>
+    !afwezig.has(`m:${m.id}`) && !afwezig.has(`u:${m.user_id}`)
+    && !actief.has(`m:${m.id}`) && !actief.has(`u:${m.user_id}`))
   if (zonderUren.length === 0) return { organisatie_id: orgId, herinnerd: 0 }
+
+  // Rem eerst zetten: mislukt het melden daarna, dan liever één gemiste
+  // herinnering dan elk uur een nieuwe.
+  const { error: remError } = await supabaseAdmin
+    .from('medewerkers')
+    .update({ uren_herinnerd_op: nu.datum })
+    .in('id', zonderUren.map((m) => m.id))
+  if (remError) {
+    console.error('[cron-uren-herinnering] rem zetten mislukt:', orgId, remError.message)
+    return { organisatie_id: orgId, overgeslagen: 'rem-fout' }
+  }
 
   const titel = 'Je hebt vandaag nog geen uren geschreven'
   const bericht = 'Schrijf je uren van vandaag voordat je afsluit.'
   const link = '/tijdregistratie'
   const { error } = await supabaseAdmin.from('notificaties').insert(
-    zonderUren.map((m) => ({ user_id: m.user_id, type: 'uren_herinnering', titel, bericht, link, gelezen: false }))
+    zonderUren.map((m) => ({ user_id: m.user_id, organisatie_id: orgId, type: 'uren_herinnering', titel, bericht, link, gelezen: false }))
   )
   if (error) {
     console.error('[cron-uren-herinnering] notificaties mislukt:', orgId, error.message)
