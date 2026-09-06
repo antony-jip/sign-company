@@ -74,6 +74,12 @@ interface SendEmailOptions {
   thread_id?: string
   /** Postvak waaruit verstuurd wordt (user_email_settings.id, migratie 245). */
   account_id?: string
+  /**
+   * Laat het verzoek doorlopen nadat het tabblad weg is (`pagehide`). De
+   * browser begrenst zo'n verzoek op 64 kB body, dus een mail met bijlagen
+   * kan hierop stuklopen; dat is beter dan hem stil verliezen.
+   */
+  keepalive?: boolean
 }
 
 /**
@@ -164,6 +170,7 @@ export async function sendEmail(
         thread_id: options?.thread_id,
         account_id: options?.account_id,
       }),
+      keepalive: options?.keepalive,
     })
   } catch (netErr) {
     // Netwerk weg — in de outbox, cron levert af zodra het weer kan

@@ -336,9 +336,9 @@ export function Composer({ document: initieel, variant, onVerzonden, onSluiten, 
     }
 
     verzendMetBedenktijd(
-      async () => {
+      async (verzendOpties) => {
         const payload = await bouwVerzending(d, ctx)
-        const { id: emailId } = await verstuurPayload(d, payload)
+        const { id: emailId } = await verstuurPayload(d, payload, verzendOpties)
         ruimConceptOp()
         onVerzonden(emailId ?? '')
       },
