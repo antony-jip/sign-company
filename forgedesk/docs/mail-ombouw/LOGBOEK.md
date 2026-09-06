@@ -511,3 +511,40 @@ hij ook vóór 245 kan draaien.
   postvak koppelt zal iets anders verwachten.
 - **`clearEmailCache()`** wist de mail van alle postvakken. Dat is precies wat
   een opruimknop hoort te doen.
+
+### Vierde ronde: de kruiscontrole op zichzelf
+
+De derde reviewer heeft daarna zijn eigen twaalf punten nagelopen. Elf waren
+opgelost; op één had hij gelijk dat mijn fix een nieuw gat maakte, van dezelfde
+soort als de vorige keer.
+
+**"Opnieuw verbinden" mengde twee postvakken.** Ik haalde het doelpostvak op met
+`loadEmailSettingsFromDb` en viel per veld terug op de gegevens uit het
+formulier. Levert die GET `null` (een 500, een netwerkfout, een leeg adres), dan
+combineerde de opslag het adres, de hosts en de poorten van postvak 1 met het
+`account_id` van postvak 2, en droegen daarna beide postvakken hetzelfde adres.
+Precies de corruptie waar de 409-poort in ronde twee voor gebouwd is, nu via een
+andere deur. Nu geldt: alles uit één bron of niets, met een melding als het
+ophalen niet lukt.
+
+Tegelijk verhuisd: de wachtwoordeis boven de knop controleerde het postvak uit
+het formulier in plaats van het postvak dat hersteld wordt. Met OAuth op het ene
+en een wachtwoord op het andere postvak blokkeerde hij de verkeerde kant op.
+
+En `api/email-attachment.ts` weigert nu een postvak-id dat niet bestaat of niet
+van de gebruiker is, in plaats van stil op het standaardpostvak terug te vallen.
+De negen andere api-bestanden doen dat al zo; stil terugvallen zou de bijlage uit
+de verkeerde mailbox halen.
+
+### Wat blijft liggen, bewust
+
+- **Er promoveert niets een overgebleven postvak tot standaard.** Ontkoppel je
+  het standaardpostvak, dan heeft de gebruiker alleen rijen met
+  `is_standaard = false`, en dan valt elk standaardpad terug op "de oudste rij".
+  Overleefbaar, maar `is_standaard` is nu op vijf plaatsen de sleutel. Hoort bij
+  hetzelfde werk als het soft-deleten van een ontkoppeld postvak, en dus vóór
+  migratie 246.
+- **`heeftMailkoppeling`** staat nog op `.maybeSingle()`: met twee postvakken
+  logt dat een waarschuwing en geeft het toevallig het goede antwoord.
+- **De aanvraag-voorfilter** kent alleen het adres van het standaardpostvak als
+  "eigen adres".

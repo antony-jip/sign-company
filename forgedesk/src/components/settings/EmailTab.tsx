@@ -130,10 +130,6 @@ function MailboxGezondheidKaart({ settings, isConnected }: { settings: EmailSett
   const [herstelt, setHerstelt] = useState(false)
 
   const opnieuwVerbinden = async () => {
-    if (!settings.has_password) {
-      toast.error('Vul hieronder eerst je wachtwoord in en sla op')
-      return
-    }
     setHerstelt(true)
     try {
       const { saveEmailSettingsToDb, loadEmailSettingsFromDb } = await import('@/services/gmailService')
@@ -141,18 +137,47 @@ function MailboxGezondheidKaart({ settings, isConnected }: { settings: EmailSett
       // postvak dat die stand veroorzaakt en niet blind het standaardpostvak.
       // Anders meldt de kaart postvak 2 en repareert de knop postvak 1.
       const doelPostvak = sync.postvakId || null
-      const doel = doelPostvak ? await loadEmailSettingsFromDb(doelPostvak).catch(() => null) : null
+      // Alles uit één bron: adres, hosts en poorten horen bij hetzelfde postvak
+      // als het account_id. Ze mengen zou de rij van postvak 2 het adres van
+      // postvak 1 geven, en dan dragen beide postvakken hetzelfde adres.
+      // Lukt het ophalen niet, dan liever niets doen dan half.
+      const geladen = doelPostvak ? await loadEmailSettingsFromDb(doelPostvak).catch(() => null) : null
+      const doel = doelPostvak
+        ? geladen
+        : {
+          gmail_address: settings.gmail_address,
+          account_id: undefined as string | undefined,
+          auth_type: undefined as import('@/services/gmailService').MailAuthType | undefined,
+          has_password: settings.has_password,
+          smtp_host: settings.smtp_host,
+          smtp_port: settings.smtp_port,
+          imap_host: settings.imap_host,
+          imap_port: settings.imap_port,
+        }
+      if (!doel || !doel.gmail_address) {
+        toast.error('De gegevens van dit postvak zijn nu niet op te halen. Probeer het zo opnieuw.')
+        return
+      }
+      // De wachtwoordeis geldt voor het postvak dat we herstellen, niet voor het
+      // postvak dat toevallig in het formulier staat.
+      const heeftWachtwoord = doel.has_password
+      const viaOauth = doel.auth_type === 'google' || doel.auth_type === 'microsoft'
+      if (!heeftWachtwoord && !viaOauth) {
+        toast.error('Vul hieronder eerst je wachtwoord in en sla op')
+        return
+      }
       await saveEmailSettingsToDb({
-        gmail_address: doel?.gmail_address || settings.gmail_address,
-        account_id: doel?.account_id ?? doelPostvak ?? undefined,
+        gmail_address: doel.gmail_address,
+        account_id: doel.account_id ?? doelPostvak ?? undefined,
         app_password: '',
-        smtp_host: doel?.smtp_host || settings.smtp_host,
-        smtp_port: doel?.smtp_port || settings.smtp_port,
-        imap_host: doel?.imap_host || settings.imap_host,
-        imap_port: doel?.imap_port || settings.imap_port,
+        auth_type: doel.auth_type,
+        smtp_host: doel.smtp_host,
+        smtp_port: doel.smtp_port,
+        imap_host: doel.imap_host,
+        imap_port: doel.imap_port,
       })
       await mailStore.laadSyncStatus()
-      const naam = doel?.gmail_address && doel.gmail_address !== settings.gmail_address ? ` (${doel.gmail_address})` : ''
+      const naam = doel.gmail_address !== settings.gmail_address ? ` (${doel.gmail_address})` : ''
       toast.success(<>Opnieuw verbonden{naam}<span style={{ color: '#F15025' }}>.</span> De volgende synchronisatie start direct.</>)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Opnieuw verbinden mislukt')

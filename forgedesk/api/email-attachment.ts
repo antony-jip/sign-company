@@ -114,6 +114,13 @@ async function getEmailCredentials(userId: string, accountId?: string | null): P
   if (isKolomFout(uitkomst.error)) uitkomst = await haal(KOLOMMEN)
   const { data: rijen, error } = uitkomst
   const lijst = (rijen || []) as unknown as Array<Record<string, unknown>>
+  // Een meegestuurd postvak dat niet bestaat of niet van jou is: weigeren, niet
+  // stil op het standaardpostvak terugvallen. De negen andere api-bestanden
+  // doen dat ook zo, en stil terugvallen haalt de bijlage uit de verkeerde
+  // mailbox.
+  if (accountId && !lijst.some((r) => r.id === accountId)) {
+    throw new Error('Dit postvak bestaat niet of hoort niet bij jou.')
+  }
   const data = (accountId ? lijst.find((r) => r.id === accountId) : null)
     ?? lijst.find((r) => r.is_standaard)
     ?? lijst[0]
