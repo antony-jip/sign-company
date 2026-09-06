@@ -24,6 +24,7 @@ import type { Project, Klant, Contactpersoon, Document, Offerte, Factuur, Werkbo
 import { useOntvangerZoeker, OntvangerLijst, type Ontvanger } from '@/components/shared/OntvangerVeld'
 import { getAvatarStyle } from '@/components/email/emailHelpers'
 import { bouwHandtekeningHtml, handtekeningBreedte } from '@/utils/handtekening'
+import { AITextToolbar } from '@/components/ui/AITextToolbar'
 import { VerzendKnop } from '@/components/email/composer/VerzendKnop'
 
 const MAX_BIJLAGE_BYTES = 20 * 1024 * 1024
@@ -1242,6 +1243,15 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
             rows={variant === 'paneel' ? 4 : 3}
             className="w-full bg-transparent border-0 outline-none text-[13px] text-foreground placeholder:text-muted-foreground resize-none leading-relaxed focus:ring-0 focus:outline-none focus-visible:outline-none focus-visible:ring-0 p-0 overflow-hidden"
             style={{ boxShadow: 'none' }}
+          />
+          {/* Dit veld is een kale textarea en niet de gedeelde Textarea, dus
+              het AI-herschrijven kwam hier niet vanzelf mee. Overal waar je
+              mailt hoort het te kunnen. */}
+          <AITextToolbar
+            textareaRef={textareaRef}
+            onReplace={(nieuweTekst, van, tot) => {
+              setBody((huidig) => huidig.slice(0, van) + nieuweTekst + huidig.slice(tot))
+            }}
           />
 
           {handtekeningAfbeelding?.trim() && (

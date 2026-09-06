@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, ChevronDown, Loader2, Paperclip, Send, Settings, Sparkles, X } from 'lucide-react'
+import { ArrowLeft, ChevronDown, Loader2, Paperclip, Send, Settings, Sparkles, Wand2, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -13,7 +13,7 @@ import { callForgie } from '@/services/forgieService'
 import { bouwHandtekeningHtml } from '@/utils/handtekening'
 import { sendInBackground } from '@/utils/sendInBackground'
 import { logger } from '@/utils/logger'
-import { AIContentEditableToolbar } from '@/components/ui/AIContentEditableToolbar'
+import { AIContentEditableToolbar, type AIHerschrijfHandle } from '@/components/ui/AIContentEditableToolbar'
 import { InlineSuggestie } from '@/components/email/InlineSuggestie'
 import { MailStatusToast } from '@/components/shared/MailStatusToast'
 import { OntvangerChips } from '@/components/shared/OntvangerVeld'
@@ -118,6 +118,7 @@ export function Composer({ document: initieel, variant, onVerzonden, onSluiten, 
   const citaat = useMemo(() => splitsCitaat(doc.html).citaat, [doc.html])
 
   const editorRef = useRef<HTMLDivElement>(null)
+  const herschrijfRef = useRef<AIHerschrijfHandle>(null)
   const editorHandle = useRef<EditorHandle>(null)
   const linkKnopRef = useRef<LinkInvoegHandle>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -643,6 +644,20 @@ export function Composer({ document: initieel, variant, onVerzonden, onSluiten, 
               )}
             </div>
 
+            {/* Herschrijven werkte alleen als je precies genoeg tekst
+                selecteerde, en dan wist niemand dat het bestond. Deze knop
+                doet hetzelfde: over je selectie, of anders over het hele
+                bericht. */}
+            <button
+              type="button"
+              onClick={() => herschrijfRef.current?.openen()}
+              className={aiChipCls}
+              title="Laat de AI je tekst herschrijven, korter maken, of vertalen"
+            >
+              <Wand2 className="h-3 w-3" />
+              Herschrijven
+            </button>
+
             {handtekeningHtml && (
               <div className="ml-auto">
                 <HandtekeningKiezer
@@ -665,7 +680,7 @@ export function Composer({ document: initieel, variant, onVerzonden, onSluiten, 
             minHoogteClass={losstaand ? 'min-h-[280px]' : variant === 'inline' ? 'min-h-[160px]' : 'min-h-[240px]'}
             className="py-2"
           />
-          <AIContentEditableToolbar editorRef={editorRef} onContentChange={() => dispatch({ type: 'eigenHtml', html: editorRef.current?.innerHTML || '' })} />
+          <AIContentEditableToolbar ref={herschrijfRef} editorRef={editorRef} onContentChange={() => dispatch({ type: 'eigenHtml', html: editorRef.current?.innerHTML || '' })} />
           <InlineSuggestie
             editorRef={editorRef}
             actief={!daanBezig}
