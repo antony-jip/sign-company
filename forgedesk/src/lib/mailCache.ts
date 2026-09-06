@@ -43,7 +43,22 @@ export interface BewaardeBody {
   eigenaar: string
   opgeslagenOp: number
   html: string
+  tekst?: string | null
+  quotedHtml?: string | null
   bijlagen?: unknown[]
+}
+
+/** Eén sleutel per map, zodat elke map zijn eigen koude start heeft. */
+export function mapLijstSleutel(map: string): string {
+  return `lijst:${map}`
+}
+
+export function leesMapLijst<T>(map: string, eigenaar: string): Promise<T | null> {
+  return leesMailCache<T>(mapLijstSleutel(map), eigenaar)
+}
+
+export function schrijfMapLijst<T>(map: string, eigenaar: string, waarde: T): Promise<void> {
+  return schrijfMailCache(mapLijstSleutel(map), eigenaar, waarde)
 }
 
 let dbBelofte: Promise<IDBDatabase | null> | null = null
@@ -148,7 +163,7 @@ export async function leesBodies(
 }
 
 export async function bewaarBodies(
-  rijen: Array<{ id: string; html: string; bijlagen?: unknown[] }>,
+  rijen: Array<{ id: string; html: string; tekst?: string | null; quotedHtml?: string | null; bijlagen?: unknown[] }>,
   eigenaar: string,
 ): Promise<void> {
   if (rijen.length === 0) return
@@ -159,8 +174,13 @@ export async function bewaarBodies(
     const tx = db.transaction(STORE_BODIES, 'readwrite')
     const store = tx.objectStore(STORE_BODIES)
     for (const rij of rijen) {
-      if (!rij.html || rij.html.length > MAX_BODY_BYTES) continue
-      store.put({ id: rij.id, eigenaar, opgeslagenOp, html: rij.html, bijlagen: rij.bijlagen } satisfies BewaardeBody)
+      if (!rij.html && !rij.tekst) continue
+      if (rij.html.length + (rij.quotedHtml?.length ?? 0) > MAX_BODY_BYTES) continue
+      store.put({
+        id: rij.id, eigenaar, opgeslagenOp,
+        html: rij.html, tekst: rij.tekst ?? null, quotedHtml: rij.quotedHtml ?? null,
+        bijlagen: rij.bijlagen,
+      } satisfies BewaardeBody)
     }
     tx.oncomplete = () => { void snoeiBodies() }
   } catch {
