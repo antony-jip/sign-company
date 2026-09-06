@@ -161,12 +161,20 @@ async function verwerk(batch: Taak[]): Promise<void> {
     return
   }
 
-  const perMap = new Map<string, string[]>()
+  // Per map én per postvak: de prefetch opent een IMAP-verbinding, en zonder
+  // postvak is dat altijd het standaardpostvak. Dan haalt hij uid's op uit de
+  // verkeerde mailbox.
+  const perMap = new Map<string, { map: string; accountId?: string; ids: string[] }>()
   for (const id of open.keys()) {
-    const map = imapMapVoor(mailStore.item(id))
-    perMap.set(map, [...(perMap.get(map) || []), id])
+    const item = mailStore.item(id)
+    const map = imapMapVoor(item)
+    const accountId = item?.account_id || undefined
+    const sleutel = `${map}\u0000${accountId || ''}`
+    const groep = perMap.get(sleutel) || { map, accountId, ids: [] }
+    groep.ids.push(id)
+    perMap.set(sleutel, groep)
   }
-  await Promise.all([...perMap].map(([map, ids]) => prefetchEmailBodies(map, ids.length)))
+  await Promise.all([...perMap.values()].map((g) => prefetchEmailBodies(g.map, g.ids.length, g.accountId)))
   open = await uitTabel(open, eigenaar)
   if (open.size === 0) return
 
@@ -179,7 +187,7 @@ async function verwerk(batch: Taak[]): Promise<void> {
     const uid = item ? Number(item.uid ?? item.gmail_id) : NaN
     if (!item || !Number.isFinite(uid) || uid <= 0) { faal(taak, 'Geen uid bekend'); continue }
     try {
-      const detail = await readEmailFromIMAP(uid, imapMapVoor(item))
+      const detail = await readEmailFromIMAP(uid, imapMapVoor(item), item.account_id || undefined)
       const body: EmailBody = { emailId: taak.id, html: detail.bodyHtml || null, tekst: detail.bodyText || null, quotedHtml: null }
       if (!body.html && !body.tekst) { faal(taak, 'Lege mail'); continue }
       const compleet = metCitaat(body)

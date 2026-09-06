@@ -85,25 +85,40 @@ function decrypt(encryptedText: string): string {
  * weer 'wachtend', zodat de werker de mailbox de eerstvolgende ronde meeneemt.
  * Mag het opslaan zelf nooit laten falen.
  */
-async function herstelSyncStatus(userId: string): Promise<void> {
+async function herstelSyncStatus(userId: string, accountId?: string | null): Promise<void> {
   const nu = new Date().toISOString()
   try {
-    const { error: stateErr } = await supabaseAdmin
-      .from('email_sync_state')
-      .update({ status: 'ok', laatste_fout: null, laatste_fout_op: null })
-      .eq('user_id', userId)
+    // Per postvak: zonder dit filter zet het opslaan van postvak A ook de
+    // storingsmelding van postvak B op 'ok' en verdwijnt die uit beeld zonder
+    // dat er iets aan verholpen is. account_id komt uit migratie 245; ontbreekt
+    // de kolom, dan is er per definitie één postvak en klopt het oude filter.
+    const staatFilter = () => {
+      const vraag = supabaseAdmin.from('email_sync_state').update({ status: 'ok', laatste_fout: null, laatste_fout_op: null })
+      return accountId ? vraag.eq('account_id', accountId) : vraag.eq('user_id', userId)
+    }
+    let stateErr = (await staatFilter()).error
+    if (stateErr && accountId && isOnbekendeSleutel(stateErr)) {
+      stateErr = (await supabaseAdmin
+        .from('email_sync_state')
+        .update({ status: 'ok', laatste_fout: null, laatste_fout_op: null })
+        .eq('user_id', userId)).error
+    }
     if (stateErr) console.warn('[email-settings] sync-status herstellen mislukt:', stateErr.message)
 
     // Eén 'mislukt'-taak terugzetten: de partiele unieke index laat maar één
     // open taak per mailbox toe, dus niet blind alle rijen tegelijk.
-    const { data: mislukt } = await supabaseAdmin
+    const misluktVraag = supabaseAdmin
       .from('mailsync_taken')
       .select('id')
       .eq('user_id', userId)
       .eq('status', 'mislukt')
       .order('updated_at', { ascending: false })
       .limit(1)
-      .maybeSingle()
+    const { data: mislukt } = await (accountId
+      ? misluktVraag.eq('account_id', accountId).maybeSingle().then(async (uit) => (uit.error && isOnbekendeSleutel(uit.error)
+        ? await supabaseAdmin.from('mailsync_taken').select('id').eq('user_id', userId).eq('status', 'mislukt').order('updated_at', { ascending: false }).limit(1).maybeSingle()
+        : uit))
+      : misluktVraag.maybeSingle())
     if (mislukt?.id) {
       const { error: taakErr } = await supabaseAdmin
         .from('mailsync_taken')
@@ -127,15 +142,20 @@ async function herstelSyncStatus(userId: string): Promise<void> {
   }
 }
 
-// ── GEDEELD-MET-API: credentials zonder 244 ───────────────────────────────
-// auth_type en de oauth-kolommen komen uit migratie 244. Zolang die niet
-// gedraaid is antwoordt PostgREST met 42703 of PGRST204 en faalt de HELE
+// ── GEDEELD-MET-API: credentials per postvak ──────────────────────────────
+// Een gebruiker kan meer postvakken hebben (migratie 245, activering in 246),
+// dus `.maybeSingle()` op user_id klapt zodra er een tweede rij bijkomt.
+// Volgorde: het meegestuurde account_id, anders het postvak met `is_standaard`,
+// anders de enige rij. auth_type en de oauth-kolommen komen uit migratie 244;
+// ontbreken die, dan antwoordt PostgREST met 42703 of PGRST204 en faalt de HELE
 // select, waarna deze GET 404 gaf en Instellingen "geen mailbox gekoppeld"
-// meldde terwijl de mailbox gewoon bestond. Daarom eerst de volledige select,
-// en pas bij een kolomfout opnieuw met de kolommen van vóór 244.
+// meldde terwijl de mailbox gewoon bestond. Vandaar de terugval op de kolommen
+// van vóór 244.
 // Dezelfde helper hoort in fetch-emails, read-email, prefetch-email-bodies,
-// email-imap-action, send-email en de twee mail-oauth-routes.
+// email-imap-action, backfill-emails, test-email-connection, send-email,
+// cron-verzend-geplande-berichten en de twee mail-oauth-routes.
 interface InstellingenRij {
+  id?: string | null
   gmail_address: string | null
   encrypted_app_password: string | null
   smtp_host: string | null
@@ -156,23 +176,125 @@ function isKolomFout(fout: { code?: string; message?: string } | null): boolean 
 }
 
 /** Kolommen uit 244 mogen ontbreken; de rij zelf moet dan nog wel terugkomen. */
-async function leesInstellingenRij(userId: string, kolommen: string, kolommenVoor244: string): Promise<Record<string, unknown> | null> {
-  const volledig = await supabaseAdmin
-    .from('user_email_settings')
-    .select(kolommen)
-    .eq('user_id', userId)
-    .maybeSingle()
-  if (!volledig.error) return (volledig.data as unknown as Record<string, unknown> | null) ?? null
-  if (!isKolomFout(volledig.error)) return null
-  const oud = await supabaseAdmin
-    .from('user_email_settings')
-    .select(kolommenVoor244)
-    .eq('user_id', userId)
-    .maybeSingle()
-  if (oud.error || !oud.data) return null
-  return { ...(oud.data as unknown as Record<string, unknown>), auth_type: 'wachtwoord', oauth_refresh_token_enc: null }
+async function leesInstellingenRij(
+  userId: string,
+  kolommen: string,
+  kolommenVoor244: string,
+  accountId?: string | null,
+): Promise<Record<string, unknown> | null> {
+  async function haalRij(keuze: 'account' | 'standaard' | 'enige') {
+    const bouw = (kols: string) => {
+      let vraag = supabaseAdmin.from('user_email_settings').select(`id, ${kols}`).eq('user_id', userId)
+      if (keuze === 'account') vraag = vraag.eq('id', accountId as string)
+      if (keuze === 'standaard') vraag = vraag.eq('is_standaard', true)
+      return vraag.maybeSingle()
+    }
+    const volledig = await bouw(kolommen)
+    if (!isKolomFout(volledig.error)) {
+      return { rij: (volledig.data as unknown as Record<string, unknown> | null) ?? null, fout: volledig.error }
+    }
+    const oud = await bouw(kolommenVoor244)
+    const rij = (oud.data as unknown as Record<string, unknown> | null) ?? null
+    return { rij: rij ? { ...rij, auth_type: 'wachtwoord', oauth_refresh_token_enc: null } : null, fout: oud.error }
+  }
+
+  if (accountId) {
+    const uitkomst = await haalRij('account')
+    return uitkomst.fout ? null : uitkomst.rij
+  }
+  // is_standaard bestaat pas sinds migratie 245; ontbreekt de kolom of staan er
+  // meer standaard-rijen, dan beslist de volgende poging.
+  const standaard = await haalRij('standaard')
+  if (!standaard.fout && standaard.rij) return standaard.rij
+  const enige = await haalRij('enige')
+  return enige.fout ? null : enige.rij
 }
-// ── GEDEELD-MET-API EINDE: credentials zonder 244 ─────────────────────────
+
+/**
+ * Alle postvakken van deze gebruiker, met de nieuwste kolommen waar die
+ * bestaan. Drie tiers, want 245 (is_standaard) en 244 (auth_type en de
+ * oauth-kolommen) kunnen los van elkaar ontbreken en een select faalt in zijn
+ * geheel op één onbekende kolom.
+ */
+async function leesPostvakken(userId: string, kolommen: string, kolommenVoor244: string): Promise<Record<string, unknown>[]> {
+  const bouw = (kols: string) => supabaseAdmin
+    .from('user_email_settings')
+    .select(kols)
+    .eq('user_id', userId)
+    .order('created_at', { ascending: true })
+  const met245 = await bouw(`id, is_standaard, ${kolommen}`)
+  if (!met245.error) return (met245.data as unknown as Record<string, unknown>[]) ?? []
+  if (!isKolomFout(met245.error)) return []
+  const met244 = await bouw(`id, ${kolommen}`)
+  if (!met244.error) return (met244.data as unknown as Record<string, unknown>[]) ?? []
+  if (!isKolomFout(met244.error)) return []
+  const oud = await bouw(`id, ${kolommenVoor244}`)
+  if (oud.error) return []
+  return ((oud.data as unknown as Record<string, unknown>[]) ?? []).map((r) => ({ ...r, auth_type: 'wachtwoord', oauth_refresh_token_enc: null }))
+}
+// ── GEDEELD-MET-API EINDE: credentials per postvak ────────────────────────
+
+// ── GEDEELD-MET-API: upsert-ladder ────────────────────────────────────────
+// user_email_settings had UNIQUE (user_id) uit migratie 037; migratie 246 haalt
+// die weg en zet er een partiële unieke index op is_standaard voor terug. Een
+// upsert op user_id geeft daarna 42P10 (geen unieke index bij die kolommen) in
+// plaats van 42703, en juist die code ving de bestaande terugval niet: opslaan
+// zou dan falen, precies de knop die je nodig hebt om een uitgezette mailbox
+// te herstellen. Kennen we het rij-id, dan is een gerichte update altijd beter.
+// Dezelfde ladder staat in api/mail-oauth-callback.ts.
+function isOnbekendeSleutel(fout: { code?: string; message?: string } | null): boolean {
+  if (!fout) return false
+  return fout.code === '42703' || fout.code === '42P10' || fout.code === 'PGRST204'
+    || /column .* does not exist|could not find the .* column|no unique or exclusion constraint/i.test(fout.message || '')
+}
+
+async function schrijfPostvak(velden: Record<string, unknown>, userId: string, postvakId?: string | null, aantalBestaand = 1): Promise<{ error: { message?: string; code?: string } | null }> {
+  if (postvakId) {
+    return await supabaseAdmin.from('user_email_settings').update(velden).eq('id', postvakId)
+  }
+  // Zonder id mag er hooguit één postvak zijn. De terugvallen hieronder raken
+  // álle rijen van deze gebruiker: de upsert op user_id werkt na 246 niet meer
+  // (de sleutel is dan weg) en de update op user_id zou dan beide postvakken
+  // hetzelfde adres geven. Weigeren is het enige veilige antwoord.
+  if (aantalBestaand > 1) {
+    return { error: { message: 'Kies welk postvak je bijwerkt.', code: 'POSTVAK_ONBEKEND' } }
+  }
+  const upsert = await supabaseAdmin.from('user_email_settings').upsert({ ...velden, user_id: userId }, { onConflict: 'user_id' })
+  if (!upsert.error || !isOnbekendeSleutel(upsert.error)) return upsert
+  return await supabaseAdmin.from('user_email_settings').update(velden).eq('user_id', userId)
+}
+/**
+ * Een tweede postvak mag niet ook standaard zijn: migratie 246 legt daar een
+ * unieke index op. Ontbreekt `is_standaard` nog, dan invoegen zonder.
+ */
+async function nieuwPostvak(velden: Record<string, unknown>, userId: string): Promise<{ id: string | null; error: { message?: string; code?: string } | null }> {
+  for (const rij of [{ ...velden, user_id: userId, is_standaard: false }, { ...velden, user_id: userId }]) {
+    const { data, error } = await supabaseAdmin.from('user_email_settings').insert(rij).select('id').maybeSingle()
+    if (!error) return { id: (data?.id as string) ?? null, error: null }
+    if (!isOnbekendeSleutel(error)) return { id: null, error }
+  }
+  return { id: null, error: { message: 'Nieuw postvak aanmaken mislukt' } }
+}
+// ── GEDEELD-MET-API EINDE: upsert-ladder ──────────────────────────────────
+
+/** Eén postvak zoals de client hem krijgt. Wachtwoord en tokens blijven op de server. */
+function naarAntwoord(rij: Record<string, unknown>) {
+  const data = rij as unknown as InstellingenRij & { is_standaard?: boolean | null }
+  return {
+    account_id: (data.id as string) ?? null,
+    gmail_address: data.gmail_address,
+    has_password: !!data.encrypted_app_password,
+    // De tokens zelf verlaten de server nooit, net zomin als het
+    // wachtwoord; de UI hoeft alleen te weten dát er een koppeling is.
+    auth_type: data.auth_type || 'wachtwoord',
+    has_oauth: !!data.oauth_refresh_token_enc,
+    is_standaard: data.is_standaard ?? true,
+    smtp_host: data.smtp_host || 'smtp.gmail.com',
+    smtp_port: data.smtp_port || 587,
+    imap_host: data.imap_host || 'imap.gmail.com',
+    imap_port: data.imap_port || 993,
+  }
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
@@ -187,24 +309,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // database (migratie 004 is nooit gedraaid) en niets schreef hem ooit.
       // De select faalde daardoor volledig, waarna deze GET een 401 gaf en de
       // instellingenpagina terugviel op localStorage.
-      const data = await leesInstellingenRij(userId, INSTELLINGEN_KOLOMMEN, INSTELLINGEN_KOLOMMEN_VOOR_244) as InstellingenRij | null
+      const gevraagdAccount = typeof req.query.account_id === 'string' ? req.query.account_id : null
+      const rijen = await leesPostvakken(userId, INSTELLINGEN_KOLOMMEN, INSTELLINGEN_KOLOMMEN_VOOR_244)
 
-      if (!data) {
+      if (rijen.length === 0) {
         return res.status(404).json({ error: 'Geen email instellingen gevonden' })
       }
 
-      return res.status(200).json({
-        gmail_address: data.gmail_address,
-        has_password: !!data.encrypted_app_password,
-        // De tokens zelf verlaten de server nooit, net zomin als het
-        // wachtwoord; de UI hoeft alleen te weten dát er een koppeling is.
-        auth_type: data.auth_type || 'wachtwoord',
-        has_oauth: !!data.oauth_refresh_token_enc,
-        smtp_host: data.smtp_host || 'smtp.gmail.com',
-        smtp_port: data.smtp_port || 587,
-        imap_host: data.imap_host || 'imap.gmail.com',
-        imap_port: data.imap_port || 993,
-      })
+      const postvakken = rijen.map(naarAntwoord)
+      // Het postvak waar de losse velden over gaan: het gevraagde, anders het
+      // standaardpostvak, anders het eerste. Met precies één postvak is dat
+      // hetzelfde antwoord als voorheen, dus de bestaande UI merkt niets.
+      const gekozen = (gevraagdAccount && postvakken.find((p) => p.account_id === gevraagdAccount))
+        || postvakken.find((p) => p.is_standaard)
+        || postvakken[0]
+
+      return res.status(200).json({ ...gekozen, postvakken })
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : 'Fout bij ophalen'
       return res.status(401).json({ error: msg })
@@ -220,12 +340,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // stilzwijgend ook de eerste.
       const accountId = typeof req.query.account_id === 'string' ? req.query.account_id : (req.body?.account_id as string | undefined)
       if (accountId) {
-        const { error } = await supabaseAdmin
+        // .select() erbij: zonder de rij terug te vragen meldt een delete op
+        // een id van iemand anders vrolijk succes.
+        const { data: weg, error } = await supabaseAdmin
           .from('user_email_settings')
           .delete()
           .eq('user_id', userId)
           .eq('id', accountId)
+          .select('id')
         if (error) return res.status(400).json({ error: 'Postvak ontkoppelen mislukt' })
+        if (!weg || weg.length === 0) {
+          return res.status(404).json({ error: 'Dit postvak bestaat niet of hoort niet bij jou.' })
+        }
         return res.status(200).json({ success: true, message: 'Postvak ontkoppeld' })
       }
       const { data: rijen } = await supabaseAdmin
@@ -251,10 +377,49 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const userId = await verifyUser(req)
     const { gmail_address, app_password, smtp_host, smtp_port, imap_host, imap_port, auth_type } = req.body
+    const gevraagdAccountId = typeof req.body?.account_id === 'string' && req.body.account_id ? req.body.account_id : null
+    // De client zegt expliciet of dit een nieuw postvak is. Zonder dat signaal
+    // is "één bestaand postvak" niet te onderscheiden van "postvak toevoegen",
+    // en zou toevoegen het eerste postvak overschrijven.
+    const wilNieuw = req.body?.nieuw === true
 
     if (!gmail_address) {
       return res.status(400).json({ error: 'Email adres is verplicht' })
     }
+
+    // Welk postvak dit formulier bijwerkt. Met een account_id is dat expliciet.
+    // Zonder account_id: één bestaand postvak is dát postvak (adres wijzigen is
+    // dan nog steeds van mailbox wisselen, precies zoals nu). Zijn er meer, dan
+    // beslist het adres, en anders is het een nieuw postvak — blind upserten op
+    // user_id zou daar het verkeerde postvak overschrijven.
+    const bestaandeRijen = await leesPostvakken(userId, INSTELLINGEN_KOLOMMEN, INSTELLINGEN_KOLOMMEN_VOOR_244)
+    const opAdres = bestaandeRijen.find(
+      (r) => String(r.gmail_address || '').toLowerCase() === String(gmail_address).toLowerCase(),
+    )
+    let doelPostvakId: string | null = null
+    if (gevraagdAccountId) {
+      const eigen = bestaandeRijen.find((r) => r.id === gevraagdAccountId)
+      if (!eigen) {
+        return res.status(404).json({ error: 'Dit postvak bestaat niet of hoort niet bij jou.' })
+      }
+      doelPostvakId = gevraagdAccountId
+    } else if (wilNieuw) {
+      if (opAdres) {
+        return res.status(409).json({ error: 'Dit adres is al gekoppeld als postvak.' })
+      }
+      doelPostvakId = null
+    } else if (bestaandeRijen.length === 1) {
+      doelPostvakId = (bestaandeRijen[0].id as string) ?? null
+    } else if (opAdres) {
+      doelPostvakId = (opAdres.id as string) ?? null
+    }
+    // Meer dan één postvak en geen aanwijzing wélk: niet raden. Zonder deze
+    // poort valt een adreswijziging terug op een update op user_id (die beide
+    // postvakken hetzelfde adres geeft) of maakt hij ongevraagd een derde rij.
+    if (!doelPostvakId && !wilNieuw && bestaandeRijen.length > 1) {
+      return res.status(409).json({ error: 'Je hebt meerdere postvakken. Kies eerst welk postvak je bijwerkt.' })
+    }
+    const wordtNieuwPostvak = !doelPostvakId && (bestaandeRijen.length > 0 || wilNieuw)
 
     const gevraagdAuthType = auth_type === 'google' || auth_type === 'microsoft' || auth_type === 'wachtwoord'
       ? (auth_type as string)
@@ -276,12 +441,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (!wijzigtWachtwoord) {
+      // Een nieuw postvak zonder wachtwoord bestaat niet: zonder deze poort
+      // valt een POST met nieuw=true en app_password 'UNCHANGED' hieronder in
+      // het bewerkpad en overschrijft hij het bestaande postvak.
+      if (wordtNieuwPostvak) {
+        return res.status(400).json({ error: 'Een nieuw postvak heeft een app-wachtwoord nodig.' })
+      }
       // Geen nieuw wachtwoord: vereist dat er al één is opgeslagen, of een
       // OAuth-koppeling die het wachtwoord vervangt.
       const bestaand = await leesInstellingenRij(
         userId,
         'encrypted_app_password, auth_type, oauth_refresh_token_enc',
         'encrypted_app_password',
+        doelPostvakId,
       ) as { encrypted_app_password?: string | null; auth_type?: string | null; oauth_refresh_token_enc?: string | null } | null
       const heeftOauth = (bestaand?.auth_type === 'google' || bestaand?.auth_type === 'microsoft')
         && !!bestaand?.oauth_refresh_token_enc
@@ -306,18 +478,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // auth_type komt uit migratie 244. Zolang die niet gedraaid is zou het
       // opslaan van een gewoon app-wachtwoord hier hard falen; dan schrijven we
       // de rest en laten we auth_type weg (wachtwoord is toch de standaard).
-      let { error } = await supabaseAdmin.from('user_email_settings').update(velden).eq('user_id', userId)
+      let { error } = await schrijfPostvak(velden as Record<string, unknown>, userId, doelPostvakId, bestaandeRijen.length)
       if (error && isKolomFout(error)) {
         const { auth_type: _weg, ...zonderAuthType } = velden as Record<string, unknown>
-        const tweede = await supabaseAdmin.from('user_email_settings').update(zonderAuthType).eq('user_id', userId)
+        const tweede = await schrijfPostvak(zonderAuthType, userId, doelPostvakId, bestaandeRijen.length)
         error = tweede.error
       }
       if (error) {
         console.error('Supabase update fout:', JSON.stringify(error))
+        if (error.code === 'POSTVAK_ONBEKEND') {
+          return res.status(409).json({ error: error.message || 'Kies eerst welk postvak je bijwerkt.' })
+        }
         return res.status(500).json({ error: `Kon email instellingen niet opslaan: ${error.message || error.code || JSON.stringify(error)}` })
       }
-      await herstelSyncStatus(userId)
-      return res.status(200).json({ success: true, message: 'Email instellingen opgeslagen' })
+      await herstelSyncStatus(userId, doelPostvakId)
+      return res.status(200).json({ success: true, account_id: doelPostvakId, message: 'Email instellingen opgeslagen' })
     }
 
     // Wachtwoord alléén AES-versleuteld opslaan. De oude b64-fallback schreef
@@ -334,27 +509,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
     }
 
-    const { error } = await supabaseAdmin
-      .from('user_email_settings')
-      .upsert({
-        ...basisVelden,
-        encrypted_app_password: encryptedPassword,
-        // Een app-wachtwoord opslaan is het einde van een OAuth-koppeling,
-        // welk auth_type het formulier ook meestuurt: laat je de tokens staan,
-        // dan kan een leespad stilletjes op de oude koppeling terugvallen.
-        auth_type: 'wachtwoord',
-        oauth_refresh_token_enc: null,
-        oauth_access_token_enc: null,
-        oauth_token_verloopt_op: null,
-      }, { onConflict: 'user_id' })
+    const velden = {
+      ...basisVelden,
+      encrypted_app_password: encryptedPassword,
+      // Een app-wachtwoord opslaan is het einde van een OAuth-koppeling,
+      // welk auth_type het formulier ook meestuurt: laat je de tokens staan,
+      // dan kan een leespad stilletjes op de oude koppeling terugvallen.
+      auth_type: 'wachtwoord',
+      oauth_refresh_token_enc: null,
+      oauth_access_token_enc: null,
+      oauth_token_verloopt_op: null,
+    }
+    const uitkomst = wordtNieuwPostvak
+      ? await nieuwPostvak(velden, userId)
+      : await schrijfPostvak(velden, userId, doelPostvakId, bestaandeRijen.length)
+    const error = uitkomst.error
 
     if (error) {
       console.error('Supabase upsert fout:', JSON.stringify(error))
+      // Vóór migratie 246 staat er nog een unieke sleutel op user_id: een
+      // tweede postvak geeft dan 23505. Dat is geen storing maar een stand van
+      // zaken, dus geen rauwe Postgres-melding op het scherm.
+      if (error.code === '23505') {
+        return res.status(409).json({ error: 'Een tweede postvak kan pas nadat migratie 246 gedraaid is.' })
+      }
+      if (error.code === 'POSTVAK_ONBEKEND') {
+        return res.status(409).json({ error: error.message || 'Kies eerst welk postvak je bijwerkt.' })
+      }
       return res.status(500).json({ error: `Kon email instellingen niet opslaan: ${error.message || error.code || JSON.stringify(error)}` })
     }
 
-    await herstelSyncStatus(userId)
-    return res.status(200).json({ success: true, message: 'Email instellingen opgeslagen' })
+    const nieuweId = ('id' in uitkomst ? (uitkomst.id as string | null) : doelPostvakId) ?? null
+    await herstelSyncStatus(userId, nieuweId)
+    return res.status(200).json({ success: true, account_id: nieuweId, message: 'Email instellingen opgeslagen' })
   } catch (error: unknown) {
     console.error('Email settings fout:', error)
     const msg = error instanceof Error ? error.message : 'Fout bij opslaan'

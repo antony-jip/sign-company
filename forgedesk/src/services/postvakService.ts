@@ -1,7 +1,7 @@
 import { supabase, isSupabaseConfigured } from './supabaseClient'
 import { getOrgId } from './supabaseHelpers'
 import { logger } from '@/utils/logger'
-import type { Postvak, PostvakSoort } from '@/lib/mail/types'
+import type { Postvak, PostvakSoort, SyncStatus } from '@/lib/mail/types'
 
 /**
  * De postvakken van deze gebruiker plus de gedeelde postvakken van de
@@ -28,6 +28,18 @@ export function isZonder245(fout: unknown): boolean {
 
 const KOLOMMEN_245 = 'id, gmail_address, naam, is_standaard, soort, organisatie_id, user_id'
 
+/**
+ * Of de 245-kolommen bij de laatste ophaalronde leesbaar waren. `null` zolang
+ * er nog niets is opgehaald. De instellingen-UI hangt haar postvakkenlijst
+ * hieraan op: zonder die kolommen is er per definitie één postvak en hoort er
+ * geen lijst en geen "Postvak toevoegen" te staan.
+ */
+let kolommen245Leesbaar: boolean | null = null
+
+export function postvakkenUitgebreid(): boolean {
+  return kolommen245Leesbaar === true
+}
+
 type Rij = {
   id: string
   gmail_address?: string | null
@@ -53,6 +65,7 @@ function naarPostvak(rij: Rij): Postvak {
 
 /** Het ene postvak van vóór migratie 245: adres uit de kolom die wél leesbaar is. */
 async function enkelPostvak(userId: string): Promise<Postvak[]> {
+  kolommen245Leesbaar = false
   if (!supabase) return []
   const { data, error } = await supabase
     .from('user_email_settings')
@@ -92,6 +105,7 @@ export async function getPostvakken(): Promise<Postvak[]> {
 
   const postvakken = ((data || []) as unknown as Rij[]).map(naarPostvak)
   if (postvakken.length === 0) return enkelPostvak(userId)
+  kolommen245Leesbaar = true
   if (!postvakken.some((p) => p.isStandaard)) postvakken[0].isStandaard = true
   return postvakken
 }
@@ -120,6 +134,133 @@ export async function hernoem(id: string, naam: string): Promise<void> {
   if (!schoon) throw new Error('Geef het postvak een naam')
   const { error } = await supabase.from('user_email_settings').update({ naam: schoon }).eq('id', id)
   if (error) throw new Error(vertaalFout(error))
+}
+
+/**
+ * De gezondheid per postvak, uit `email_sync_state` (rij inbox). `account_id`
+ * op die tabel komt uit migratie 245: zonder die kolom is er één rij voor de
+ * hele gebruiker, en dan krijgt elk postvak diezelfde stand. Postvakken zonder
+ * rij hebben nog nooit gesynchroniseerd en staan er niet in.
+ */
+export async function getPostvakGezondheid(postvakken: Postvak[]): Promise<Record<string, SyncStatus>> {
+  if (!isSupabaseConfigured() || !supabase || postvakken.length === 0) return {}
+  const client = supabase
+  const { data: { session } } = await client.auth.getSession()
+  const userId = session?.user?.id
+  if (!userId) return {}
+
+  const alsStatus = (rij: { status?: string | null; laatste_fout?: string | null; laatste_succes_op?: string | null }): SyncStatus => ({
+    status: (rij.status as SyncStatus['status']) || 'ok',
+    laatsteFout: rij.laatste_fout || undefined,
+    laatsteSucces: rij.laatste_succes_op || undefined,
+  })
+
+  const perPostvak = await client
+    .from('email_sync_state')
+    .select('account_id, status, laatste_fout, laatste_succes_op')
+    .eq('user_id', userId)
+    .eq('folder', 'inbox')
+  if (!perPostvak.error) {
+    const uit: Record<string, SyncStatus> = {}
+    type Gezondheidsrij = { account_id: string | null; status?: string | null; laatste_fout?: string | null; laatste_succes_op?: string | null }
+    for (const rij of (perPostvak.data || []) as Gezondheidsrij[]) {
+      if (rij.account_id) uit[rij.account_id] = alsStatus(rij)
+    }
+    if (Object.keys(uit).length > 0) return uit
+  }
+
+  const enkel = await client
+    .from('email_sync_state')
+    .select('status, laatste_fout, laatste_succes_op')
+    .eq('user_id', userId)
+    .eq('folder', 'inbox')
+    .limit(1)
+    .maybeSingle()
+  if (enkel.error || !enkel.data) return {}
+  const status = alsStatus(enkel.data)
+  return Object.fromEntries(postvakken.map((p) => [p.id, status]))
+}
+
+export interface PostvakInvoer {
+  /** Bestaand postvak bijwerken. Leeg laten koppelt er een nieuwe. */
+  accountId?: string
+  /** Expliciet een postvak toevoegen. Zonder dit werkt de server het bestaande
+   *  postvak bij, ook als het adres in het formulier gewijzigd is (van mailbox
+   *  wisselen). Alleen de UI weet welke van de twee bedoeld is. */
+  nieuw?: boolean
+  adres: string
+  /** Leeg = wachtwoord ongewijzigd; de server houdt de opgeslagen versie. */
+  wachtwoord: string
+  smtpHost: string
+  smtpPort: number
+  imapHost: string
+  imapPort: number
+}
+
+async function sessieToken(): Promise<string> {
+  if (!supabase) throw new Error('Geen verbinding')
+  const { data: { session } } = await supabase.auth.getSession()
+  const token = session?.access_token
+  if (!token) throw new Error('Niet ingelogd')
+  return token
+}
+
+/**
+ * Opslaan loopt via api/email-settings: alleen de server heeft de sleutel om
+ * het wachtwoord te versleutelen. Met `accountId` werkt hij dat ene postvak
+ * bij, zonder id maakt hij een nieuwe rij als er al één staat.
+ *
+ * Een server die dat laatste nog niet kan zou de bestaande rij bijwerken in
+ * plaats van er een toe te voegen. Dat gaat hier niet stil voorbij: bij een
+ * nieuw postvak telt deze functie de postvakken vóór en na, en meldt het als
+ * er niets bijgekomen is.
+ */
+export async function slaPostvakOp(invoer: PostvakInvoer): Promise<void> {
+  const token = await sessieToken()
+  const vooraf = invoer.nieuw ? await getPostvakken().catch(() => []) : []
+
+  const res = await fetch('/api/email-settings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({
+      ...(invoer.accountId ? { account_id: invoer.accountId } : {}),
+      ...(invoer.nieuw ? { nieuw: true } : {}),
+      gmail_address: invoer.adres,
+      app_password: invoer.wachtwoord || 'UNCHANGED',
+      smtp_host: invoer.smtpHost || 'smtp.gmail.com',
+      smtp_port: invoer.smtpPort || 587,
+      imap_host: invoer.imapHost || 'imap.gmail.com',
+      imap_port: invoer.imapPort || 993,
+    }),
+  })
+  const antwoord: { error?: string; account_id?: string | null } = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(antwoord?.error || `Opslaan mislukt: ${res.status}`)
+
+  if (!invoer.nieuw || vooraf.length === 0) return
+  const bekend = new Set(vooraf.map((p) => p.id))
+  if (antwoord.account_id && bekend.has(antwoord.account_id)) {
+    throw new Error('De server heeft je bestaande postvak bijgewerkt in plaats van er een toe te voegen. Een tweede postvak kan pas nadat migratie 246 gedraaid is; controleer het adres van je postvak hierboven.')
+  }
+  const na = await getPostvakken().catch(() => [])
+  if (na.length <= vooraf.length) {
+    throw new Error('De server heeft geen tweede postvak aangemaakt. Controleer je bestaande postvak: mogelijk is dat bijgewerkt in plaats van dat er een postvak bij kwam.')
+  }
+}
+
+/**
+ * Eén postvak ontkoppelen. De mail blijft staan: DELETE haalt alleen de rij uit
+ * `user_email_settings` weg, dus de koppeling en het wachtwoord. Zonder id
+ * weigert de server zodra er meer postvakken zijn, want dan is niet te zien
+ * welke bedoeld wordt.
+ */
+export async function ontkoppelPostvak(accountId?: string): Promise<void> {
+  const token = await sessieToken()
+  const url = accountId ? `/api/email-settings?account_id=${encodeURIComponent(accountId)}` : '/api/email-settings'
+  const res = await fetch(url, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
+  if (!res.ok) {
+    const fout: { error?: string } = await res.json().catch(() => ({}))
+    throw new Error(fout?.error || `Ontkoppelen mislukt: ${res.status}`)
+  }
 }
 
 function vertaalFout(fout: unknown): string {

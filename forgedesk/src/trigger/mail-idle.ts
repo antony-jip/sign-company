@@ -73,6 +73,12 @@ const LOPENDE_STATUSSEN = ['PENDING_VERSION', 'QUEUED', 'DEQUEUED', 'EXECUTING',
 
 interface IdleLading {
   userId: string
+  /**
+   * Rij-id van user_email_settings (migratie 245). Ontbreekt bij een run die
+   * nog van vóór deze wijziging in de wachtrij staat; die pakt dan het eerste
+   * postvak van de gebruiker, precies zoals voorheen.
+   */
+  accountId?: string | null
   ronde?: number
 }
 
@@ -87,11 +93,23 @@ interface IdleUitkomst {
 interface Postvak {
   id: string | null
   user_id: string
+  /** 'persoonlijk' of 'gedeeld' (migratie 245). Zonder die kolom persoonlijk. */
+  soort: string
   gmail_address: string
   imap_host: string
   imap_port: number
   auth_type: string
   encrypted_app_password: string | null
+}
+
+/**
+ * Waar één IDLE-verbinding bij hoort. Twee postvakken van dezelfde gebruiker
+ * zijn twee losse mailaccounts en krijgen dus elk een eigen sleutel; zonder
+ * `id` (migratie 245 niet gedraaid) valt hij terug op de gebruiker en is dit
+ * exact het oude gedrag.
+ */
+function postvakSleutel(postvak: Postvak): string {
+  return postvak.id || postvak.user_id
 }
 
 function basisUrl(): string {
@@ -140,14 +158,14 @@ function ontsleutel(waarde: string): string {
 /**
  * Kolommen uit een migratie die nog niet gedraaid hoeft te zijn mogen
  * ontbreken. Bij een onbekende kolom valt de select een stap terug: eerst
- * zonder is_verified, dan zonder `id` (migratie 245) en tenslotte ook zonder
- * `auth_type` (migratie 244). Zonder die laatste stap vond de IDLE-worker op
- * een database van vóór 244 stil nul postvakken.
+ * zonder is_verified, dan zonder `soort` en `id` (migratie 245) en tenslotte
+ * ook zonder `auth_type` (migratie 244). Zonder die laatste stap vond de
+ * IDLE-worker op een database van vóór 244 stil nul postvakken.
  */
 async function haalPostvakken(supabase: SupabaseClient, userId?: string): Promise<Postvak[]> {
   const basis = 'user_id, gmail_address, imap_host, imap_port, auth_type, encrypted_app_password'
   const zonderAuthType = 'user_id, gmail_address, imap_host, imap_port, encrypted_app_password'
-  for (const kolommen of [`id, ${basis}, is_verified`, `id, ${basis}`, zonderAuthType]) {
+  for (const kolommen of [`id, ${basis}, soort, is_verified`, `id, ${basis}, soort`, `id, ${basis}`, zonderAuthType]) {
     let vraag = supabase.from('user_email_settings').select(kolommen)
     if (userId) vraag = vraag.eq('user_id', userId)
     const { data, error } = await vraag
@@ -166,6 +184,7 @@ async function haalPostvakken(supabase: SupabaseClient, userId?: string): Promis
       .map((r) => ({
         id: (r.id as string) ?? null,
         user_id: r.user_id as string,
+        soort: (r.soort as string) || 'persoonlijk',
         gmail_address: r.gmail_address as string,
         imap_host: (r.imap_host as string) || 'imap.gmail.com',
         imap_port: Number(r.imap_port) || 993,
@@ -195,15 +214,22 @@ async function haalToegangstokenViaApi(userId: string, cronSecret: string): Prom
   return antwoord.access_token
 }
 
-/** idle_laatst_op komt uit migratie 245 en mag ontbreken. */
-async function tikIdleTijdstip(supabase: SupabaseClient, userId: string): Promise<void> {
-  const { error } = await supabase
-    .from('email_sync_state')
-    .update({ idle_laatst_op: new Date().toISOString() })
-    .eq('user_id', userId)
-    .eq('folder', 'inbox')
-  if (error && error.code !== '42703') {
-    logger.warn('idle_laatst_op schrijven mislukt', { userId, fout: error.message })
+/**
+ * idle_laatst_op komt uit migratie 245 en mag ontbreken, net als account_id.
+ * Met twee postvakken heeft één gebruiker twee inbox-rijen, dus mag de tik niet
+ * op user_id alleen: dan tikt hij ze allebei aan.
+ */
+async function tikIdleTijdstip(supabase: SupabaseClient, postvak: Postvak): Promise<void> {
+  const velden = { idle_laatst_op: new Date().toISOString() }
+  for (const perAccount of postvak.id ? [true, false] : [false]) {
+    const vraag = supabase.from('email_sync_state').update(velden).eq('folder', 'inbox')
+    const { error } = perAccount
+      ? await vraag.eq('account_id', postvak.id)
+      : await vraag.eq('user_id', postvak.user_id)
+    if (!error) return
+    if (isOnbekendeSleutel(error)) continue
+    logger.warn('idle_laatst_op schrijven mislukt', { userId: postvak.user_id, fout: error.message })
+    return
   }
 }
 
@@ -227,8 +253,34 @@ function leesFoutTeller(laatsteFout: string | null | undefined): number {
  * opgegeven kolommen te vinden is.
  */
 function isOnbekendeSleutel(error: { code?: string; message: string }): boolean {
-  return error.code === '42703' || error.code === '42P10'
-    || /column .* does not exist|no unique or exclusion constraint/i.test(error.message)
+  return error.code === '42703' || error.code === '42P10' || error.code === 'PGRST204'
+    || /column .* does not exist|could not find the .* column|no unique or exclusion constraint/i.test(error.message)
+}
+
+/**
+ * De foutteller van dít postvak. Met twee postvakken staan er twee idle-rijen
+ * onder dezelfde gebruiker, dus is `maybeSingle()` op user_id niet meer genoeg.
+ * Een rij zonder account_id is van vóór migratie 245 en hoort bij het enige
+ * postvak dat die gebruiker toen had.
+ */
+async function leesIdleFoutTeller(supabase: SupabaseClient, postvak: Postvak): Promise<number> {
+  for (const kolommen of ['account_id, laatste_fout', 'laatste_fout']) {
+    const { data, error } = await supabase
+      .from('email_sync_state')
+      .select(kolommen)
+      .eq('user_id', postvak.user_id)
+      .eq('folder', 'idle')
+    if (error) {
+      if (isOnbekendeSleutel(error)) continue
+      logger.warn('IDLE-foutteller niet leesbaar', { userId: postvak.user_id, fout: error.message })
+      return 0
+    }
+    const rijen = (data || []) as unknown as Array<Record<string, unknown>>
+    const eigen = postvak.id ? rijen.find((r) => r.account_id === postvak.id) : undefined
+    const rij = eigen ?? rijen.find((r) => !r.account_id) ?? rijen[0]
+    return leesFoutTeller(rij?.laatste_fout as string | undefined)
+  }
+  return 0
 }
 
 async function upsertIdleStaat(supabase: SupabaseClient, postvak: Postvak, velden: Record<string, unknown>): Promise<string | null> {
@@ -303,16 +355,15 @@ export const mailIdleWerker: MailIdleTaak = task({
     if (!cronSecret) return { reden: 'geen-cron-secret' }
 
     const postvakken = await haalPostvakken(supabase, lading.userId)
-    const postvak = postvakken[0]
+    // Een run zonder accountId komt uit de wachtrij van vóór deze wijziging, of
+    // uit een database zonder migratie 245: dan het eerste postvak, zoals altijd.
+    const postvak = lading.accountId
+      ? postvakken.find((p) => p.id === lading.accountId)
+      : postvakken[0]
     if (!postvak) return { reden: 'geen-postvak' }
+    const sleutel = postvakSleutel(postvak)
 
-    const { data: idleRij } = await supabase
-      .from('email_sync_state')
-      .select('laatste_fout')
-      .eq('user_id', lading.userId)
-      .eq('folder', 'idle')
-      .maybeSingle()
-    const vorigeTeller = leesFoutTeller(idleRij?.laatste_fout as string | undefined)
+    const vorigeTeller = await leesIdleFoutTeller(supabase, postvak)
 
     let auth: { user: string; pass?: string; accessToken?: string }
     try {
@@ -366,7 +417,7 @@ export const mailIdleWerker: MailIdleTaak = task({
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cronSecret}` },
           // snel: de sales- en lead-sweeps horen bij de cron van drie minuten,
           // niet bij een signaal waar iemand op zit te wachten.
-          body: JSON.stringify({ folder: 'INBOX', limit: 50, snel: true, service_user_id: lading.userId }),
+          body: JSON.stringify({ folder: 'INBOX', limit: 50, snel: true, service_user_id: lading.userId, ...(postvak.id ? { account_id: postvak.id } : {}) }),
           signal: AbortSignal.timeout(45_000),
         })
         if (!respons.ok) {
@@ -381,7 +432,7 @@ export const mailIdleWerker: MailIdleTaak = task({
         logger.warn('IDLE-sync gooide', { userId: lading.userId, err: err instanceof Error ? err.message : String(err) })
       } finally {
         bezig = false
-        await tikIdleTijdstip(supabase, lading.userId)
+        await tikIdleTijdstip(supabase, postvak)
       }
     }
 
@@ -401,7 +452,7 @@ export const mailIdleWerker: MailIdleTaak = task({
       }
 
       await schrijfIdleSucces(supabase, postvak)
-      logger.info('IDLE open', { userId: lading.userId, ronde: lading.ronde ?? 1, host: postvak.imap_host })
+      logger.info('IDLE open', { userId: lading.userId, accountId: postvak.id, ronde: lading.ronde ?? 1, host: postvak.imap_host })
 
       await new Promise<void>((klaar) => {
         let gestopt = false
@@ -448,13 +499,13 @@ export const mailIdleWerker: MailIdleTaak = task({
     let opnieuw = false
     if (maxPostvakken() > 0 && !teKort) {
       try {
-        await tasks.trigger<MailIdleTaak>(TAAK_ID, { userId: lading.userId, ronde: (lading.ronde ?? 1) + 1 }, {
-          tags: ['mail-idle', `mailbox:${lading.userId}`],
-          concurrencyKey: lading.userId,
+        await tasks.trigger<MailIdleTaak>(TAAK_ID, { userId: lading.userId, accountId: postvak.id, ronde: (lading.ronde ?? 1) + 1 }, {
+          tags: ['mail-idle', `mailbox:${sleutel}`],
+          concurrencyKey: sleutel,
         })
         opnieuw = true
       } catch (err) {
-        logger.warn('IDLE niet opnieuw ingepland', { userId: lading.userId, err: err instanceof Error ? err.message : String(err) })
+        logger.warn('IDLE niet opnieuw ingepland', { userId: lading.userId, accountId: postvak.id, err: err instanceof Error ? err.message : String(err) })
       }
     }
 
@@ -478,26 +529,65 @@ export const mailIdleStart = schedules.task({
     if (!process.env.CRON_SECRET) return { reden: 'geen-cron-secret', gestart: 0 }
 
     const supabase = getSupabaseAdmin()
-    const postvakken = await haalPostvakken(supabase)
+    const alle = await haalPostvakken(supabase)
+    // Twee postvakken van dezelfde gebruiker zijn twee losse mailaccounts en
+    // tellen dus niet bij elkaar op. Een gedeeld postvak is het omgekeerde: één
+    // mailaccount waar meerdere collega's bij kunnen, dus daar hoort precies
+    // één IDLE-verbinding bij, hoeveel rijen er ook naar wijzen. Gmail telt
+    // open verbindingen per account en blokkeert wie er te veel opent.
+    const gezien = new Set<string>()
+    const postvakken: Postvak[] = []
+    for (const p of alle) {
+      const sleutel = p.soort === 'gedeeld' ? `gedeeld:${p.gmail_address.toLowerCase()}` : `postvak:${postvakSleutel(p)}`
+      if (gezien.has(sleutel)) continue
+      gezien.add(sleutel)
+      postvakken.push(p)
+    }
     if (postvakken.length === 0) return { kandidaten: 0, gestart: 0 }
 
-    const { data: staat } = await supabase
-      .from('email_sync_state')
-      .select('user_id, folder, status, laatste_fout, laatste_fout_op, laatste_succes_op')
-      .in('folder', ['inbox', 'idle'])
+    const staatKolommen = 'account_id, user_id, folder, status, laatste_fout, laatste_fout_op, laatste_succes_op'
+    let staat: unknown[] | null = null
+    for (const kolommen of [staatKolommen, staatKolommen.replace('account_id, ', '')]) {
+      const { data, error } = await supabase
+        .from('email_sync_state')
+        .select(kolommen)
+        .in('folder', ['inbox', 'idle'])
+      if (error) {
+        if (isOnbekendeSleutel(error)) continue
+        logger.warn('IDLE: sync-state niet leesbaar', { fout: error.message })
+        break
+      }
+      staat = data as unknown[]
+      break
+    }
 
     const rijen = (staat || []) as Array<Record<string, unknown>>
-    const inbox = new Map(rijen.filter((r) => r.folder === 'inbox').map((r) => [r.user_id as string, r]))
-    const idle = new Map(rijen.filter((r) => r.folder === 'idle').map((r) => [r.user_id as string, r]))
+    // Per postvak als account_id er staat, anders per gebruiker. Een rij zonder
+    // account_id is van vóór migratie 245 en hoort bij het enige postvak dat de
+    // gebruiker toen had, dus die blijft onder zijn user_id vindbaar.
+    const indexeer = (folder: string) => {
+      const perSleutel = new Map<string, Record<string, unknown>>()
+      for (const r of rijen) {
+        if (r.folder !== folder) continue
+        const accountId = r.account_id as string | undefined
+        if (accountId) perSleutel.set(accountId, r)
+        else if (!perSleutel.has(r.user_id as string)) perSleutel.set(r.user_id as string, r)
+      }
+      return perSleutel
+    }
+    const inbox = indexeer('inbox')
+    const idle = indexeer('idle')
+    const staatVan = (bron: Map<string, Record<string, unknown>>, p: Postvak) =>
+      (p.id ? bron.get(p.id) : undefined) ?? bron.get(p.user_id)
     const nu = Date.now()
 
     const kandidaten = postvakken
       .filter((p) => {
-        const status = inbox.get(p.user_id)?.status as string | undefined
+        const status = staatVan(inbox, p)?.status as string | undefined
         // Een mailbox met een geweigerd wachtwoord of een uitgezette sync komt
         // hier niet aan de deur kloppen; die wacht op een nieuwe koppeling.
         if (status === 'fout' || status === 'uitgezet') return false
-        const idleRij = idle.get(p.user_id)
+        const idleRij = staatVan(idle, p)
         const teller = leesFoutTeller(idleRij?.laatste_fout as string | undefined)
         if (teller >= FOUT_DREMPEL) {
           const sinds = idleRij?.laatste_fout_op ? Date.parse(idleRij.laatste_fout_op as string) : 0
@@ -506,8 +596,8 @@ export const mailIdleStart = schedules.task({
         return true
       })
       .sort((a, b) => {
-        const ta = Date.parse((inbox.get(a.user_id)?.laatste_succes_op as string) || '') || 0
-        const tb = Date.parse((inbox.get(b.user_id)?.laatste_succes_op as string) || '') || 0
+        const ta = Date.parse((staatVan(inbox, a)?.laatste_succes_op as string) || '') || 0
+        const tb = Date.parse((staatVan(inbox, b)?.laatste_succes_op as string) || '') || 0
         return tb - ta
       })
       .slice(0, max)
@@ -515,11 +605,17 @@ export const mailIdleStart = schedules.task({
     let gestart = 0
     let lopend = 0
     for (const postvak of kandidaten) {
+      const sleutel = postvakSleutel(postvak)
+      // Ook op de oude tag zoeken: een run die vóór deze uitrol is ingepland
+      // draagt `mailbox:<user_id>` en zou anders onzichtbaar zijn, met twee
+      // verbindingen naar hetzelfde postvak als gevolg. De tags zijn een OR, dus
+      // dit blokkeert hoogstens één ronde te veel — en dat is de goede kant op.
+      const tags = sleutel === postvak.user_id ? [`mailbox:${sleutel}`] : [`mailbox:${sleutel}`, `mailbox:${postvak.user_id}`]
       let alLopend: boolean
       try {
         const bestaande = await runs.list({
           taskIdentifier: TAAK_ID,
-          tag: `mailbox:${postvak.user_id}`,
+          tag: tags,
           status: [...LOPENDE_STATUSSEN],
           limit: 1,
         })
@@ -530,14 +626,15 @@ export const mailIdleStart = schedules.task({
         // en blokkeert accounts die er te veel openen.
         logger.warn('IDLE: lopende runs niet op te vragen, niet gestart', {
           userId: postvak.user_id,
+          accountId: postvak.id,
           err: err instanceof Error ? err.message : String(err),
         })
         continue
       }
       if (alLopend) { lopend += 1; continue }
-      await tasks.trigger<MailIdleTaak>(TAAK_ID, { userId: postvak.user_id, ronde: 1 }, {
-        tags: ['mail-idle', `mailbox:${postvak.user_id}`],
-        concurrencyKey: postvak.user_id,
+      await tasks.trigger<MailIdleTaak>(TAAK_ID, { userId: postvak.user_id, accountId: postvak.id, ronde: 1 }, {
+        tags: ['mail-idle', `mailbox:${sleutel}`],
+        concurrencyKey: sleutel,
       })
       gestart += 1
     }

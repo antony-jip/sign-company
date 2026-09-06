@@ -15,17 +15,23 @@ export type BackfillTarget = '1jaar' | '5jaar' | 'alles'
 /** Hoe ver de historie-backfill teruggaat (instelling leeft op email_sync_state). */
 export async function getBackfillTarget(): Promise<BackfillTarget> {
   if (!isSupabaseConfigured() || !supabase) return '1jaar'
+  // Geen maybeSingle: met twee postvakken zijn dat twee inbox-rijen en dan viel
+  // de instelling stil terug op '1jaar'. Het doel is een gebruikersinstelling
+  // die voor alle postvakken geldt, dus de eerste rij met een waarde volstaat.
   const { data } = await supabase
     .from('email_sync_state')
     .select('backfill_target')
     .eq('folder', 'inbox')
-    .maybeSingle()
-  return (data?.backfill_target as BackfillTarget) || '1jaar'
+  const rijen = (data || []) as Array<{ backfill_target?: string | null }>
+  const gevonden = rijen.find((r) => !!r.backfill_target)?.backfill_target
+  return (gevonden as BackfillTarget) || '1jaar'
 }
 
 /**
  * Zet het backfill-doel voor inbox + verzonden en heropent de backfill
- * (backfill_done = false) zodat een ruimer doel direct verder graaft.
+ * (backfill_done = false) zodat een ruimer doel direct verder graaft. Het doel
+ * geldt voor alle postvakken van de gebruiker; er is bewust geen instelling per
+ * postvak.
  */
 export async function setBackfillTarget(target: BackfillTarget): Promise<void> {
   if (!isSupabaseConfigured() || !supabase) return
@@ -39,10 +45,22 @@ export async function setBackfillTarget(target: BackfillTarget): Promise<void> {
     backfill_done: false,
     updated_at: nu,
   }))
-  const { error } = await supabase
+  // Migratie 246 laat de sleutel (user_id, folder) vallen ten gunste van
+  // (account_id, folder). Zonder deze tweede poging geeft PostgREST dan 42P10
+  // en werkt "hoe ver terug" niet meer.
+  const eerste = await supabase
     .from('email_sync_state')
     .upsert(rows, { onConflict: 'user_id,folder' })
-  if (error) throw new Error(error.message)
+  if (!eerste.error) return
+  if (eerste.error.code !== '42P10' && !/no unique or exclusion constraint/i.test(eerste.error.message || '')) {
+    throw new Error(eerste.error.message)
+  }
+  const perPostvak = await supabase
+    .from('email_sync_state')
+    .update({ backfill_target: target, backfill_done: false, updated_at: nu })
+    .eq('user_id', session.user.id)
+    .in('folder', ['inbox', 'verzonden'])
+  if (perPostvak.error) throw new Error(perPostvak.error.message)
 }
 
 // ============ EMAIL CACHING ============
@@ -60,6 +78,21 @@ export async function setBackfillTarget(target: BackfillTarget): Promise<void> {
 const LIST_VIEW_COLUMNS = 'id,gmail_id,uid,message_id,van,aan,to_addresses,cc_addresses,onderwerp,datum,gelezen,starred,labels,bijlagen,map,from_name,from_address,imap_folder,pinned,snoozed_until,thread_id,attachment_meta,has_attachments,body_text,created_at,is_aanvraag,aanvraag_zekerheid,aanvraag_samenvatting,aanvraag_verborgen'
 
 /**
+ * Migratie 245 herbouwt emails_list_view mét `account_id`. Zolang die niet
+ * gedraaid is kent de view de kolom niet en moest het postvak per lijstlading
+ * uit een tweede query komen (`metAccountKolom`). Vragen we hem gewoon op, dan
+ * is dat straks één query in plaats van twee; ontbreekt hij nog, dan valt deze
+ * module terug op de oude kolomlijst en die tweede query.
+ */
+const LIST_VIEW_COLUMNS_MET_ACCOUNT = `${LIST_VIEW_COLUMNS},account_id`
+
+let viewHeeftAccount: boolean | null = null
+
+function lijstKolommen(): string {
+  return viewHeeftAccount === false ? LIST_VIEW_COLUMNS : LIST_VIEW_COLUMNS_MET_ACCOUNT
+}
+
+/**
  * De mailbox is persoonlijk. RLS op `emails` staat naast de eigenaar-policy
  * ook toe dat teamleden mail lezen die via `email_project_koppelingen` aan een
  * project van de organisatie hangt (migratie 109). Dat is gewenst binnen een
@@ -75,20 +108,21 @@ async function eigenUserId(): Promise<string | null> {
 
 export async function getEmails(limit = 200): Promise<Email[]> {
   if (isSupabaseConfigured() && supabase) {
+    const client = supabase
     const uid = await eigenUserId()
     if (!uid) return []
-    const { data, error } = await supabase
+    const { data, error } = await lijstQuery<Record<string, unknown>>(null, (kolommen) => client
       .from('emails_list_view')
-      .select(LIST_VIEW_COLUMNS)
+      .select(kolommen)
       .eq('user_id', uid)
       .order('datum', { ascending: false })
-      .limit(limit)
+      .limit(limit) as unknown as PromiseLike<Uitkomst<Record<string, unknown>>>)
     if (error) throw error
     return (data || []).map(e => ({
       ...e,
       inhoud: '',
       body_html: null,
-    }))
+    })) as unknown as Email[]
   }
   return getLocalData<Email>('emails')
 }
@@ -158,6 +192,50 @@ function metAccount(q: LijstBouwer, accountId?: string | null): LijstBouwer {
   return q.eq('account_id', accountId)
 }
 
+type Uitkomst<T> = { data: T[] | null; error: unknown }
+
+/**
+ * Een query met postvakfilter, met terugval op dezelfde query zonder filter
+ * zodra `account_id` niet blijkt te bestaan. Zo hoeft geen enkele aanroeper te
+ * weten of migratie 245 al gedraaid is.
+ */
+async function metPostvak<T>(
+  accountId: string | null | undefined,
+  bouw: (accountId: string | null) => PromiseLike<Uitkomst<T>>,
+): Promise<Uitkomst<T>> {
+  const gekozen = accountId && accountKolomBekend !== false ? accountId : null
+  const eerste = await bouw(gekozen)
+  if (!gekozen) return eerste
+  if (eerste.error && isOnbekendeKolom(eerste.error)) {
+    accountKolomBekend = false
+    return bouw(null)
+  }
+  if (!eerste.error) accountKolomBekend = true
+  return eerste
+}
+
+/**
+ * Een query op emails_list_view met de kolomlijst en het postvakfilter die op
+ * dit moment mogelijk zijn. Ontbreekt `account_id` nog, dan gaat dezelfde query
+ * opnieuw zonder de kolom en zonder het filter.
+ */
+async function lijstQuery<T>(
+  accountId: string | null | undefined,
+  bouw: (kolommen: string, accountId: string | null) => PromiseLike<Uitkomst<T>>,
+): Promise<Uitkomst<T>> {
+  const gekozen = accountId && accountKolomBekend !== false ? accountId : null
+  const eerste = await bouw(lijstKolommen(), gekozen)
+  if (!eerste.error) {
+    if (viewHeeftAccount === null) viewHeeftAccount = true
+    if (gekozen) accountKolomBekend = true
+    return eerste
+  }
+  if (!isOnbekendeKolom(eerste.error)) return eerste
+  viewHeeftAccount = false
+  if (gekozen) accountKolomBekend = false
+  return bouw(LIST_VIEW_COLUMNS, null)
+}
+
 function metCursor(q: LijstBouwer, cursor: EmailPageCursor | null): LijstBouwer {
   if (!cursor) return q
   return q.or(`datum.lt."${cursor.datum}",and(datum.eq."${cursor.datum}",id.lt."${cursor.id}")`)
@@ -221,7 +299,7 @@ export async function getEmailsPage(map: string, cursor: EmailPageCursor | null,
     if (error) {
       if (accountId && isOnbekendeKolom(error)) {
         accountKolomBekend = false
-        return getEmailsPage(map, cursor, limit, null)
+        return getEmailsPage(map, cursor, limit, null, metPostvakKolom)
       }
       throw error
     }
@@ -229,10 +307,10 @@ export async function getEmailsPage(map: string, cursor: EmailPageCursor | null,
     type Vlaggen = { id: string; account_id?: string | null; wacht_op_reactie?: boolean; beantwoord?: boolean; toegewezen_aan?: string | null; toegewezen_op?: string | null }
     const vlaggen = new Map(((treffers || []) as unknown as Vlaggen[]).map((r, i) => [r.id, { i, r }]))
     if (vlaggen.size === 0) return []
-    const { data: rijen, error: rijenErr } = await client
+    const { data: rijen, error: rijenErr } = await lijstQuery<Record<string, unknown>>(null, (kolommen) => client
       .from('emails_list_view')
-      .select(LIST_VIEW_COLUMNS)
-      .in('id', [...vlaggen.keys()])
+      .select(kolommen)
+      .in('id', [...vlaggen.keys()]) as unknown as PromiseLike<Uitkomst<Record<string, unknown>>>)
     if (rijenErr) throw rijenErr
     return ((rijen || []) as Array<Record<string, unknown>>)
       .sort((a, b) => (vlaggen.get(a.id as string)?.i ?? 0) - (vlaggen.get(b.id as string)?.i ?? 0))
@@ -249,24 +327,28 @@ export async function getEmailsPage(map: string, cursor: EmailPageCursor | null,
       })
   }
 
-  const basis = pasMapFilterToe(
-    client.from('emails_list_view').select(LIST_VIEW_COLUMNS).eq('user_id', uid) as unknown as LijstBouwer,
-    map,
-  )
-  if (!basis) return []
-  const { data, error } = await metCursor(basis, cursor)
-    .order('datum', { ascending: false })
-    .order('id', { ascending: false })
-    .limit(limit)
+  const { data, error } = await lijstQuery<Record<string, unknown>>(null, (kolommen) => {
+    const basis = pasMapFilterToe(
+      client.from('emails_list_view').select(kolommen).eq('user_id', uid) as unknown as LijstBouwer,
+      map,
+    )
+    if (!basis) return Promise.resolve({ data: [], error: null })
+    return metCursor(basis, cursor)
+      .order('datum', { ascending: false })
+      .order('id', { ascending: false })
+      .limit(limit) as unknown as PromiseLike<Uitkomst<Record<string, unknown>>>
+  })
   if (error) throw error
   const rijen = ((data || []) as Array<Record<string, unknown>>).map(alsLijstItem)
-  return metPostvakKolom ? await metAccountKolom(client, rijen) : rijen
+  // Heeft de view account_id al, dan zit het postvak in de rijen hierboven en
+  // is de tweede query overbodig.
+  return metPostvakKolom && viewHeeftAccount === false ? await metAccountKolom(client, rijen) : rijen
 }
 
 /**
- * emails_list_view kent `account_id` niet (migratie 245 voegt de kolom aan
- * `emails` toe en laat de view ongemoeid), dus in de stand "Alle postvakken"
- * zou een regel nooit weten uit welk postvak hij komt. Eén lichte query erbij
+ * Terugval zolang emails_list_view `account_id` niet kent (migratie 245 bouwt
+ * de view opnieuw op mét die kolom): in de stand "Alle postvakken" zou een
+ * regel anders nooit weten uit welk postvak hij komt. Eén lichte query erbij
  * vult dat aan. Alleen bij meer dan één postvak, anders is het een extra ronde
  * voor niets, en defensief: zonder 245 bestaat de kolom nog niet en gaat het
  * veld gewoon weer weg.
@@ -287,24 +369,28 @@ async function metAccountKolom(client: NonNullable<typeof supabase>, rijen: Emai
 }
 
 /** Alle berichten van één gesprek als lijst-items, oudste eerst. Concepten en prullenbak blijven eruit, net als in email_threads_view. */
-export async function getThreadItems(threadId: string): Promise<EmailLijstItem[]> {
+export async function getThreadItems(threadId: string, accountId?: string | null): Promise<EmailLijstItem[]> {
   if (!threadId || !isSupabaseConfigured() || !supabase) return []
+  const client = supabase
   const uid = await eigenUserId()
   if (!uid) return []
-  const { data, error } = await supabase
-    .from('emails_list_view')
-    .select(LIST_VIEW_COLUMNS)
-    .eq('user_id', uid)
-    .eq('thread_id', threadId)
-    .not('map', 'in', '("prullenbak","concepten")')
-    .order('datum', { ascending: true })
-    .order('id', { ascending: true })
+  const { data, error } = await lijstQuery<Record<string, unknown>>(accountId, (kolommen, acc) => {
+    const basis = client
+      .from('emails_list_view')
+      .select(kolommen)
+      .eq('user_id', uid)
+      .eq('thread_id', threadId)
+      .not('map', 'in', '("prullenbak","concepten")') as unknown as LijstBouwer
+    return (acc ? basis.eq('account_id', acc) : basis)
+      .order('datum', { ascending: true })
+      .order('id', { ascending: true }) as unknown as PromiseLike<Uitkomst<Record<string, unknown>>>
+  })
   if (error) throw error
   return (data || []) as unknown as EmailLijstItem[]
 }
 
 /** Thread-tellers van de server (email_threads_view) voor een reeks threads. */
-export async function getThreadInfos(threadIds: string[]): Promise<ThreadInfo[]> {
+export async function getThreadInfos(threadIds: string[], accountId?: string | null): Promise<ThreadInfo[]> {
   const uniek = [...new Set(threadIds.filter(Boolean))]
   if (uniek.length === 0 || !isSupabaseConfigured() || !supabase) return []
   const client = supabase
@@ -312,46 +398,96 @@ export async function getThreadInfos(threadIds: string[]): Promise<ThreadInfo[]>
   if (!uid) return []
   const blokken: string[][] = []
   for (let i = 0; i < uniek.length; i += 100) blokken.push(uniek.slice(i, i + 100))
+  type Rij = { thread_id: string; laatste_datum: string; aantal: number; ongelezen: number; laatste_email_id: string; deelnemers: string[] | null }
   const resultaten = await Promise.all(blokken.map(async (blok) => {
-    const { data, error } = await client
-      .from('email_threads_view')
-      .select('thread_id, laatste_datum, aantal, ongelezen, laatste_email_id, deelnemers')
-      .eq('user_id', uid)
-      .in('thread_id', blok)
+    // email_threads_view groepeert sinds migratie 245 óók op account_id, dus
+    // zonder filter tellen twee postvakken van dezelfde gebruiker dubbel.
+    const { data, error } = await metPostvak<Rij>(accountId, (acc) => {
+      const basis = client
+        .from('email_threads_view')
+        .select('thread_id, laatste_datum, aantal, ongelezen, laatste_email_id, deelnemers')
+        .eq('user_id', uid)
+        .in('thread_id', blok) as unknown as LijstBouwer
+      return (acc ? basis.eq('account_id', acc) : basis) as unknown as PromiseLike<Uitkomst<Rij>>
+    })
     if (error) return []
-    return (data || []) as Array<{ thread_id: string; laatste_datum: string; aantal: number; ongelezen: number; laatste_email_id: string; deelnemers: string[] | null }>
+    return (data || []) as Rij[]
   }))
-  return resultaten.flat().map((r) => ({
-    threadId: r.thread_id,
-    laatsteDatum: r.laatste_datum,
-    aantal: r.aantal,
-    ongelezen: r.ongelezen,
-    laatsteEmailId: r.laatste_email_id,
-    deelnemers: r.deelnemers || [],
-  }))
+  // In de stand "Alle postvakken" gaat de query zonder account_id-filter en
+  // levert dezelfde thread één rij per postvak op. Die horen bij elkaar
+  // opgeteld te worden; wie ze alleen mapt houdt de laatste rij over en toont
+  // de teller van één postvak.
+  const perThread = new Map<string, ThreadInfo>()
+  for (const r of resultaten.flat()) {
+    const bestaand = perThread.get(r.thread_id)
+    if (!bestaand) {
+      perThread.set(r.thread_id, {
+        threadId: r.thread_id,
+        laatsteDatum: r.laatste_datum,
+        aantal: r.aantal,
+        ongelezen: r.ongelezen,
+        laatsteEmailId: r.laatste_email_id,
+        deelnemers: r.deelnemers || [],
+      })
+      continue
+    }
+    const nieuwer = r.laatste_datum > bestaand.laatsteDatum
+    perThread.set(r.thread_id, {
+      threadId: r.thread_id,
+      laatsteDatum: nieuwer ? r.laatste_datum : bestaand.laatsteDatum,
+      aantal: bestaand.aantal + r.aantal,
+      ongelezen: bestaand.ongelezen + r.ongelezen,
+      laatsteEmailId: nieuwer ? r.laatste_email_id : bestaand.laatsteEmailId,
+      deelnemers: [...new Set([...bestaand.deelnemers, ...(r.deelnemers || [])])],
+    })
+  }
+  return [...perThread.values()]
 }
 
 /** Gezondheid van de eigen mailbox, uit email_sync_state (rij inbox). */
 export async function getSyncStatus(): Promise<SyncStatus> {
   const standaard: SyncStatus = { status: 'ok' }
   if (!isSupabaseConfigured() || !supabase) return standaard
+  const client = supabase
   const uid = await eigenUserId()
   if (!uid) return standaard
-  const { data, error } = await supabase
+  // Geen maybeSingle: met twee postvakken staan er twee inbox-rijen en dan gaf
+  // die PGRST116, waarna de banner permanent op "onbekend" stond. De slechtste
+  // stand van de postvakken telt, want dat is de mailbox waar iets aan de hand
+  // is.
+  const haal = (kolommen: string) => client
     .from('email_sync_state')
-    .select('status, laatste_fout, laatste_succes_op')
+    .select(kolommen)
     .eq('user_id', uid)
     .eq('folder', 'inbox')
-    .maybeSingle()
+  // account_id komt uit migratie 245; zonder die kolom faalt de hele select.
+  let uitkomst = await haal('status, laatste_fout, laatste_succes_op, account_id')
+  if (isOnbekendeKolom(uitkomst.error)) uitkomst = await haal('status, laatste_fout, laatste_succes_op')
+  const { data, error } = uitkomst
   // Een fout hier is geen "alles goed": zonder migratie 244 bestaan deze
   // kolommen niet, en terugvallen op ok liet de banner zwijgen terwijl de sync
   // stilstond. Geen rij is wél normaal: die mailbox heeft nog nooit gesynct.
   if (error) return { status: 'onbekend', laatsteFout: 'Gezondheid niet op te halen' }
-  if (!data) return standaard
+  type StatusRij = { status: string | null; laatste_fout: string | null; laatste_succes_op: string | null; account_id?: string | null }
+  const rijen = (data || []) as unknown as StatusRij[]
+  if (rijen.length === 0) return standaard
+  // De CHECK in migratie 244 laat alleen ok, fout en uitgezet toe. Een waarde
+  // die daar niet in staat komt tussen ok en fout: niet groen beweren, maar ook
+  // geen storing melden die er niet is.
+  const RANG: Record<string, number> = { ok: 0, fout: 2, uitgezet: 3 }
+  const rang = (r: StatusRij) => RANG[r.status || 'ok'] ?? 1
+  const ergste = rijen.reduce((a, b) => (rang(b) > rang(a) ? b : a))
+  const successen = rijen
+    .map((r) => r.laatste_succes_op)
+    .filter((d): d is string => !!d)
+    .sort()
+  const laatsteSucces = successen[successen.length - 1]
+  const bekend = ergste.status === 'ok' || ergste.status === 'fout' || ergste.status === 'uitgezet'
   return {
-    status: (data.status as SyncStatus['status']) || 'ok',
-    laatsteFout: data.laatste_fout || undefined,
-    laatsteSucces: data.laatste_succes_op || undefined,
+    status: bekend ? (ergste.status as SyncStatus['status']) : (ergste.status ? 'onbekend' : 'ok'),
+    laatsteFout: ergste.laatste_fout || undefined,
+    laatsteSucces: laatsteSucces || undefined,
+    postvakId: ergste.account_id ?? null,
   }
 }
 
@@ -360,17 +496,20 @@ function veiligeZoekterm(w: string): string {
   return w.replace(/[,%()"*]/g, '').trim()
 }
 
-export async function searchEmailsFTS(query: string, limit = 50, offset = 0): Promise<Email[]> {
+export async function searchEmailsFTS(query: string, limit = 50, offset = 0, accountId?: string | null): Promise<Email[]> {
   if (!query.trim() || !isSupabaseConfigured() || !supabase) return []
   const client = supabase
   const uid = await eigenUserId()
   if (!uid) return []
   const filters = parseZoekQuery(query)
+  // Zoeken bleef over alle postvakken gaan terwijl de lijst er één toonde.
+  const postvak = accountId && accountKolomBekend !== false ? accountId : null
 
   // Alle filters buiten de vrije tekst gelden in beide rondes.
   type Bouwer = PostgrestFilterBuilder<any, any, any, any>
   const pasFiltersToe = (q: Bouwer): Bouwer => {
     let uit = q.eq('user_id', uid)
+    if (postvak) uit = uit.eq('account_id', postvak)
     if (filters.van) {
       const veilig = veiligeZoekterm(filters.van)
       if (veilig) uit = uit.or(`van.ilike.%${veilig}%,from_address.ilike.%${veilig}%`)
@@ -407,7 +546,15 @@ export async function searchEmailsFTS(query: string, limit = 50, offset = 0): Pr
   const tsQuery = bouwTsQuery(filters.termen)
   const eersteRonde = tsQuery ? idsQuery().textSearch('fts', tsQuery) : idsQuery()
   const { data: treffers, error } = await eersteRonde
-  if (error) throw error
+  if (error) {
+    // Zonder migratie 245 bestaat account_id niet; dan zoekt hij zoals altijd.
+    if (postvak && isOnbekendeKolom(error)) {
+      accountKolomBekend = false
+      return searchEmailsFTS(query, limit, offset, null)
+    }
+    throw error
+  }
+  if (postvak) accountKolomBekend = true
   let ids = ((treffers || []) as Array<{ id: string }>).map(r => r.id)
 
   // Vangnet: letterlijke deelstring op de korte kolommen. De Nederlandse
@@ -427,10 +574,10 @@ export async function searchEmailsFTS(query: string, limit = 50, offset = 0): Pr
 
   if (ids.length === 0) return []
 
-  const { data: rijen, error: rijenErr } = await client
+  const { data: rijen, error: rijenErr } = await lijstQuery<Record<string, unknown>>(null, (kolommen) => client
     .from('emails_list_view')
-    .select(LIST_VIEW_COLUMNS)
-    .in('id', ids)
+    .select(kolommen)
+    .in('id', ids) as unknown as PromiseLike<Uitkomst<Record<string, unknown>>>)
   if (rijenErr) throw rijenErr
 
   const volgorde = new Map(ids.map((id, i) => [id, i]))
@@ -641,18 +788,22 @@ export async function getThread(threadId: string): Promise<Email[]> {
 }
 
 /** Alle correspondentie met één adres · zowel ontvangen als verstuurd. */
-export async function getEmailsMetAdres(adres: string, limit = 20): Promise<Email[]> {
+export async function getEmailsMetAdres(adres: string, limit = 20, accountId?: string | null): Promise<Email[]> {
   const bareEmail = adres.trim().toLowerCase()
   if (!bareEmail) return []
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
-      .from('emails_list_view')
-      .select(LIST_VIEW_COLUMNS)
-      .or(`from_address.ilike.%${bareEmail}%,van.ilike.%${bareEmail}%,aan.ilike.%${bareEmail}%`)
-      .order('datum', { ascending: false })
-      .limit(limit)
+    const client = supabase
+    const { data, error } = await lijstQuery<Record<string, unknown>>(accountId, (kolommen, acc) => {
+      const basis = client
+        .from('emails_list_view')
+        .select(kolommen)
+        .or(`from_address.ilike.%${bareEmail}%,van.ilike.%${bareEmail}%,aan.ilike.%${bareEmail}%`) as unknown as LijstBouwer
+      return (acc ? basis.eq('account_id', acc) : basis)
+        .order('datum', { ascending: false })
+        .limit(limit) as unknown as PromiseLike<Uitkomst<Record<string, unknown>>>
+    })
     if (error) throw error
-    return (data || []).map(e => ({ ...e, inhoud: '', body_html: null }))
+    return (data || []).map(e => ({ ...e, inhoud: '', body_html: null })) as unknown as Email[]
   }
   const emails = getLocalData<Email>('emails')
   return emails

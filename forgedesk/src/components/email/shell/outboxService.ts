@@ -105,6 +105,9 @@ export async function verstuurOutboxOpnieuw(b: IngeplandBericht): Promise<void> 
     bcc: b.bcc,
     html: b.html,
     attachments: bijlagen.length ? bijlagen.map((x) => ({ filename: x.filename, content: x.content, encoding: 'base64' as const })) : undefined,
+    // Hetzelfde postvak als waar hij vandaan kwam, anders wisselt de afzender
+    // bij de tweede poging.
+    account_id: b.account_id || undefined,
   })
   if (!supabase) return
   await supabase.from('ingeplande_berichten').update({ status: 'geannuleerd' }).eq('id', b.id).eq('status', 'mislukt')

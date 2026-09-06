@@ -110,7 +110,8 @@ export async function bouwVerzending(doc: ComposerDocument, ctx: VerzendContext)
         const uid = Number(bron?.gmail_id)
         if (!bron || Number.isNaN(uid)) throw new Error('Bronmail niet gevonden')
         const folder = (bron as { imap_folder?: string | null }).imap_folder || 'INBOX'
-        const opgehaald = await downloadEmailAttachment(uid, folder, b.naam)
+        const bronPostvak = (bron as { account_id?: string | null }).account_id || undefined
+        const opgehaald = await downloadEmailAttachment(uid, folder, b.naam, bronPostvak)
         if (opgehaald?.content) attachments.push({ filename: opgehaald.filename || b.naam, content: opgehaald.content, encoding: 'base64' })
         else throw new Error('Lege bijlage')
       } catch (err) {

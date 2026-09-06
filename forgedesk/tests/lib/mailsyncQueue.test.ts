@@ -16,6 +16,9 @@ import {
   leaseGrens,
   messageIdVoorRij,
   synthetiseerMessageId,
+  postvakSleutel,
+  ontbrekendeTaken,
+  eenTaakPerPostvak,
   LEASE_MS,
   LEASE_MARGE_MS,
   HERPLAN_MS,
@@ -402,20 +405,139 @@ describe('idempotentie op message-id', () => {
   })
 })
 
+// ── Een wachtrij per postvak ──────────────────────────────────────────
+
+const GEBRUIKER = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
+const ANDERE_GEBRUIKER = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'
+const POSTVAK_A = 'cccccccc-cccc-cccc-cccc-cccccccccccc'
+const POSTVAK_B = 'dddddddd-dddd-dddd-dddd-dddddddddddd'
+
+describe('wachtrij per postvak', () => {
+  it('spiegelt COALESCE(account_id, user_id) uit migratie 247', () => {
+    expect(postvakSleutel({ user_id: GEBRUIKER, account_id: POSTVAK_A })).toBe(POSTVAK_A)
+    // Zonder account_id valt de sleutel terug op de gebruiker, zoals de oude
+    // index op (user_id, folder, soort).
+    expect(postvakSleutel({ user_id: GEBRUIKER, account_id: null })).toBe(GEBRUIKER)
+    expect(postvakSleutel({ user_id: GEBRUIKER })).toBe(GEBRUIKER)
+  })
+
+  it('maakt een taak voor postvak B terwijl postvak A er al een heeft', () => {
+    // Dit is de hele reden van migratie 247. Onder de oude index bezette de
+    // taak van postvak A de enige plek voor deze gebruiker en bleef postvak B
+    // voor altijd leeg.
+    const rijen = ontbrekendeTaken(
+      [
+        { user_id: GEBRUIKER, account_id: POSTVAK_A },
+        { user_id: GEBRUIKER, account_id: POSTVAK_B },
+      ],
+      [{ user_id: GEBRUIKER, account_id: POSTVAK_A }],
+      true,
+    )
+    expect(rijen).toEqual([
+      { user_id: GEBRUIKER, folder: 'inbox', soort: 'incrementeel', account_id: POSTVAK_B },
+    ])
+  })
+
+  it('verandert niets zolang iedereen één postvak heeft', () => {
+    const postvakken = [{ user_id: GEBRUIKER, account_id: POSTVAK_A }]
+    // Bestaande taak: geen tweede erbij.
+    expect(ontbrekendeTaken(postvakken, [{ user_id: GEBRUIKER, account_id: POSTVAK_A }], true)).toEqual([])
+    // Nog geen taak: precies één, met account_id erop.
+    expect(ontbrekendeTaken(postvakken, [], true)).toEqual([
+      { user_id: GEBRUIKER, folder: 'inbox', soort: 'incrementeel', account_id: POSTVAK_A },
+    ])
+  })
+
+  it('laat een taak zonder account_id het enige postvak van die gebruiker dekken', () => {
+    // Het venster tussen migratie 245 en 247: de kolom bestaat, de bestaande
+    // rijen zijn nog niet gevuld. Zonder deze regel zou elke aanvulronde een
+    // tweede taak proberen te plaatsen die de oude index toch weigert.
+    expect(ontbrekendeTaken(
+      [{ user_id: GEBRUIKER, account_id: POSTVAK_A }],
+      [{ user_id: GEBRUIKER, account_id: null }],
+      true,
+    )).toEqual([])
+
+    // Heeft die gebruiker er twee, dan is niet te zeggen bij welke de oude rij
+    // hoort en gaat de sleutel per postvak: beide krijgen er een.
+    const rijen = ontbrekendeTaken(
+      [
+        { user_id: GEBRUIKER, account_id: POSTVAK_A },
+        { user_id: GEBRUIKER, account_id: POSTVAK_B },
+      ],
+      [{ user_id: GEBRUIKER, account_id: null }],
+      true,
+    )
+    expect(rijen.map((r) => r.account_id)).toEqual([POSTVAK_A, POSTVAK_B])
+  })
+
+  it('valt zonder de kolom terug op één taak per gebruiker, zonder account_id in de rij', () => {
+    const rijen = ontbrekendeTaken(
+      [
+        { user_id: GEBRUIKER, account_id: POSTVAK_A },
+        { user_id: GEBRUIKER, account_id: POSTVAK_B },
+        { user_id: ANDERE_GEBRUIKER, account_id: null },
+      ],
+      [],
+      false,
+    )
+    expect(rijen).toEqual([
+      { user_id: GEBRUIKER, folder: 'inbox', soort: 'incrementeel' },
+      { user_id: ANDERE_GEBRUIKER, folder: 'inbox', soort: 'incrementeel' },
+    ])
+  })
+
+  it('plant hetzelfde postvak niet twee keer in binnen één ronde', () => {
+    const rijen = ontbrekendeTaken(
+      [
+        { user_id: GEBRUIKER, account_id: POSTVAK_A },
+        { user_id: GEBRUIKER, account_id: POSTVAK_A },
+      ],
+      [],
+      true,
+    )
+    expect(rijen).toHaveLength(1)
+  })
+
+  it('claimt hoogstens één taak per postvak per ronde', () => {
+    // Twee open taken voor dezelfde mailbox kunnen bestaan: een oude rij zonder
+    // account_id en een nieuwe met account_id zijn onder COALESCE verschillend.
+    // Twee IMAP-verbindingen naar hetzelfde postvak is precies wat de lease
+    // hoort te voorkomen.
+    const taken = [
+      { id: '1', user_id: GEBRUIKER, account_id: POSTVAK_A },
+      { id: '2', user_id: GEBRUIKER, account_id: POSTVAK_A },
+      { id: '3', user_id: GEBRUIKER, account_id: POSTVAK_B },
+      { id: '4', user_id: ANDERE_GEBRUIKER, account_id: null },
+      { id: '5', user_id: ANDERE_GEBRUIKER, account_id: null },
+    ]
+    expect(eenTaakPerPostvak(taken).map((t) => t.id)).toEqual(['1', '3', '4'])
+    // De eerste wint, dus de volgorde uit de due-query (scheduled_at oplopend)
+    // blijft leidend.
+    expect(eenTaakPerPostvak([]).length).toBe(0)
+  })
+})
+
 // ── De kopieën in api/ ────────────────────────────────────────────────
 
 const WORTEL = fileURLToPath(new URL('../..', import.meta.url))
 const BEGIN = '// ── GEDEELD-MET-API BEGIN ──'
 const EINDE = '// ── GEDEELD-MET-API EINDE ──'
+const POSTVAK_BEGIN = '// ── GEDEELD-POSTVAK BEGIN ──'
+const POSTVAK_EINDE = '// ── GEDEELD-POSTVAK EINDE ──'
+
+function blok(pad: string, begin: string, einde: string): string {
+  const inhoud = readFileSync(`${WORTEL}/${pad}`, 'utf8')
+  const van = inhoud.indexOf(begin)
+  const tot = inhoud.indexOf(einde)
+  if (van === -1 || tot === -1) {
+    throw new Error(`${pad} mist de markers ${begin.trim()}`)
+  }
+  return inhoud.slice(van + begin.length, tot).trim()
+}
 
 function gedeeldBlok(pad: string): string {
-  const inhoud = readFileSync(`${WORTEL}/${pad}`, 'utf8')
-  const van = inhoud.indexOf(BEGIN)
-  const tot = inhoud.indexOf(EINDE)
-  if (van === -1 || tot === -1) {
-    throw new Error(`${pad} mist de GEDEELD-MET-API-markers`)
-  }
-  return inhoud.slice(van + BEGIN.length, tot).trim()
+  return blok(pad, BEGIN, EINDE)
 }
 
 describe('kopieën in api/ lopen niet uit de pas', () => {
@@ -435,5 +557,17 @@ describe('kopieën in api/ lopen niet uit de pas', () => {
     'api/fetch-emails.ts',
   ])('%s bevat exact hetzelfde blok', (pad) => {
     expect(gedeeldBlok(pad)).toBe(bron)
+  })
+
+  // Het postvak-blok staat in twee bestanden en niet in drie: fetch-emails
+  // heeft deze helpers niet nodig, en dat bestand is van een andere hand.
+  const postvakBron = blok('src/lib/mailsyncQueue.ts', POSTVAK_BEGIN, POSTVAK_EINDE)
+
+  it('het postvak-blok is niet leeg', () => {
+    expect(postvakBron.length).toBeGreaterThan(500)
+  })
+
+  it('api/cron-mailsync-werker.ts bevat exact hetzelfde postvak-blok', () => {
+    expect(blok('api/cron-mailsync-werker.ts', POSTVAK_BEGIN, POSTVAK_EINDE)).toBe(postvakBron)
   })
 })

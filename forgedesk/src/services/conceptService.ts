@@ -44,13 +44,33 @@ export async function slaConceptOp(doc: ComposerDocument): Promise<string> {
     in_reply_to: doc.inReplyTo ?? null,
   }
   if (doc.id) rij.id = doc.id
-  const { data, error } = await supabase
+  // Zonder account_id hoort een concept bij geen enkel postvak en verschijnt
+  // het dus in allemaal. De kolom komt uit migratie 245; bestaat hij nog niet,
+  // dan schrijven we de rij zonder en is het gedrag weer dat van één postvak.
+  if (doc.accountId) rij.account_id = doc.accountId
+  const client = supabase
+  const schrijf = (velden: Record<string, unknown>) => client
     .from('emails')
-    .upsert(rij, { onConflict: 'id' })
+    .upsert(velden, { onConflict: 'id' })
     .select('id')
     .single()
+
+  let { data, error } = await schrijf(rij)
+  if (error && doc.accountId && isOnbekendeKolom(error)) {
+    const { account_id: _weg, ...zonderAccount } = rij
+    const tweede = await schrijf(zonderAccount)
+    data = tweede.data
+    error = tweede.error
+  }
   if (error) throw error
-  return data.id as string
+  return data!.id as string
+}
+
+/** Migratie 245 niet gedraaid: `emails.account_id` bestaat dan nog niet. */
+function isOnbekendeKolom(fout: unknown): boolean {
+  const code = (fout as { code?: string } | null)?.code
+  if (code === '42703' || code === 'PGRST204') return true
+  return /column .*account_id.* does not exist|could not find the .*account_id.* column/i.test((fout as { message?: string } | null)?.message || '')
 }
 
 function alsDocument(rij: { id: string; concept: ComposerDocument | null }): ComposerDocument | null {

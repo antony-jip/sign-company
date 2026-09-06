@@ -152,18 +152,24 @@ function splitsCitaat(html: string): { eigen: string; geciteerd: string | null }
  * eerst. PostgREST kent geen NOT EXISTS, dus in pagina's van 100 en per
  * pagina tegen email_bodies afstrepen; hoogstens vijf pagina's.
  */
-async function zoekKandidaten(user_id: string, mapValue: string, gewenst: number): Promise<{ rijen: Rij[]; meer: boolean }> {
+async function zoekKandidaten(user_id: string, mapValue: string, gewenst: number, accountId?: string | null): Promise<{ rijen: Rij[]; meer: boolean }> {
   const rijen: Rij[] = []
   const PAGINA = 100
   for (let pagina = 0; pagina < 5 && rijen.length <= gewenst; pagina++) {
-    const { data: blok, error } = await supabaseAdmin
-      .from('emails')
-      .select('id, uid')
-      .eq('user_id', user_id)
-      .eq('map', mapValue)
-      .not('uid', 'is', null)
-      .order('datum', { ascending: false })
-      .range(pagina * PAGINA, pagina * PAGINA + PAGINA - 1)
+    // Per postvak: de IMAP-verbinding hieronder gaat naar één mailbox, en
+    // uid 1234 bestaat in allebei. Zonder dit filter wint er stil één en wordt
+    // de body van de ene mailbox op de rij van de andere geschreven.
+    const { data: blok, error } = await leesMetAccount(accountId, (metAccount) => {
+      const basis = supabaseAdmin
+        .from('emails')
+        .select('id, uid')
+        .eq('user_id', user_id)
+        .eq('map', mapValue)
+        .not('uid', 'is', null)
+      return (metAccount ? basis.eq('account_id', accountId as string) : basis)
+        .order('datum', { ascending: false })
+        .range(pagina * PAGINA, pagina * PAGINA + PAGINA - 1)
+    })
     if (error) throw new Error(error.message)
     if (!blok?.length) break
 
@@ -182,6 +188,8 @@ async function zoekKandidaten(user_id: string, mapValue: string, gewenst: number
 }
 
 interface EmailCredentials {
+  /** Rij-id van het postvak; pas gevuld als migratie 245 gedraaid is. */
+  account_id: string | null
   gmail_address: string
   app_password: string
   user_id: string
@@ -240,6 +248,9 @@ function decryptPassword(encrypted: string): string {
 // `decryptPassword` uit het bestand zelf.
 
 interface OauthRij {
+  /** Rij-id van het postvak (migratie 245); `account_id` als de aanroeper EmailCredentials doorgeeft. */
+  id?: string | null
+  account_id?: string | null
   user_id?: string | null
   auth_type?: string | null
   oauth_refresh_token_enc?: string | null
@@ -335,8 +346,14 @@ async function haalToegangstoken(rij: OauthRij, opties?: { forceer?: boolean }):
   // Microsoft rouleert de refresh-token bij elke verversing, Google niet.
   if (antwoord.refresh_token) patch.oauth_refresh_token_enc = versleutelToken(antwoord.refresh_token)
 
-  if (rij.user_id) {
-    const { error } = await supabaseAdmin.from('user_email_settings').update(patch).eq('user_id', rij.user_id)
+  // Op de rij-id zodra we die kennen: met twee postvakken schrijft een update
+  // op user_id het verse token ook over het andere postvak heen.
+  const postvakId = rij.id ?? rij.account_id ?? null
+  if (postvakId || rij.user_id) {
+    const doel = () => supabaseAdmin.from('user_email_settings').update(patch)
+    const { error } = postvakId
+      ? await doel().eq('id', postvakId)
+      : await doel().eq('user_id', rij.user_id as string)
     if (error) console.warn('[oauth] nieuw token niet opgeslagen:', error.message)
   }
   rij.oauth_access_token_enc = patch.oauth_access_token_enc as string
@@ -355,33 +372,78 @@ function isToegangGeweigerd(fout: unknown): boolean {
  * een tweede 401: de eerste kan een verlopen token zijn en die ververst
  * haalToegangstoken zelf.
  */
-async function meldToegangIngetrokken(userId: string): Promise<void> {
+// ── GEDEELD-MET-API: upsert-ladder ────────────────────────────────────────
+// Migratie 245 zet (account_id, folder) naast (user_id, folder); migratie 246
+// laat de oude sleutel vallen. Zolang beide werelden kunnen bestaan proberen we
+// de nieuwe sleutel eerst en vallen we terug op de oude. PostgREST geeft 42703
+// bij een select op een kolom die er nog niet is, PGRST204 als die kolom in de
+// lading van een insert of upsert staat, en 42P10 als er bij de opgegeven
+// kolommen geen unieke index te vinden is. Alle drie horen erbij: zonder
+// PGRST204 staat de sync stil op een database zonder 245, zonder 42P10 na 246.
+// account_id gaat ook in de rij mee, anders vindt de nieuwe sleutel nooit een
+// bestaande rij.
+// Dezelfde ladder staat in src/trigger/mail-idle.ts en in de andere
+// api-mailbestanden.
+function isOnbekendeSleutel(fout: { code?: string; message?: string } | null): boolean {
+  if (!fout) return false
+  return fout.code === '42703' || fout.code === '42P10' || fout.code === 'PGRST204'
+    || /column .* does not exist|could not find the .* column|no unique or exclusion constraint/i.test(fout.message || '')
+}
+
+type SyncStateUitkomst = { error: { message: string; code?: string } | null }
+
+async function upsertSyncStateRij(rij: Record<string, unknown>, accountId?: string | null): Promise<SyncStateUitkomst> {
+  const pogingen: Array<{ onConflict: string; metAccount: boolean }> = accountId
+    ? [
+        { onConflict: 'account_id,folder', metAccount: true },
+        { onConflict: 'user_id,folder', metAccount: true },
+        { onConflict: 'user_id,folder', metAccount: false },
+      ]
+    : [{ onConflict: 'user_id,folder', metAccount: false }]
+
+  let laatste: SyncStateUitkomst = { error: { message: 'onbekend' } }
+  for (const poging of pogingen) {
+    const lading = poging.metAccount ? { ...rij, account_id: accountId } : rij
+    const uitkomst = await supabaseAdmin.from('email_sync_state').upsert(lading, { onConflict: poging.onConflict })
+    if (!uitkomst.error) return { error: null }
+    laatste = uitkomst as SyncStateUitkomst
+    if (!isOnbekendeSleutel(uitkomst.error)) return laatste
+  }
+  return laatste
+}
+// ── GEDEELD-MET-API EINDE: upsert-ladder ──────────────────────────────────
+
+async function meldToegangIngetrokken(userId: string, accountId?: string | null): Promise<void> {
   const nu = new Date().toISOString()
-  const { error } = await supabaseAdmin
-    .from('email_sync_state')
-    .upsert({
-      user_id: userId,
-      folder: 'inbox',
-      status: 'uitgezet',
-      laatste_fout: 'Toegang ingetrokken, koppel opnieuw',
-      laatste_fout_op: nu,
-      updated_at: nu,
-    }, { onConflict: 'user_id,folder' })
+  const { error } = await upsertSyncStateRij({
+    user_id: userId,
+    folder: 'inbox',
+    status: 'uitgezet',
+    laatste_fout: 'Toegang ingetrokken, koppel opnieuw',
+    laatste_fout_op: nu,
+    updated_at: nu,
+  }, accountId)
   if (error) console.warn('[oauth] status uitgezet schrijven mislukt:', error.message)
 }
 // ── GEDEELD-MET-API EINDE: OAuth-toegangstoken ────────────────────────────
 
-// ── GEDEELD-MET-API: credentials zonder 244 ───────────────────────────────
-// auth_type en de drie oauth-kolommen komen uit migratie 244. Zolang die niet
-// gedraaid is antwoordt PostgREST met 42703 of PGRST204 en faalt de HELE
-// select, waarna er geen mailbox meer te vinden is: geen sync, geen mail
-// openen, geen IMAP-actie. Daarom eerst de volledige select, en pas bij een
-// kolomfout opnieuw met de kolommen van vóór 244.
+// ── GEDEELD-MET-API: credentials per postvak ──────────────────────────────
+// Een gebruiker kan meer postvakken hebben (migratie 245, activering in 246),
+// dus `.single()` op user_id klapt zodra er een tweede rij bijkomt en meldt dan
+// misleidend dat er geen instellingen zijn. Volgorde: het meegestuurde
+// account_id, anders het postvak met `is_standaard`, anders de enige rij.
+// auth_type en de drie oauth-kolommen komen uit migratie 244; ontbreken die,
+// dan antwoordt PostgREST met 42703 of PGRST204 en faalt de HELE select, dus
+// blijft de terugval op de kolommen van vóór 244 staan.
 // Dezelfde helper hoort in fetch-emails, read-email, prefetch-email-bodies,
-// email-imap-action, email-settings, send-email en de twee mail-oauth-routes.
+// email-imap-action, backfill-emails, test-email-connection, email-settings,
+// send-email, mail-oauth-token en cron-verzend-geplande-berichten.
 interface CredentialRij {
+  id?: string | null
   gmail_address: string | null
   encrypted_app_password: string | null
+  smtp_host: string | null
+  smtp_port: number | null
   imap_host: string | null
   imap_port: number | null
   auth_type: string | null
@@ -390,8 +452,23 @@ interface CredentialRij {
   oauth_token_verloopt_op: string | null
 }
 
-const CREDENTIAL_KOLOMMEN_VOOR_244 = 'gmail_address, encrypted_app_password, imap_host, imap_port'
+const CREDENTIAL_KOLOMMEN_VOOR_244 = 'id, gmail_address, encrypted_app_password, smtp_host, smtp_port, imap_host, imap_port'
 const CREDENTIAL_KOLOMMEN = `${CREDENTIAL_KOLOMMEN_VOOR_244}, auth_type, oauth_refresh_token_enc, oauth_access_token_enc, oauth_token_verloopt_op`
+
+/**
+ * Een select met `account_id` erbij zodra we het postvak kennen, met terugval
+ * op dezelfde vraag zonder dat filter voor een database van vóór migratie 245.
+ */
+async function leesMetAccount<T extends { error: { code?: string; message?: string } | null }>(
+  accountId: string | null | undefined,
+  bouw: (metAccount: boolean) => PromiseLike<T>,
+): Promise<T> {
+  if (accountId) {
+    const metAccount = await bouw(true)
+    if (!isKolomFout(metAccount.error)) return metAccount
+  }
+  return await bouw(false)
+}
 
 function isKolomFout(fout: { code?: string; message?: string } | null): boolean {
   if (!fout) return false
@@ -399,32 +476,47 @@ function isKolomFout(fout: { code?: string; message?: string } | null): boolean 
   return /column .* does not exist|could not find the .* column/i.test(fout.message || '')
 }
 
-async function leesCredentialRij(userId: string): Promise<CredentialRij | null> {
-  const volledig = await supabaseAdmin
-    .from('user_email_settings')
-    .select(CREDENTIAL_KOLOMMEN)
-    .eq('user_id', userId)
-    .single()
-  if (!volledig.error) return volledig.data as unknown as CredentialRij
-  if (!isKolomFout(volledig.error)) return null
-  const oud = await supabaseAdmin
-    .from('user_email_settings')
-    .select(CREDENTIAL_KOLOMMEN_VOOR_244)
-    .eq('user_id', userId)
-    .single()
-  if (oud.error || !oud.data) return null
-  return {
-    ...(oud.data as unknown as CredentialRij),
-    auth_type: 'wachtwoord',
-    oauth_refresh_token_enc: null,
-    oauth_access_token_enc: null,
-    oauth_token_verloopt_op: null,
+async function leesCredentialRij(userId: string, accountId?: string | null): Promise<CredentialRij | null> {
+  async function haalRij(keuze: 'account' | 'standaard' | 'enige') {
+    const bouw = (kolommen: string) => {
+      let vraag = supabaseAdmin.from('user_email_settings').select(kolommen).eq('user_id', userId)
+      if (keuze === 'account') vraag = vraag.eq('id', accountId as string)
+      if (keuze === 'standaard') vraag = vraag.eq('is_standaard', true)
+      return vraag.maybeSingle()
+    }
+    const volledig = await bouw(CREDENTIAL_KOLOMMEN)
+    if (!isKolomFout(volledig.error)) {
+      return { rij: (volledig.data as unknown as CredentialRij | null) ?? null, fout: volledig.error }
+    }
+    const oud = await bouw(CREDENTIAL_KOLOMMEN_VOOR_244)
+    const rij = (oud.data as unknown as CredentialRij | null) ?? null
+    return {
+      rij: rij ? { ...rij, auth_type: 'wachtwoord', oauth_refresh_token_enc: null, oauth_access_token_enc: null, oauth_token_verloopt_op: null } : null,
+      fout: oud.error,
+    }
   }
-}
-// ── GEDEELD-MET-API EINDE: credentials zonder 244 ─────────────────────────
 
-async function getEmailCredentials(userId: string): Promise<EmailCredentials> {
-  const data = await leesCredentialRij(userId)
+  if (accountId) {
+    const uitkomst = await haalRij('account')
+    if (uitkomst.fout || !uitkomst.rij) {
+      throw new Error('Dit postvak bestaat niet of hoort niet bij jou. Kies een ander postvak onder Instellingen > E-mail.')
+    }
+    return uitkomst.rij
+  }
+  // is_standaard bestaat pas sinds migratie 245; ontbreekt de kolom of staan er
+  // meer standaard-rijen, dan beslist de volgende poging.
+  const standaard = await haalRij('standaard')
+  if (!standaard.fout && standaard.rij) return standaard.rij
+  const enige = await haalRij('enige')
+  if (enige.fout) {
+    throw new Error('Er zijn meer postvakken gekoppeld en geen ervan is de standaard. Kies een postvak onder Instellingen > E-mail.')
+  }
+  return enige.rij
+}
+// ── GEDEELD-MET-API EINDE: credentials per postvak ────────────────────────
+
+async function getEmailCredentials(userId: string, accountId?: string | null): Promise<EmailCredentials> {
+  const data = await leesCredentialRij(userId, accountId)
 
   if (!data?.gmail_address) {
     throw new Error('Geen email instellingen gevonden. Configureer je email in Instellingen > Integraties.')
@@ -440,6 +532,7 @@ async function getEmailCredentials(userId: string): Promise<EmailCredentials> {
   }
 
   return {
+    account_id: (data.id as string) ?? null,
     gmail_address: data.gmail_address,
     app_password: data.encrypted_app_password ? decryptPassword(data.encrypted_app_password) : '',
     user_id: userId,
@@ -535,6 +628,19 @@ async function resolveImapFolder(client: ImapFlow, folder: string): Promise<stri
 
 // Serverless heeft een harde limiet; we stoppen ruim daarvoor en melden hoeveel
 // er nog open staat, zodat de client desgewenst nog een ronde vraagt.
+/**
+ * Uit welk postvak dit verzoek komt (user_email_settings.id, migratie 245).
+ * Ontbreekt hij, dan kiest de credential-lezer het standaardpostvak, dus oude
+ * clients blijven werken.
+ */
+function leesAccountId(req: VercelRequest): string | null {
+  const uitBody = (req.body as Record<string, unknown> | undefined)?.account_id
+  if (typeof uitBody === 'string' && uitBody) return uitBody
+  const uitQuery = req.query?.account_id
+  if (typeof uitQuery === 'string' && uitQuery) return uitQuery
+  return null
+}
+
 export const config = { maxDuration: 60 }
 const TIJDSBUDGET_MS = 45_000
 const MAX_BATCH = 40
@@ -581,13 +687,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { folder = 'INBOX', limit = 25 } = req.body || {}
     const user_id = await verifyUser(req)
     if (!(await enforceRateLimit(user_id, res))) return
-    const creds = await getEmailCredentials(user_id)
+    const creds = await getEmailCredentials(user_id, leesAccountId(req))
 
     const mapValue = String(folder).toUpperCase() === 'INBOX' ? 'inbox' : String(folder).toLowerCase()
     const batchGrootte = Math.min(Math.max(Number(limit) || 25, 1), MAX_BATCH)
 
     // Nieuwste eerst: dat is wat de gebruiker zo gaat openen.
-    const { rijen, meer: meerBeschikbaar } = await zoekKandidaten(user_id, mapValue, batchGrootte)
+    const { rijen, meer: meerBeschikbaar } = await zoekKandidaten(user_id, mapValue, batchGrootte, creds.account_id)
 
     if (rijen.length === 0) {
       return res.status(200).json({ verwerkt: 0, mislukt: 0, resterend: false })

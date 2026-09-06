@@ -11,6 +11,9 @@
 //
 // De vlagresolutie is een kopie van `bepaalStand` uit `src/lib/featureFlags.ts`
 // en moet daar gelijk aan blijven; de test bewaakt ook dat.
+//
+// Onderaan staat een tweede markerpaar, GEDEELD-POSTVAK. Dat blok staat in twee
+// bestanden en niet in drie: `api/fetch-emails.ts` heeft die helpers niet nodig.
 
 // ── GEDEELD-MET-API BEGIN ──────────────────────────────────────────────
 // Letterlijke kopie in api/cron-mailsync-werker.ts en api/fetch-emails.ts.
@@ -313,7 +316,108 @@ function messageIdVoorRij(
 
 // ── GEDEELD-MET-API EINDE ──────────────────────────────────────────────
 
+// ── Postvak-bewuste wachtrij (migratie 245 en 247) ─────────────────────
+//
+// BEWUST BUITEN HET GEDEELDE BLOK HIERBOVEN. Dat blok staat byte voor byte in
+// drie bestanden en `api/fetch-emails.ts` is van een andere hand; deze helpers
+// hebben daar niets te zoeken. De kopie hiervan staat alleen in
+// `api/cron-mailsync-werker.ts`, onder dezelfde kop.
+
+// ── GEDEELD-POSTVAK BEGIN ──────────────────────────────────
+interface PostvakTaak {
+  user_id: string
+  /** Rij-id van user_email_settings. Ontbreekt zolang migratie 245 niet draait. */
+  account_id?: string | null
+}
+
+/**
+ * Spiegelt `COALESCE(account_id, user_id)` uit `mailsync_taken_open_unique`
+ * (migratie 247). Zonder account_id valt de sleutel terug op de gebruiker,
+ * precies zoals de oude index op (user_id, folder, soort): zolang iedereen één
+ * postvak heeft verandert er niets.
+ */
+function postvakSleutel(rij: PostvakTaak): string {
+  return rij.account_id || rij.user_id
+}
+
+interface TeMakenTaak {
+  user_id: string
+  folder: string
+  soort: string
+  account_id?: string
+}
+
+/**
+ * Welke postvakken nog een open taak missen.
+ *
+ * `metAccountKolom` is de terugval: bestaat `mailsync_taken.account_id` niet
+ * (migratie 247 niet gedraaid), dan is de sleutel weer de gebruiker en is dit
+ * exact het oude gedrag — één taak per gebruiker, zonder account_id in de rij.
+ *
+ * Een bestaande taak zónder account_id komt uit de oude code of uit het venster
+ * tussen 245 en 247. Heeft die gebruiker maar één postvak, dan hoort de taak
+ * daarbij en telt hij als dekking; heeft hij er meer, dan is niet te zeggen
+ * welke en gaat de sleutel per postvak.
+ */
+function ontbrekendeTaken(
+  postvakken: readonly PostvakTaak[],
+  bestaand: readonly PostvakTaak[],
+  metAccountKolom: boolean,
+  folder = 'inbox',
+  soort = 'incrementeel',
+): TeMakenTaak[] {
+  const aantalPerUser = new Map<string, number>()
+  for (const postvak of postvakken) {
+    aantalPerUser.set(postvak.user_id, (aantalPerUser.get(postvak.user_id) ?? 0) + 1)
+  }
+
+  const heeftAl = new Set<string>()
+  const zonderAccount = new Set<string>()
+  for (const rij of bestaand) {
+    heeftAl.add(metAccountKolom ? postvakSleutel(rij) : rij.user_id)
+    if (!rij.account_id) zonderAccount.add(rij.user_id)
+  }
+
+  const gepland = new Set<string>()
+  const rijen: TeMakenTaak[] = []
+  for (const postvak of postvakken) {
+    const sleutel = metAccountKolom ? postvakSleutel(postvak) : postvak.user_id
+    if (gepland.has(sleutel)) continue
+    if (heeftAl.has(sleutel)) continue
+    if (zonderAccount.has(postvak.user_id) && aantalPerUser.get(postvak.user_id) === 1) continue
+    gepland.add(sleutel)
+    const rij: TeMakenTaak = { user_id: postvak.user_id, folder, soort }
+    if (metAccountKolom && postvak.account_id) rij.account_id = postvak.account_id
+    rijen.push(rij)
+  }
+  return rijen
+}
+
+/**
+ * Hoogstens één taak per postvak per ronde claimen.
+ *
+ * Twee open taken voor dezelfde mailbox kunnen bestaan zolang migratie 247 niet
+ * gedraaid is, en ook daarna: een oude rij zonder account_id en een nieuwe met
+ * account_id geven onder COALESCE twee verschillende sleutels. Twee
+ * gelijktijdige IMAP-verbindingen naar hetzelfde postvak is precies wat de
+ * lease hoort te voorkomen, dus valt de tweede hier af in plaats van bij de
+ * mailserver.
+ */
+function eenTaakPerPostvak<T extends PostvakTaak>(taken: readonly T[]): T[] {
+  const gezien = new Set<string>()
+  const uniek: T[] = []
+  for (const taak of taken) {
+    const sleutel = postvakSleutel(taak)
+    if (gezien.has(sleutel)) continue
+    gezien.add(sleutel)
+    uniek.push(taak)
+  }
+  return uniek
+}
+// ── GEDEELD-POSTVAK EINDE ──────────────────────────────────
+
 export type { FlagStand, FeatureFlagRij, TaakStatus, FoutSoort, Aanleiding, TaakUitkomst, CasUitvoer }
+export type { PostvakTaak, TeMakenTaak }
 export {
   bepaalStand,
   vlagStaatAan,
@@ -335,4 +439,7 @@ export {
   korteHash,
   synthetiseerMessageId,
   messageIdVoorRij,
+  postvakSleutel,
+  ontbrekendeTaken,
+  eenTaakPerPostvak,
 }

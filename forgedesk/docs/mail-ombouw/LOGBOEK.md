@@ -262,3 +262,289 @@ Op Trigger.dev (dashboard, environment prod) voor de IDLE-werker:
 - Onderzoek naar het tweede postvak, meerdere handtekeningen en het gedeelde postvak: zie het rapport in de sessie. Kern: de leeskant is af, de schrijfkant niet. Zestien upserts en negen credential-lezers gaan nog uit van één rij per gebruiker. Er is een vijfde blokkade gevonden die in augustus niet in beeld was: `mailsync_taken_open_unique` op `(user_id, folder, soort)` laat maar één open sync-taak per gebruiker toe, dus postvak 2 krijgt er nooit een.
 - **Migratie 246 nog steeds niet draaien.** Hij haalt drie constraints weg terwijl zestien upserts er nog op leunen; de bestaande terugval vangt een ontbrekende kolom af, geen ontbrekende constraint. Gevolg zou zijn dat `last_seen_uid` niet meer opschuift en instellingen opslaan faalt, precies de knop die je nodig hebt om het te herstellen.
 - Nu al gefixt: `api/email-settings.ts` DELETE wiste alle postvakken van een gebruiker (nu per `account_id`, en zonder id alleen als er precies één is); `api/send-email.ts` schrijft `account_id` op de verzonden rij (zonder dat is verzonden mail uit een gedeeld postvak onzichtbaar voor het team); migratie 245 versmalt de schrijfrechten op `user_email_settings` zodat niet elk lid zijn eigen mailbox op `gedeeld` kan zetten en daarmee voor de hele organisatie kan openzetten.
+
+## Postvak 2: sync
+
+- `api/cron-email-sync.ts` itereert over postvakken in plaats van gebruikers (`haalPostvakken`, regel 71). Hij selecteerde alleen `user_id` en ontdubbelde niet, dus met twee rijen opende één ronde twee verbindingen naar hetzelfde eerste postvak. Nu `id, user_id, is_standaard, soort`, ontdubbeld op de rij-id, met `account_id` naast `service_user_id` in de aanroep van `fetch-emails` (en van de verzonden-ronde). `MAX_PER_RONDE` blijft 8 maar telt postvakken. Sortering op `email_sync_state` per `(account_id, folder)` als die kolom bestaat, anders per `(user_id, folder)` met de oudste rij van die gebruiker als maat; bij gelijkspel gaat het standaardpostvak voor.
+- `api/cron-mailsync-werker.ts` en `src/lib/mailsyncQueue.ts` maken en claimen taken per postvak. Drie helpers in een tweede markerpaar `GEDEELD-POSTVAK`, in twee bestanden en niet in drie: `postvakSleutel` spiegelt `COALESCE(account_id, user_id)` uit 247, `ontbrekendeTaken` bepaalt welke postvakken nog een open taak missen, en `eenTaakPerPostvak` maakt de claim per postvak uniek zodat twee open rijen voor dezelfde mailbox nooit twee IMAP-verbindingen in één ronde openen. `account_id` gaat mee naar `fetch-emails`, `prefetch-email-bodies` en de verzonden-ronde. Het bestaande `GEDEELD-MET-API`-blok is niet aangeraakt, dus de kopie in `api/fetch-emails.ts` (andere agent) blijft zoals hij was.
+- De actief-filter van zeven dagen geldt niet meer voor een postvak met `soort = 'gedeeld'` (werker regel 590, en dezelfde filter in `cron-email-sync.ts`): een team-inbox hoort niet stil te vallen omdat degene die hem koppelde een week op vakantie is. Zonder de kolom `soort` leest elk postvak als `persoonlijk` en geldt de filter onveranderd. Zijn álle kandidaten gedeeld, dan wordt de `listUsers`-paginatie overgeslagen.
+- `src/trigger/mail-idle.ts` draait per postvak: `accountId` in de lading, `concurrencyKey` en de tag worden het postvak-id (terugval op user_id), de foutteller wordt per postvak gelezen (`leesIdleFoutTeller`), `idle_laatst_op` tikt op de eigen inbox-rij en de starttaak telt postvakken tegen `MAIL_IDLE_MAX`. Gmail telt verbindingen per account: twee postvakken van dezelfde gebruiker zijn twee accounts en tellen niet bij elkaar op, een gedeeld postvak is één account met meerdere collega's en wordt daarom ontdubbeld op zijn adres, dus hoogstens één IDLE-taak. De starttaak zoekt ook nog op de oude tag `mailbox:<user_id>`, anders zet hij tijdens de uitrol een tweede verbinding naast een run die al liep.
+- Tests: negen erbij in `tests/lib/mailsyncQueue.test.ts`, met als kern dat een taak voor postvak B wordt aangemaakt terwijl postvak A er al een heeft. Plus de byte-vergelijking van het nieuwe `GEDEELD-POSTVAK`-blok tussen `src/lib/mailsyncQueue.ts` en `api/cron-mailsync-werker.ts`.
+
+### Wat pas werkt na een migratie
+
+- **Na 245** (`account_id` op `emails`, `email_sync_state` en `mailsync_taken`, plus `soort` en `is_standaard` op `user_email_settings`): sortering per postvak, `account_id` op de taak en in de aanroepen, de gedeeld-uitzondering op de actief-filter, en de eigen `email_sync_state`-rij per postvak. Tot die tijd valt alles terug op `user_id` en is het gedrag exact zoals nu.
+- **Na 247** (`mailsync_taken_open_unique` op `(user_id, COALESCE(account_id, user_id), folder, soort)`): pas dán krijgt postvak 2 daadwerkelijk een sync-taak. Draait 245 wel en 247 niet, dan berekent de code de taak keurig maar weigert de oude index hem met 23505; dat is opgevangen en levert geen fout op, alleen geen tweede taak.
+- **Na 246**: `zetMailboxUitgezet` en `upsertIdleStaat` proberen eerst `onConflict: 'account_id,folder'`. Zolang de oude unieke sleutel `(user_id, folder)` bestaat kan de terugval de rij van het andere postvak van dezelfde gebruiker overschrijven. Met twee postvakken is 246 dus geen luxe voor de gezondheidsstand.
+
+### Voor de andere agents
+
+- `api/fetch-emails.ts`, `api/prefetch-email-bodies.ts`: de cron stuurt nu `account_id` mee in de body naast `service_user_id`. Zolang die niet gelezen wordt kiest `getEmailCredentials` nog steeds het eerste postvak, en dat blijft dus de laatste schakel voor postvak 2. Let ook op de `.single()` daar: met twee rijen per gebruiker geeft die PGRST116.
+- Niet aangeraakt, bewust: `meldNieuweMail` in beide cron-bestanden zoekt de laatste inbox-mail op `user_id` zonder postvakfilter. Met twee postvakken kan de pushmelding dus de afzender van het verkeerde postvak tonen. Kleine fix, buiten de opdracht gelaten.
+- Poorten na dit werk: `npm run typecheck:api` = 1, `npx tsc --noEmit` = 28, build groen, 683 tests groen (674 + 9).
+
+## Postvak 2: api-laag
+
+- 1. Credential-lezers per postvak: `getEmailCredentials(userId, accountId)` uit `api/send-email.ts` staat nu ook in `fetch-emails`, `read-email`, `prefetch-email-bodies`, `email-imap-action`, `backfill-emails`, `test-email-connection`, `email-settings`, `mail-oauth-token` en `cron-verzend-geplande-berichten`, met de marker `// GEDEELD-MET-API: credentials per postvak`. Volgorde: meegestuurd `account_id`, dan `is_standaard`, dan de enige rij; de terugval op de kolommen van vóór 244 blijft. `account_id` zit overal in het resultaat. `test-email-connection` en `mail-oauth-token` lezen alleen de OAuth-kolommen en kregen daarom `leesPostvakRij`, dezelfde ladder zonder de 244-terugval.
+- 1b. Meegenomen omdat het uit dezelfde fout volgt: het terugschrijven van een vers OAuth-token deed `.eq('user_id', ...)` en raakte daarmee álle postvakken van een gebruiker. Dat gaat nu op de rij-id (`OauthRij` kreeg `id` en `account_id`). De kopieën in `api/cron-email-sync.ts` en `src/trigger/mail-idle.ts` zijn niet van mij en hebben dit nog niet.
+- 2. `account_id` als parameter: `fetch-emails`, `read-email`, `prefetch-email-bodies`, `email-imap-action` en `backfill-emails` lezen hem via `leesAccountId(req)` uit body of query; `test-email-connection` uit `body.account_id`. In `src/services/gmailService.ts` is `accountId` een optionele laatste parameter op `fetchEmailsFromIMAP`, `readEmailFromIMAP`, `markeerEmailGelezenOpServer`, `prefetchEmailBodies`, `backfillEmailsFromIMAP`, `emailImapActie` en `testEmailConnection`, en een veld op `EmailSettingsData`. Leeg laten = het standaardpostvak, dus bestaande aanroepers merken niets.
+- 3. Upsert-ladder (marker `// GEDEELD-MET-API: upsert-ladder`): eerst `account_id,<sleutel>`, dan `user_id,<sleutel>`, dan de oude sleutel zonder `account_id` in de rij. `isOnbekendeSleutel` vangt nu ook **42P10** (geen unieke index bij die kolommen); dat is precies wat migratie 246 oplevert en wat de oude terugval liet lopen. `email_sync_state` en `emails` schrijven `account_id` mee, anders vindt de nieuwe arbiter nooit een bestaande rij. In `fetch-emails` gaan ook de partiële updates (`updateSyncState`, `tikSyncTijdstip`) op `account_id` in plaats van op `user_id`, want die raakten anders de rij van het andere postvak.
+- 4. `email-settings`: GET geeft `postvakken` terug plus de losse velden van het gekozen postvak (`?account_id=`, anders het standaardpostvak, anders het enige) — met één postvak dus letterlijk het antwoord van nu. POST accepteert `account_id` en weigert een id dat niet van de aanvrager is. **Bewust afgeweken van de opdracht:** zonder `account_id` en met precies één bestaand postvak werkt POST dat postvak bij in plaats van een tweede aan te maken. Anders zou de bestaande instellingen-UI (die geen `account_id` stuurt) bij elke opslag een duplicaat maken, en zou "adres wijzigen" niet meer betekenen "van mailbox wisselen". Een nieuw postvak ontstaat wanneer er meer rijen zijn en geen ervan op adres matcht. `herstelSyncStatus` filtert op `account_id` (met terugval op `user_id`), zodat opslaan van postvak A de storing van postvak B niet wegpoetst. DELETE was al per `account_id`; toegevoegd: `.select('id')` erbij, want zonder dat meldde een delete op andermans id vrolijk succes.
+- 5. `cron-verzend-geplande-berichten` gebruikt `bericht.account_id` (245) en valt terug op het standaardpostvak. `send-email` stempelt `account_id` op de rijen die het in `ingeplande_berichten` schrijft (gepland én outbox), anders heeft de cron niets om te lezen. Elke insert die `account_id` noemt probeert het één keer opnieuw zonder dat veld, zodat een database zonder 245 het bericht nog steeds opslaat.
+- 6. De terugval in `send-email` op `gmail_address`/`app_password` uit de request-body is **weg**, niet versmald. Reden staat in een comment op de plek zelf: die terugval sloeg juist aan wanneer `getEmailCredentials` gooide, en dat is precies wat er gebeurt als je een `account_id` opvraagt dat niet van jou is. Verzenden liep dan langs elke postvakcontrole heen met een zelfgekozen afzender en wachtwoord. Geen enkele client stuurt die velden.
+
+### Restrisico's en wat er nog open staat
+
+- Tussen 245 en 246 bestaan beide unieke sleutels naast elkaar. Een rij met `account_id IS NULL` die ná 245 is ingevoegd zou op `(account_id, message_id)` niet matchen maar op `(user_id, message_id)` wél botsen: 23505, en die vangt de ladder niet (`mail-idle` doet dat ook niet). 245 backfilt alle bestaande rijen en alle schrijvers zetten `account_id`, dus dit kan alleen door code van vóór deze ronde ontstaan.
+- `emails.body_html` en de `map`-logica zijn niet aangeraakt.
+
+### Voor de andere agents (postvak 2)
+
+- **Client/store:** `gmailService` neemt `accountId` nu aan maar niemand geeft hem mee. De aanroepers zijn van jullie: `src/components/email/shell/useMailSync.ts` (`fetchEmailsFromIMAP`, `backfillEmailsFromIMAP`), `src/lib/mail/bodyRepository.ts` (`readEmailFromIMAP`, `prefetchEmailBodies`) en `src/components/settings/EmailTab.tsx` (`testEmailConnection`, `loadEmailSettingsFromDb`, `saveEmailSettingsToDb`, `deleteEmailSettingsFromDb`). Zolang dat niet gebeurt draait alles op het standaardpostvak.
+- **Instellingen:** GET `/api/email-settings` geeft nu `postvakken: [{ account_id, gmail_address, has_password, auth_type, has_oauth, is_standaard, smtp_*, imap_* }]` naast de bestaande losse velden. POST en DELETE nemen `account_id`; POST geeft het gebruikte `account_id` terug.
+- **Crons/IDLE:** `api/cron-email-sync.ts` en `api/cron-mailsync-werker.ts` zijn van jullie. Twee dingen die aan mijn kant al gedaan zijn en daar nog niet: het OAuth-token terugschrijven op de rij-id in plaats van op `user_id`, en 42P10 in de sleutelterugval. `api/email-attachment.ts` heeft ook nog een `getEmailCredentials(user_id)` zonder postvak; die staat op niemands lijst.
+- Poorten na dit werk: `npm run typecheck:api` = 1 (ongewijzigd, `api/portaal-upload.ts:232`), `npx tsc --noEmit` = 28 (ongewijzigd), `npm run build` groen.
+
+## Postvak 2: instellingen en client
+
+- 1. **Postvakkenlijst** in Instellingen, E-mail, Verbinding (`EmailTab.tsx:219` `PostvakkenLijst`, `:269` `PostvakRij`): naam of adres, het adres eronder, een merkje "standaard." en bij `soort = 'gedeeld'` een label gedeeld. Per rij hernoemen, als standaard instellen en ontkoppelen achter een bevestiging die zegt dat de mail in doen. blijft staan. `zetStandaard` en `hernoem` uit `postvakService` hadden nul consumenten en hangen hier nu aan. De lijst verschijnt alleen bij meer dan één postvak of zodra de 245-kolommen leesbaar zijn (`postvakkenUitgebreid()`, `postvakService.ts:39`); daarvoor staat er precies het formulier van nu (`EmailTab.tsx:1007`).
+- 2. **Opslaan per postvak** via `slaPostvakOp` (`postvakService.ts:214`, aangeroepen op `EmailTab.tsx:1478`): `account_id` gaat mee bij bijwerken, en niet bij een nieuw postvak. Het formulier staat in de stand nieuw of bewerken (`stand`-prop) en gebruikt bij een nieuw postvak een eigen, leeg state-object, zodat het bestaande postvak in beeld blijft. Bij een nieuw postvak wist het formulier de mailcache niet: de mail van postvak 1 hoort te blijven staan.
+- 3. **Ontkoppelen** gaat via `ontkoppelPostvak` (`postvakService.ts:251`) met `?account_id=` naar de DELETE die er al was. Beide paden gebruiken hem: de rij in de lijst (`EmailTab.tsx:1291`) en de knop onder het formulier (`:1554`). Een geweigerde delete toont zijn melding in plaats van stil te verdwijnen.
+- 4. **MijnEmailSubTab** toont niet één adres meer maar alle postvakken met de gezondheid per postvak (`getPostvakGezondheid`, `postvakService.ts:145`, leest `email_sync_state` op `account_id`). Zonder die kolom krijgt elk postvak de stand van de mailbox als geheel, precies het gedrag van nu.
+- 5. **Client-plekken die het postvak negeerden.** `conceptService.slaConceptOp` schrijft `account_id` uit het composer-document (`conceptService.ts:50`), met één herkansing zonder die kolom; zonder dit verscheen elk concept in élk postvak. `emailService` kreeg een optionele `accountId` op `getThreadItems` (`:354`), `getThreadInfos` (`:375`), `searchEmailsFTS` (`:437`) en `getEmailsMetAdres` (`:729`). `mailStore` geeft het actieve postvak mee aan zoeken (`:519`), thread laden (`:558`) en de thread-tellers (`:594`), weigert een realtime-insert uit een ánder postvak zolang je op één postvak staat (`:705`) en geeft de postvak-kolomvlag mee in `pasRegelsToeOpBestaande` (`:305`).
+- 6. **Eén query per lijstlading.** Migratie 245 herbouwt `emails_list_view` mét `account_id`, `toegewezen_aan` en `toegewezen_op` (nagekeken in 245, sectie onderaan). `account_id` zit nu in de selectie (`emailService.ts:69`), met terugval op de oude kolomlijst plus de tweede query zolang de view hem niet heeft (`lijstQuery`, `:204`; `metAccountKolom` draait alleen nog bij `viewHeeftAccount === false`, `:327`).
+- 7. Kennisbank `mail-outlook-niveau`: sectie "Een tweede postvak toevoegen" erbij (hoe je koppelt, hernoemen, standaard, ontkoppelen laat de mail staan) en de bestaande alinea over meerdere postvakken zegt nu expliciet dat verzenden volgt wat er op de regel Van staat. Changelog: 1.6.2.
+- `PostvakKiezer.tsx` bleef ongewijzigd: die verbergt zichzelf al bij één postvak.
+
+### Wat pas werkt na een migratie
+
+- **Na 245**: de postvakkenlijst en "Postvak toevoegen" (de UI hangt aan `postvakkenUitgebreid()`), `account_id` op een concept, het postvakfilter in zoeken, threads en thread-tellers, de gezondheid per postvak, en `account_id` rechtstreeks uit `emails_list_view`. Zonder 245 valt alles terug op één postvak en is het gedrag exact zoals vandaag.
+- **Na 246**: pas dán kan er echt een tweede rij in `user_email_settings` staan (246 haalt `user_email_settings_user_id_key` weg). Tot die tijd levert "Postvak toevoegen" hoogstens een melding, geen tweede postvak.
+- **Na 247**: postvak 2 krijgt pas een eigen sync-taak, dus zonder 247 blijft de tweede mailbox leeg hoe netjes de instellingen ook staan.
+
+### Waarschuwing voor de regie: POST wijkt af van het contract
+
+- De opdracht aan mij was: POST **zonder** `account_id` maakt een nieuwe rij als er al één is. De api-agent heeft daar bewust van afgeweken (zie zijn eigen regel onder "Postvak 2: api-laag", punt 4): met precies één bestaand postvak werkt POST dát postvak bij. Dat is precies de sprong die Antony wil maken (antony@ staat er, studio@ komt erbij), en die eindigt nu dus in een overschreven eerste postvak in plaats van een tweede.
+- Mijn kant vangt het op in plaats van het stil te laten gebeuren: `slaPostvakOp` vergelijkt het `account_id` uit het antwoord met de ids die er vóór de POST al waren, en meldt in het formulier dat de server het bestaande postvak heeft bijgewerkt. Een tweede controle telt de postvakken vóór en na.
+- Op te lossen door de regie, niet door mij (het bestand is niet van mij): laat POST een nieuw postvak maken zodra de client dat vraagt. Een expliciet signaal in de body is het schoonst; zonder afspraak daarover blijft 1 → 2 hangen op de melding hierboven.
+- Poorten na dit werk: `npx tsc --noEmit` = 28 (ongewijzigd), `npm run build` groen, `npm run test:run` 683 groen (674 + 9 van de sync-agent).
+
+## Postvak 2: de naad tussen client en api (regie)
+
+- De api-agent liet POST zonder `account_id` het bestaande postvak bijwerken, want zonder signaal is "één postvak bijwerken" niet te onderscheiden van "postvak toevoegen". De instellingen-agent zag dat en meldde het. Opgelost met een expliciete `nieuw`-vlag: alleen het formulier weet of je een postvak toevoegt of een adres wijzigt (dat laatste is van mailbox wisselen). Bestaat het adres al, dan geeft de api 409 in plaats van een duplicaat.
+- Migratie 247 geschreven: `mailsync_taken_open_unique` wordt `(user_id, COALESCE(account_id, user_id), folder, soort)`. Zonder die wijziging krijgt postvak 2 nooit een sync-taak, want postvak 1 bezet de enige plek. De COALESCE houdt taken zonder `account_id` op user_id ontdubbeld; NULL is in een unieke index anders distinct.
+- Volgorde voor de uitrol: deployen, dan 245, dan 247, dan pas 246. 246 haalt de oude sleutels weg waar de terugval-ladder op leunt; die ladder moet eerst bewezen draaien.
+
+## Twee reviewrondes op de tweede-postvak-branch (regie)
+
+Twee reviewers naast elkaar, met opzet vanuit een andere hoek: de een liep de
+code per onderdeel na, de ander werkte tien productiescenario's uit en bewees
+per scenario in de code of het echt kan.
+
+### Wat de eerste reviewer vond, en wat ermee gebeurd is
+
+- **`isOnbekendeSleutel` kende PGRST204 niet.** Dat is de code die PostgREST
+  geeft als een kolom in de *lading* van een insert of upsert staat; 42703 komt
+  bij een select. De rest van de codebase gebruikte PGRST204 overal al, deze
+  ladder als enige niet. Gevolg op de database van vandaag (zonder 245): poging
+  1 vuurt altijd, faalt met PGRST204, de ladder herkent het niet en stopt, en er
+  wordt géén mail meer weggeschreven. Opgelost in alle elf kopieën.
+- **Er was geen testpoort op die ladder.** Toegevoegd: `tests/lib/upsertLadder.test.ts`
+  vergelijkt het lichaam van `isOnbekendeSleutel` in alle elf bestanden en eist
+  alle drie de codes. Nagelopen dat de test faalt zodra één kopie achterblijft.
+- **De verzonden mail in `send-email.ts`** ging met een kale insert de tabel in,
+  niet via `insertMetAccountTerugval`. Zonder 245 verdween een mail die al
+  verstuurd was uit Verzonden. Nu via de ladder.
+- **`schrijfPostvak` kon beide postvakken overschrijven.** Zonder `postvakId`
+  viel hij terug op `update … .eq('user_id')`. Nu weigert hij dat zodra er meer
+  dan één postvak is, en de POST geeft 409 vóórdat het zover komt.
+- **245 had geen `lock_timeout`.** Toegevoegd (4s/120s, net als 244 en 247).
+- Kleiner meegenomen: 23505 vertaalt naar een begrijpelijke melding, `nieuw:true`
+  zonder wachtwoord wordt geweigerd, en `getThreadInfos` telt in "Alle
+  postvakken" de rijen per gesprek op in plaats van er één te houden.
+
+### Wat de tweede reviewer vond: de client was niet meegegroeid
+
+De rode draad: de api-laag accepteert overal `account_id`, maar de clientpaden
+die écht met IMAP praten stuurden hem niet mee, en vier server-side lezingen
+gingen stuk op de tweede rij die deze migratie zelf mogelijk maakt.
+
+- **`imapActie` stuurde geen postvak.** Gelezen markeren, archiveren,
+  verplaatsen en definitief verwijderen landden dus altijd op het
+  standaardpostvak. Nu groepeert `mailStore.imapPerPostvak` de selectie per
+  postvak en gaat er één verzoek per postvak uit. Bij definitief verwijderen
+  wordt het postvak vastgelegd vóór de rij lokaal verdwijnt, anders zou de purge
+  in de verkeerde mailbox landen. Test toegevoegd.
+- **`bodyRepository`** vroeg bodies en losse mails op zonder postvak: de prefetch
+  groepeert nu op map én postvak, en `readEmailFromIMAP` krijgt het postvak van
+  de mail zelf. Zonder dit kwam de body van uid 1234 uit de verkeerde mailbox.
+- **`useMailSync`** synchroniseerde alleen het standaardpostvak. Nu per postvak,
+  zowel de ververs-knop als de historie-backfill.
+- **De outbox verloor het postvak.** Een mail uit postvak 2 die stukliep werd
+  een minuut later door de cron vanuit postvak 1 verstuurd, met de verkeerde
+  afzender en de kopie in het verkeerde archief. `enqueueOutbox` schrijft nu
+  `account_id` mee (met terugval als 245 nog niet gedraaid is) en opnieuw
+  versturen houdt hetzelfde postvak vast.
+- **`fetch-emails` las de sync-state zonder postvak.** Met twee postvakken geeft
+  `maybeSingle()` daar PGRST116, en dan viel de incrementele sync voor béide
+  postvakken uit en herstartte de backfill eeuwig. Nu per postvak. Datzelfde
+  gold voor de inbox-reconciliatie, die anders de mail van het ándere postvak
+  per ronde 40 stuks naar de prullenbak zou verplaatsen, en voor de twee
+  terugval-lookups bij een mislukte batch.
+- **`backfill-emails` gaf 503** zodra er een tweede postvak was. De credentials
+  worden nu eerst gelezen, zodat de sync-state per postvak opgehaald kan worden.
+- **De gezondheidsbanner stond permanent op "onbekend"** bij twee postvakken.
+  Leest nu alle inbox-rijen en toont de slechtste stand.
+- **"Hoe ver terug" brak na 246** (upsert op een sleutel die dan niet meer
+  bestaat). Tweede poging toegevoegd.
+- **De UIDVALIDITY-controle** in `email-imap-action` accepteerde de waarde van
+  het verkeerde postvak. Nu per postvak.
+
+### Twee dingen bewust anders opgelost dan de reviewers voorstelden
+
+- **`mailsync_taken.account_id` is uit 245 gehaald** in plaats van een
+  volgorde-instructie toe te voegen. Zodra die kolom bestaat schakelt de werker
+  over op één taak per postvak, terwijl de index uit 202 er nog maar één per
+  gebruiker toestaat: postvak 2 krijgt dan nooit een taak. 247 voegt de kolom en
+  de nieuwe index in dezelfde transactie toe, dus dat venster kan niet meer
+  ontstaan en de volgorde van 245 en 247 doet er niet langer toe.
+- **Ontkoppelen en opnieuw koppelen ná 246 dupliceert de hele mailbox.** Dat is
+  niet met een index te repareren: opnieuw koppelen levert een nieuw postvak-id
+  op, dus de mail komt hoe dan ook als nieuwe rijen binnen. De echte oplossing is
+  ontkoppelen als soft-delete, zodat hetzelfde id terugkomt. Dat is geen werk
+  voor deze branch, en 246 draait nog niet: de waarschuwing staat nu bovenaan
+  246 als voorwaarde om hem te mogen draaien.
+
+### Wat blijft staan als bekend gegeven
+
+- Een gedeeld postvak kan alleen met de hand in SQL ontstaan; de app maakt er
+  geen. De UPDATE-policy erop kan geen kolommen beperken, dus een teamlid dat
+  het gedeelde postvak mag bewerken kan élke kolom van die mailrijen wijzigen.
+  Staat als comment in 245. Wordt aanmaken in de app gezet, dan eerst een
+  trigger die `user_id` vastpint.
+- Twee crons synchroniseren dezelfde mailbox naast elkaar zodra de vlag
+  `mailsync_queue` aanstaat; `MAX_PER_RONDE = 8` telt vanaf nu postvakken in
+  plaats van gebruikers. Bewust, maar het halveert de doorloop voor wie twee
+  postvakken heeft.
+- Poorten na dit werk: `npx tsc --noEmit` = 28 (ongewijzigd), `npm run typecheck:api` = 1
+  (ongewijzigd), `npm run build` groen, `npm run test:run` 706 groen.
+
+## Derde ronde: de kruiscontrole
+
+De derde reviewer kreeg één opdracht: klopt wat de eerste twee zeiden, en klopt
+wat er daarna mee gedaan is. Dat leverde meer op dan een stempel.
+
+### Hij vond een regressie die de fixronde zelf had gemaakt
+
+`api/backfill-emails.ts`: om de sync-state per postvak te kunnen lezen had ik
+`getEmailCredentials` naar voren gehaald, vóór de vroege antwoorden "nog niet
+gebootstrapt" en "al klaar". Die functie eist een app-wachtwoord, dus élke
+OAuth-mailbox kreeg voortaan een 500 in plaats van een 200, en die fout brak de
+hele backfill-lus in de client af. Dat raakte iedereen, ook zonder tweede
+postvak, en meteen bij deploy. Nu wordt alleen het postvak-id vooruit gelezen en
+blijft de wachtwoordeis staan waar hij stond.
+
+Les voor de volgende keer: een aanroep verplaatsen die kan gooien is nooit een
+neutrale verplaatsing.
+
+### Wie gelijk had waar de twee reviewers elkaar tegenspraken
+
+Reviewer 1 noemde het ontbreken van PGRST204 een blokkade; reviewer 2 noemde
+datzelfde scenario onschuldig met "isOnbekendeSleutel vangt 42703 correct af".
+Reviewer 1 had gelijk, en de derde bewees het langs twee kanten: `account_id`
+staat altijd op de rij (het is `user_email_settings.id`, een kolom van vóór 245),
+dus poging 1 vuurt altijd; en PostgREST houdt een onbekende kolom in de lading
+zelf tegen, vóór Postgres, met PGRST204 en een tekst die de oude regex niet
+matcht. Dat de fix naast de code ook de regex moest uitbreiden bevestigt het.
+
+### Wat er alsnog uit kwam, en wat ermee gedaan is
+
+Zwaar, allemaal gerepareerd:
+
+- **Bijlagen waren dood bij twee postvakken.** `api/email-attachment.ts` deed
+  `.single()` op `user_email_settings` en kende geen postvak. Elke bijlage
+  antwoordde "Geen email instellingen gevonden". De cache-lookup matchte
+  bovendien op `(user_id, uid, map)`, dus een bijlage kon aan de mail van het
+  verkeerde postvak hangen. Endpoint en de vier aanroepers doen het nu per
+  postvak.
+- **De app zei "nog geen mailbox gekoppeld" zodra je er twee had.**
+  `authenticateGmail` stond op `.single()`.
+- **De vlaggensync schreef over postvakken heen.** Dat was de zwaarste van deze
+  ronde, want het is een schrijfpad: de sync van postvak 2 zette de gelezen- en
+  gepind-stand van uid 1234 op de mail met uid 1234 in postvak 1. Stond pal naast
+  vier reads die de vorige ronde wél gerepareerd had.
+- **De prefetch koos kandidaten zonder postvak** terwijl de verbinding er wel
+  één opende, dus bodies landden op rijen van de andere mailbox. De vorige ronde
+  had alleen de clientkant gerepareerd; de serverkant deed het werk dubbel én
+  fout.
+- **read-email's cachetreffer** matchte op `(user_id, uid, map)`: de verkeerde
+  mail tonen bij een treffer in één postvak, of de cache stil verliezen bij een
+  treffer in allebei.
+- **De aanvraagherkenning viel uit** na elke sync (`.single()`).
+- **"Opnieuw verbinden" repareerde altijd postvak 1**, terwijl de banner sinds de
+  vorige ronde de slechtste stand van álle postvakken toont. De banner meldde
+  postvak 2, de knop herstelde postvak 1, zonder melding. De status draagt nu het
+  postvak dat de stand veroorzaakt en de knop volgt dat.
+- **`herstelSyncStatus` in mail-oauth-callback** was de kopie zonder
+  postvakfilter: postvak 2 herkoppelen zette de storing van postvak 1 op ok.
+- **Eén kapot postvak zette de andere stil**, doordat de lus in `useMailSync`
+  binnen één try stond. Nu een try per postvak. Ook: de postvakkenlijst wordt nu
+  eerst geladen, anders miste postvak 2 de eenmalige backfill van die sessie.
+- **De twee losse inserts na een mislukte batch** gingen rauw de tabel in, dus
+  zonder 245 faalden ze op precies het pad dat bestaat voor als de batch al
+  gefaald heeft.
+- **De outbox-dedupe** zag dezelfde mail vanuit een ander postvak als duplicaat.
+
+Kleiner meegenomen: `email-imap-action` controleert nu aan de serverkant dat de
+rijen bij het gevraagde postvak horen (de client groepeert al goed, dit is de
+tweede sluiting), de weekdigest stuurt één mail per gebruiker in plaats van één
+per postvak, de twee backfill-joins in 245 en 247 kiezen `is_standaard` in plaats
+van een willekeurig postvak, en 247 zet `is_standaard` desnoods zelf neer zodat
+hij ook vóór 245 kan draaien.
+
+### Bewust niet gedaan
+
+- **Alle verzendpaden buiten de mailmodule** (offertes, facturen, portaal,
+  projectmail) sturen geen `account_id` en vertrekken dus uit het
+  standaardpostvak. Dat is een keuze, geen bug: zakelijke post hoort uit het
+  hoofdadres. Wel hier vastgelegd, want wie zijn zakelijke adres als tweede
+  postvak koppelt zal iets anders verwachten.
+- **`clearEmailCache()`** wist de mail van alle postvakken. Dat is precies wat
+  een opruimknop hoort te doen.
+
+### Vierde ronde: de kruiscontrole op zichzelf
+
+De derde reviewer heeft daarna zijn eigen twaalf punten nagelopen. Elf waren
+opgelost; op één had hij gelijk dat mijn fix een nieuw gat maakte, van dezelfde
+soort als de vorige keer.
+
+**"Opnieuw verbinden" mengde twee postvakken.** Ik haalde het doelpostvak op met
+`loadEmailSettingsFromDb` en viel per veld terug op de gegevens uit het
+formulier. Levert die GET `null` (een 500, een netwerkfout, een leeg adres), dan
+combineerde de opslag het adres, de hosts en de poorten van postvak 1 met het
+`account_id` van postvak 2, en droegen daarna beide postvakken hetzelfde adres.
+Precies de corruptie waar de 409-poort in ronde twee voor gebouwd is, nu via een
+andere deur. Nu geldt: alles uit één bron of niets, met een melding als het
+ophalen niet lukt.
+
+Tegelijk verhuisd: de wachtwoordeis boven de knop controleerde het postvak uit
+het formulier in plaats van het postvak dat hersteld wordt. Met OAuth op het ene
+en een wachtwoord op het andere postvak blokkeerde hij de verkeerde kant op.
+
+En `api/email-attachment.ts` weigert nu een postvak-id dat niet bestaat of niet
+van de gebruiker is, in plaats van stil op het standaardpostvak terug te vallen.
+De negen andere api-bestanden doen dat al zo; stil terugvallen zou de bijlage uit
+de verkeerde mailbox halen.
+
+### Wat blijft liggen, bewust
+
+- **Er promoveert niets een overgebleven postvak tot standaard.** Ontkoppel je
+  het standaardpostvak, dan heeft de gebruiker alleen rijen met
+  `is_standaard = false`, en dan valt elk standaardpad terug op "de oudste rij".
+  Overleefbaar, maar `is_standaard` is nu op vijf plaatsen de sleutel. Hoort bij
+  hetzelfde werk als het soft-deleten van een ontkoppeld postvak, en dus vóór
+  migratie 246.
+- **`heeftMailkoppeling`** staat nog op `.maybeSingle()`: met twee postvakken
+  logt dat een waarschuwing en geeft het toevallig het goede antwoord.
+- **De aanvraag-voorfilter** kent alleen het adres van het standaardpostvak als
+  "eigen adres".

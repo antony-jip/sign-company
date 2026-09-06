@@ -43,18 +43,21 @@ export async function authenticateGmail(): Promise<boolean> {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session?.user?.id) return false
 
+  // Geen .single(): met een tweede postvak staan er twee rijen en dan gaf die
+  // PGRST116, waarna de app "nog geen mailbox gekoppeld" toonde terwijl er
+  // twee gekoppeld waren. De vraag is alleen of er er minstens één is.
   const { data, error } = await supabase
     .from('user_email_settings')
     .select('id')
     .eq('user_id', session.user.id)
-    .single()
+    .limit(1)
 
   if (error) {
     console.error('authenticateGmail: email settings ophalen mislukt:', error.message)
     return false
   }
 
-  return !!data
+  return (data?.length ?? 0) > 0
 }
 
 // ============ EMAIL OPERATIONS ============
@@ -82,6 +85,13 @@ interface SendEmailOptions {
   keepalive?: boolean
 }
 
+/** 42703 bij een select, PGRST204 als de kolom in de lading van een insert staat. */
+function isOnbekendeKolomFout(fout: { code?: string; message?: string } | null): boolean {
+  if (!fout) return false
+  return fout.code === '42703' || fout.code === 'PGRST204'
+    || /column .* does not exist|could not find the .* column/i.test(fout.message || '')
+}
+
 /**
  * Outbox: zet een mail die niet verzonden kon worden in ingeplande_berichten
  * (bron 'outbox'); de verzend-cron probeert het automatisch opnieuw met
@@ -95,18 +105,25 @@ async function enqueueOutbox(to: string, subject: string, body: string, options?
 
     // Dedup: nooit twee outbox-rijen voor dezelfde mail (dubbele clicks,
     // races, herhaalde fouten op rij).
-    const { data: bestaand } = await supabase
-      .from('ingeplande_berichten')
-      .select('id')
-      .eq('user_id', session.user.id)
-      .eq('ontvanger', to)
-      .eq('onderwerp', subject)
-      .eq('bron', 'outbox')
-      .in('status', ['wachtend', 'verwerken'])
-      .limit(1)
-    if (bestaand && bestaand.length > 0) return true
+    const dedupe = (metAccount: boolean) => {
+      const basis = supabase!
+        .from('ingeplande_berichten')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .eq('ontvanger', to)
+        .eq('onderwerp', subject)
+        .eq('bron', 'outbox')
+        .in('status', ['wachtend', 'verwerken'])
+      return (metAccount ? basis.eq('account_id', options!.account_id as string) : basis).limit(1)
+    }
+    // Ook op postvak: dezelfde mail vanuit een ánder postvak is geen duplicaat.
+    // Zonder dit filter kreeg de gebruiker "staat in de outbox" te zien terwijl
+    // de mail vanuit het verkeerde postvak zou vertrekken.
+    let dubbel = options?.account_id ? await dedupe(true) : await dedupe(false)
+    if (options?.account_id && isOnbekendeKolomFout(dubbel.error)) dubbel = await dedupe(false)
+    if (dubbel.data && dubbel.data.length > 0) return true
 
-    const { error } = await supabase.from('ingeplande_berichten').insert({
+    const rij: Record<string, unknown> = {
       user_id: session.user.id,
       ontvanger: to,
       cc: options?.cc || null,
@@ -122,8 +139,21 @@ async function enqueueOutbox(to: string, subject: string, body: string, options?
       in_reply_to: options?.in_reply_to || null,
       thread_id: options?.thread_id || null,
       wacht_op_reactie: options?.wacht_op_reactie ?? false,
-    })
-    return !error
+      // Uit welk postvak deze mail vertrok. Zonder dit veld verstuurt de
+      // verzend-cron hem een minuut later vanuit het standaardpostvak, met de
+      // verkeerde afzender en de kopie in het verkeerde archief.
+      ...(options?.account_id ? { account_id: options.account_id } : {}),
+    }
+    const { error } = await supabase.from('ingeplande_berichten').insert(rij)
+    if (!error) return true
+    // account_id komt uit migratie 245. Is die nog niet gedraaid, dan faalt de
+    // insert in zijn geheel; liever een mail in de outbox zonder postvak dan
+    // een mail die nergens meer staat.
+    if (!('account_id' in rij) || !isOnbekendeKolomFout(error)) return false
+    const zonder = { ...rij }
+    delete zonder.account_id
+    const tweede = await supabase.from('ingeplande_berichten').insert(zonder)
+    return !tweede.error
   } catch {
     return false
   }
@@ -252,6 +282,8 @@ export async function testEmailConnection(
     imap_port?: number
     /** google of microsoft test de opgeslagen koppeling; adres en wachtwoord doen dan niet mee. */
     auth_type?: MailAuthType
+    /** Welk postvak getest wordt (user_email_settings.id, migratie 245); leeg = het standaardpostvak. */
+    account_id?: string
   }
 ): Promise<{ imap_ok: boolean; smtp_ok: boolean; error?: string }> {
   const token = await getAuthToken()
@@ -265,6 +297,7 @@ export async function testEmailConnection(
       gmail_address,
       app_password,
       auth_type: options?.auth_type,
+      account_id: options?.account_id,
       smtp_host: options?.smtp_host || 'smtp.gmail.com',
       smtp_port: options?.smtp_port || 587,
       imap_host: options?.imap_host || 'imap.gmail.com',
@@ -308,7 +341,8 @@ export async function fetchEmailsFromIMAP(
   limit?: number,
   offset?: number,
   userId?: string,
-  snel?: boolean
+  snel?: boolean,
+  accountId?: string
 ): Promise<{ emails: IMAPEmailSummary[]; total: number; synced?: number; incremental?: boolean; remaining?: number; errors?: string[] }> {
   const token = await getAuthToken()
 
@@ -323,6 +357,7 @@ export async function fetchEmailsFromIMAP(
       limit: limit || 50,
       offset: offset || 0,
       snel: snel === true,
+      account_id: accountId,
     }),
   })
 
@@ -370,7 +405,8 @@ export async function classificeerAanvragen(emailId?: string): Promise<{ beoorde
  */
 export async function prefetchEmailBodies(
   folder = 'INBOX',
-  limit = 25
+  limit = 25,
+  accountId?: string
 ): Promise<{ verwerkt: number; mislukt: number; resterend: boolean } | null> {
   try {
     const token = await getAuthToken()
@@ -380,7 +416,7 @@ export async function prefetchEmailBodies(
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
       },
-      body: JSON.stringify({ folder, limit }),
+      body: JSON.stringify({ folder, limit, account_id: accountId }),
     })
     if (!response.ok) return null
     return await response.json()
@@ -391,7 +427,8 @@ export async function prefetchEmailBodies(
 
 /** Eén backfill-batch oudere mail (zie api/backfill-emails). */
 export async function backfillEmailsFromIMAP(
-  folder?: string
+  folder?: string,
+  accountId?: string
 ): Promise<{ done: boolean; pending?: boolean; synced?: number; oudsteDatum?: string | null }> {
   const token = await getAuthToken()
   const response = await fetch('/api/backfill-emails', {
@@ -400,7 +437,7 @@ export async function backfillEmailsFromIMAP(
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`,
     },
-    body: JSON.stringify({ folder: folder || 'inbox' }),
+    body: JSON.stringify({ folder: folder || 'inbox', account_id: accountId }),
   })
   if (!response.ok) {
     const error: { error?: string } = await response.json().catch(() => ({}))
@@ -411,7 +448,8 @@ export async function backfillEmailsFromIMAP(
 
 export async function readEmailFromIMAP(
   uid: number,
-  folder?: string
+  folder?: string,
+  accountId?: string
 ): Promise<IMAPEmailDetail> {
   const token = await getAuthToken()
 
@@ -424,6 +462,7 @@ export async function readEmailFromIMAP(
     body: JSON.stringify({
       uid,
       folder: folder || 'INBOX',
+      account_id: accountId,
     }),
   })
 
@@ -440,7 +479,7 @@ export async function readEmailFromIMAP(
  * raakt de vlaggen niet meer aan (dat pad draait ook op prefetch en hover),
  * dus alleen een echte klik komt hier langs.
  */
-export async function markeerEmailGelezenOpServer(uid: number, folder?: string): Promise<void> {
+export async function markeerEmailGelezenOpServer(uid: number, folder?: string, accountId?: string): Promise<void> {
   const token = await getAuthToken()
 
   const response = await fetch('/api/read-email', {
@@ -453,6 +492,7 @@ export async function markeerEmailGelezenOpServer(uid: number, folder?: string):
       uid,
       folder: folder || 'INBOX',
       markSeenOnly: true,
+      account_id: accountId,
     }),
   })
 
@@ -476,6 +516,7 @@ export async function downloadEmailAttachment(
   uid: number,
   folder: string,
   filename: string,
+  accountId?: string,
 ): Promise<EmailAttachmentDownload> {
   const token = await getAuthToken()
 
@@ -485,7 +526,7 @@ export async function downloadEmailAttachment(
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`,
     },
-    body: JSON.stringify({ uid, folder, filename }),
+    body: JSON.stringify({ uid, folder, filename, account_id: accountId }),
   })
 
   if (!response.ok) {
@@ -499,6 +540,7 @@ export async function downloadEmailAttachment(
 export async function downloadAllEmailAttachments(
   uid: number,
   folder: string,
+  accountId?: string,
 ): Promise<EmailAttachmentDownload[]> {
   const token = await getAuthToken()
 
@@ -508,7 +550,7 @@ export async function downloadAllEmailAttachments(
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`,
     },
-    body: JSON.stringify({ uid, folder, all: true }),
+    body: JSON.stringify({ uid, folder, all: true, account_id: accountId }),
   })
 
   if (!response.ok) {
@@ -535,14 +577,16 @@ export interface EmailSettingsData {
   auth_type?: MailAuthType
   /** Of er een refresh-token ligt. De tokens zelf verlaten de server nooit. */
   has_oauth?: boolean
+  /** Welk postvak dit is (user_email_settings.id, migratie 245). */
+  account_id?: string
 }
 
 export type MailAuthType = 'wachtwoord' | 'google' | 'microsoft'
 
-export async function loadEmailSettingsFromDb(): Promise<EmailSettingsData | null> {
+export async function loadEmailSettingsFromDb(accountId?: string): Promise<EmailSettingsData | null> {
   try {
     const token = await getAuthToken()
-    const response = await fetch('/api/email-settings', {
+    const response = await fetch(`/api/email-settings${accountId ? `?account_id=${encodeURIComponent(accountId)}` : ''}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -560,6 +604,7 @@ export async function loadEmailSettingsFromDb(): Promise<EmailSettingsData | nul
     return {
       gmail_address: data.gmail_address,
       app_password: '',
+      account_id: data.account_id || undefined,
       has_password: !!data.has_password,
       auth_type: (data.auth_type as MailAuthType) || 'wachtwoord',
       has_oauth: !!data.has_oauth,
@@ -585,6 +630,7 @@ export async function saveEmailSettingsToDb(settings: EmailSettingsData): Promis
     },
     body: JSON.stringify({
       gmail_address: settings.gmail_address,
+      account_id: settings.account_id,
       // Leeg wachtwoord = ongewijzigd: stuur sentinel zodat de server de
       // bestaande versleutelde waarde behoudt in plaats van hem te wissen.
       app_password: settings.app_password || 'UNCHANGED',
@@ -602,10 +648,10 @@ export async function saveEmailSettingsToDb(settings: EmailSettingsData): Promis
   }
 }
 
-export async function deleteEmailSettingsFromDb(): Promise<void> {
+export async function deleteEmailSettingsFromDb(accountId?: string): Promise<void> {
   const token = await getAuthToken()
 
-  await fetch('/api/email-settings', {
+  await fetch(`/api/email-settings${accountId ? `?account_id=${encodeURIComponent(accountId)}` : ''}`, {
     method: 'DELETE',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -669,12 +715,13 @@ export interface ImapActieResultaat {
 export async function emailImapActie(
   action: 'trash' | 'purge' | 'archive',
   emailIds: string[],
+  accountId?: string,
 ): Promise<ImapActieResultaat> {
   const token = await getAuthToken()
   const response = await fetch('/api/email-imap-action', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-    body: JSON.stringify({ action, emailIds }),
+    body: JSON.stringify({ action, emailIds, account_id: accountId }),
   })
   if (!response.ok) {
     const error: { error?: string } = await response.json().catch(() => ({}))

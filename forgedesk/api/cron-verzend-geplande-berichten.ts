@@ -87,13 +87,107 @@ function decryptPassword(encrypted: string): string {
   }
 }
 
+// ── GEDEELD-MET-API: insert met account-terugval ──────────────────────────
+// account_id komt uit migratie 245. Zolang die niet gedraaid is faalt een
+// insert met dat veld in zijn geheel op 42703, en dan zou een mail die al
+// verstuurd is niet meer opgeslagen worden. Eén keer opnieuw zonder het veld.
+function isAccountKolomFout(fout: { code?: string; message?: string } | null): boolean {
+  if (!fout) return false
+  return fout.code === '42703' || fout.code === 'PGRST204'
+    || /column .* does not exist|could not find the .* column/i.test(fout.message || '')
+}
+
+async function insertMetAccountTerugval(tabel: string, rij: Record<string, unknown>) {
+  const eerste = await supabaseAdmin.from(tabel).insert(rij).select('id').single()
+  if (!eerste.error || !('account_id' in rij) || !isAccountKolomFout(eerste.error)) return eerste
+  const zonder = { ...rij }
+  delete zonder.account_id
+  return await supabaseAdmin.from(tabel).insert(zonder).select('id').single()
+}
+// ── GEDEELD-MET-API EINDE: insert met account-terugval ────────────────────
+
 function extractBareEmail(address: string): string {
   const trimmed = address.trim()
   const match = trimmed.match(/<([^>]+)>/)
   return (match?.[1] || trimmed).toLowerCase()
 }
 
+// ── GEDEELD-MET-API: credentials per postvak ──────────────────────────────
+// Een gebruiker kan meer postvakken hebben (migratie 245, activering in 246),
+// dus `.single()` op user_id klapt zodra er een tweede rij bijkomt en meldt dan
+// misleidend dat er geen instellingen zijn. Volgorde: het meegestuurde
+// account_id, anders het postvak met `is_standaard`, anders de enige rij.
+// auth_type en de drie oauth-kolommen komen uit migratie 244; ontbreken die,
+// dan antwoordt PostgREST met 42703 of PGRST204 en faalt de HELE select, dus
+// blijft de terugval op de kolommen van vóór 244 staan.
+// Dezelfde helper hoort in fetch-emails, read-email, prefetch-email-bodies,
+// email-imap-action, backfill-emails, test-email-connection, email-settings,
+// send-email, mail-oauth-token en cron-verzend-geplande-berichten.
+interface CredentialRij {
+  id?: string | null
+  gmail_address: string | null
+  encrypted_app_password: string | null
+  smtp_host: string | null
+  smtp_port: number | null
+  imap_host: string | null
+  imap_port: number | null
+  auth_type: string | null
+  oauth_refresh_token_enc: string | null
+  oauth_access_token_enc: string | null
+  oauth_token_verloopt_op: string | null
+}
+
+const CREDENTIAL_KOLOMMEN_VOOR_244 = 'id, gmail_address, encrypted_app_password, smtp_host, smtp_port, imap_host, imap_port'
+const CREDENTIAL_KOLOMMEN = `${CREDENTIAL_KOLOMMEN_VOOR_244}, auth_type, oauth_refresh_token_enc, oauth_access_token_enc, oauth_token_verloopt_op`
+
+function isKolomFout(fout: { code?: string; message?: string } | null): boolean {
+  if (!fout) return false
+  if (fout.code === '42703' || fout.code === 'PGRST204') return true
+  return /column .* does not exist|could not find the .* column/i.test(fout.message || '')
+}
+
+async function leesCredentialRij(userId: string, accountId?: string | null): Promise<CredentialRij | null> {
+  async function haalRij(keuze: 'account' | 'standaard' | 'enige') {
+    const bouw = (kolommen: string) => {
+      let vraag = supabaseAdmin.from('user_email_settings').select(kolommen).eq('user_id', userId)
+      if (keuze === 'account') vraag = vraag.eq('id', accountId as string)
+      if (keuze === 'standaard') vraag = vraag.eq('is_standaard', true)
+      return vraag.maybeSingle()
+    }
+    const volledig = await bouw(CREDENTIAL_KOLOMMEN)
+    if (!isKolomFout(volledig.error)) {
+      return { rij: (volledig.data as unknown as CredentialRij | null) ?? null, fout: volledig.error }
+    }
+    const oud = await bouw(CREDENTIAL_KOLOMMEN_VOOR_244)
+    const rij = (oud.data as unknown as CredentialRij | null) ?? null
+    return {
+      rij: rij ? { ...rij, auth_type: 'wachtwoord', oauth_refresh_token_enc: null, oauth_access_token_enc: null, oauth_token_verloopt_op: null } : null,
+      fout: oud.error,
+    }
+  }
+
+  if (accountId) {
+    const uitkomst = await haalRij('account')
+    if (uitkomst.fout || !uitkomst.rij) {
+      throw new Error('Dit postvak bestaat niet of hoort niet bij jou. Kies een ander postvak onder Instellingen > E-mail.')
+    }
+    return uitkomst.rij
+  }
+  // is_standaard bestaat pas sinds migratie 245; ontbreekt de kolom of staan er
+  // meer standaard-rijen, dan beslist de volgende poging.
+  const standaard = await haalRij('standaard')
+  if (!standaard.fout && standaard.rij) return standaard.rij
+  const enige = await haalRij('enige')
+  if (enige.fout) {
+    throw new Error('Er zijn meer postvakken gekoppeld en geen ervan is de standaard. Kies een postvak onder Instellingen > E-mail.')
+  }
+  return enige.rij
+}
+// ── GEDEELD-MET-API EINDE: credentials per postvak ────────────────────────
+
 interface UserCreds {
+  /** Rij-id van het postvak; pas gevuld als migratie 245 gedraaid is. */
+  account_id: string | null
   gmail_address: string
   password: string
   smtp_host: string
@@ -103,12 +197,16 @@ interface UserCreds {
   fromName?: string
 }
 
-async function getUserCreds(userId: string): Promise<UserCreds | null> {
-  const { data: settings } = await supabaseAdmin
-    .from('user_email_settings')
-    .select('gmail_address, encrypted_app_password, smtp_host, smtp_port, imap_host, imap_port')
-    .eq('user_id', userId)
-    .maybeSingle()
+// Deze cron kent geen OAuth-pad: zonder app-wachtwoord blijft het bericht
+// wachten, precies zoals voorheen.
+async function getUserCreds(userId: string, accountId?: string | null): Promise<UserCreds | null> {
+  let settings: CredentialRij | null = null
+  try {
+    settings = await leesCredentialRij(userId, accountId)
+  } catch (err) {
+    console.warn('[cron-verzend] postvak niet gevonden:', err instanceof Error ? err.message : err)
+    return null
+  }
 
   if (!settings?.gmail_address || !settings?.encrypted_app_password) return null
 
@@ -123,6 +221,7 @@ async function getUserCreds(userId: string): Promise<UserCreds | null> {
   const fromName = afzenderNaam || profile?.bedrijfsnaam?.trim() || undefined
 
   return {
+    account_id: (settings.id as string) ?? null,
     gmail_address: settings.gmail_address,
     password: decryptPassword(settings.encrypted_app_password),
     smtp_host: settings.smtp_host || 'smtp.gmail.com',
@@ -352,7 +451,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           .maybeSingle()
         if (!claimed) continue
 
-        const creds = await getUserCreds(bericht.user_id)
+        // account_id staat op de rij sinds migratie 245; ontbreekt de kolom of
+        // is de rij ouder, dan valt getUserCreds terug op het standaardpostvak.
+        const creds = await getUserCreds(bericht.user_id, (bericht.account_id as string | null) ?? null)
         if (!creds) {
           throw new Error('Geen email instellingen gevonden voor user')
         }
@@ -502,9 +603,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             .select('organisatie_id')
             .eq('id', bericht.user_id)
             .maybeSingle()
-          const { data: insertedMail } = await supabaseAdmin.from('emails').insert({
+          const { data: insertedMail } = await insertMetAccountTerugval('emails', {
             user_id: bericht.user_id,
             organisatie_id: (orgProfiel?.organisatie_id as string | null) ?? null,
+            // Zonder account_id is verzonden mail uit een gedeeld postvak
+            // onzichtbaar voor het team (migratie 245).
+            ...(creds.account_id ? { account_id: creds.account_id } : {}),
             message_id: sentMessageId,
             in_reply_to: bericht.in_reply_to || null,
             thread_id: effectiveThreadId,
@@ -527,7 +631,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             cached_at: new Date().toISOString(),
             wacht_op_reactie: wachtOpReactie,
             beantwoord: false,
-          }).select('id').single()
+          })
 
           // Sales Inbox: vervangen-niet-stapelen — sluit eerdere openstaande
           // wacht-mails naar hetzelfde adres af (gelijk aan api/send-email.ts).

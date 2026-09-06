@@ -200,6 +200,9 @@ function decryptPassword(encrypted: string): string {
 // `decryptPassword` uit het bestand zelf.
 
 interface OauthRij {
+  /** Rij-id van het postvak (migratie 245); `account_id` als de aanroeper EmailCredentials doorgeeft. */
+  id?: string | null
+  account_id?: string | null
   user_id?: string | null
   auth_type?: string | null
   oauth_refresh_token_enc?: string | null
@@ -295,8 +298,14 @@ async function haalToegangstoken(rij: OauthRij, opties?: { forceer?: boolean }):
   // Microsoft rouleert de refresh-token bij elke verversing, Google niet.
   if (antwoord.refresh_token) patch.oauth_refresh_token_enc = versleutelToken(antwoord.refresh_token)
 
-  if (rij.user_id) {
-    const { error } = await supabaseAdmin.from('user_email_settings').update(patch).eq('user_id', rij.user_id)
+  // Op de rij-id zodra we die kennen: met twee postvakken schrijft een update
+  // op user_id het verse token ook over het andere postvak heen.
+  const postvakId = rij.id ?? rij.account_id ?? null
+  if (postvakId || rij.user_id) {
+    const doel = () => supabaseAdmin.from('user_email_settings').update(patch)
+    const { error } = postvakId
+      ? await doel().eq('id', postvakId)
+      : await doel().eq('user_id', rij.user_id as string)
     if (error) console.warn('[oauth] nieuw token niet opgeslagen:', error.message)
   }
   rij.oauth_access_token_enc = patch.oauth_access_token_enc as string
@@ -315,18 +324,57 @@ function isToegangGeweigerd(fout: unknown): boolean {
  * een tweede 401: de eerste kan een verlopen token zijn en die ververst
  * haalToegangstoken zelf.
  */
-async function meldToegangIngetrokken(userId: string): Promise<void> {
+// ── GEDEELD-MET-API: upsert-ladder ────────────────────────────────────────
+// Migratie 245 zet (account_id, folder) naast (user_id, folder); migratie 246
+// laat de oude sleutel vallen. Zolang beide werelden kunnen bestaan proberen we
+// de nieuwe sleutel eerst en vallen we terug op de oude. PostgREST geeft 42703
+// bij een select op een kolom die er nog niet is, PGRST204 als die kolom in de
+// lading van een insert of upsert staat, en 42P10 als er bij de opgegeven
+// kolommen geen unieke index te vinden is. Alle drie horen erbij: zonder
+// PGRST204 staat de sync stil op een database zonder 245, zonder 42P10 na 246.
+// account_id gaat ook in de rij mee, anders vindt de nieuwe sleutel nooit een
+// bestaande rij.
+// Dezelfde ladder staat in src/trigger/mail-idle.ts en in de andere
+// api-mailbestanden.
+function isOnbekendeSleutel(fout: { code?: string; message?: string } | null): boolean {
+  if (!fout) return false
+  return fout.code === '42703' || fout.code === '42P10' || fout.code === 'PGRST204'
+    || /column .* does not exist|could not find the .* column|no unique or exclusion constraint/i.test(fout.message || '')
+}
+
+type SyncStateUitkomst = { error: { message: string; code?: string } | null }
+
+async function upsertSyncStateRij(rij: Record<string, unknown>, accountId?: string | null): Promise<SyncStateUitkomst> {
+  const pogingen: Array<{ onConflict: string; metAccount: boolean }> = accountId
+    ? [
+        { onConflict: 'account_id,folder', metAccount: true },
+        { onConflict: 'user_id,folder', metAccount: true },
+        { onConflict: 'user_id,folder', metAccount: false },
+      ]
+    : [{ onConflict: 'user_id,folder', metAccount: false }]
+
+  let laatste: SyncStateUitkomst = { error: { message: 'onbekend' } }
+  for (const poging of pogingen) {
+    const lading = poging.metAccount ? { ...rij, account_id: accountId } : rij
+    const uitkomst = await supabaseAdmin.from('email_sync_state').upsert(lading, { onConflict: poging.onConflict })
+    if (!uitkomst.error) return { error: null }
+    laatste = uitkomst as SyncStateUitkomst
+    if (!isOnbekendeSleutel(uitkomst.error)) return laatste
+  }
+  return laatste
+}
+// ── GEDEELD-MET-API EINDE: upsert-ladder ──────────────────────────────────
+
+async function meldToegangIngetrokken(userId: string, accountId?: string | null): Promise<void> {
   const nu = new Date().toISOString()
-  const { error } = await supabaseAdmin
-    .from('email_sync_state')
-    .upsert({
-      user_id: userId,
-      folder: 'inbox',
-      status: 'uitgezet',
-      laatste_fout: 'Toegang ingetrokken, koppel opnieuw',
-      laatste_fout_op: nu,
-      updated_at: nu,
-    }, { onConflict: 'user_id,folder' })
+  const { error } = await upsertSyncStateRij({
+    user_id: userId,
+    folder: 'inbox',
+    status: 'uitgezet',
+    laatste_fout: 'Toegang ingetrokken, koppel opnieuw',
+    laatste_fout_op: nu,
+    updated_at: nu,
+  }, accountId)
   if (error) console.warn('[oauth] status uitgezet schrijven mislukt:', error.message)
 }
 // ── GEDEELD-MET-API EINDE: OAuth-toegangstoken ────────────────────────────
@@ -555,6 +603,8 @@ function classificeerSmtpFout(err: unknown): SmtpFoutSoort {
 
 async function schrijfOutboxRij(rij: {
   user_id: string
+  /** Postvak waaruit dit bericht moet (migratie 245); de cron leest hem terug. */
+  account_id?: string | null
   to: string
   cc?: string
   bcc?: string
@@ -567,26 +617,23 @@ async function schrijfOutboxRij(rij: {
   wacht_op_reactie: boolean
 }): Promise<string | null> {
   try {
-    const { data, error } = await supabaseAdmin
-      .from('ingeplande_berichten')
-      .insert({
-        user_id: rij.user_id,
-        ontvanger: rij.to,
-        cc: rij.cc || null,
-        bcc: rij.bcc || null,
-        onderwerp: rij.subject,
-        body: rij.body || null,
-        html: rij.html || null,
-        bijlagen: rij.bijlagen,
-        scheduled_at: new Date().toISOString(),
-        status: 'verwerken',
-        bron: 'outbox',
-        in_reply_to: rij.in_reply_to || null,
-        thread_id: rij.thread_id || null,
-        wacht_op_reactie: rij.wacht_op_reactie,
-      })
-      .select('id')
-      .single()
+    const { data, error } = await insertMetAccountTerugval('ingeplande_berichten', {
+      user_id: rij.user_id,
+      ...(rij.account_id ? { account_id: rij.account_id } : {}),
+      ontvanger: rij.to,
+      cc: rij.cc || null,
+      bcc: rij.bcc || null,
+      onderwerp: rij.subject,
+      body: rij.body || null,
+      html: rij.html || null,
+      bijlagen: rij.bijlagen,
+      scheduled_at: new Date().toISOString(),
+      status: 'verwerken',
+      bron: 'outbox',
+      in_reply_to: rij.in_reply_to || null,
+      thread_id: rij.thread_id || null,
+      wacht_op_reactie: rij.wacht_op_reactie,
+    })
     if (error) {
       console.warn('[send-email] outbox-rij schrijven mislukt:', error.message)
       return null
@@ -604,6 +651,25 @@ async function werkOutboxBij(id: string | null, patch: Record<string, unknown>):
   if (error) console.warn('[send-email] outbox-rij bijwerken mislukt:', error.message)
 }
 
+// ── GEDEELD-MET-API: insert met account-terugval ──────────────────────────
+// account_id komt uit migratie 245. Zolang die niet gedraaid is faalt een
+// insert met dat veld in zijn geheel op 42703, en dan zou een mail die al
+// verstuurd is niet meer opgeslagen worden. Eén keer opnieuw zonder het veld.
+function isAccountKolomFout(fout: { code?: string; message?: string } | null): boolean {
+  if (!fout) return false
+  return fout.code === '42703' || fout.code === 'PGRST204'
+    || /column .* does not exist|could not find the .* column/i.test(fout.message || '')
+}
+
+async function insertMetAccountTerugval(tabel: string, rij: Record<string, unknown>) {
+  const eerste = await supabaseAdmin.from(tabel).insert(rij).select('id').single()
+  if (!eerste.error || !('account_id' in rij) || !isAccountKolomFout(eerste.error)) return eerste
+  const zonder = { ...rij }
+  delete zonder.account_id
+  return await supabaseAdmin.from(tabel).insert(zonder).select('id').single()
+}
+// ── GEDEELD-MET-API EINDE: insert met account-terugval ────────────────────
+
 export const config = { maxDuration: 30 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -615,8 +681,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!(await enforceRateLimit(user_id, res))) return
 
-    let gmail_address: string, app_password: string, smtp_host: string, smtp_port: number
-    let imap_host: string, imap_port: number
     // Bij auth_type google of microsoft gaat er een access-token over de lijn
     // in plaats van een wachtwoord (XOAUTH2), zowel naar SMTP als naar de
     // IMAP-APPEND in Verzonden.
@@ -630,27 +694,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       credsFout = err instanceof Error ? err.message : null
       creds = null
     }
-    if (creds) {
-      gmail_address = creds.gmail_address
-      app_password = creds.app_password
-      smtp_host = creds.smtp_host
-      smtp_port = creds.smtp_port
-      imap_host = creds.imap_host
-      imap_port = creds.imap_port
-      if (isOauthKoppeling(creds.auth_type)) {
-        oauthCreds = creds
-        access_token = await haalToegangstoken(creds)
-      }
-    } else {
-      gmail_address = req.body.gmail_address
-      app_password = req.body.app_password
-      smtp_host = req.body.smtp_host || 'smtp.gmail.com'
-      smtp_port = req.body.smtp_port || 587
-      imap_host = req.body.imap_host || 'imap.gmail.com'
-      imap_port = req.body.imap_port || 993
-      if (!gmail_address || !app_password) {
-        return res.status(400).json({ error: credsFout || 'Geen email instellingen gevonden. Koppel je mailbox onder Instellingen > Koppelingen > E-mail.' })
-      }
+    // Hier stond een terugval op gmail_address en app_password uit de
+    // request-body. Die is weg, en bewust helemaal: hij maakte de controle op
+    // account_id omzeilbaar. Vraag je een postvak op dat niet van jou is, dan
+    // gooit getEmailCredentials, en precies dán viel de oude code terug op de
+    // afzender die de aanvrager zelf meestuurde. Verzenden liep dan langs elke
+    // postvakcontrole heen, met een adres en wachtwoord naar keuze. Geen enkele
+    // client heeft die velden ooit gestuurd (zie sendEmail in
+    // src/services/gmailService.ts): de mailbox staat op de server, en wie er
+    // geen heeft koppelt er eerst één.
+    if (!creds) {
+      return res.status(400).json({ error: credsFout || 'Geen email instellingen gevonden. Koppel je mailbox onder Instellingen > Koppelingen > E-mail.' })
+    }
+    const gmail_address = creds.gmail_address
+    const app_password = creds.app_password
+    const smtp_host = creds.smtp_host
+    const smtp_port = creds.smtp_port
+    const imap_host = creds.imap_host
+    const imap_port = creds.imap_port
+    if (isOauthKoppeling(creds.auth_type)) {
+      oauthCreds = creds
+      access_token = await haalToegangstoken(creds)
     }
 
     const {
@@ -695,25 +759,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ error: 'scheduledAt moet in de toekomst liggen' })
       }
 
-      const { data: ingepland, error: insertError } = await supabaseAdmin
-        .from('ingeplande_berichten')
-        .insert({
-          user_id,
-          ontvanger: to,
-          cc: cc || null,
-          bcc: bcc || null,
-          onderwerp: subject,
-          body: body || null,
-          html: html || null,
-          bijlagen: attachments || [],
-          scheduled_at: verzendDatum.toISOString(),
-          status: 'wachtend',
-          in_reply_to: in_reply_to || null,
-          thread_id: thread_id || null,
-          wacht_op_reactie,
-        })
-        .select('id')
-        .single()
+      const { data: ingepland, error: insertError } = await insertMetAccountTerugval('ingeplande_berichten', {
+        user_id,
+        ...(creds?.account_id ? { account_id: creds.account_id } : {}),
+        ontvanger: to,
+        cc: cc || null,
+        bcc: bcc || null,
+        onderwerp: subject,
+        body: body || null,
+        html: html || null,
+        bijlagen: attachments || [],
+        scheduled_at: verzendDatum.toISOString(),
+        status: 'wachtend',
+        in_reply_to: in_reply_to || null,
+        thread_id: thread_id || null,
+        wacht_op_reactie,
+      })
 
       if (insertError || !ingepland) {
         console.error('[send-email] Ingepland bericht aanmaken mislukt:', insertError)
@@ -855,7 +916,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // op 'mislukt' met een melding. Bijlage-inhoud gaat niet mee: deze rij
     // wordt nooit door de cron opnieuw verstuurd, hij is administratie.
     const outboxId = await schrijfOutboxRij({
-      user_id, to, cc, bcc, subject, body, html,
+      user_id, account_id: creds?.account_id ?? null, to, cc, bcc, subject, body, html,
       bijlagen: (attachments || []).map(({ content: _content, ...rest }) => rest),
       in_reply_to, thread_id, wacht_op_reactie,
     })
@@ -878,7 +939,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         try {
           sendResult = await transporter.sendMail(mailOptions)
         } catch (tweedeSmtpFout) {
-          if (classificeerSmtpFout(tweedeSmtpFout) === 'auth') await meldToegangIngetrokken(user_id)
+          if (classificeerSmtpFout(tweedeSmtpFout) === 'auth') await meldToegangIngetrokken(user_id, creds?.account_id ?? null)
           throw tweedeSmtpFout
         }
       }
@@ -944,40 +1005,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .maybeSingle()
       const mailOrgId = (orgProfiel?.organisatie_id as string | null) ?? null
 
-      const { data: inserted, error: insertErr } = await supabaseAdmin
-        .from('emails')
-        .insert({
-          user_id,
-          organisatie_id: mailOrgId,
-          // Uit welk postvak deze mail vertrok. Zonder dit is verzonden mail uit
-          // een gedeeld postvak onzichtbaar voor het team, want de policy uit
-          // migratie 245 eist een account_id.
-          ...(creds?.account_id ? { account_id: creds.account_id } : {}),
-          message_id: sentMessageId,
-          in_reply_to: in_reply_to || null,
-          thread_id: effectiveThreadId,
-          map: 'verzonden',
-          uid: verzondenUid,
-          imap_folder: verzondenMap || 'SENT',
-          from_address: gmail_address,
-          from_name: fromName || '',
-          van: fromAddress,
-          aan: to,
-          onderwerp: subject,
-          body_html: html || null,
-          body_text: body || subject,
-          inhoud: html || body || '',
-          datum: new Date().toISOString(),
-          gelezen: true,
-          bijlagen: attachments?.length || 0,
-          has_attachments: (attachments?.length || 0) > 0,
-          gmail_id: verzondenUid ? String(verzondenUid) : '',
-          cached_at: new Date().toISOString(),
-          wacht_op_reactie,
-          beantwoord: false,
-        })
-        .select('id')
-        .single()
+      // Via de terugval-ladder: zonder migratie 245 kent emails geen account_id
+      // en zou deze insert in zijn geheel falen, waarna een mail die al de deur
+      // uit is niet in Verzonden belandt.
+      const verzondenRij = {
+        user_id,
+        organisatie_id: mailOrgId,
+        // Uit welk postvak deze mail vertrok. Zonder dit is verzonden mail uit
+        // een gedeeld postvak onzichtbaar voor het team, want de policy uit
+        // migratie 245 eist een account_id.
+        ...(creds?.account_id ? { account_id: creds.account_id } : {}),
+        message_id: sentMessageId,
+        in_reply_to: in_reply_to || null,
+        thread_id: effectiveThreadId,
+        map: 'verzonden',
+        uid: verzondenUid,
+        imap_folder: verzondenMap || 'SENT',
+        from_address: gmail_address,
+        from_name: fromName || '',
+        van: fromAddress,
+        aan: to,
+        onderwerp: subject,
+        body_html: html || null,
+        body_text: body || subject,
+        inhoud: html || body || '',
+        datum: new Date().toISOString(),
+        gelezen: true,
+        bijlagen: attachments?.length || 0,
+        has_attachments: (attachments?.length || 0) > 0,
+        gmail_id: verzondenUid ? String(verzondenUid) : '',
+        cached_at: new Date().toISOString(),
+        wacht_op_reactie,
+        beantwoord: false,
+      }
+      const { data: inserted, error: insertErr } = await insertMetAccountTerugval('emails', verzondenRij)
       if (insertErr) throw insertErr
 
       // ─── Sales Inbox v1: vervangen-niet-stapelen ───
