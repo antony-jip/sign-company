@@ -163,10 +163,11 @@ async function leesCredentialRij(userId: string, accountId?: string | null): Pro
 // ── GEDEELD-MET-API EINDE: credentials per postvak ────────────────────────
 
 // Backfill kent geen OAuth-pad: zonder app-wachtwoord blijft dit endpoint
-// weigeren, precies zoals voorheen.
-async function getEmailCredentials(userId: string, accountId?: string | null) {
-  const data = await leesCredentialRij(userId, accountId)
-
+// weigeren, precies zoals voorheen. Het lezen van de rij en het eisen van een
+// wachtwoord staan bewust uit elkaar: het postvak-id is al nodig om de juiste
+// sync-state-rij te vinden, en dat mag niet gooien voordat de vroege
+// antwoorden ("nog niet gebootstrapt", "al klaar") gegeven zijn.
+function maakCredentials(data: CredentialRij | null) {
   if (!data?.gmail_address || !data?.encrypted_app_password) {
     throw new Error('Geen email instellingen gevonden. Configureer je email in Instellingen > Integraties.')
   }
@@ -285,18 +286,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     const mapValue = String(folder).toUpperCase() === 'INBOX' ? 'inbox' : String(folder).toLowerCase()
 
-    // De credentials eerst: we hebben het account_id nodig om de juiste
-    // sync-state-rij te lezen. Met twee postvakken staan er twee rijen voor
-    // dezelfde map, en dan gaf maybeSingle() PGRST116 en dit endpoint een 503.
-    const creds = await getEmailCredentials(user_id, leesAccountId(req))
+    // Alleen het postvak-id vooruit, zonder te gooien: dat is nodig om de juiste
+    // sync-state-rij te vinden (met twee postvakken staan er twee rijen voor
+    // dezelfde map, en dan gaf maybeSingle() PGRST116 en dit endpoint een 503).
+    // De eis van een app-wachtwoord komt pas verderop, zodat een OAuth-postvak
+    // hier nog gewoon zijn 200 krijgt.
+    const credRij = await leesCredentialRij(user_id, leesAccountId(req))
+    const postvakId = (credRij?.id as string) ?? null
 
-    const { data: state, error: stateErr } = await leesMetAccount(creds.account_id, (metAccount) => {
+    const { data: state, error: stateErr } = await leesMetAccount(postvakId, (metAccount) => {
       const basis = supabaseAdmin
         .from('email_sync_state')
         .select('id, imap_folder, uidvalidity, backfill_low_uid, backfill_done, backfill_target')
         .eq('user_id', user_id)
         .eq('folder', mapValue)
-      return (metAccount ? basis.eq('account_id', creds.account_id as string) : basis).maybeSingle()
+      return (metAccount ? basis.eq('account_id', postvakId as string) : basis).maybeSingle()
     })
 
     if (stateErr) {
@@ -318,6 +322,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ done: true, synced: 0 })
     }
 
+    const creds = maakCredentials(credRij)
     client = new ImapFlow({
       host: creds.imap_host,
       port: creds.imap_port,
