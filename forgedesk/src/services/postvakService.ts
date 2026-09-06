@@ -195,6 +195,22 @@ export async function slaPostvakOp(invoer: PostvakInvoer): Promise<void> {
   }
 }
 
+/**
+ * Eén postvak ontkoppelen. De mail blijft staan: DELETE haalt alleen de rij uit
+ * `user_email_settings` weg, dus de koppeling en het wachtwoord. Zonder id
+ * weigert de server zodra er meer postvakken zijn, want dan is niet te zien
+ * welke bedoeld wordt.
+ */
+export async function ontkoppelPostvak(accountId?: string): Promise<void> {
+  const token = await sessieToken()
+  const url = accountId ? `/api/email-settings?account_id=${encodeURIComponent(accountId)}` : '/api/email-settings'
+  const res = await fetch(url, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
+  if (!res.ok) {
+    const fout: { error?: string } = await res.json().catch(() => ({}))
+    throw new Error(fout?.error || `Ontkoppelen mislukt: ${res.status}`)
+  }
+}
+
 function vertaalFout(fout: unknown): string {
   if (isZonder245(fout)) return 'Meerdere postvakken staan nog niet aan in de database'
   return (fout as { message?: string })?.message || 'Opslaan mislukt'

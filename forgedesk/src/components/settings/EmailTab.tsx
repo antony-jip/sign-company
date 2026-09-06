@@ -47,7 +47,7 @@ import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useFunctie } from '@/hooks/useFunctie'
 import { useSyncStatus } from '@/lib/mail/hooks'
 import { mailStore } from '@/lib/mail/mailStore'
-import { getPostvakken, hernoem, postvakkenUitgebreid, slaPostvakOp, zetStandaard } from '@/services/postvakService'
+import { getPostvakken, hernoem, ontkoppelPostvak, postvakkenUitgebreid, slaPostvakOp, zetStandaard } from '@/services/postvakService'
 import type { Postvak } from '@/lib/mail/types'
 import { getBackfillTarget, setBackfillTarget, type BackfillTarget } from '@/services/emailService'
 import { getProfile, getProfielenVoorTeam, getAppSettings, updateAppSettings, getMedewerkers, getEmailTemplates, createEmailTemplate, updateEmailTemplate, deleteEmailTemplate, type EmailTemplate } from '@/services/supabaseService'
@@ -1288,10 +1288,12 @@ export function EmailTab() {
               onToevoegen={() => setNieuwPostvak({ ...DEFAULT_EMAIL_SETTINGS })}
               onOntkoppel={async (postvak) => {
                 try {
-                  const { deleteEmailSettingsFromDb, clearEmailCache } = await import('@/services/gmailService')
-                  await deleteEmailSettingsFromDb()
-                  await clearEmailCache()
+                  await ontkoppelPostvak(postvak.id)
+                  // De cache en het formulier horen bij het postvak dat de
+                  // server teruggaf; alleen dát postvak leegt hier mee.
                   if (postvak.adres === emailSettings.gmail_address) {
+                    const { clearEmailCache } = await import('@/services/gmailService')
+                    await clearEmailCache()
                     sessionStorage.removeItem('doen_email_settings')
                     localStorage.removeItem('doen_email_settings')
                     setEmailSettings(DEFAULT_EMAIL_SETTINGS)
@@ -1549,11 +1551,14 @@ function EmailSettingsInline({
   const handleDisconnect = async () => {
     try {
       if (isSupabaseConfigured()) {
-        const { deleteEmailSettingsFromDb, clearEmailCache } = await import('@/services/gmailService')
-        await deleteEmailSettingsFromDb()
+        await ontkoppelPostvak(accountId)
+        const { clearEmailCache } = await import('@/services/gmailService')
         await clearEmailCache()
       }
-    } catch (err) { /* ignore */ }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Ontkoppelen mislukt')
+      return
+    }
     sessionStorage.removeItem('doen_email_settings')
     localStorage.removeItem('doen_email_settings')
     setSettings(DEFAULT_EMAIL_SETTINGS)
