@@ -12,6 +12,34 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import nodemailer from 'nodemailer'
 import crypto from 'crypto'
 import { createClient } from '@supabase/supabase-js'
+import * as Sentry from '@sentry/node'
+
+// ── Sentry init (inline; Vercel bundelt geen lokale modules in api/) ──
+if (process.env.SENTRY_DSN && !Sentry.getClient()) {
+  const SENS = /password|app_password|encrypted_app_password|betaal_token|payment_token|access_token|refresh_token|mollie_api_key|authorization|cookie|secret|api_key|to|cc|bcc|email/i
+  const scrub = (v: unknown, d = 0): unknown => {
+    if (d > 6 || v == null) return v
+    if (Array.isArray(v)) return v.map(x => scrub(x, d + 1))
+    if (typeof v === 'object') {
+      const o: Record<string, unknown> = {}
+      for (const [k, val] of Object.entries(v as Record<string, unknown>)) o[k] = SENS.test(k) ? '[Filtered]' : scrub(val, d + 1)
+      return o
+    }
+    return v
+  }
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.VERCEL_ENV || process.env.NODE_ENV || 'development',
+    tracesSampleRate: 0.1,
+    sendDefaultPii: false,
+    beforeSend(event) {
+      if (event.request?.headers) for (const k of Object.keys(event.request.headers)) if (/authorization|cookie/i.test(k)) (event.request.headers as Record<string, string>)[k] = '[Filtered]'
+      if (event.request?.data) event.request.data = scrub(event.request.data) as typeof event.request.data
+      if (event.user) { delete event.user.ip_address; delete event.user.email }
+      return event
+    },
+  })
+}
 
 const supabaseAdmin = createClient(
   process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '',
@@ -160,6 +188,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const nu = new Date().toISOString()
+
+    // Opruimer: een run die halverwege stierf (timeout, deploy) laat rijen op
+    // 'verwerken' achter en niemand pakt die nog op. De tabel heeft geen
+    // claim-tijdstip, dus scheduled_at is de ondergrens: tien minuten na het
+    // geplande moment nog 'verwerken' betekent vast. Niet opnieuw versturen
+    // (de mail kan al weg zijn), wel de gebruiker laten weten.
+    const vastGrens = new Date(Date.now() - 10 * 60_000).toISOString()
+    const { data: vast } = await supabaseAdmin
+      .from('ingeplande_berichten')
+      .update({ status: 'mislukt', foutmelding: 'Verzending bleef hangen; controleer of het bericht is aangekomen en plan het zo nodig opnieuw.' })
+      .eq('status', 'verwerken')
+      .lt('scheduled_at', vastGrens)
+      .select('id, user_id, onderwerp')
+    if (vast && vast.length > 0) {
+      console.warn(`[cron] ${vast.length} hangende berichten op mislukt gezet`)
+      const { error: notifFout } = await supabaseAdmin.from('notificaties').insert(
+        vast.map(b => ({
+          user_id: b.user_id,
+          type: 'algemeen',
+          titel: 'Gepland bericht niet verzonden',
+          bericht: `"${b.onderwerp || 'Zonder onderwerp'}" bleef hangen tijdens het verzenden. Controleer je verzonden items en plan het zo nodig opnieuw.`,
+          link: '/email',
+          gelezen: false,
+        }))
+      )
+      if (notifFout) console.error('[cron] notificatie voor hangende berichten mislukt:', notifFout)
+    }
 
     const { data: due, error: fetchError } = await supabaseAdmin
       .from('ingeplande_berichten')
@@ -422,6 +477,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             .update({ status: 'mislukt', foutmelding })
             .eq('id', bericht.id)
           console.error('[cron] Bericht verzenden definitief mislukt:', bericht.id, foutmelding)
+          Sentry.captureException(err, { extra: { berichtId: bericht.id } })
         }
       }
     }
@@ -429,6 +485,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ processed: due.length, verzonden, mislukt })
   } catch (err) {
     console.error('[cron] Fatale fout:', err)
+    Sentry.captureException(err)
     return res.status(500).json({ error: err instanceof Error ? err.message : 'Cron mislukt' })
   }
 }
