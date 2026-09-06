@@ -139,6 +139,7 @@ export function UrenKeuren({ registraties, medewerkers, userId, standaardOpen, o
               </div>
               <div className="flex items-center justify-between gap-2 md:justify-end">
                 <Badge variant="secondary" className="font-mono">{formatUren(week.minuten)} uur</Badge>
+                {!week.userId && <span className="text-2xs text-muted-foreground">Geen melding: dit teamlid heeft geen login</span>}
                 <div className="flex items-center gap-2">
                   <Button variant="outline" size="sm" className="h-11 md:h-9" disabled={bezig === week.sleutel} onClick={() => { setTerugVoor(week); setOpmerking('') }}>
                     <Undo2 className="mr-2 h-4 w-4" />Terug naar concept
