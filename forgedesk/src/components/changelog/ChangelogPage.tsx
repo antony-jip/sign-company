@@ -37,7 +37,7 @@ const APP_FEATURES = [
   { naam: 'Werkbonnen', desc: 'Opdracht voor de monteur. Neemt offerte over, foto\'s, klanthandtekening.', kleur: '#F15025' },
   { naam: 'Montageplanning', desc: 'Weekoverzicht met drag-and-drop. Weerbericht, conflict-detectie.', kleur: '#1A535C' },
   { naam: 'Takenbeheer', desc: 'Taken toewijzen met deadlines en prioriteiten. Weekplanning met tijdlijn.', kleur: '#5A5A55' },
-  { naam: 'Email', desc: 'Verstuur en ontvang email vanuit de app. Automatisch gekoppeld aan klanten.', kleur: '#6A5A8A' },
+  { naam: 'Email', desc: 'Gesprekken, toetsenbord, bedenktijd en snooze. Gekoppeld aan klant, project en offerte.', kleur: '#6A5A8A' },
   { naam: 'AI Visualizer', desc: 'Upload een foto, laat AI het eindresultaat visualiseren voor je klant.', kleur: '#9A5A48' },
   { naam: 'Financieel', desc: 'Omzet, openstaand, cashflow. Grootboek, BTW-codes, exporteer naar CSV.', kleur: '#2D6B48' },
   { naam: 'Kennisbank', desc: 'Handleidingen en procedures. Alles over Doen. op één plek.', kleur: '#1A535C' },
@@ -51,6 +51,25 @@ const APP_FEATURES = [
 // ── Changelog entries ──
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    versie: '1.6.0',
+    datum: '6 september 2026',
+    label: 'Nieuw',
+    titel: 'Mail op Outlook-niveau',
+    beschrijving: 'Je mailbox in doen. is nu een volwaardig mailprogramma. Lezen, antwoorden en koppelen zonder te wisselen. Vier schakelaars onder Instellingen > doen. > Functies, groep Mail.',
+    features: [
+      { titel: 'Gesprekken in plaats van losse mails', beschrijving: 'Lijst links, het hele gesprek rechts. Geciteerde tekst ingeklapt, alleen het nieuwe leest mee.' },
+      { titel: 'Toetsenbord', beschrijving: 'j en k door de lijst, e archiveert, r antwoordt, c schrijft. Druk op ? voor de kaart.' },
+      { titel: 'Bedenktijd na verzenden', beschrijving: 'Een paar seconden "Ongedaan maken" na Verzenden. Verkeerde prijs of vergeten tekening: terughalen.' },
+      { titel: 'Later verzenden', beschrijving: 'Vanavond 18:00, morgen 09:00 of een eigen moment. Bewerken kan tot hij de deur uit gaat.' },
+      { titel: 'Concepten op elk apparaat', beschrijving: 'Begin op de zaak, maak af op je telefoon. Elke twee seconden bewaard, nooit een vraag bij sluiten.' },
+      { titel: 'Snooze en opvolgen', beschrijving: 'Zet een mail weg tot donderdag; hij komt ongelezen terug. Opvolgen verdwijnt vanzelf als de klant antwoordt.' },
+      { titel: 'Klantkaart en slepen naar project', beschrijving: 'Rechts zie je open offertes en projecten van de afzender. Sleep de mail naar een project en het team ziet hem daar.' },
+      { titel: 'Zoeken met chips', beschrijving: 'Van, aan, met bijlage, periode, klant. Combineren mag.' },
+      { titel: 'Externe afbeeldingen pas na klik', beschrijving: 'Nieuwsbrieven laden hun plaatjes pas als jij het wilt. Afzenders zien niet wanneer je leest.' },
+      { titel: 'Je mailbox loopt mee', beschrijving: 'Verzonden mail komt ook in je eigen Verzonden-map, gelezen en gearchiveerd gaat twee kanten op. Een gezondheidskaart onder Instellingen > E-mail zegt of alles loopt.' },
+    ],
+  },
   {
     versie: '1.5.2',
     datum: '6 september 2026',
