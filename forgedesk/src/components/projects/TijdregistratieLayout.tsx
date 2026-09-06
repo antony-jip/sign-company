@@ -55,13 +55,13 @@ import {
   getProjecten,
   getKlanten,
   createFactuur,
-  createFactuurItem,
+  replaceFactuurItems,
 } from "@/services/supabaseService";
 import { useAppSettings } from "@/contexts/AppSettingsContext";
 import { getProjectUrenBudget, type ProjectUrenBudget } from "@/services/projectUrenService";
 import { urenVeldenUitInstellingen } from "@/utils/offerteUren";
 import { kostprijsVoor, uurtariefVoorkeuze } from "@/utils/kostprijs";
-import { standaardUrenStatus, urenBeschermdMelding } from "@/services/tijdregistratieService";
+import { standaardUrenStatus, urenBeschermdMelding, markeerGefactureerd } from "@/services/tijdregistratieService";
 import { getMedewerkerContracten } from "@/services/planningService";
 import { useFunctie } from "@/hooks/useFunctie";
 import { Weekstaat, vandaagIso } from "./Weekstaat";
@@ -592,22 +592,10 @@ export function TijdregistratieLayout() {
         });
         logCreate({ user, entityType: 'factuur', entityId: factuur.id });
 
-        // Factuuritems aanmaken
-        for (const item of items) {
-          await createFactuurItem({
-            user_id: regs[0].user_id,
-            factuur_id: factuur.id,
-            ...item,
-          });
-        }
-
-        // Markeer alle tijdregistraties als gefactureerd
-        for (const reg of regs) {
-          await updateTijdregistratie(reg.id, {
-            gefactureerd: true,
-            factuur_id: factuur.id,
-          });
-        }
+        // Alle regels in één RPC en alle tijdregistraties in één update, in
+        // plaats van een request per regel.
+        await replaceFactuurItems(factuur.id, items);
+        await markeerGefactureerd(regs.map((r) => r.id), factuur.id);
       }
 
       toast.success(`${teFactureren.length} uren gefactureerd over ${perProject.size} project(en)`);
