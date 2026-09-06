@@ -691,6 +691,32 @@ async function syncVerzonden(userId: string, cronSecret: string, url: string, re
 }
 
 /**
+ * Bodies alvast ophalen na een geslaagde sync, zodat de body er is vóór de
+ * gebruiker klikt. Hoogstens 25 per ronde en alleen als er tijd over is.
+ */
+async function prefetchBodies(userId: string, cronSecret: string, resterendMs: number): Promise<number> {
+  if (resterendMs < 15_000) return 0
+  try {
+    const respons = await fetch(`${basisUrl()}/api/prefetch-email-bodies`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cronSecret}` },
+      body: JSON.stringify({ folder: 'INBOX', limit: 25, service_user_id: userId }),
+      signal: AbortSignal.timeout(resterendMs - 1_000),
+    })
+    if (!respons.ok) {
+      const tekst = await respons.text().catch(() => '')
+      console.warn('[cron-mailsync-werker] prefetch mislukt', { userId, status: respons.status, tekst: tekst.slice(0, 200) })
+      return 0
+    }
+    const antwoord = (await respons.json().catch(() => ({}))) as { verwerkt?: number }
+    return Number(antwoord?.verwerkt) || 0
+  } catch (err) {
+    console.warn('[cron-mailsync-werker] prefetch gooide', { userId, err: err instanceof Error ? err.message : err })
+    return 0
+  }
+}
+
+/**
  * Afronden van een geslaagde ronde: de rij wordt hergebruikt in plaats van op
  * 'gedaan' gezet. Zo blijft de coalescing-index betekenisvol — precies één rij
  * per mailbox, altijd — en blijft de tabel klein.
@@ -848,6 +874,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (nieuw > 0) await meldNieuweMail(taak.user_id, nieuw, cronSecret, basisUrl())
         if (taak.folder === 'inbox') {
           await syncVerzonden(taak.user_id, cronSecret, url, DEADLINE_MS - (Date.now() - gestartOp))
+          await prefetchBodies(taak.user_id, cronSecret, DEADLINE_MS - (Date.now() - gestartOp))
         }
         return { taak, uitkomst: 'gedaan' as const, synced: nieuw }
       } catch (err) {

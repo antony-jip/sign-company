@@ -235,6 +235,60 @@ async function resolveImapFolder(client: ImapFlow, folder: string): Promise<stri
   return folder
 }
 
+// ───── Bodies in email_bodies (migratie 244) ─────
+// emails.body_html wordt niet meer gelezen of geschreven; de html staat in een
+// eigen tabel zodat de emails-rij en de realtime-payloads licht blijven.
+// body_text blijft op emails voor de lijst-view (LEFT(body_text, 200)), maar
+// begrensd.
+const MAX_BODY_TEXT = 20_000
+
+// Zelfde splitsing als src/lib/mail/quoted.ts; api/ importeert niets uit src.
+// De grens is de eerste van: een blockquote, Gmail's gmail_quote, een div die
+// begint met "Op ... schreef", een Outlook-scheidingslijn, of een From:/Van:-
+// kop met binnen 200 tekens Sent:/Verzonden:.
+const CITAAT_PATRONEN: RegExp[] = [
+  /<blockquote[\s>]/i,
+  /<[a-z][^>]*class="[^"]*gmail_quote[^"]*"/i,
+  /<div[^>]*>\s*(?:<[^>]+>\s*)*Op\s[\s\S]{0,300}?schreef/i,
+  /-{3,}\s*(?:Original Message|Oorspronkelijk bericht)\s*-{3,}/i,
+  /(?:From|Van):[\s\S]{0,200}?(?:Sent|Verzonden):/,
+]
+
+function splitsCitaat(html: string): { eigen: string; geciteerd: string | null } {
+  if (!html) return { eigen: html || '', geciteerd: null }
+  let grens = -1
+  for (const patroon of CITAAT_PATRONEN) {
+    const m = patroon.exec(html)
+    if (m && (grens < 0 || m.index < grens)) grens = m.index
+  }
+  if (grens <= 0) return { eigen: html, geciteerd: null }
+
+  // Tekstpatronen (Outlook-lijn, From:-kop) vallen midden in een element;
+  // terug naar de omhullende div/p/hr zodat de scheiding geen halve tag laat.
+  const aanloop = html.slice(Math.max(0, grens - 200), grens)
+  const omhullend = aanloop.search(/<(?:div|p|hr)\b[^>]*>\s*(?:<[^>]+>\s*)*$/i)
+  if (omhullend >= 0) grens = Math.max(0, grens - 200) + omhullend
+
+  const eigenTekst = html.slice(0, grens).replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim()
+  if (!eigenTekst) return { eigen: html, geciteerd: null }
+  return { eigen: html.slice(0, grens), geciteerd: html.slice(grens) }
+}
+
+async function bewaarBody(email_id: string, user_id: string, html: string, tekst: string): Promise<void> {
+  const { eigen, geciteerd } = splitsCitaat(html)
+  const { error } = await supabaseAdmin
+    .from('email_bodies')
+    .upsert({
+      email_id,
+      user_id,
+      body_html: eigen,
+      body_text: tekst || null,
+      quoted_html: geciteerd,
+      bijgewerkt_op: new Date().toISOString(),
+    }, { onConflict: 'email_id' })
+  if (error) console.warn('[read-email] email_bodies schrijven mislukt:', error.message)
+}
+
 // ───── Persistent attachment-cache (sprint 3) ─────
 const STORAGE_BUCKET = 'email-attachments'
 const SIGNED_URL_TTL = 60 * 60 // 1 uur — voldoende voor reading-sessie
@@ -408,18 +462,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const { data: cached } = await supabaseAdmin
         .from('emails')
-        .select('id, van, aan, onderwerp, datum, gelezen, body_html, body_text, attachment_meta, message_id')
+        .select('id, van, aan, onderwerp, datum, gelezen, body_text, attachment_meta, message_id')
         .eq('user_id', user_id)
         .eq('uid', Number(uid))
         .eq('map', mapValue)
         .limit(1)
         .maybeSingle()
 
-      // body_html NULL betekent: nog nooit volledig geparsed. Een lege string
-      // betekent wél geparsed, maar de mail heeft geen HTML-deel. Alleen op
-      // body_text afgaan was fout: de aanvraag-classifier vult die kolom ook,
-      // en dan bleef de reader de kale tekstversie van een HTML-mail tonen.
-      if (cached && cached.body_html !== null) {
+      // Een rij in email_bodies betekent: volledig geparsed (ook als de mail
+      // geen HTML-deel had, dan is body_html leeg). Alleen op emails.body_text
+      // afgaan was fout: de aanvraag-classifier vult die kolom ook.
+      const { data: body } = cached
+        ? await supabaseAdmin
+          .from('email_bodies')
+          .select('body_html, body_text, quoted_html')
+          .eq('email_id', cached.id)
+          .maybeSingle()
+        : { data: null }
+
+      if (cached && body) {
         // Lookup gecachde bijlagen voor signed URLs (instant previews/downloads).
         const cachedSigned = await readCachedSignedUrls(user_id, cached.id)
         let meta = (cached.attachment_meta as Array<{ filename: string; contentType: string; size: number; isInlineCid?: boolean }> | null) || []
@@ -467,8 +528,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           cc: '',
           subject: cached.onderwerp || '',
           date: cached.datum || '',
-          bodyHtml: cached.body_html || '',
-          bodyText: cached.body_text || '',
+          bodyHtml: (body.body_html || '') + (body.quoted_html || ''),
+          bodyText: body.body_text || cached.body_text || '',
+          quoted_html: body.quoted_html || null,
           attachments: attachmentsOut,
           messageId: cached.message_id || '',
           inReplyTo: '',
@@ -496,13 +558,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // geparsed is — nooit gokken op bodyStructure, dat blijft aan de sync.
       const echteBijlagen = attachmentMetaForDb.filter((a) => !a.isInlineCid).length
       let email_uuid: string | null = null
+      const bodyTextBegrensd = (result.bodyText || '').slice(0, MAX_BODY_TEXT)
       if (cached) {
-        // Update existing row with body
         await supabaseAdmin
           .from('emails')
           .update({
-            body_html: result.bodyHtml,
-            body_text: result.bodyText || null,
+            body_text: bodyTextBegrensd || null,
             attachment_meta: attachmentMetaForDb.length > 0 ? attachmentMetaForDb : null,
             bijlagen: echteBijlagen,
             has_attachments: echteBijlagen > 0,
@@ -542,9 +603,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             bijlagen: echteBijlagen,
             has_attachments: echteBijlagen > 0,
             attachment_meta: attachmentMetaForDb.length > 0 ? attachmentMetaForDb : null,
-            body_html: result.bodyHtml,
-            body_text: result.bodyText || null,
-            inhoud: result.bodyHtml || result.bodyText || '',
+            body_text: bodyTextBegrensd || null,
+            inhoud: bodyTextBegrensd,
             gmail_id: String(uid),
             cached_at: new Date().toISOString(),
           }, {
@@ -574,8 +634,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // en PDFs < 25MB. Bouw signed URLs voor de response.
       let signedMap = new Map<string, string>()
       if (email_uuid) {
+        await bewaarBody(email_uuid, user_id, result.bodyHtml, bodyTextBegrensd)
         signedMap = await cacheAttachmentsToStorage(user_id, email_uuid, result.rawBuffers)
       }
+      const { geciteerd: quotedHtml } = splitsCitaat(result.bodyHtml)
 
       // Strip inline base64-`content` zodra storage_url beschikbaar is —
       // anders levert de response twee paden voor dezelfde bytes en
@@ -597,6 +659,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         date: result.date,
         bodyHtml: result.bodyHtml,
         bodyText: result.bodyText,
+        quoted_html: quotedHtml,
         attachments: attachmentsOut,
         messageId: result.messageId,
         inReplyTo: result.inReplyTo,

@@ -54,9 +54,80 @@ async function verifyUser(req: VercelRequest): Promise<string> {
   const authHeader = req.headers.authorization
   if (!authHeader?.startsWith('Bearer ')) throw new Error('Niet geautoriseerd')
   const token = authHeader.split(' ')[1]
+
+  // Service-modus voor cron-mailsync-werker, gelijk aan fetch-emails: alleen
+  // met het cron-secret, en dat secret moet gezet zijn.
+  const cronSecret = process.env.CRON_SECRET
+  if (cronSecret && token === cronSecret) {
+    const serviceUser = req.body?.service_user_id
+    if (typeof serviceUser !== 'string' || !serviceUser) throw new Error('Niet geautoriseerd')
+    return serviceUser
+  }
+
   const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
   if (error || !user) throw new Error('Ongeldige sessie')
   return user.id
+}
+
+// ───── Bodies in email_bodies (migratie 244), kopie van api/read-email.ts ─────
+const MAX_BODY_TEXT = 20_000
+
+const CITAAT_PATRONEN: RegExp[] = [
+  /<blockquote[\s>]/i,
+  /<[a-z][^>]*class="[^"]*gmail_quote[^"]*"/i,
+  /<div[^>]*>\s*(?:<[^>]+>\s*)*Op\s[\s\S]{0,300}?schreef/i,
+  /-{3,}\s*(?:Original Message|Oorspronkelijk bericht)\s*-{3,}/i,
+  /(?:From|Van):[\s\S]{0,200}?(?:Sent|Verzonden):/,
+]
+
+function splitsCitaat(html: string): { eigen: string; geciteerd: string | null } {
+  if (!html) return { eigen: html || '', geciteerd: null }
+  let grens = -1
+  for (const patroon of CITAAT_PATRONEN) {
+    const m = patroon.exec(html)
+    if (m && (grens < 0 || m.index < grens)) grens = m.index
+  }
+  if (grens <= 0) return { eigen: html, geciteerd: null }
+  const aanloop = html.slice(Math.max(0, grens - 200), grens)
+  const omhullend = aanloop.search(/<(?:div|p|hr)\b[^>]*>\s*(?:<[^>]+>\s*)*$/i)
+  if (omhullend >= 0) grens = Math.max(0, grens - 200) + omhullend
+  const eigenTekst = html.slice(0, grens).replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim()
+  if (!eigenTekst) return { eigen: html, geciteerd: null }
+  return { eigen: html.slice(0, grens), geciteerd: html.slice(grens) }
+}
+
+/**
+ * Kandidaten: rijen met uid in deze map zonder rij in email_bodies, nieuwste
+ * eerst. PostgREST kent geen NOT EXISTS, dus in pagina's van 100 en per
+ * pagina tegen email_bodies afstrepen; hoogstens vijf pagina's.
+ */
+async function zoekKandidaten(user_id: string, mapValue: string, gewenst: number): Promise<{ rijen: Rij[]; meer: boolean }> {
+  const rijen: Rij[] = []
+  const PAGINA = 100
+  for (let pagina = 0; pagina < 5 && rijen.length <= gewenst; pagina++) {
+    const { data: blok, error } = await supabaseAdmin
+      .from('emails')
+      .select('id, uid')
+      .eq('user_id', user_id)
+      .eq('map', mapValue)
+      .not('uid', 'is', null)
+      .order('datum', { ascending: false })
+      .range(pagina * PAGINA, pagina * PAGINA + PAGINA - 1)
+    if (error) throw new Error(error.message)
+    if (!blok?.length) break
+
+    const ids = blok.map((r) => r.id as string)
+    const { data: metBody } = await supabaseAdmin
+      .from('email_bodies')
+      .select('email_id')
+      .in('email_id', ids)
+    const heeftBody = new Set((metBody || []).map((b) => b.email_id as string))
+    for (const r of blok) {
+      if (!heeftBody.has(r.id as string)) rijen.push({ id: r.id as string, uid: Number(r.uid) })
+    }
+    if (blok.length < PAGINA) break
+  }
+  return { rijen: rijen.slice(0, gewenst), meer: rijen.length > gewenst }
 }
 
 interface EmailCredentials {
@@ -256,22 +327,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const batchGrootte = Math.min(Math.max(Number(limit) || 25, 1), MAX_BATCH)
 
     // Nieuwste eerst: dat is wat de gebruiker zo gaat openen.
-    const { data: kandidaten, error: selectErr } = await supabaseAdmin
-      .from('emails')
-      .select('id, uid')
-      .eq('user_id', user_id)
-      .eq('map', mapValue)
-      .is('body_html', null)
-      .not('uid', 'is', null)
-      .order('datum', { ascending: false })
-      .limit(batchGrootte + 1)
-
-    if (selectErr) throw new Error(selectErr.message)
-
-    const rijen = ((kandidaten || []) as Rij[]).slice(0, batchGrootte)
-    // De extra rij uit de query vertelt of er nog meer werk ligt zonder een
-    // tweede count-query.
-    const meerBeschikbaar = (kandidaten || []).length > batchGrootte
+    const { rijen, meer: meerBeschikbaar } = await zoekKandidaten(user_id, mapValue, batchGrootte)
 
     if (rijen.length === 0) {
       return res.status(200).json({ verwerkt: 0, mislukt: 0, resterend: false })
@@ -347,13 +403,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           })
           const echteBijlagen = attachmentMeta.filter((a) => !a.isInlineCid).length
 
-          const bodyText = parsed.text || ''
-          const { error: updateErr } = await supabaseAdmin
+          const bodyText = (parsed.text || '').slice(0, MAX_BODY_TEXT)
+          const { eigen, geciteerd } = splitsCitaat(bodyHtml)
+          // De rij in email_bodies is de marker "geparsed", ook bij een mail
+          // zonder HTML-deel (body_html leeg). emails.body_html blijft NULL.
+          const { error: bodyErr } = await supabaseAdmin
+            .from('email_bodies')
+            .upsert({
+              email_id: rijId,
+              user_id,
+              body_html: eigen,
+              body_text: bodyText || null,
+              quoted_html: geciteerd,
+              bijgewerkt_op: new Date().toISOString(),
+            }, { onConflict: 'email_id' })
+          const { error: updateErr } = bodyErr ? { error: bodyErr } : await supabaseAdmin
             .from('emails')
             .update({
-              // Lege string, niet null: null betekent "nooit geparsed" en zou
-              // read-email opnieuw de IMAP-route in sturen.
-              body_html: bodyHtml,
               body_text: bodyText || null,
               attachment_meta: attachmentMeta.length > 0 ? attachmentMeta : null,
               bijlagen: echteBijlagen,
