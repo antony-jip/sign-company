@@ -3,8 +3,9 @@
 -- 1. organisaties.eigenaar_id zat niet in de guard van migratie 217, dus elk
 --    lid kon zichzelf eigenaar maken (billing-mail, support-toewijzing).
 -- 2. visualizer_credits en credit_transacties waren door org-leden vanuit de
---    browser bij te schrijven (migratie 059). Saldo loopt voortaan alleen via
---    de RPC's van migratie 147 en de billing-webhook (service_role).
+--    browser bij te schrijven (migratie 059): iedereen kon zichzelf credits
+--    geven. Saldo loopt voortaan alleen via de RPC's van migratie 147 en de
+--    billing-webhook (service_role); de browser mag alleen de welkomstrij maken.
 -- 3. Storage: documenten-prive was voor elke ingelogde gebruiker op elk pad
 --    schrijfbaar (185), en project-fotos accepteerde uploads in elke
 --    projectmap (028). Het pad wordt nu aan de gebruiker of de organisatie
@@ -58,10 +59,31 @@ BEGIN
 END;
 $$;
 
--- 2. Credits alleen via RPC en webhook
+-- 2. Credits: saldo wijzigen alleen via RPC (147) en de billing-webhook.
+--    Vanuit de browser mag nog precies één ding: de welkomstrij van maximaal
+--    10 credits aanmaken (visualizerService.getVisualizerCredits) plus de
+--    bijbehorende logregel. Bijschrijven of aftrekken kan niet meer.
 DROP POLICY IF EXISTS "Org members update credits" ON visualizer_credits;
 DROP POLICY IF EXISTS "Org members insert credits" ON visualizer_credits;
+CREATE POLICY "Org members insert credits" ON visualizer_credits
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    organisatie_id = auth_organisatie_id()
+    AND user_id = auth.uid()
+    AND saldo <= 10
+    AND totaal_gekocht <= 10
+    AND totaal_gebruikt = 0
+  );
+
 DROP POLICY IF EXISTS "Org members insert transactions" ON credit_transacties;
+CREATE POLICY "Org members insert transactions" ON credit_transacties
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    organisatie_id = auth_organisatie_id()
+    AND user_id = auth.uid()
+    AND type = 'handmatig_toegevoegd'
+    AND aantal <= 10
+  );
 
 -- 3a. documenten-prive: schrijven alleen in je eigen map of in een map van je organisatie
 DROP POLICY IF EXISTS "documenten_prive_schrijven" ON storage.objects;

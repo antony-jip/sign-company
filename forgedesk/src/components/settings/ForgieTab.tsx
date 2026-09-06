@@ -527,8 +527,9 @@ export function ForgieTab() {
 
           <Separator />
 
-          {/* Handmatig credits beheren (admin) */}
-          <details className="group">
+          {/* Handmatig credits: sinds migratie 243 blokkeert de database dit
+              vanuit de browser, dus alleen nog zichtbaar in dev. */}
+          {import.meta.env.DEV && <details className="group">
             <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground flex items-center gap-1">
               <Plus className="h-3 w-3" />
               Handmatig credits toevoegen/verwijderen
@@ -551,7 +552,7 @@ export function ForgieTab() {
                 <Plus className="h-3 w-3" /> Toevoegen
               </Button>
             </div>
-          </details>
+          </details>}
 
           {/* Transactiehistorie */}
           {transacties.length > 0 && (
