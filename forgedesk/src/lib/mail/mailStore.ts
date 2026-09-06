@@ -86,7 +86,7 @@ export function mappenVoor(item: EmailLijstItem): MailMap[] {
 type Luisteraar = () => void
 type Wachtend = {
   timer: ReturnType<typeof setTimeout>
-  flush: () => void
+  flush: (keepalive?: boolean) => void
   /** Laat deze ids vallen: niet wegschrijven, niet herstellen. */
   annuleer: (ids: string[]) => void
   /** Velden die optimistisch gezet zijn en dus nog niet op de server staan. */
@@ -116,7 +116,7 @@ class MailStore {
 
   constructor() {
     if (typeof window !== 'undefined') {
-      window.addEventListener('pagehide', () => this.flushAlles())
+      window.addEventListener('pagehide', () => this.flushAlles({ keepalive: true }))
       try {
         const bewaard = localStorage.getItem(POSTVAK_VOORKEUR)
         if (bewaard) this.actiefPostvak = bewaard
@@ -734,8 +734,8 @@ class MailStore {
     return Promise.all(ids.map((id) => updateEmail(id, deel).catch(() => {}))).then(() => {})
   }
 
-  private imap(actie: ImapActie, ids: string[]): void {
-    void imapActie(actie, ids).catch(() => {})
+  private imap(actie: ImapActie, ids: string[], keepalive = false): void {
+    void imapActie(actie, ids, undefined, { keepalive }).catch(() => {})
   }
 
   async zetGelezen(ids: string[], gelezen: boolean): Promise<void> {
@@ -804,9 +804,9 @@ class MailStore {
   }
 
   archiveer(ids: string[]): Undo {
-    return this.metUndo(ids, ARCHIEF_PATCH, (echt) => {
+    return this.metUndo(ids, ARCHIEF_PATCH, (echt, keepalive) => {
       void this.schrijfWeg(echt, ARCHIEF_PATCH)
-      this.imap('archive', echt)
+      this.imap('archive', echt, keepalive)
     })
   }
 
@@ -815,17 +815,17 @@ class MailStore {
     const naarPrullenbak = ids.filter((id) => this.items.get(id) && this.items.get(id)!.map !== 'prullenbak')
     const undos: Undo[] = []
     if (naarPrullenbak.length) {
-      undos.push(this.metUndo(naarPrullenbak, PRULLENBAK_PATCH, (echt) => {
+      undos.push(this.metUndo(naarPrullenbak, PRULLENBAK_PATCH, (echt, keepalive) => {
         void this.schrijfWeg(echt, PRULLENBAK_PATCH)
-        this.imap('trash', echt)
+        this.imap('trash', echt, keepalive)
       }))
     }
     if (inPrullenbak.length) {
       const bewaard = inPrullenbak.map((id) => this.items.get(id)!)
       for (const id of inPrullenbak) this.verwijderLokaal(id)
-      undos.push(this.buffer(inPrullenbak, (nog) => {
+      undos.push(this.buffer(inPrullenbak, (nog, keepalive) => {
         // Eerst IMAP: purge wil de rij nog kunnen lezen om de map te controleren.
-        void imapActie('purge', nog).catch(() => {}).finally(() => {
+        void imapActie('purge', nog, undefined, { keepalive }).catch(() => {}).finally(() => {
           for (const id of nog) void deleteEmail(id).catch(() => {})
         })
       }, (nog) => {
@@ -837,7 +837,7 @@ class MailStore {
     return { ongedaan: () => undos.forEach((u) => u.ongedaan()), klaarOver }
   }
 
-  private metUndo(ids: string[], deel: { map: string; labels: string[] }, flush: (ids: string[]) => void): Undo {
+  private metUndo(ids: string[], deel: { map: string; labels: string[] }, flush: (ids: string[], keepalive: boolean) => void): Undo {
     const snapshots = new Map<string, { map: string; labels: string[] }>()
     for (const id of ids) {
       const item = this.items.get(id)
@@ -846,7 +846,7 @@ class MailStore {
       this.patch(id, deel)
     }
     const echt = [...snapshots.keys()]
-    return this.buffer(echt, (nog) => flush(nog), (nog) => {
+    return this.buffer(echt, (nog, keepalive) => flush(nog, keepalive), (nog) => {
       for (const id of nog) {
         const snap = snapshots.get(id)
         if (snap) this.patch(id, snap)
@@ -861,20 +861,20 @@ class MailStore {
    * Flush en herstel krijgen alleen de ids die nog wachten: annuleerWachtend
    * kan er tussentijds een paar uit hebben gehaald.
    */
-  private buffer(ids: string[], flush: (ids: string[]) => void, herstel: (ids: string[]) => void, velden: string[] = []): Undo {
+  private buffer(ids: string[], flush: (ids: string[], keepalive: boolean) => void, herstel: (ids: string[]) => void, velden: string[] = []): Undo {
     for (const id of ids) {
       const eerder = this.wachtend.get(id)
       if (eerder) { clearTimeout(eerder.timer); this.wachtend.delete(id); eerder.flush() }
     }
     const actief = new Set(ids)
     let afgehandeld = false
-    const doe = () => {
+    const doe = (keepalive = false) => {
       if (afgehandeld) return
       afgehandeld = true
       clearTimeout(timer)
       const nog = [...actief]
       for (const id of nog) this.wachtend.delete(id)
-      if (nog.length) flush(nog)
+      if (nog.length) flush(nog, keepalive)
     }
     const annuleer = (teAnnuleren: string[]) => {
       if (afgehandeld) return
@@ -915,11 +915,16 @@ class MailStore {
     for (const [rij, lijst] of perRij) rij.annuleer(lijst)
   }
 
-  /** Alle wachtende acties nu doorschrijven (bij verlaten van de pagina of de module). */
-  flushAlles(): void {
+  /**
+   * Alle wachtende acties nu doorschrijven (bij verlaten van de pagina of de
+   * module). Met `keepalive` overleeft het verzoek het tabblad; zonder dat
+   * verdampte een archivering die binnen vijf seconden gevolgd werd door een
+   * refresh.
+   */
+  flushAlles(opties?: { keepalive?: boolean }): void {
     const uniek = new Set(this.wachtend.values())
     this.wachtend.clear()
-    for (const rij of uniek) { clearTimeout(rij.timer); rij.flush() }
+    for (const rij of uniek) { clearTimeout(rij.timer); rij.flush(opties?.keepalive) }
   }
 }
 

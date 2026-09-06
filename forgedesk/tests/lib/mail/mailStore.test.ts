@@ -88,7 +88,7 @@ describe('mailStore: optimistische patch met undo', () => {
     expect(mailStore.item('m0000')?.map).toBe('prullenbak')
     vi.advanceTimersByTime(UNDO_MS + 10)
     expect(mocks.updateEmail).toHaveBeenCalledWith('m0000', { map: 'prullenbak', labels: ['prullenbak'] })
-    expect(mocks.imapActie).toHaveBeenCalledWith('trash', ['m0000'])
+    expect(mocks.imapActie).toHaveBeenCalledWith('trash', ['m0000'], undefined, { keepalive: false })
   })
 
   it('verwijderen uit de prullenbak haalt lokaal weg en purge gaat vóór delete', async () => {
@@ -106,7 +106,7 @@ describe('mailStore: optimistische patch met undo', () => {
     await mailStore.zetGelezen(['m0000'], true)
     expect(mailStore.item('m0000')?.gelezen).toBe(true)
     expect(mocks.updateEmail).toHaveBeenCalledWith('m0000', { gelezen: true })
-    expect(mocks.imapActie).toHaveBeenCalledWith('seen', ['m0000'])
+    expect(mocks.imapActie).toHaveBeenCalledWith('seen', ['m0000'], undefined, { keepalive: false })
   })
 })
 

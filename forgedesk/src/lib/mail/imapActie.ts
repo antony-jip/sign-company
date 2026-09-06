@@ -17,7 +17,7 @@ export interface ImapActieUitkomst {
  * map zelf op bij de rijen van de ingelogde gebruiker. Staat writeback uit,
  * dan komt { overgeslagen: true } terug en blijft doen. de enige waarheid.
  */
-export async function imapActie(actie: ImapActie, emailIds: string[], doel?: MoveDoel): Promise<ImapActieUitkomst> {
+export async function imapActie(actie: ImapActie, emailIds: string[], doel?: MoveDoel, opties?: { keepalive?: boolean }): Promise<ImapActieUitkomst> {
   if (emailIds.length === 0) return { geslaagd: 0, mislukt: 0 }
   if (!supabase) throw new Error('Supabase niet geconfigureerd')
   const { data: { session } } = await supabase.auth.getSession()
@@ -26,6 +26,10 @@ export async function imapActie(actie: ImapActie, emailIds: string[], doel?: Mov
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
     body: JSON.stringify(actie === 'move' ? { action: actie, emailIds, doel } : { action: actie, emailIds }),
+    // Bij het verlaten van de pagina: laat het verzoek doorlopen. Het endpoint
+    // schrijft ook de map-kolom, dus dit is meteen het vangnet voor de
+    // supabase-update die met het tabblad verdwijnt.
+    keepalive: opties?.keepalive,
   })
   if (!response.ok) {
     const fout: { error?: string } = await response.json().catch(() => ({}))
