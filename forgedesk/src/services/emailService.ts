@@ -543,7 +543,9 @@ export async function getEmailBody(id: string): Promise<{ body_html: string | nu
     let bodyHtml = bodyQ.data?.body_html ?? null
     let bodyTekst = bodyQ.data?.body_text ?? null
     if (bodiesTabelOntbreekt() || tabelOntbreekt(bodyQ.error)) {
-      markeerBodiesTabelOntbreekt()
+      // Alleen markeren bij een echte tabelfout: markeren op de latch zelf
+      // verlengde hem bij elk gebruik, waardoor hij nooit verliep.
+      if (tabelOntbreekt(bodyQ.error)) markeerBodiesTabelOntbreekt()
       const terugval = (await bodiesUitEmailsRijen([id]))[0]
       bodyHtml = terugval?.body_html ?? null
       bodyTekst = terugval?.body_text ?? bodyTekst
@@ -588,7 +590,7 @@ export async function getEmailBodies(
       ])
       let rijen = (bodiesQ.data || []) as Array<{ email_id: string; body_html: string | null; body_text: string | null }>
       if (bodiesTabelOntbreekt() || tabelOntbreekt(bodiesQ.error)) {
-        markeerBodiesTabelOntbreekt()
+        if (tabelOntbreekt(bodiesQ.error)) markeerBodiesTabelOntbreekt()
         rijen = (await bodiesUitEmailsRijen(blok)).filter((r) => r.body_html)
       } else if (bodiesQ.error) {
         return []

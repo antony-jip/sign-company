@@ -252,3 +252,6 @@ Op Trigger.dev (dashboard, environment prod) voor de IDLE-werker:
 
 - `api/fetch-emails.ts` schrijft nu `account_id` op nieuwe mail (uit de credential-rij, met `id` in de select). Zonder migratie 245 bestaat de kolom niet en valt de batch terug op een tweede upsert zonder dat veld. Zonder dit hadden threads na 245 gesplitst en was nieuwe mail in een gedeeld postvak onzichtbaar gebleven.
 - Migratie 245 herbouwt `emails_list_view` met `account_id`, `toegewezen_aan` en `toegewezen_op` erin. De view somt zijn kolommen expliciet op, dus die kwamen er anders nooit bij en moest de client een tweede query doen.
+- Derde reviewronde: het view-blok in 245 zette `account_id` op positie 3, en CREATE OR REPLACE staat alleen kolommen aan het eind toe (migratie 159 waarschuwt daar zelf voor). De drie nieuwe kolommen staan nu achteraan, met de 35 kolommen uit 163 in precies dezelfde volgorde ervoor. Gecontroleerd met een scriptvergelijking.
+- De terugval-latch in `emailService` verlengde zichzelf bij elk gebruik en verliep daardoor nooit. Markeren gebeurt nu alleen bij een echte tabelfout.
+- Uitrolvolgorde volgens de reviewer: eerst deployen, dan migratie 244. Andersom maakt 244 het leesvenster leeg voor de code die nu live staat, want die leest `emails.body_html` nog. De nieuwe code overleeft een database zonder 244.

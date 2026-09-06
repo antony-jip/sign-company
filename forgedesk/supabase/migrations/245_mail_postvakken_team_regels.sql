@@ -228,19 +228,21 @@ BEGIN
 END $$;
 
 -- De lijst-view somt zijn kolommen expliciet op, dus account_id, toegewezen_aan
--- en toegewezen_op komen er niet vanzelf bij. Zonder die drie moet de client
--- een tweede query doen voor het postvak en de toewijzing.
+-- en toegewezen_op komen er niet vanzelf bij. CREATE OR REPLACE staat alleen
+-- kolommen aan het EIND toe (zie de waarschuwing in migratie 159), dus de
+-- bestaande volgorde uit 163 blijft precies zoals hij is en de drie nieuwe
+-- komen erachter.
 CREATE OR REPLACE VIEW emails_list_view
 WITH (security_invoker = on) AS
 SELECT
-  id, user_id, account_id, gmail_id, uid, message_id, van, aan, onderwerp, datum,
+  id, user_id, gmail_id, uid, message_id, van, aan, onderwerp, datum,
   gelezen, starred, labels, bijlagen, map, from_name, from_address, imap_folder,
   pinned, snoozed_until, thread_id, attachment_meta, has_attachments,
   LEFT(body_text, 200) AS body_text,
   fts, created_at, updated_at, cached_at,
   is_aanvraag, aanvraag_zekerheid, aanvraag_samenvatting, aanvraag_beoordeeld_op,
   aanvraag_verborgen, to_addresses, cc_addresses,
-  toegewezen_aan, toegewezen_op
+  account_id, toegewezen_aan, toegewezen_op
 FROM emails;
 GRANT SELECT ON emails_list_view TO authenticated;
 
