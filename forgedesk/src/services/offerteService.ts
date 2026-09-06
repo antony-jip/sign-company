@@ -360,7 +360,7 @@ export async function converteerOfferteNaarProject(offerte: Offerte, userId?: st
   return { project, offerte: bijgewerkt }
 }
 
-/** Wijst de offerte af met reden; de deal (als die er is) krijgt dezelfde verloren-reden. */
+/** Wijst de offerte af met reden; de deal (als die er is) gaat op verloren met dezelfde reden. */
 export async function wijsOfferteAf(offerte: Offerte, reden: string): Promise<Offerte> {
   const bijgewerkt = await updateOfferte(offerte.id, {
     status: 'afgewezen',
@@ -370,7 +370,7 @@ export async function wijsOfferteAf(offerte: Offerte, reden: string): Promise<Of
   if (offerte.deal_id) {
     // De deal is bijzaak: de offerte staat al op afgewezen, dus een mislukte
     // deal-update mag dat niet als fout terugmelden.
-    await updateDeal(offerte.deal_id, { verloren_reden: reden }).catch((err) => {
+    await updateDeal(offerte.deal_id, { status: 'verloren', verloren_reden: reden, verloren_op: now() }).catch((err) => {
       Sentry.captureException(err, { tags: { bron: 'wijsOfferteAf' } })
     })
   }
