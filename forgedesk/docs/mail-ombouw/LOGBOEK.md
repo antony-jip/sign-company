@@ -428,3 +428,86 @@ gingen stuk op de tweede rij die deze migratie zelf mogelijk maakt.
   postvakken heeft.
 - Poorten na dit werk: `npx tsc --noEmit` = 28 (ongewijzigd), `npm run typecheck:api` = 1
   (ongewijzigd), `npm run build` groen, `npm run test:run` 706 groen.
+
+## Derde ronde: de kruiscontrole
+
+De derde reviewer kreeg één opdracht: klopt wat de eerste twee zeiden, en klopt
+wat er daarna mee gedaan is. Dat leverde meer op dan een stempel.
+
+### Hij vond een regressie die de fixronde zelf had gemaakt
+
+`api/backfill-emails.ts`: om de sync-state per postvak te kunnen lezen had ik
+`getEmailCredentials` naar voren gehaald, vóór de vroege antwoorden "nog niet
+gebootstrapt" en "al klaar". Die functie eist een app-wachtwoord, dus élke
+OAuth-mailbox kreeg voortaan een 500 in plaats van een 200, en die fout brak de
+hele backfill-lus in de client af. Dat raakte iedereen, ook zonder tweede
+postvak, en meteen bij deploy. Nu wordt alleen het postvak-id vooruit gelezen en
+blijft de wachtwoordeis staan waar hij stond.
+
+Les voor de volgende keer: een aanroep verplaatsen die kan gooien is nooit een
+neutrale verplaatsing.
+
+### Wie gelijk had waar de twee reviewers elkaar tegenspraken
+
+Reviewer 1 noemde het ontbreken van PGRST204 een blokkade; reviewer 2 noemde
+datzelfde scenario onschuldig met "isOnbekendeSleutel vangt 42703 correct af".
+Reviewer 1 had gelijk, en de derde bewees het langs twee kanten: `account_id`
+staat altijd op de rij (het is `user_email_settings.id`, een kolom van vóór 245),
+dus poging 1 vuurt altijd; en PostgREST houdt een onbekende kolom in de lading
+zelf tegen, vóór Postgres, met PGRST204 en een tekst die de oude regex niet
+matcht. Dat de fix naast de code ook de regex moest uitbreiden bevestigt het.
+
+### Wat er alsnog uit kwam, en wat ermee gedaan is
+
+Zwaar, allemaal gerepareerd:
+
+- **Bijlagen waren dood bij twee postvakken.** `api/email-attachment.ts` deed
+  `.single()` op `user_email_settings` en kende geen postvak. Elke bijlage
+  antwoordde "Geen email instellingen gevonden". De cache-lookup matchte
+  bovendien op `(user_id, uid, map)`, dus een bijlage kon aan de mail van het
+  verkeerde postvak hangen. Endpoint en de vier aanroepers doen het nu per
+  postvak.
+- **De app zei "nog geen mailbox gekoppeld" zodra je er twee had.**
+  `authenticateGmail` stond op `.single()`.
+- **De vlaggensync schreef over postvakken heen.** Dat was de zwaarste van deze
+  ronde, want het is een schrijfpad: de sync van postvak 2 zette de gelezen- en
+  gepind-stand van uid 1234 op de mail met uid 1234 in postvak 1. Stond pal naast
+  vier reads die de vorige ronde wél gerepareerd had.
+- **De prefetch koos kandidaten zonder postvak** terwijl de verbinding er wel
+  één opende, dus bodies landden op rijen van de andere mailbox. De vorige ronde
+  had alleen de clientkant gerepareerd; de serverkant deed het werk dubbel én
+  fout.
+- **read-email's cachetreffer** matchte op `(user_id, uid, map)`: de verkeerde
+  mail tonen bij een treffer in één postvak, of de cache stil verliezen bij een
+  treffer in allebei.
+- **De aanvraagherkenning viel uit** na elke sync (`.single()`).
+- **"Opnieuw verbinden" repareerde altijd postvak 1**, terwijl de banner sinds de
+  vorige ronde de slechtste stand van álle postvakken toont. De banner meldde
+  postvak 2, de knop herstelde postvak 1, zonder melding. De status draagt nu het
+  postvak dat de stand veroorzaakt en de knop volgt dat.
+- **`herstelSyncStatus` in mail-oauth-callback** was de kopie zonder
+  postvakfilter: postvak 2 herkoppelen zette de storing van postvak 1 op ok.
+- **Eén kapot postvak zette de andere stil**, doordat de lus in `useMailSync`
+  binnen één try stond. Nu een try per postvak. Ook: de postvakkenlijst wordt nu
+  eerst geladen, anders miste postvak 2 de eenmalige backfill van die sessie.
+- **De twee losse inserts na een mislukte batch** gingen rauw de tabel in, dus
+  zonder 245 faalden ze op precies het pad dat bestaat voor als de batch al
+  gefaald heeft.
+- **De outbox-dedupe** zag dezelfde mail vanuit een ander postvak als duplicaat.
+
+Kleiner meegenomen: `email-imap-action` controleert nu aan de serverkant dat de
+rijen bij het gevraagde postvak horen (de client groepeert al goed, dit is de
+tweede sluiting), de weekdigest stuurt één mail per gebruiker in plaats van één
+per postvak, de twee backfill-joins in 245 en 247 kiezen `is_standaard` in plaats
+van een willekeurig postvak, en 247 zet `is_standaard` desnoods zelf neer zodat
+hij ook vóór 245 kan draaien.
+
+### Bewust niet gedaan
+
+- **Alle verzendpaden buiten de mailmodule** (offertes, facturen, portaal,
+  projectmail) sturen geen `account_id` en vertrekken dus uit het
+  standaardpostvak. Dat is een keuze, geen bug: zakelijke post hoort uit het
+  hoofdadres. Wel hier vastgelegd, want wie zijn zakelijke adres als tweede
+  postvak koppelt zal iets anders verwachten.
+- **`clearEmailCache()`** wist de mail van alle postvakken. Dat is precies wat
+  een opruimknop hoort te doen.

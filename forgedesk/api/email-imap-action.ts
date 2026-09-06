@@ -614,15 +614,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // af. Zou de client uid+folder mogen meesturen, dan kon een ingelogde
     // gebruiker willekeurige UIDs uit willekeurige mappen laten wissen.
     // user_id-filter is verplicht: service_role omzeilt RLS.
+    // Ook op postvak: de IMAP-verbinding hieronder gaat naar één mailbox, dus
+    // een rij uit een ánder postvak hoort hier niet in de uitkomst te staan.
+    // De client groepeert al per postvak; dit is de controle aan de serverkant,
+    // zodat een oude of afwijkende client geen uid van postvak B in de mailbox
+    // van postvak A kan laten wissen.
+    const gevraagdPostvak = leesAccountId(req)
     const alle: MailRij[] = []
     for (let i = 0; i < ids.length; i += 50) {
-      const { data: rijen, error: leesFout } = await supabaseAdmin
-        .from('emails')
-        .select('id, uid, imap_folder, map, message_id')
-        .eq('user_id', user_id)
-        .in('id', ids.slice(i, i + 50))
-      if (leesFout) throw new Error(leesFout.message)
-      alle.push(...((rijen || []) as MailRij[]))
+      const blok = ids.slice(i, i + 50)
+      const haal = (metAccount: boolean) => {
+        const basis = supabaseAdmin
+          .from('emails')
+          .select('id, uid, imap_folder, map, message_id')
+          .eq('user_id', user_id)
+          .in('id', blok)
+        return metAccount ? basis.eq('account_id', gevraagdPostvak as string) : basis
+      }
+      let uitkomst = gevraagdPostvak ? await haal(true) : await haal(false)
+      if (gevraagdPostvak && isKolomFout(uitkomst.error)) uitkomst = await haal(false)
+      if (uitkomst.error) throw new Error(uitkomst.error.message)
+      alle.push(...((uitkomst.data || []) as MailRij[]))
     }
     const metUid = alle.filter((r) => Number.isFinite(Number(r.uid)) && Number(r.uid) > 0 && r.imap_folder)
     const zonderUid = alle.filter((r) => !metUid.includes(r))

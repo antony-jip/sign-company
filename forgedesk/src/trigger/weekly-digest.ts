@@ -336,6 +336,12 @@ export const weeklyDigestTask = schedules.task({
       return { sent: 0, skipped: 0, failed: 0 };
     }
 
+    // Eén digest per gebruiker, ook met twee postvakken: user_email_settings
+    // heeft sinds migratie 245 meer dan één rij per gebruiker kunnen hebben.
+    const perGebruiker = new Map<string, (typeof users)[number]>();
+    for (const u of users) if (!perGebruiker.has(u.user_id)) perGebruiker.set(u.user_id, u);
+    const ontvangers = [...perGebruiker.values()];
+
     const subject = `Je week in doen. \u2014 ${dateRange}`;
     let sent = 0;
     let skipped = 0;
@@ -346,8 +352,8 @@ export const weeklyDigestTask = schedules.task({
     // tegelijk open.
     const CHUNK = 8;
     const results: PromiseSettledResult<{ status: "sent" | "failed"; error?: string } | undefined>[] = [];
-    for (let i = 0; i < users.length; i += CHUNK) {
-      const chunk = users.slice(i, i + CHUNK);
+    for (let i = 0; i < ontvangers.length; i += CHUNK) {
+      const chunk = ontvangers.slice(i, i + CHUNK);
       results.push(...(await Promise.allSettled(
       chunk.map(async (user) => {
         if (!user.gmail_address) {
