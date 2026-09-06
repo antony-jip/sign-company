@@ -575,9 +575,12 @@ class MailStore {
     this.imap(aan ? 'flagged' : 'unflagged', ids)
   }
 
+  /** snoozed_until is een TEXT-kolom: altijd volledige ISO-UTC, anders vergelijkt de wekker-cron appels met peren. */
   async snooze(ids: string[], tot: string | null): Promise<void> {
-    for (const id of ids) this.patch(id, { snoozed_until: tot })
-    await this.schrijfWeg(ids, { snoozed_until: tot })
+    const iso = tot ? new Date(tot).toISOString() : null
+    if (tot && Number.isNaN(Date.parse(tot))) throw new Error('Ongeldige snooze-tijd')
+    for (const id of ids) this.patch(id, { snoozed_until: iso })
+    await this.schrijfWeg(ids, { snoozed_until: iso })
   }
 
   async label(ids: string[], label: string, aan: boolean): Promise<void> {
@@ -606,6 +609,7 @@ class MailStore {
       this.patch(id, { map: 'inbox', labels })
     }
     await Promise.all([...patches].map(([id, deel]) => updateEmail(id, deel).catch(() => {})))
+    void imapActie('move', [...patches.keys()], 'inbox').catch(() => {})
   }
 
   archiveer(ids: string[]): Undo {
