@@ -39,6 +39,7 @@ import {
   Bell,
   ArrowRight,
   KeyRound,
+  Filter,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -54,6 +55,7 @@ import { toast } from 'sonner'
 import { logger } from '../../utils/logger'
 import type { Medewerker } from '@/types'
 import { SubTabNav } from './SubTabNav'
+import { MailRegelsKaart } from './MailRegelsKaart'
 import { HandtekeningEditor } from './HandtekeningEditor'
 import {
   handtekeningNaarHtml,
@@ -70,6 +72,7 @@ const EMAIL_TABS: SubTab[] = [
   { id: 'verbinding', label: 'Verbinding', icon: Server },
   { id: 'handtekening', label: 'Handtekening', icon: FileText },
   { id: 'templates', label: 'Templates', icon: Mail },
+  { id: 'regels', label: 'Regels en labels', icon: Filter },
   { id: 'teamleden', label: 'Team Handtekeningen', icon: Users },
   { id: 'algemeen', label: 'Algemeen', icon: Mail },
 ]
@@ -903,6 +906,8 @@ export function EmailTab() {
       )}
 
       {subTab === 'templates' && <EmailTemplatesBeheerTab />}
+
+      {subTab === 'regels' && <MailRegelsKaart />}
 
       {subTab === 'teamleden' && (
         <div className="space-y-6">

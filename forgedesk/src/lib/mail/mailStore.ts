@@ -3,6 +3,11 @@ import { MAIL_MAPPEN } from './types'
 import { getPostvakken } from '@/services/postvakService'
 import { wijsToe as wijsToeInDb } from '@/services/teamInboxService'
 import {
+  eersteRegelVoor, getRegels, leesGezien, regelsBeschikbaar, schrijfGezien,
+  type MailRegel,
+} from '@/services/mailRegelService'
+import { koppel as koppelAan } from '@/services/koppelingService'
+import {
   getEmailsPage, searchEmailsFTS, getMapTellers, getThreadInfos, getThreadItems, getSyncStatus,
   updateEmail, deleteEmail,
   type EmailPageCursor,
@@ -91,6 +96,8 @@ class MailStore {
   private postvakken: Postvak[] = []
   private actiefPostvak: PostvakKeuze = 'alle'
   private postvakkenBelofte: Promise<Postvak[]> | null = null
+  private regels: MailRegel[] = []
+  private regelsBelofte: Promise<MailRegel[]> | null = null
   private versie = 0
   private snapshot: MailState | null = null
   private luisteraars = new Set<Luisteraar>()
@@ -162,6 +169,8 @@ class MailStore {
     this.zoekQuery = ''
     this.postvakken = []
     this.postvakkenBelofte = null
+    this.regels = []
+    this.regelsBelofte = null
     for (const t of this.cacheTimers.values()) clearTimeout(t)
     this.cacheTimers.clear()
     this.meld()
@@ -201,6 +210,71 @@ class MailStore {
         return []
       })
     return this.postvakkenBelofte
+  }
+
+  // ── Regels ──
+
+  async laadRegels(opnieuw = false): Promise<MailRegel[]> {
+    if (this.regelsBelofte && !opnieuw) return this.regelsBelofte
+    this.regelsBelofte = getRegels().then((lijst) => { this.regels = lijst; return lijst }).catch(() => [])
+    return this.regelsBelofte
+  }
+
+  regelsLokaal(): MailRegel[] {
+    return this.regels
+  }
+
+  /**
+   * Regels op mail die ze nog niet gezien heeft. Draait bij het laden van de
+   * inbox en bij elke realtime-INSERT; `doen_mail_regels_gezien` houdt bij wat
+   * al langs is geweest, want de database heeft daar geen kolom voor.
+   */
+  async pasRegelsToe(items: EmailLijstItem[]): Promise<number> {
+    if (!regelsBeschikbaar() || items.length === 0) return 0
+    const regels = await this.laadRegels()
+    if (regels.length === 0) return 0
+    const gezien = leesGezien()
+    const account = this.actiefAccountId()
+    let toegepast = 0
+    for (const item of items) {
+      if (gezien.has(item.id)) continue
+      gezien.add(item.id)
+      if (item.map !== 'inbox') continue
+      const regel = eersteRegelVoor(regels, item, account)
+      if (!regel) continue
+      toegepast += 1
+      await this.voerRegelUit(regel, item)
+    }
+    schrijfGezien(gezien)
+    return toegepast
+  }
+
+  private async voerRegelUit(regel: MailRegel, item: EmailLijstItem): Promise<void> {
+    const acties = regel.acties
+    if (acties.markeerGelezen) await this.zetGelezen([item.id], true).catch(() => {})
+    if (acties.label) await this.label([item.id], acties.label, true).catch(() => {})
+    if (acties.toewijzenAan) await this.wijsToe([item.id], acties.toewijzenAan).catch(() => {})
+    if (acties.projectId) {
+      await koppelAan('project', acties.projectId, item.thread_id ? { threadId: item.thread_id } : { emailId: item.id }).catch(() => {})
+    }
+    if (acties.archiveren) {
+      this.patch(item.id, ARCHIEF_PATCH)
+      await this.schrijfWeg([item.id], ARCHIEF_PATCH)
+      this.imap('archive', [item.id])
+    }
+  }
+
+  /** "Nu toepassen": de laatste N mails uit de inbox opnieuw langs de regels. */
+  async pasRegelsToeOpBestaande(aantal = 200): Promise<number> {
+    if (!regelsBeschikbaar()) return 0
+    await this.laadRegels(true)
+    const pagina = await getEmailsPage('inbox', null, aantal, this.actiefAccountId()) as unknown as EmailLijstItem[]
+    for (const rij of pagina) this.neemOp(rij)
+    // Zonder de gezien-lijst: dit is een uitdrukkelijke opdracht van de gebruiker.
+    const gezien = leesGezien()
+    for (const rij of pagina) gezien.delete(rij.id)
+    schrijfGezien(gezien)
+    return this.pasRegelsToe(pagina)
   }
 
   zetActiefPostvak(keuze: PostvakKeuze): void {
@@ -327,6 +401,7 @@ class MailStore {
       })
       this.meld()
       void this.vulThreadInfo(nieuw)
+      if (map === 'inbox') void this.pasRegelsToe(nieuw).catch(() => {})
       this.planCache(map)
     } catch (e) {
       this.zetStand(map, { laden: false, geladen: true, fout: e instanceof Error ? e.message : 'Laden mislukt' })
@@ -584,6 +659,7 @@ class MailStore {
     }
     this.planCacheVoor(geraakt)
     this.meld()
+    if (opgenomen.map === 'inbox') void this.pasRegelsToe([opgenomen]).catch(() => {})
   }
 
   verwijderLokaal(id: string): void {
