@@ -44,298 +44,285 @@ export const offerteOpvolgingCron = schedules.task({
     const errors: string[] = [];
 
     for (const schema of schemas) {
-      const stappen = ((schema.stappen || []) as StapRow[])
-        .filter((s) => s.actief)
-        .sort((a, b) => a.stap_nummer - b.stap_nummer);
+      try {
+        const stappen = ((schema.stappen || []) as StapRow[])
+          .filter((s) => s.actief)
+          .sort((a, b) => a.stap_nummer - b.stap_nummer);
 
-      if (stappen.length === 0) continue;
+        if (stappen.length === 0) continue;
 
-      // Get all users in this org
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, bedrijfsnaam, logo_url")
-        .eq("organisatie_id", schema.organisatie_id);
+        // Get all users in this org
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, bedrijfsnaam, logo_url")
+          .eq("organisatie_id", schema.organisatie_id);
 
-      if (!profiles || profiles.length === 0) continue;
+        if (!profiles || profiles.length === 0) continue;
 
-      const userIds = profiles.map((p: { id: string }) => p.id);
+        const userIds = profiles.map((p: { id: string }) => p.id);
 
-      // Get all offertes with opvolging active, status verzonden/bekeken
-      const { data: offertes } = await supabase
-        .from("offertes")
-        .select("id, user_id, klant_id, project_id, nummer, titel, subtotaal, totaal, status, verstuurd_op, verzendwijze, opvolging_actief, opvolging_schema_id, bekeken_door_klant, aantal_keer_bekeken, publiek_token")
-        .in("user_id", userIds)
-        .in("status", ["verzonden", "bekeken"])
-        .or("opvolging_actief.is.null,opvolging_actief.eq.true");
+        // Get all offertes with opvolging active, status verzonden/bekeken
+        const { data: offertes } = await supabase
+          .from("offertes")
+          .select("id, user_id, klant_id, project_id, nummer, titel, subtotaal, totaal, status, verstuurd_op, verzendwijze, opvolging_actief, opvolging_schema_id, bekeken_door_klant, aantal_keer_bekeken, publiek_token")
+          .in("user_id", userIds)
+          .in("status", ["verzonden", "bekeken"])
+          .or("opvolging_actief.is.null,opvolging_actief.eq.true");
 
-      if (!offertes || offertes.length === 0) continue;
+        if (!offertes || offertes.length === 0) continue;
 
-      // Filter to offertes that use this schema (or no override)
-      const relevantOffertes = offertes.filter(
-        (o: OfferteRow) =>
-          !o.opvolging_schema_id || o.opvolging_schema_id === schema.id
-      );
-
-      // Get existing log entries for these offertes
-      const offerteIds = relevantOffertes.map((o: OfferteRow) => o.id);
-      const { data: existingLogs } = await supabase
-        .from("offerte_opvolg_log")
-        .select("offerte_id, stap_id, resultaat")
-        .in("offerte_id", offerteIds);
-
-      const logsByOfferte = new Map<string, Set<string>>();
-      for (const log of existingLogs || []) {
-        const l = log as { offerte_id: string; stap_id: string };
-        if (!logsByOfferte.has(l.offerte_id)) {
-          logsByOfferte.set(l.offerte_id, new Set());
-        }
-        logsByOfferte.get(l.offerte_id)!.add(l.stap_id);
-      }
-
-      // Batch fetch klant info
-      const klantIds = [...new Set(relevantOffertes.map((o: OfferteRow) => o.klant_id).filter(Boolean))];
-      const { data: klanten } = await supabase
-        .from("klanten")
-        .select("id, bedrijfsnaam, contactpersoon, email, contactpersonen")
-        .in("id", klantIds);
-
-      const klantMap = new Map(
-        (klanten || []).map((k: KlantRow) => [k.id, k])
-      );
-
-      // Batch fetch project info
-      const projectIds = [...new Set(relevantOffertes.map((o: OfferteRow) => o.project_id).filter(Boolean))];
-      const { data: projecten } = await supabase
-        .from("projecten")
-        .select("id, naam")
-        .in("id", projectIds.length > 0 ? projectIds : ["__none__"]);
-
-      const projectMap = new Map(
-        (projecten || []).map((p: { id: string; naam: string }) => [p.id, p])
-      );
-
-      // Get portaal tokens for portaal-sent offertes
-      const portaalOfferteIds = relevantOffertes
-        .filter((o: OfferteRow) => o.verzendwijze === "via_portaal" && o.project_id)
-        .map((o: OfferteRow) => o.id);
-      const { data: portaalItems } = portaalOfferteIds.length > 0
-        ? await supabase
-            .from("portaal_items")
-            .select("offerte_id, portaal_id")
-            .eq("type", "offerte")
-            .in("offerte_id", portaalOfferteIds)
-        : { data: [] };
-
-      const portaalItemMap = new Map(
-        (portaalItems || []).map((pi: { offerte_id: string; portaal_id: string }) => [pi.offerte_id, pi.portaal_id])
-      );
-
-      // Get portaal tokens
-      const portaalIds = [...new Set((portaalItems || []).map((pi: { portaal_id: string }) => pi.portaal_id))];
-      const { data: portalenData } = portaalIds.length > 0
-        ? await supabase
-            .from("project_portalen")
-            .select("id, token")
-            .in("id", portaalIds)
-            .eq("actief", true)
-        : { data: [] };
-
-      const portaalTokenMap = new Map(
-        (portalenData || []).map((p: { id: string; token: string }) => [p.id, p.token])
-      );
-
-      // Get document styles for branding
-      const { data: docStyles } = await supabase
-        .from("document_styles")
-        .select("user_id, primaire_kleur")
-        .in("user_id", userIds);
-
-      const docStyleMap = new Map(
-        (docStyles || []).map((d: { user_id: string; primaire_kleur: string }) => [d.user_id, d])
-      );
-
-      const profileMap = new Map(
-        profiles.map((p: { id: string; bedrijfsnaam: string; logo_url: string }) => [p.id, p])
-      );
-
-      // Branding komt van de organisatie-eigenaar (zoals factuur-herinnering),
-      // met de maker als terugval voor orgs zonder eigenaar_id.
-      const { data: orgRow } = await supabase
-        .from("organisaties")
-        .select("eigenaar_id")
-        .eq("id", schema.organisatie_id)
-        .maybeSingle();
-      const eigenaarId: string | undefined = orgRow?.eigenaar_id || undefined;
-
-      const appUrl =
-        process.env.VITE_APP_URL ||
-        process.env.APP_URL ||
-        "https://app.doen.team";
-
-      const now = new Date();
-
-      for (const offerte of relevantOffertes as OfferteRow[]) {
-        // Skip handmatig verstuurd (unless opvolging explicitly turned on)
-        if (offerte.verzendwijze === "via_handmatig" && offerte.opvolging_actief !== true) {
-          totaalOvergeslagen++;
-          continue;
-        }
-
-        const verstuurdOp = offerte.verstuurd_op
-          ? new Date(offerte.verstuurd_op)
-          : null;
-        if (!verstuurdOp) {
-          totaalOvergeslagen++;
-          continue;
-        }
-
-        const dagenOpen = Math.floor(
-          (now.getTime() - verstuurdOp.getTime()) / 86400000
+        // Filter to offertes that use this schema (or no override)
+        const relevantOffertes = offertes.filter(
+          (o: OfferteRow) =>
+            !o.opvolging_schema_id || o.opvolging_schema_id === schema.id
         );
 
-        const executedStapIds = logsByOfferte.get(offerte.id) || new Set();
+        // Get existing log entries for these offertes
+        const offerteIds = relevantOffertes.map((o: OfferteRow) => o.id);
+        const { data: existingLogs } = await supabase
+          .from("offerte_opvolg_log")
+          .select("offerte_id, stap_id, resultaat")
+          .in("offerte_id", offerteIds);
 
-        // Find the next stap to execute
-        for (const stap of stappen) {
-          if (executedStapIds.has(stap.id)) continue;
-          if (dagenOpen < stap.dagen_na_versturen) continue;
+        const logsByOfferte = new Map<string, Set<string>>();
+        for (const log of existingLogs || []) {
+          const l = log as { offerte_id: string; stap_id: string };
+          if (!logsByOfferte.has(l.offerte_id)) {
+            logsByOfferte.set(l.offerte_id, new Set());
+          }
+          logsByOfferte.get(l.offerte_id)!.add(l.stap_id);
+        }
 
-          // Check conditions
-          const isBekeken =
-            offerte.bekeken_door_klant === true ||
-            (offerte.aantal_keer_bekeken ?? 0) > 0;
+        // Batch fetch klant info
+        const klantIds = [...new Set(relevantOffertes.map((o: OfferteRow) => o.klant_id).filter(Boolean))];
+        const { data: klanten } = await supabase
+          .from("klanten")
+          .select("id, bedrijfsnaam, contactpersoon, email, contactpersonen")
+          .in("id", klantIds);
 
-          // For via_email_pdf, skip "niet bekeken" check (no tracking)
-          const skipBekekenCheck = offerte.verzendwijze === "via_email_pdf";
+        const klantMap = new Map(
+          (klanten || []).map((k: KlantRow) => [k.id, k])
+        );
 
-          if (stap.alleen_als_niet_bekeken && !skipBekekenCheck && isBekeken) {
-            await logOpvolgActie(supabase, offerte.id, stap.id, stap.actie, "overgeslagen_bekeken");
+        // Batch fetch project info
+        const projectIds = [...new Set(relevantOffertes.map((o: OfferteRow) => o.project_id).filter(Boolean))];
+        const { data: projecten } = await supabase
+          .from("projecten")
+          .select("id, naam")
+          .in("id", projectIds.length > 0 ? projectIds : ["__none__"]);
+
+        const projectMap = new Map(
+          (projecten || []).map((p: { id: string; naam: string }) => [p.id, p])
+        );
+
+        // Get portaal tokens for portaal-sent offertes
+        const portaalOfferteIds = relevantOffertes
+          .filter((o: OfferteRow) => o.verzendwijze === "via_portaal" && o.project_id)
+          .map((o: OfferteRow) => o.id);
+        const { data: portaalItems } = portaalOfferteIds.length > 0
+          ? await supabase
+              .from("portaal_items")
+              .select("offerte_id, portaal_id")
+              .eq("type", "offerte")
+              .in("offerte_id", portaalOfferteIds)
+          : { data: [] };
+
+        const portaalItemMap = new Map(
+          (portaalItems || []).map((pi: { offerte_id: string; portaal_id: string }) => [pi.offerte_id, pi.portaal_id])
+        );
+
+        // Get portaal tokens
+        const portaalIds = [...new Set((portaalItems || []).map((pi: { portaal_id: string }) => pi.portaal_id))];
+        const { data: portalenData } = portaalIds.length > 0
+          ? await supabase
+              .from("project_portalen")
+              .select("id, token")
+              .in("id", portaalIds)
+              .eq("actief", true)
+          : { data: [] };
+
+        const portaalTokenMap = new Map(
+          (portalenData || []).map((p: { id: string; token: string }) => [p.id, p.token])
+        );
+
+        // Get document styles for branding
+        const { data: docStyles } = await supabase
+          .from("document_styles")
+          .select("user_id, primaire_kleur")
+          .in("user_id", userIds);
+
+        const docStyleMap = new Map(
+          (docStyles || []).map((d: { user_id: string; primaire_kleur: string }) => [d.user_id, d])
+        );
+
+        const profileMap = new Map(
+          profiles.map((p: { id: string; bedrijfsnaam: string; logo_url: string }) => [p.id, p])
+        );
+
+        // Branding komt van de organisatie-eigenaar (zoals factuur-herinnering),
+        // met de maker als terugval voor orgs zonder eigenaar_id.
+        const { data: orgRow } = await supabase
+          .from("organisaties")
+          .select("eigenaar_id")
+          .eq("id", schema.organisatie_id)
+          .maybeSingle();
+        const eigenaarId: string | undefined = orgRow?.eigenaar_id || undefined;
+
+        const appUrl =
+          process.env.VITE_APP_URL ||
+          process.env.APP_URL ||
+          "https://app.doen.team";
+
+        const now = new Date();
+
+        for (const offerte of relevantOffertes as OfferteRow[]) {
+          // Skip handmatig verstuurd (unless opvolging explicitly turned on)
+          if (offerte.verzendwijze === "via_handmatig" && offerte.opvolging_actief !== true) {
             totaalOvergeslagen++;
             continue;
           }
 
-          // "niet gereageerd" = offerte is still in verzonden/bekeken (not goedgekeurd/afgewezen)
-          const heeftGereageerd = !["verzonden", "bekeken"].includes(offerte.status);
-          if (stap.alleen_als_niet_gereageerd && heeftGereageerd) {
-            await logOpvolgActie(supabase, offerte.id, stap.id, stap.actie, "overgeslagen_gereageerd");
+          const verstuurdOp = offerte.verstuurd_op
+            ? new Date(offerte.verstuurd_op)
+            : null;
+          if (!verstuurdOp) {
             totaalOvergeslagen++;
             continue;
           }
 
-          // Build merge vars
-          const klant = klantMap.get(offerte.klant_id);
-          const project = offerte.project_id ? projectMap.get(offerte.project_id) : null;
-          const profile = (eigenaarId && profileMap.get(eigenaarId)) || profileMap.get(offerte.user_id);
-          const docStyle = (eigenaarId && docStyleMap.get(eigenaarId)) || docStyleMap.get(offerte.user_id);
+          const dagenOpen = Math.floor(
+            (now.getTime() - verstuurdOp.getTime()) / 86400000
+          );
 
-          const klantNaam = klant?.bedrijfsnaam || "klant";
-          const contactpersoon = klant?.contactpersoon || klant?.contactpersonen?.[0]?.naam || klantNaam;
-          const klantEmail = klant?.email || klant?.contactpersonen?.[0]?.email;
-          const bedrijfsnaam = profile?.bedrijfsnaam || "";
-          const projectNaam = project?.naam || "";
-          // Build the correct link based on verzendwijze
-          let offerteLink = "";
-          if (offerte.verzendwijze === "via_portaal") {
-            // Portaal-sent: link to portaal page
-            const portaalId = portaalItemMap.get(offerte.id);
-            const pToken = portaalId ? portaalTokenMap.get(portaalId) : undefined;
-            if (pToken) {
-              offerteLink = `${appUrl}/portaal/${pToken}`;
+          const executedStapIds = logsByOfferte.get(offerte.id) || new Set();
+
+          // Find the next stap to execute
+          for (const stap of stappen) {
+            if (executedStapIds.has(stap.id)) continue;
+            if (dagenOpen < stap.dagen_na_versturen) continue;
+
+            // Check conditions
+            const isBekeken =
+              offerte.bekeken_door_klant === true ||
+              (offerte.aantal_keer_bekeken ?? 0) > 0;
+
+            // For via_email_pdf, skip "niet bekeken" check (no tracking)
+            const skipBekekenCheck = offerte.verzendwijze === "via_email_pdf";
+
+            if (stap.alleen_als_niet_bekeken && !skipBekekenCheck && isBekeken) {
+              await logOpvolgActie(supabase, offerte.id, stap.id, stap.actie, "overgeslagen_bekeken");
+              totaalOvergeslagen++;
+              continue;
             }
-          }
-          // Fallback to publiek_token for PDF-sent or when portaal token not found
-          if (!offerteLink && offerte.publiek_token) {
-            offerteLink = `${appUrl}/offerte-bekijken/${offerte.publiek_token}`;
-          }
 
-          const vars: Record<string, string> = {
-            klant_naam: klantNaam,
-            contactpersoon,
-            offerte_nummer: offerte.nummer,
-            offerte_bedrag: `${new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(offerte.subtotaal ?? offerte.totaal)} excl. btw`,
-            project_naam: projectNaam,
-            verstuurd_op: verstuurdOp.toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" }),
-            dagen_open: String(dagenOpen),
-            bedrijfsnaam,
-            afzender_naam: bedrijfsnaam,
-            offerte_link: offerteLink,
-            portaal_link: offerteLink,
-            // De fallback-templates (offerte_opvolging_dag1/7) gebruiken
-            // {{portaal_url}} — zonder deze alias lekt de placeholder
-            // letterlijk naar de klant.
-            portaal_url: offerteLink,
-          };
+            // "niet gereageerd" = offerte is still in verzonden/bekeken (not goedgekeurd/afgewezen)
+            const heeftGereageerd = !["verzonden", "bekeken"].includes(offerte.status);
+            if (stap.alleen_als_niet_gereageerd && heeftGereageerd) {
+              await logOpvolgActie(supabase, offerte.id, stap.id, stap.actie, "overgeslagen_gereageerd");
+              totaalOvergeslagen++;
+              continue;
+            }
 
-          // Per-stap custom content wint; bij lege velden fallback op het
-          // bijbehorende systeem-template uit email_templates (dag1 of dag7
-          // afhankelijk van stap.dagen_na_versturen).
-          const triggerNaam = stap.dagen_na_versturen <= 3
-            ? "offerte_opvolging_dag1"
-            : "offerte_opvolging_dag7";
-          const fallbackTemplate = await getTemplateAdmin(schema.organisatie_id, triggerNaam);
-          const onderwerp = renderTriggerTemplate(stap.onderwerp || fallbackTemplate.onderwerp, vars);
-          const inhoud = renderTriggerTemplate(stap.inhoud || fallbackTemplate.body, vars);
+            // Build merge vars
+            const klant = klantMap.get(offerte.klant_id);
+            const project = offerte.project_id ? projectMap.get(offerte.project_id) : null;
+            const profile = (eigenaarId && profileMap.get(eigenaarId)) || profileMap.get(offerte.user_id);
+            const docStyle = (eigenaarId && docStyleMap.get(eigenaarId)) || docStyleMap.get(offerte.user_id);
 
-          try {
-            // Email naar klant — via portaal herinnering
-            if ((stap.actie === "email_klant" || stap.actie === "email_en_melding") && klantEmail) {
-              const portaalLink = vars.portaal_link;
-              if (!portaalLink) {
-                logger.warn("Geen portaal gevonden, email overgeslagen", { offerte: offerte.nummer });
-                await logOpvolgActie(supabase, offerte.id, stap.id, stap.actie, "fout", { error: "Geen portaal gevonden voor dit project" });
-                errors.push(`${offerte.nummer}: Geen portaal gevonden`);
-                // Melding intern mag nog steeds doorgaan
-                if (stap.actie === "email_en_melding") {
-                  await supabase.from("notificaties").insert({
-                    user_id: offerte.user_id,
-                    type: "offerte_opvolging",
-                    titel: onderwerp,
-                    bericht: inhoud.substring(0, 500),
-                    link: `/offertes/${offerte.id}`,
-                    gelezen: false,
-                    actie_genomen: false,
-                  });
-                }
-                continue;
+            const klantNaam = klant?.bedrijfsnaam || "klant";
+            const contactpersoon = klant?.contactpersoon || klant?.contactpersonen?.[0]?.naam || klantNaam;
+            const klantEmail = klant?.email || klant?.contactpersonen?.[0]?.email;
+            const bedrijfsnaam = profile?.bedrijfsnaam || "";
+            const projectNaam = project?.naam || "";
+            // Build the correct link based on verzendwijze
+            let offerteLink = "";
+            if (offerte.verzendwijze === "via_portaal") {
+              // Portaal-sent: link to portaal page
+              const portaalId = portaalItemMap.get(offerte.id);
+              const pToken = portaalId ? portaalTokenMap.get(portaalId) : undefined;
+              if (pToken) {
+                offerteLink = `${appUrl}/portaal/${pToken}`;
               }
+            }
+            // Fallback to publiek_token for PDF-sent or when portaal token not found
+            if (!offerteLink && offerte.publiek_token) {
+              offerteLink = `${appUrl}/offerte-bekijken/${offerte.publiek_token}`;
+            }
 
-              const plainBody = [
-                `Beste ${contactpersoon},`,
-                "",
-                inhoud,
-                "",
-                `Bekijk het hier: ${portaalLink}`,
-                "",
-                `Met vriendelijke groet,`,
-                bedrijfsnaam || "Het team",
-              ].join("\n");
+            const vars: Record<string, string> = {
+              klant_naam: klantNaam,
+              contactpersoon,
+              offerte_nummer: offerte.nummer,
+              offerte_bedrag: `${new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(offerte.subtotaal ?? offerte.totaal)} excl. btw`,
+              project_naam: projectNaam,
+              verstuurd_op: verstuurdOp.toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" }),
+              dagen_open: String(dagenOpen),
+              bedrijfsnaam,
+              afzender_naam: bedrijfsnaam,
+              offerte_link: offerteLink,
+              portaal_link: offerteLink,
+              // De fallback-templates (offerte_opvolging_dag1/7) gebruiken
+              // {{portaal_url}} — zonder deze alias lekt de placeholder
+              // letterlijk naar de klant.
+              portaal_url: offerteLink,
+            };
 
-              const htmlBody = buildPortalEmailHtml({
-                heading: `Herinnering: Offerte ${offerte.nummer}`,
-                itemTitel: `Offerte ${offerte.nummer}`,
-                beschrijving: inhoud,
-                ctaUrl: portaalLink,
-                ctaLabel: "Bekijk in portaal",
-                bedrijfsnaam,
-                logoUrl: profile?.logo_url || undefined,
-                primaireKleur: docStyle?.primaire_kleur || undefined,
-              });
+            // Per-stap custom content wint; bij lege velden fallback op het
+            // bijbehorende systeem-template uit email_templates (dag1 of dag7
+            // afhankelijk van stap.dagen_na_versturen).
+            const triggerNaam = stap.dagen_na_versturen <= 3
+              ? "offerte_opvolging_dag1"
+              : "offerte_opvolging_dag7";
+            const fallbackTemplate = await getTemplateAdmin(schema.organisatie_id, triggerNaam);
+            const onderwerp = renderTriggerTemplate(stap.onderwerp || fallbackTemplate.onderwerp, vars);
+            const inhoud = renderTriggerTemplate(stap.inhoud || fallbackTemplate.body, vars);
 
-              let emailResult = await sendEmailForUser({
-                userId: offerte.user_id,
-                to: klantEmail,
-                subject: onderwerp,
-                text: plainBody,
-                html: htmlBody,
-                organisatieId: schema.organisatie_id,
-                idempotencyKey: `offerte_opvolging:${offerte.id}:${stap.id}`,
-              });
+            try {
+              // Email naar klant — via portaal herinnering
+              if ((stap.actie === "email_klant" || stap.actie === "email_en_melding") && klantEmail) {
+                const portaalLink = vars.portaal_link;
+                if (!portaalLink) {
+                  logger.warn("Geen portaal gevonden, email overgeslagen", { offerte: offerte.nummer });
+                  await logOpvolgActie(supabase, offerte.id, stap.id, stap.actie, "fout", { error: "Geen portaal gevonden voor dit project" });
+                  errors.push(`${offerte.nummer}: Geen portaal gevonden`);
+                  // Melding intern mag nog steeds doorgaan
+                  if (stap.actie === "email_en_melding") {
+                    await supabase.from("notificaties").insert({
+                      user_id: offerte.user_id,
+                      type: "offerte_opvolging",
+                      titel: onderwerp,
+                      bericht: inhoud.substring(0, 500),
+                      link: `/offertes/${offerte.id}`,
+                      gelezen: false,
+                      actie_genomen: false,
+                    });
+                  }
+                  continue;
+                }
 
-              // Eén herkansing bij een transiente SMTP-fout — anders schuift
-              // de stap pas een dag op (de idempotency-key is teruggerold).
-              if (!emailResult.success) {
-                await new Promise((r) => setTimeout(r, 5000));
-                emailResult = await sendEmailForUser({
+                const plainBody = [
+                  `Beste ${contactpersoon},`,
+                  "",
+                  inhoud,
+                  "",
+                  `Bekijk het hier: ${portaalLink}`,
+                  "",
+                  `Met vriendelijke groet,`,
+                  bedrijfsnaam || "Het team",
+                ].join("\n");
+
+                const htmlBody = buildPortalEmailHtml({
+                  heading: `Herinnering: Offerte ${offerte.nummer}`,
+                  itemTitel: `Offerte ${offerte.nummer}`,
+                  beschrijving: inhoud,
+                  ctaUrl: portaalLink,
+                  ctaLabel: "Bekijk in portaal",
+                  bedrijfsnaam,
+                  logoUrl: profile?.logo_url || undefined,
+                  primaireKleur: docStyle?.primaire_kleur || undefined,
+                });
+
+                let emailResult = await sendEmailForUser({
                   userId: offerte.user_id,
                   to: klantEmail,
                   subject: onderwerp,
@@ -344,50 +331,71 @@ export const offerteOpvolgingCron = schedules.task({
                   organisatieId: schema.organisatie_id,
                   idempotencyKey: `offerte_opvolging:${offerte.id}:${stap.id}`,
                 });
+
+                // Eén herkansing bij een transiente SMTP-fout — anders schuift
+                // de stap pas een dag op (de idempotency-key is teruggerold).
+                if (!emailResult.success) {
+                  await new Promise((r) => setTimeout(r, 5000));
+                  emailResult = await sendEmailForUser({
+                    userId: offerte.user_id,
+                    to: klantEmail,
+                    subject: onderwerp,
+                    text: plainBody,
+                    html: htmlBody,
+                    organisatieId: schema.organisatie_id,
+                    idempotencyKey: `offerte_opvolging:${offerte.id}:${stap.id}`,
+                  });
+                }
+
+                if (emailResult.skipped) {
+                  logger.info("Offerte-opvolging mail overgeslagen (duplicaat)", {
+                    offerteId: offerte.id,
+                    stapId: stap.id,
+                  });
+                  continue;
+                }
+
+                if (!emailResult.success) {
+                  await logOpvolgActie(supabase, offerte.id, stap.id, stap.actie, "fout", { error: emailResult.error });
+                  errors.push(`${offerte.nummer}: ${emailResult.error}`);
+                  continue;
+                }
               }
 
-              if (emailResult.skipped) {
-                logger.info("Offerte-opvolging mail overgeslagen (duplicaat)", {
-                  offerteId: offerte.id,
-                  stapId: stap.id,
+              // Interne melding
+              if (stap.actie === "melding_intern" || stap.actie === "email_en_melding") {
+                await supabase.from("notificaties").insert({
+                  user_id: offerte.user_id,
+                  type: "offerte_opvolging",
+                  titel: onderwerp,
+                  bericht: inhoud.substring(0, 500),
+                  link: `/offertes/${offerte.id}`,
+                  gelezen: false,
+                  actie_genomen: false,
                 });
-                continue;
               }
 
-              if (!emailResult.success) {
-                await logOpvolgActie(supabase, offerte.id, stap.id, stap.actie, "fout", { error: emailResult.error });
-                errors.push(`${offerte.nummer}: ${emailResult.error}`);
-                continue;
-              }
-            }
-
-            // Interne melding
-            if (stap.actie === "melding_intern" || stap.actie === "email_en_melding") {
-              await supabase.from("notificaties").insert({
-                user_id: offerte.user_id,
-                type: "offerte_opvolging",
-                titel: onderwerp,
-                bericht: inhoud.substring(0, 500),
-                link: `/offertes/${offerte.id}`,
-                gelezen: false,
-                actie_genomen: false,
+              await logOpvolgActie(supabase, offerte.id, stap.id, stap.actie, "verstuurd", {
+                klant_email: klantEmail,
+                dagen_open: dagenOpen,
               });
+              totaalVerstuurd++;
+            } catch (err) {
+              const msg = err instanceof Error ? err.message : "Onbekende fout";
+              await logOpvolgActie(supabase, offerte.id, stap.id, stap.actie, "fout", { error: msg });
+              errors.push(`${offerte.nummer}: ${msg}`);
             }
 
-            await logOpvolgActie(supabase, offerte.id, stap.id, stap.actie, "verstuurd", {
-              klant_email: klantEmail,
-              dagen_open: dagenOpen,
-            });
-            totaalVerstuurd++;
-          } catch (err) {
-            const msg = err instanceof Error ? err.message : "Onbekende fout";
-            await logOpvolgActie(supabase, offerte.id, stap.id, stap.actie, "fout", { error: msg });
-            errors.push(`${offerte.nummer}: ${msg}`);
+            // Only execute one stap per offerte per run
+            break;
           }
-
-          // Only execute one stap per offerte per run
-          break;
         }
+      } catch (err) {
+        logger.error("offerte-opvolging: organisatie overgeslagen na fout", {
+          orgId: schema.organisatie_id,
+          error: err instanceof Error ? err.message : String(err),
+        });
+        continue;
       }
     }
 

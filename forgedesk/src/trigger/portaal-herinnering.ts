@@ -39,28 +39,36 @@ export const portaalHerinneringCron = schedules.task({
     const errors: string[] = [];
 
     for (const settings of allSettings) {
-      const instellingen = (settings.portaal_instellingen || {}) as {
-        herinnering_na_dagen?: number;
-        bedrijfslogo_op_portaal?: boolean;
-        template_herinnering?: { onderwerp?: string; inhoud?: string };
-      };
+      try {
+        const instellingen = (settings.portaal_instellingen || {}) as {
+          herinnering_na_dagen?: number;
+          bedrijfslogo_op_portaal?: boolean;
+          template_herinnering?: { onderwerp?: string; inhoud?: string };
+        };
 
-      const herinneringDagen = instellingen.herinnering_na_dagen ?? 3;
-      if (herinneringDagen === 0) {
-        totaalOvergeslagen++;
+        const herinneringDagen = instellingen.herinnering_na_dagen ?? 3;
+        if (herinneringDagen === 0) {
+          totaalOvergeslagen++;
+          continue;
+        }
+
+        const result = await processUserHerinneringen({
+          userId: settings.user_id,
+          herinneringDagen,
+          template: instellingen.template_herinnering,
+          showLogo: instellingen.bedrijfslogo_op_portaal !== false,
+        });
+
+        totaalVerstuurd += result.verstuurd;
+        totaalOvergeslagen += result.overgeslagen;
+        errors.push(...result.errors);
+      } catch (err) {
+        logger.error("portaal-herinnering: gebruiker overgeslagen na fout", {
+          userId: settings.user_id,
+          error: err instanceof Error ? err.message : String(err),
+        });
         continue;
       }
-
-      const result = await processUserHerinneringen({
-        userId: settings.user_id,
-        herinneringDagen,
-        template: instellingen.template_herinnering,
-        showLogo: instellingen.bedrijfslogo_op_portaal !== false,
-      });
-
-      totaalVerstuurd += result.verstuurd;
-      totaalOvergeslagen += result.overgeslagen;
-      errors.push(...result.errors);
     }
 
     metadata.set("status", "completed");
