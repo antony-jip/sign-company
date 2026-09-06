@@ -320,21 +320,30 @@ export function TeamLayout() {
     setWerktijdenAangeraakt(true);
   }
 
-  // Het geldende rooster bijwerken, of bij een latere ingangsdatum het oude
-  // afsluiten op de dag ervoor en een nieuw contract beginnen.
+  // Alleen opslaan als het blok Werktijden is aangeraakt, nooit een stil
+  // standaardcontract. Het rooster dat op de ingangsdatum geldt wordt
+  // bijgewerkt; bij een latere ingangsdatum sluit het oude op de dag ervoor.
+  // Valt de ingangsdatum vóór alle roosters, dan sluit het nieuwe op de dag
+  // vóór het eerstvolgende, zodat de historie aansluit.
   async function slaWerktijdenOp(medewerkerId: string) {
-    const basis = contractOpDatum(contracten, medewerkerId, werktijden.geldig_van) ?? geldendContract(medewerkerId);
-    if (basis && !werktijdenAangeraakt) return;
+    if (!werktijdenAangeraakt) return;
+    const ingang = werktijden.geldig_van.slice(0, 10);
+    if (!ingang) { toast.error('Kies een ingangsdatum'); return; }
+    const basis = contractOpDatum(contracten, medewerkerId, ingang);
     const velden = urenNaarVelden(werktijden.uren);
+    const volgende = contracten
+      .filter((c) => c.medewerker_id === medewerkerId && c.geldig_van.slice(0, 10) > ingang)
+      .sort((a, b) => a.geldig_van.localeCompare(b.geldig_van))[0];
+    const geldigTot = volgende ? datumPlusDagen(volgende.geldig_van, -1) : null;
     if (!basis) {
-      await upsertMedewerkerContract({ medewerker_id: medewerkerId, geldig_van: werktijden.geldig_van, geldig_tot: null, ...velden });
-    } else if (werktijden.geldig_van > basis.geldig_van.slice(0, 10)) {
+      await upsertMedewerkerContract({ medewerker_id: medewerkerId, geldig_van: ingang, geldig_tot: geldigTot, ...velden });
+    } else if (ingang > basis.geldig_van.slice(0, 10)) {
       const ongewijzigd = urenVanContract(basis).every((u, i) => u === werktijden.uren[i]);
       if (ongewijzigd) return;
-      await upsertMedewerkerContract({ ...basis, geldig_tot: datumPlusDagen(werktijden.geldig_van, -1) });
-      await upsertMedewerkerContract({ medewerker_id: medewerkerId, geldig_van: werktijden.geldig_van, geldig_tot: null, ...velden });
+      await upsertMedewerkerContract({ ...basis, geldig_tot: datumPlusDagen(ingang, -1) });
+      await upsertMedewerkerContract({ medewerker_id: medewerkerId, geldig_van: ingang, geldig_tot: geldigTot, ...velden });
     } else {
-      await upsertMedewerkerContract({ ...basis, geldig_van: werktijden.geldig_van, ...velden });
+      await upsertMedewerkerContract({ ...basis, ...velden });
     }
     setContracten(await getMedewerkerContracten());
   }
@@ -366,6 +375,10 @@ export function TeamLayout() {
   async function handleOpslaan() {
     if (!form.naam.trim() || !form.email.trim()) {
       toast.error('Naam en e-mail zijn verplicht.');
+      return;
+    }
+    if (werktijdenAangeraakt && !werktijden.geldig_van) {
+      toast.error('Kies een ingangsdatum');
       return;
     }
 
