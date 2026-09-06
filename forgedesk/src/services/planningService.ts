@@ -460,6 +460,17 @@ export async function deleteAfwezigheid(id: string): Promise<void> {
   setLocalData('afwezigheid', items.filter((a) => a.id !== id))
 }
 
+// ── Bedrijfssluitingsdagen (datum + jaarlijks_herhalend, org-breed) ──
+
+export async function getBedrijfssluitingsdagen(): Promise<Bedrijfssluitingsdag[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('bedrijfssluitingsdagen').select('*').order('datum')
+    if (error) throw error
+    return (data || []) as Bedrijfssluitingsdag[]
+  }
+  return getLocalData<Bedrijfssluitingsdag>('bedrijfssluitingsdagen')
+}
+
 // ── Contracturen (migratie 241) ──
 
 export async function getMedewerkerContracten(): Promise<MedewerkerContract[]> {

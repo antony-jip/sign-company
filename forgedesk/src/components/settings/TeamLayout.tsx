@@ -42,7 +42,10 @@ import {
   Clock,
   CheckCircle,
   AlertTriangle,
+  Activity,
 } from 'lucide-react';
+import { BezettingTab } from '@/components/settings/BezettingTab';
+import { useFunctie } from '@/hooks/useFunctie';
 import {
   getMedewerkers,
   createMedewerker,
@@ -62,7 +65,7 @@ import { isAdminUser } from '@/utils/authHelpers';
 import { cn, getInitials } from '@/lib/utils';
 import { toast } from 'sonner';
 
-type TeamTab = 'overzicht' | 'beschikbaarheid' | 'vaardigheden' | 'prestaties';
+type TeamTab = 'overzicht' | 'beschikbaarheid' | 'bezetting' | 'vaardigheden' | 'prestaties';
 
 
 // ---------------------------------------------------------------------------
@@ -174,6 +177,7 @@ export function TeamLayout() {
   const { user, userRol } = useAuth();
   // Kostprijs per uur is wat een collega kost; dat blijft bij admin.
   const magKostprijs = isAdminUser(userRol);
+  const bezettingAan = useFunctie('planning_bezetting');
   // ---- state ---------------------------------------------------------------
   const [activeTab, setActiveTab] = useState<TeamTab>('overzicht');
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>([]);
@@ -492,6 +496,7 @@ export function TeamLayout() {
         {([
           { id: 'overzicht' as TeamTab, label: 'Overzicht', icon: Users },
           { id: 'beschikbaarheid' as TeamTab, label: 'Beschikbaarheid', icon: Calendar },
+          ...(bezettingAan ? [{ id: 'bezetting' as TeamTab, label: 'Bezetting', icon: Activity }] : []),
           { id: 'vaardigheden' as TeamTab, label: 'Vaardigheden', icon: Award },
           { id: 'prestaties' as TeamTab, label: 'Prestaties', icon: BarChart3 },
         ]).map((tab) => {
@@ -555,6 +560,16 @@ export function TeamLayout() {
           </CardContent>
         </Card>
       </div>
+
+      {/* ──── Bezetting tab ──── */}
+      {activeTab === 'bezetting' && bezettingAan && (
+        <BezettingTab
+          medewerkers={medewerkers}
+          contracten={contracten}
+          verlof={verlofLijst}
+          onNaarWerktijden={() => setActiveTab('overzicht')}
+        />
+      )}
 
       {/* ──── Beschikbaarheid tab ──── */}
       {activeTab === 'beschikbaarheid' && (<>
