@@ -466,6 +466,42 @@ const ARTICLES: KbArticle[] = [
     link: '/planning',
   },
   {
+    id: 'uren-weekstaat',
+    category: 'uitvoering',
+    icon: Calendar,
+    iconColor: '#1A535C',
+    titel: 'Weekstaat en uren goedkeuren',
+    subtitel: 'Je week in één raster, goedkeuren als je dat wilt',
+    inhoud: [
+      'Bovenaan Tijdregistratie staat de **weekstaat**: rijen zijn de projecten en bewerkingen waar je deze of vorige week aan werkte, kolommen zijn de dagen. Typ een getal in een cel en het uur staat vast. Onder elke dag zie je het totaal en, als er werktijden zijn ingesteld, de dagnorm met de afwijking.',
+      'Inklokken blijft bestaan en vult dezelfde uren. De weekstaat is voor wie liever achteraf invult, of om een dag te corrigeren.',
+      '**Uren goedkeuren** is een aparte schakelaar in Functies, standaard uit. Aan betekent: nieuwe uren zijn concept, je dient je week in met één knop, een beheerder keurt goed in de kaart "Te keuren", en alleen goedgekeurde uren gaan naar de factuur. Uit betekent: elk uur telt meteen mee, zoals altijd.',
+    ],
+    tips: [
+      'Werktijden per medewerker stel je in bij Team, in het blok Werktijden; daar komt de dagnorm vandaan',
+      'Een teruggestuurde week krijgt de opmerking van de beheerder als melding',
+    ],
+    link: '/tijdregistratie',
+  },
+  {
+    id: 'planning-bezetting',
+    category: 'uitvoering',
+    icon: Users,
+    iconColor: '#1A535C',
+    titel: 'Werktijden en bezetting',
+    subtitel: '13 van 40 uur, vier weken vooruit',
+    inhoud: [
+      'Geef elke medewerker **werktijden** per weekdag (Team, medewerker bewerken, blok Werktijden). Verandert het rooster, dan maak je een nieuw rooster met een ingangsdatum; het oude blijft gelden tot die dag.',
+      'De tab **Bezetting** bij Team laat per medewerker per week zien hoeveel er gepland staat tegenover wat er beschikbaar is: werktijden min verlof, afwezigheid en sluitingsdagen. Gepland zijn de montageafspraken plus taken met een deadline in die week. Tik op een cel voor de opbouw.',
+      'Vanuit het montagebord kom je er via het menu rechtsboven.',
+    ],
+    tips: [
+      'Boven 110 procent kleurt de cel amber, boven 130 rood: tijd om te schuiven of iemand erbij te zetten',
+      'Zonder werktijden is er geen noemer; begin daar',
+    ],
+    link: '/team?tab=bezetting',
+  },
+  {
     id: 'meldingen-noemen',
     category: 'communicatie',
     icon: Bell,

@@ -52,6 +52,18 @@ const APP_FEATURES = [
 
 const CHANGELOG: ChangelogEntry[] = [
   {
+    versie: '1.5.1',
+    datum: '6 september 2026',
+    label: 'Nieuw',
+    titel: 'Weekstaat, uren goedkeuren en bezetting',
+    beschrijving: 'Voor wie op uren stuurt. Allebei achter een schakelaar; goedkeuren staat standaard uit.',
+    features: [
+      { titel: 'Weekstaat', beschrijving: 'Uren per dag in een weekraster bovenaan Tijdregistratie, met de dagnorm uit je werktijden ernaast. Naast het inklokken.' },
+      { titel: 'Uren goedkeuren', beschrijving: 'Week indienen, beheerder keurt goed, alleen goedgekeurde uren naar de factuur. Optioneel.' },
+      { titel: 'Werktijden en bezetting', beschrijving: 'Uren per weekdag per medewerker, en per week gepland tegenover beschikbaar, vier weken vooruit.' },
+    ],
+  },
+  {
     versie: '1.5.0',
     datum: '5 september 2026',
     label: 'Nieuw',

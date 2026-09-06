@@ -1221,6 +1221,18 @@ Planning
 - *Herhaald inplannen* (planning_herhalen): blok "Herhalen" in de
   afspraakdialoog: wekelijks, elke twee weken of maandelijks tot een datum.
   Verwijderen kan "alleen deze" of "deze en volgende".
+- *Weekstaat* (uren_weekstaat): raster bovenaan Tijdregistratie, rijen zijn
+  project plus bewerking, kolommen de dagen; typen in een cel slaat het uur op.
+  Dagnorm uit de werktijden. Inklokken blijft bestaan.
+- *Uren goedkeuren* (uren_goedkeuren, standaard uit): nieuwe uren zijn concept,
+  "Week indienen" maakt ze definitief, een beheerder keurt goed in de kaart "Te
+  keuren" (ook via /tijdregistratie?keuren=1); alleen goedgekeurde uren gaan
+  naar de factuur. Uit: elk uur telt meteen mee.
+- *Werktijden en bezetting* (planning_bezetting): werktijden per weekdag op de
+  medewerker (Team, blok Werktijden, met ingangsdatum); tab Bezetting bij Team
+  toont per medewerker per week gepland (montage plus taken met deadline)
+  tegenover beschikbaar (werktijden min verlof, afwezigheid, sluitingsdagen),
+  vier weken vooruit. Ingang ook via het menu van het montagebord.
 - *Herinnering als er nog geen uren staan* (uren_herinnering, met tijdstip):
   melding en push voor wie die dag niets schreef; een getekende werkbon telt mee.
 
