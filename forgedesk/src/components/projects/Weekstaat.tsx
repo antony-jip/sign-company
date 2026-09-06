@@ -7,7 +7,7 @@ import { ChevronLeft, ChevronRight, Lock, Plus, Send } from 'lucide-react'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
 import { cn } from '@/lib/utils'
-import { createTijdregistratie, updateTijdregistratie, deleteTijdregistratie, standaardUrenStatus, zetUrenStatus } from '@/services/tijdregistratieService'
+import { createTijdregistratie, updateTijdregistratie, deleteTijdregistratie, standaardUrenStatus, urenBeschermdMelding, zetUrenStatus } from '@/services/tijdregistratieService'
 import { stuurUrenWeekMelding } from '@/services/urenWeekService'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { getProjectUrenBudget, type ProjectUrenBudget } from '@/services/projectUrenService'
@@ -83,12 +83,14 @@ interface WeekstaatProps {
   weekOffset: number
   onWeekOffsetChange: (offset: number) => void
   goedkeurenAan: boolean
+  /** Beheerders mogen goedgekeurde en gefactureerde regels nog wijzigen; de databasetrigger laat dat alleen voor hen toe. */
+  isAdmin: boolean
   onGewijzigd: () => Promise<void> | void
 }
 
 export function Weekstaat({
   registraties, projecten, urenVelden, eigenMedewerker, userId, contracten, settings,
-  weekOffset, onWeekOffsetChange, goedkeurenAan, onGewijzigd,
+  weekOffset, onWeekOffsetChange, goedkeurenAan, isAdmin, onGewijzigd,
 }: WeekstaatProps) {
   const maandag = maandagMetOffset(weekOffset)
   const dagen = useMemo(() => Array.from({ length: 7 }, (_, i) => datumPlusDagen(maandag, i)), [maandag])
@@ -129,9 +131,9 @@ export function Weekstaat({
   }
 
   function celSlot(regels: Tijdregistratie[]): string | null {
-    if (regels.some((r) => r.gefactureerd)) return 'Gefactureerd, niet meer te wijzigen'
+    if (!isAdmin && regels.some((r) => r.gefactureerd)) return 'Gefactureerd, alleen een beheerder kan dit wijzigen'
     if (!goedkeurenAan) return null
-    if (regels.some((r) => r.status === 'goedgekeurd')) return 'Goedgekeurd, niet meer te wijzigen'
+    if (!isAdmin && regels.some((r) => r.status === 'goedgekeurd')) return 'Goedgekeurd, alleen een beheerder kan dit wijzigen'
     if (regels.some((r) => r.status === 'definitief')) return 'Ingediend, wacht op goedkeuring'
     return null
   }
@@ -210,7 +212,7 @@ export function Weekstaat({
       await onGewijzigd()
     } catch (err) {
       logger.error('Weekstaat opslaan mislukt:', err)
-      toast.error('Uren opslaan mislukt')
+      toast.error(urenBeschermdMelding(err) ?? 'Uren opslaan mislukt')
     } finally {
       setBezigCel(null)
       vergeetConcept()

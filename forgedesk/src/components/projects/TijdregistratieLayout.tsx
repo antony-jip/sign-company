@@ -61,7 +61,7 @@ import { useAppSettings } from "@/contexts/AppSettingsContext";
 import { getProjectUrenBudget, type ProjectUrenBudget } from "@/services/projectUrenService";
 import { urenVeldenUitInstellingen } from "@/utils/offerteUren";
 import { kostprijsVoor, uurtariefVoorkeuze } from "@/utils/kostprijs";
-import { standaardUrenStatus } from "@/services/tijdregistratieService";
+import { standaardUrenStatus, urenBeschermdMelding } from "@/services/tijdregistratieService";
 import { getMedewerkerContracten } from "@/services/planningService";
 import { useFunctie } from "@/hooks/useFunctie";
 import { Weekstaat, vandaagIso } from "./Weekstaat";
@@ -186,6 +186,7 @@ const EMPTY_FORM: FormData = {
 
 export function TijdregistratieLayout() {
   const { user, userRol } = useAuth();
+  const isAdmin = isAdminUser(userRol);
   const [searchParams] = useSearchParams();
   const keurenDeeplink = searchParams.get("keuren") === "1";
   const [registraties, setRegistraties] = useState<Tijdregistratie[]>(() => getCached<Tijdregistratie[]>('tijdregistraties') ?? []);
@@ -451,6 +452,11 @@ export function TijdregistratieLayout() {
       loadData();
     } catch (err) {
       logger.error('Fout bij opslaan tijdregistratie:', err);
+      const beschermd = urenBeschermdMelding(err);
+      if (beschermd) {
+        toast.error(beschermd);
+        return;
+      }
       if (editingId) {
         setRegistraties((prev) =>
           prev.map((r) =>
@@ -492,10 +498,23 @@ export function TijdregistratieLayout() {
       loadData();
     } catch (err) {
       logger.error('Fout bij verwijderen tijdregistratie:', err);
-      setRegistraties((prev) => prev.filter((r) => r.id !== id));
-      toast.success("Tijdregistratie lokaal verwijderd");
+      const beschermd = urenBeschermdMelding(err);
+      if (beschermd) {
+        toast.error(beschermd);
+      } else {
+        setRegistraties((prev) => prev.filter((r) => r.id !== id));
+        toast.success("Tijdregistratie lokaal verwijderd");
+      }
     }
     setDeleteConfirmId(null);
+  }
+
+  // Spiegelt de databasetrigger uit migratie 241; 'goedgekeurd' telt alleen als de schakelaar aan staat.
+  function vergrendelTitel(r: Tijdregistratie): string | undefined {
+    if (isAdmin) return undefined;
+    if (r.gefactureerd) return "Gefactureerd, alleen een beheerder kan dit wijzigen";
+    if (goedkeurenAan && r.status === "goedgekeurd") return "Goedgekeurd, alleen een beheerder kan dit wijzigen";
+    return undefined;
   }
 
   // Met uren_goedkeuren aan gaat alleen 'goedgekeurd' naar de factuur; uit telt elk uur (status is dan altijd goedgekeurd).
@@ -685,7 +704,7 @@ export function TijdregistratieLayout() {
         </div>
       </div>
 
-      {goedkeurenAan && isAdminUser(userRol) && (
+      {goedkeurenAan && isAdmin && (
         <UrenKeuren
           registraties={registraties}
           medewerkers={medewerkers}
@@ -883,6 +902,7 @@ export function TijdregistratieLayout() {
           weekOffset={weekOffset}
           onWeekOffsetChange={setWeekOffset}
           goedkeurenAan={goedkeurenAan}
+          isAdmin={isAdmin}
           onGewijzigd={loadData}
         />
       ) : (
@@ -1048,10 +1068,10 @@ export function TijdregistratieLayout() {
                             <XCircle className="h-5 w-5 text-muted-foreground" />
                           )}
                         </span>
-                        <Button variant="ghost" size="icon" className="h-11 w-11" onClick={() => openEditDialog(reg)} aria-label="Bewerken">
+                        <Button variant="ghost" size="icon" className="h-11 w-11" onClick={() => openEditDialog(reg)} aria-label="Bewerken" disabled={!!vergrendelTitel(reg)} title={vergrendelTitel(reg)}>
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-11 w-11 text-destructive hover:text-destructive" onClick={() => setDeleteConfirmId(reg.id)} aria-label="Verwijderen">
+                        <Button variant="ghost" size="icon" className="h-11 w-11 text-destructive hover:text-destructive" onClick={() => setDeleteConfirmId(reg.id)} aria-label="Verwijderen" disabled={!!vergrendelTitel(reg)} title={vergrendelTitel(reg)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -1176,6 +1196,9 @@ export function TijdregistratieLayout() {
                               size="icon"
                               className="h-8 w-8"
                               onClick={() => openEditDialog(reg)}
+                              aria-label="Bewerken"
+                              disabled={!!vergrendelTitel(reg)}
+                              title={vergrendelTitel(reg)}
                             >
                               <Pencil className="h-3.5 w-3.5" />
                             </Button>
@@ -1184,6 +1207,9 @@ export function TijdregistratieLayout() {
                               size="icon"
                               className="h-8 w-8 text-destructive hover:text-destructive"
                               onClick={() => setDeleteConfirmId(reg.id)}
+                              aria-label="Verwijderen"
+                              disabled={!!vergrendelTitel(reg)}
+                              title={vergrendelTitel(reg)}
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>

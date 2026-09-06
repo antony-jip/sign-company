@@ -15,6 +15,18 @@ export function standaardUrenStatus(functies: FunctieInstellingen | null | undef
   return functieAan(functies, 'uren_goedkeuren') ? 'concept' : 'goedgekeurd'
 }
 
+/**
+ * De melding van de databasetrigger (migratie 241) die goedkeuren en het
+ * wijzigen van goedgekeurde of gefactureerde uren aan beheerders voorbehoudt;
+ * null bij elke andere fout, zodat de offline-terugval daar blijft werken.
+ */
+export function urenBeschermdMelding(err: unknown): string | null {
+  const bericht = err instanceof Error
+    ? err.message
+    : typeof err === 'object' && err !== null && 'message' in err ? String((err as { message: unknown }).message) : ''
+  return /alleen een beheerder/i.test(bericht) ? bericht : null
+}
+
 export async function getTijdregistraties(limit = 50000): Promise<Tijdregistratie[]> {
   const sb = supabase
   if (isSupabaseConfigured() && sb) {
