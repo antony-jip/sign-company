@@ -212,3 +212,47 @@ opmerkingen. Hij hoeft de diff niet zelf te lezen.
 - `src/components/planning/MontagePlanningLayout.tsx` week/maand D&D-logica.
 - `supabaseService.ts` splitsen (5700 regels, blijft zoals het is).
 - Root Next.js marketing site (altijd in `forgedesk/` werken, niet in root).
+
+## 10. Valkuilen die telkens terugkomen
+
+Geleerd tijdens de mail-ombouw (september 2026). Geen van deze tien leid je af
+uit de code zelf; ze hebben allemaal een keer productie geraakt of bijna geraakt.
+
+1. **`api/` mag niets uit `src/` importeren** (Vercel-functies staan los), dus
+   dezelfde logica staat met de hand in tot elf bestanden. Twee blokkades op één
+   dag kwamen hier vandaan: één kopie kende PGRST204 niet, één had de
+   toegangscontrole wel gedefinieerd maar nooit aangeroepen. Bewaak een gedeeld
+   blok met een test die de kopieën vergelijkt **én** controleert dat de functie
+   wordt aangeroepen. Zie `tests/services/gedeeldPostvakToegang.test.ts` en
+   `tests/lib/upsertLadder.test.ts`.
+2. **De database loopt achter op deze map.** Migratie 131 heeft nooit gedraaid en
+   dat bleef jaren onopgemerkt. Controleer de echte database voor je ergens op
+   bouwt, niet of er een bestand ligt.
+3. **Een onbekende kolom laat de héle query falen**, niet alleen dat veld.
+   PostgREST geeft `42703` bij een select, `PGRST204` als de kolom in de lading
+   van een insert of upsert staat, en `42P10` als er bij de opgegeven
+   onConflict-kolommen geen unieke index is. Vang alle drie af.
+4. **`.single()` en `.maybeSingle()`** op een rij waarvan er straks twee zijn
+   geven `PGRST116` en laten functionaliteit stil uitvallen. Elke `.single()` is
+   een aanname dat er nooit een tweede rij komt.
+5. **Migraties op drukke tabellen.** `SET LOCAL` bínnen de transactie, nooit
+   `SET` erbuiten: via de pooler in transaction mode landt die op een andere
+   verbinding dan de `BEGIN` erna. Een wachtende `ALTER TABLE` op `emails`
+   blokkeert ondertussen élke lezer. Knip op in kleine transacties, zet de zware
+   ALTER apart, en gebruik een lus die de lock kort probeert en tussendoor
+   loslaat (zie migratie 245).
+6. **Postgres-details.** `CREATE OR REPLACE VIEW` staat nieuwe kolommen alleen
+   aan het eind toe. Een partiële unieke index kan geen ON CONFLICT-arbiter zijn.
+   NULL is in een unieke index distinct, dus "hoogstens één" geldt niet zodra de
+   kolom leeg mag zijn.
+7. **Modulevariabelen als geheugen** overleven navigatie en unmount. Eén
+   netwerkfout die zo'n vlag verkeerd zet, blijft de hele sessie staan. Onthoud
+   alleen een definitief antwoord en gebruik drie standen: ja, nee, nog onbekend.
+8. **Twee bronnen voor hetzelfde gegeven.** Verhuis je iets naar een nieuwe
+   tabel, ga dan na wie het oude veld nog leest. De offerte-, factuur-, project-
+   en portaalmail lezen allemaal `profiles`.
+9. **Concepten in localStorage overleven een codewijziging.** Verandert het
+   formaat, zet dan een versienummer in de sleutel en ruim de oude op.
+10. **De poorten zijn een basislijn, geen nul.** `npx tsc --noEmit` staat op 28
+    en `npm run typecheck:api` op 1. Tel ze, anders glipt een nieuwe fout
+    ertussen.
