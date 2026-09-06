@@ -244,13 +244,20 @@ async function leesPostvakken(userId: string, kolommen: string, kolommenVoor244:
 // Dezelfde ladder staat in api/mail-oauth-callback.ts.
 function isOnbekendeSleutel(fout: { code?: string; message?: string } | null): boolean {
   if (!fout) return false
-  return fout.code === '42703' || fout.code === '42P10'
-    || /column .* does not exist|no unique or exclusion constraint/i.test(fout.message || '')
+  return fout.code === '42703' || fout.code === '42P10' || fout.code === 'PGRST204'
+    || /column .* does not exist|could not find the .* column|no unique or exclusion constraint/i.test(fout.message || '')
 }
 
-async function schrijfPostvak(velden: Record<string, unknown>, userId: string, postvakId?: string | null): Promise<{ error: { message?: string; code?: string } | null }> {
+async function schrijfPostvak(velden: Record<string, unknown>, userId: string, postvakId?: string | null, aantalBestaand = 1): Promise<{ error: { message?: string; code?: string } | null }> {
   if (postvakId) {
     return await supabaseAdmin.from('user_email_settings').update(velden).eq('id', postvakId)
+  }
+  // Zonder id mag er hooguit één postvak zijn. De terugvallen hieronder raken
+  // álle rijen van deze gebruiker: de upsert op user_id werkt na 246 niet meer
+  // (de sleutel is dan weg) en de update op user_id zou dan beide postvakken
+  // hetzelfde adres geven. Weigeren is het enige veilige antwoord.
+  if (aantalBestaand > 1) {
+    return { error: { message: 'Kies welk postvak je bijwerkt.', code: 'POSTVAK_ONBEKEND' } }
   }
   const upsert = await supabaseAdmin.from('user_email_settings').upsert({ ...velden, user_id: userId }, { onConflict: 'user_id' })
   if (!upsert.error || !isOnbekendeSleutel(upsert.error)) return upsert
@@ -406,6 +413,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } else if (opAdres) {
       doelPostvakId = (opAdres.id as string) ?? null
     }
+    // Meer dan één postvak en geen aanwijzing wélk: niet raden. Zonder deze
+    // poort valt een adreswijziging terug op een update op user_id (die beide
+    // postvakken hetzelfde adres geeft) of maakt hij ongevraagd een derde rij.
+    if (!doelPostvakId && !wilNieuw && bestaandeRijen.length > 1) {
+      return res.status(409).json({ error: 'Je hebt meerdere postvakken. Kies eerst welk postvak je bijwerkt.' })
+    }
     const wordtNieuwPostvak = !doelPostvakId && (bestaandeRijen.length > 0 || wilNieuw)
 
     const gevraagdAuthType = auth_type === 'google' || auth_type === 'microsoft' || auth_type === 'wachtwoord'
@@ -428,6 +441,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (!wijzigtWachtwoord) {
+      // Een nieuw postvak zonder wachtwoord bestaat niet: zonder deze poort
+      // valt een POST met nieuw=true en app_password 'UNCHANGED' hieronder in
+      // het bewerkpad en overschrijft hij het bestaande postvak.
+      if (wordtNieuwPostvak) {
+        return res.status(400).json({ error: 'Een nieuw postvak heeft een app-wachtwoord nodig.' })
+      }
       // Geen nieuw wachtwoord: vereist dat er al één is opgeslagen, of een
       // OAuth-koppeling die het wachtwoord vervangt.
       const bestaand = await leesInstellingenRij(
@@ -459,14 +478,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // auth_type komt uit migratie 244. Zolang die niet gedraaid is zou het
       // opslaan van een gewoon app-wachtwoord hier hard falen; dan schrijven we
       // de rest en laten we auth_type weg (wachtwoord is toch de standaard).
-      let { error } = await schrijfPostvak(velden as Record<string, unknown>, userId, doelPostvakId)
+      let { error } = await schrijfPostvak(velden as Record<string, unknown>, userId, doelPostvakId, bestaandeRijen.length)
       if (error && isKolomFout(error)) {
         const { auth_type: _weg, ...zonderAuthType } = velden as Record<string, unknown>
-        const tweede = await schrijfPostvak(zonderAuthType, userId, doelPostvakId)
+        const tweede = await schrijfPostvak(zonderAuthType, userId, doelPostvakId, bestaandeRijen.length)
         error = tweede.error
       }
       if (error) {
         console.error('Supabase update fout:', JSON.stringify(error))
+        if (error.code === 'POSTVAK_ONBEKEND') {
+          return res.status(409).json({ error: error.message || 'Kies eerst welk postvak je bijwerkt.' })
+        }
         return res.status(500).json({ error: `Kon email instellingen niet opslaan: ${error.message || error.code || JSON.stringify(error)}` })
       }
       await herstelSyncStatus(userId, doelPostvakId)
@@ -500,11 +522,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     const uitkomst = wordtNieuwPostvak
       ? await nieuwPostvak(velden, userId)
-      : await schrijfPostvak(velden, userId, doelPostvakId)
+      : await schrijfPostvak(velden, userId, doelPostvakId, bestaandeRijen.length)
     const error = uitkomst.error
 
     if (error) {
       console.error('Supabase upsert fout:', JSON.stringify(error))
+      // Vóór migratie 246 staat er nog een unieke sleutel op user_id: een
+      // tweede postvak geeft dan 23505. Dat is geen storing maar een stand van
+      // zaken, dus geen rauwe Postgres-melding op het scherm.
+      if (error.code === '23505') {
+        return res.status(409).json({ error: 'Een tweede postvak kan pas nadat migratie 246 gedraaid is.' })
+      }
+      if (error.code === 'POSTVAK_ONBEKEND') {
+        return res.status(409).json({ error: error.message || 'Kies eerst welk postvak je bijwerkt.' })
+      }
       return res.status(500).json({ error: `Kon email instellingen niet opslaan: ${error.message || error.code || JSON.stringify(error)}` })
     }
 
