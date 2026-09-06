@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
+import { timingSafeEqual } from 'node:crypto'
 
 // Resend roept dit endpoint aan bij afleveringen, opens, clicks, bounces,
 // klachten en afmeldingen. Beveiliging via een gedeeld token in de URL
@@ -77,7 +78,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   const verwacht = process.env.NIEUWSBRIEF_WEBHOOK_TOKEN
-  if (!verwacht || req.query.token !== verwacht) return res.status(401).json({ error: 'Unauthorized' })
+  const gekregen = typeof req.query.token === 'string' ? req.query.token : ''
+  const geldig = !!verwacht && gekregen.length === verwacht.length
+    && timingSafeEqual(Buffer.from(gekregen), Buffer.from(verwacht))
+  if (!geldig) return res.status(401).json({ error: 'Unauthorized' })
 
   try {
     const event = (req.body ?? {}) as { type?: string; data?: Record<string, unknown> }
