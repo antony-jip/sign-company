@@ -9,6 +9,7 @@ import { openDaan, DAAN_ONGELEZEN_EVENT } from '@/lib/daanWidget'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useSupportAttentie } from '@/hooks/useSupportInbox'
+import { useMapTellers } from '@/lib/mail/hooks'
 import { ADMIN_USER_ID } from '@/services/supportChatService'
 import {
   MOBIELE_NAV_MAX, MOBIELE_MENU_KANDIDATEN, SETTINGS_ITEM, SUPPORT_ITEM,
@@ -34,6 +35,8 @@ export function MobileTabBar() {
   const { settings, forgieEnabled } = useAppSettings()
   const isSupportAdmin = user?.id === ADMIN_USER_ID
   const supportAttentie = useSupportAttentie('support-mobile-nav', isSupportAdmin)
+  const mailOngelezen = useMapTellers().inbox
+  const mailBadge = mailOngelezen > 99 ? '99+' : String(mailOngelezen)
   const [meerOpen, setMeerOpen] = useState(false)
 
   // Een module achter een uitgezette feature-flag valt uit de balk én uit
@@ -112,6 +115,11 @@ export function MobileTabBar() {
                 <span className="absolute top-0 left-1/2 -translate-x-1/2 h-[2px] w-8 rounded-b-[2px] bg-flame" />
               )}
               <Icon className="w-[21px] h-[21px]" style={isActive ? { color: item.color } : undefined} />
+              {item.path === '/email' && mailOngelezen > 0 && (
+                <span className="absolute top-1 right-[22%] min-w-[16px] h-[16px] px-1 rounded-full bg-petrol text-white text-[9px] font-mono font-semibold tabular-nums flex items-center justify-center ring-2 ring-card">
+                  {mailBadge}
+                </span>
+              )}
               <span className="text-[10px] font-semibold tracking-[-0.01em] leading-none truncate max-w-full">
                 {item.label}
               </span>
@@ -216,7 +224,8 @@ export function MobileTabBar() {
                     {meerItems.map((item) => {
                       const isActive = isPadActief(location.pathname, item.path)
                       const Icon = item.icon
-                      const telling = item.path === SUPPORT_ITEM.path ? supportAttentie : 0
+                      const telling = item.path === SUPPORT_ITEM.path ? supportAttentie : item.path === '/email' ? mailOngelezen : 0
+                      const tellingTekst = item.path === '/email' ? mailBadge : String(telling)
                       return (
                         <NavLink
                           key={item.path}
@@ -234,8 +243,11 @@ export function MobileTabBar() {
                           >
                             <Icon className="w-[21px] h-[21px]" style={{ color: item.color }} />
                             {telling > 0 && (
-                              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-flame text-white text-[10px] font-bold font-mono tabular-nums flex items-center justify-center ring-2 ring-card">
-                                {telling}
+                              <span className={cn(
+                                'absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full text-white text-[10px] font-bold font-mono tabular-nums flex items-center justify-center ring-2 ring-card',
+                                item.path === '/email' ? 'bg-petrol' : 'bg-flame',
+                              )}>
+                                {tellingTekst}
                               </span>
                             )}
                           </span>

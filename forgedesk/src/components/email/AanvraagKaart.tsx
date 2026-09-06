@@ -9,7 +9,7 @@ import { koppelEmailAanProject, getProjectVoorThread } from '@/services/emailPro
 import { verbergAanvraag } from '@/services/emailService'
 import { extractSenderEmail, zoekKlantVoorAfzender, bepaalAanvraagContact, bodyAlsTekst, haalHandtekeningUitBody, GENERIEKE_MAILDOMEINEN } from './emailHelpers'
 import type { HandtekeningGegevens } from './emailHelpers'
-import { extractCompanyName } from './EmailCRMSidebar'
+import { extractCompanyName } from './emailHelpers'
 import { useAuth } from '@/contexts/AuthContext'
 import { logger } from '@/utils/logger'
 
@@ -208,6 +208,24 @@ export function AanvraagKaart({ email, senderName }: AanvraagKaartProps) {
 
   if (verborgen) return null
 
+  // QuoteCreation leest klant_id en project_id uit de query, dus de editor
+  // opent met klant en project al ingevuld. Zonder klant is er niets voor te vullen.
+  function handleOfferteStarten() {
+    if (!klant) return
+    const params = new URLSearchParams({ klant_id: klant.id })
+    if (aangemaakt) params.set('project_id', aangemaakt.id)
+    navigate(`/offertes/nieuw?${params.toString()}`)
+  }
+
+  const offerteKnop = klant ? (
+    <button
+      onClick={handleOfferteStarten}
+      className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-border px-3.5 text-[13px] font-semibold text-petrol transition-colors hover:bg-petrol/[0.06]"
+    >
+      Offerte starten
+    </button>
+  ) : null
+
   const aanvullingBlok = klantGeladen && !aangevuld && aanvullingTekst ? (
     <div className="mt-3.5 flex flex-wrap items-center gap-x-3 gap-y-2">
       <span className="inline-flex items-center gap-1.5 text-[13px] text-text-sec">
@@ -242,13 +260,16 @@ export function AanvraagKaart({ email, senderName }: AanvraagKaartProps) {
             </span>
             <span className="truncate text-[14px] font-semibold text-foreground">{aangemaakt.naam}</span>
           </div>
-          <button
-            onClick={() => navigate(`/projecten/${aangemaakt.id}`)}
-            className="group inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-[#4A9960] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#418754]"
-          >
-            Ga naar project
-            <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            {offerteKnop}
+            <button
+              onClick={() => navigate(`/projecten/${aangemaakt.id}`)}
+              className="group inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-[#4A9960] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#418754]"
+            >
+              Ga naar project
+              <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+            </button>
+          </div>
         </div>
         {aanvullingBlok}
       </div>
@@ -297,6 +318,8 @@ export function AanvraagKaart({ email, senderName }: AanvraagKaartProps) {
             {bezig && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Project aanmaken
           </Button>
+
+          {offerteKnop}
 
           {!klantGeladen ? (
             <span className="text-[13px] text-muted-hex">Klant zoeken...</span>

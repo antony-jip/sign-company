@@ -5,6 +5,7 @@ import {
 } from './supabaseHelpers'
 import type { PostgrestFilterBuilder } from '@supabase/postgrest-js'
 import type { Email, InternEmailNotitie } from '@/types'
+import type { EmailBody, EmailLijstItem, MailMap, SyncStatus, ThreadInfo } from '@/lib/mail/types'
 import { parseZoekQuery, bouwTsQuery } from '@/utils/emailZoek'
 
 // ============ HISTORIE-BACKFILL ============
@@ -97,22 +98,32 @@ export async function getEmails(limit = 200): Promise<Email[]> {
  * de client geladen heeft (met duizenden mails in de DB telt de client
  * anders alleen zijn eigen venster).
  */
-export async function getMapTellers(): Promise<{ inboxOngelezen: number; concepten: number; gepland: number; gesnoozed: number } | null> {
+export async function getMapTellers(accountId?: string | null): Promise<{ inboxOngelezen: number; concepten: number; gepland: number; gesnoozed: number; opvolgen: number } | null> {
   if (!isSupabaseConfigured() || !supabase) return null
+  const client = supabase
   const uid = await eigenUserId()
   if (!uid) return null
-  const [inboxQ, conceptenQ, geplandQ, gesnoozedQ] = await Promise.all([
-    supabase.from('emails').select('id', { count: 'exact', head: true }).eq('user_id', uid).eq('map', 'inbox').eq('gelezen', false),
-    supabase.from('emails').select('id', { count: 'exact', head: true }).eq('user_id', uid).eq('map', 'concepten'),
-    supabase.from('emails').select('id', { count: 'exact', head: true }).eq('user_id', uid).eq('map', 'gepland'),
-    supabase.from('emails').select('id', { count: 'exact', head: true }).eq('user_id', uid).not('snoozed_until', 'is', null),
+  const telling = () => metAccount(client.from('emails').select('id', { count: 'exact', head: true }).eq('user_id', uid) as unknown as LijstBouwer, accountId)
+  const [inboxQ, conceptenQ, geplandQ, gesnoozedQ, opvolgenQ] = await Promise.all([
+    telling().eq('map', 'inbox').eq('gelezen', false).is('snoozed_until', null),
+    telling().eq('map', 'concepten'),
+    telling().eq('map', 'gepland'),
+    telling().not('snoozed_until', 'is', null),
+    telling().eq('wacht_op_reactie', true).eq('beantwoord', false),
   ])
-  if (inboxQ.error || conceptenQ.error || geplandQ.error || gesnoozedQ.error) return null
+  if (inboxQ.error || conceptenQ.error || geplandQ.error || gesnoozedQ.error || opvolgenQ.error) {
+    if (accountId && [inboxQ, conceptenQ, geplandQ, gesnoozedQ, opvolgenQ].some((q) => isOnbekendeKolom(q.error))) {
+      accountKolomBekend = false
+      return getMapTellers(null)
+    }
+    return null
+  }
   return {
     inboxOngelezen: inboxQ.count ?? 0,
     concepten: conceptenQ.count ?? 0,
     gepland: geplandQ.count ?? 0,
     gesnoozed: gesnoozedQ.count ?? 0,
+    opvolgen: opvolgenQ.count ?? 0,
   }
 }
 
@@ -121,33 +132,227 @@ export interface EmailPageCursor {
   id: string
 }
 
+type LijstBouwer = PostgrestFilterBuilder<any, any, any, any>
+
+/**
+ * `emails.account_id` komt uit migratie 245. Zolang die niet gedraaid is
+ * bestaat de kolom niet en zou elk filter erop de hele lijst laten falen.
+ * Eén mislukte poging zet de vlag op false en daarna filtert niemand meer:
+ * met één postvak levert dat precies het oude gedrag.
+ */
+let accountKolomBekend: boolean | null = null
+
+export function accountKolomOntbreekt(): boolean {
+  return accountKolomBekend === false
+}
+
+function isOnbekendeKolom(fout: unknown): boolean {
+  const code = (fout as { code?: string } | null)?.code
+  if (code === '42703' || code === 'PGRST204') return true
+  return /column .*account_id.* does not exist/i.test((fout as { message?: string } | null)?.message || '')
+}
+
+/** Filter op postvak, maar alleen zolang de kolom bestaat en er één gekozen is. */
+function metAccount(q: LijstBouwer, accountId?: string | null): LijstBouwer {
+  if (!accountId || accountKolomBekend === false) return q
+  return q.eq('account_id', accountId)
+}
+
+function metCursor(q: LijstBouwer, cursor: EmailPageCursor | null): LijstBouwer {
+  if (!cursor) return q
+  return q.or(`datum.lt."${cursor.datum}",and(datum.eq."${cursor.datum}",id.lt."${cursor.id}")`)
+}
+
+/**
+ * Wat een map betekent, server-side. Dit was de filterlogica van
+ * filteredEmails in EmailLayout: een gesnoozde mail blijft in map inbox
+ * staan maar hoort in Gesnoozed, niet in Inbox. Opvolgen en Beantwoord zijn
+ * vlaggen op verzonden mail (Sales Inbox); Ingepland is de oude map 'gepland'.
+ * Leads is geen maillijst maar een paneel, dus die geeft niets terug.
+ */
+function pasMapFilterToe(q: LijstBouwer, map: string): LijstBouwer | null {
+  switch (map as MailMap) {
+    case 'gesnoozed': return q.not('snoozed_until', 'is', null)
+    case 'opvolgen': return q.eq('wacht_op_reactie', true).eq('beantwoord', false)
+    case 'beantwoord': return q.eq('wacht_op_reactie', true).eq('beantwoord', true)
+    case 'ingepland': return q.eq('map', 'gepland')
+    case 'leads': return null
+    default: return q.eq('map', map).is('snoozed_until', null)
+  }
+}
+
+/** Mappen waarvan het filter op kolommen staat die de lijst-view niet kent. */
+const MAPPEN_VIA_TABEL = new Set<string>(['opvolgen', 'beantwoord'])
+
+function alsLijstItem(e: Record<string, unknown>): Email {
+  return { ...e, inhoud: '', body_html: null } as unknown as Email
+}
+
 /**
  * Keyset-paginatie per map: de volgende pagina ouder dan de cursor
  * (datum, id) — stabiel bij nieuwe mail bovenin, geen offset-drift.
  * De data komt uit de eigen DB; de historie-backfill vult die aan.
  */
-export async function getEmailsPage(map: string, cursor: EmailPageCursor | null, limit = 100): Promise<Email[]> {
+export async function getEmailsPage(map: string, cursor: EmailPageCursor | null, limit = 100, accountId?: string | null, metPostvakKolom = false): Promise<Email[]> {
   if (!isSupabaseConfigured() || !supabase) return []
+  const client = supabase
   const uid = await eigenUserId()
   if (!uid) return []
-  let q = supabase
-    .from('emails_list_view')
-    .select(LIST_VIEW_COLUMNS)
-    .eq('user_id', uid)
-    .eq('map', map)
+
+  // emails_list_view kent account_id, toegewezen_aan en toegewezen_op niet
+  // (migratie 245 raakt de view niet aan), dus zodra er op postvak gefilterd
+  // wordt loopt het via dezelfde twee stappen als Opvolgen: ids uit `emails`,
+  // lijstkolommen uit de view.
+  const viaTabel = MAPPEN_VIA_TABEL.has(map) || (!!accountId && accountKolomBekend !== false)
+  if (viaTabel) {
+    // account_id gaat mee zodra er toch al op postvak gefilterd wordt: de
+    // regels moeten weten in welk postvak een mail binnenkwam. Zonder 245
+    // bestaat de kolom niet, en dan komt deze tak hier niet eens langs.
+    const extra = accountId ? 'id, account_id, wacht_op_reactie, beantwoord, toegewezen_aan, toegewezen_op' : 'id, wacht_op_reactie, beantwoord'
+    const idsQ = pasMapFilterToe(
+      metAccount(client.from('emails').select(extra).eq('user_id', uid) as unknown as LijstBouwer, accountId),
+      map,
+    )
+    if (!idsQ) return []
+    const { data: treffers, error } = await metCursor(idsQ, cursor)
+      .order('datum', { ascending: false })
+      .order('id', { ascending: false })
+      .limit(limit)
+    if (error) {
+      if (accountId && isOnbekendeKolom(error)) {
+        accountKolomBekend = false
+        return getEmailsPage(map, cursor, limit, null)
+      }
+      throw error
+    }
+    if (accountId) accountKolomBekend = true
+    type Vlaggen = { id: string; account_id?: string | null; wacht_op_reactie?: boolean; beantwoord?: boolean; toegewezen_aan?: string | null; toegewezen_op?: string | null }
+    const vlaggen = new Map(((treffers || []) as unknown as Vlaggen[]).map((r, i) => [r.id, { i, r }]))
+    if (vlaggen.size === 0) return []
+    const { data: rijen, error: rijenErr } = await client
+      .from('emails_list_view')
+      .select(LIST_VIEW_COLUMNS)
+      .in('id', [...vlaggen.keys()])
+    if (rijenErr) throw rijenErr
+    return ((rijen || []) as Array<Record<string, unknown>>)
+      .sort((a, b) => (vlaggen.get(a.id as string)?.i ?? 0) - (vlaggen.get(b.id as string)?.i ?? 0))
+      .map((e) => {
+        const v = vlaggen.get(e.id as string)?.r
+        return alsLijstItem({
+          ...e,
+          ...(v && 'account_id' in v ? { account_id: v.account_id ?? null } : {}),
+          wacht_op_reactie: v?.wacht_op_reactie,
+          beantwoord: v?.beantwoord,
+          toegewezen_aan: v?.toegewezen_aan ?? null,
+          toegewezen_op: v?.toegewezen_op ?? null,
+        })
+      })
+  }
+
+  const basis = pasMapFilterToe(
+    client.from('emails_list_view').select(LIST_VIEW_COLUMNS).eq('user_id', uid) as unknown as LijstBouwer,
+    map,
+  )
+  if (!basis) return []
+  const { data, error } = await metCursor(basis, cursor)
     .order('datum', { ascending: false })
     .order('id', { ascending: false })
     .limit(limit)
-  if (cursor) {
-    q = q.or(`datum.lt."${cursor.datum}",and(datum.eq."${cursor.datum}",id.lt."${cursor.id}")`)
-  }
-  const { data, error } = await q
   if (error) throw error
-  return (data || []).map(e => ({
-    ...e,
-    inhoud: '',
-    body_html: null,
+  const rijen = ((data || []) as Array<Record<string, unknown>>).map(alsLijstItem)
+  return metPostvakKolom ? await metAccountKolom(client, rijen) : rijen
+}
+
+/**
+ * emails_list_view kent `account_id` niet (migratie 245 voegt de kolom aan
+ * `emails` toe en laat de view ongemoeid), dus in de stand "Alle postvakken"
+ * zou een regel nooit weten uit welk postvak hij komt. Eén lichte query erbij
+ * vult dat aan. Alleen bij meer dan één postvak, anders is het een extra ronde
+ * voor niets, en defensief: zonder 245 bestaat de kolom nog niet en gaat het
+ * veld gewoon weer weg.
+ */
+async function metAccountKolom(client: NonNullable<typeof supabase>, rijen: Email[]): Promise<Email[]> {
+  if (rijen.length === 0 || accountKolomBekend === false) return rijen
+  const { data, error } = await client
+    .from('emails')
+    .select('id, account_id')
+    .in('id', rijen.map((r) => r.id))
+  if (error) {
+    if (isOnbekendeKolom(error)) accountKolomBekend = false
+    return rijen
+  }
+  accountKolomBekend = true
+  const perId = new Map(((data || []) as Array<{ id: string; account_id: string | null }>).map((r) => [r.id, r.account_id]))
+  return rijen.map((r) => (perId.has(r.id) ? { ...r, account_id: perId.get(r.id) ?? null } : r))
+}
+
+/** Alle berichten van één gesprek als lijst-items, oudste eerst. Concepten en prullenbak blijven eruit, net als in email_threads_view. */
+export async function getThreadItems(threadId: string): Promise<EmailLijstItem[]> {
+  if (!threadId || !isSupabaseConfigured() || !supabase) return []
+  const uid = await eigenUserId()
+  if (!uid) return []
+  const { data, error } = await supabase
+    .from('emails_list_view')
+    .select(LIST_VIEW_COLUMNS)
+    .eq('user_id', uid)
+    .eq('thread_id', threadId)
+    .not('map', 'in', '("prullenbak","concepten")')
+    .order('datum', { ascending: true })
+    .order('id', { ascending: true })
+  if (error) throw error
+  return (data || []) as unknown as EmailLijstItem[]
+}
+
+/** Thread-tellers van de server (email_threads_view) voor een reeks threads. */
+export async function getThreadInfos(threadIds: string[]): Promise<ThreadInfo[]> {
+  const uniek = [...new Set(threadIds.filter(Boolean))]
+  if (uniek.length === 0 || !isSupabaseConfigured() || !supabase) return []
+  const client = supabase
+  const uid = await eigenUserId()
+  if (!uid) return []
+  const blokken: string[][] = []
+  for (let i = 0; i < uniek.length; i += 100) blokken.push(uniek.slice(i, i + 100))
+  const resultaten = await Promise.all(blokken.map(async (blok) => {
+    const { data, error } = await client
+      .from('email_threads_view')
+      .select('thread_id, laatste_datum, aantal, ongelezen, laatste_email_id, deelnemers')
+      .eq('user_id', uid)
+      .in('thread_id', blok)
+    if (error) return []
+    return (data || []) as Array<{ thread_id: string; laatste_datum: string; aantal: number; ongelezen: number; laatste_email_id: string; deelnemers: string[] | null }>
   }))
+  return resultaten.flat().map((r) => ({
+    threadId: r.thread_id,
+    laatsteDatum: r.laatste_datum,
+    aantal: r.aantal,
+    ongelezen: r.ongelezen,
+    laatsteEmailId: r.laatste_email_id,
+    deelnemers: r.deelnemers || [],
+  }))
+}
+
+/** Gezondheid van de eigen mailbox, uit email_sync_state (rij inbox). */
+export async function getSyncStatus(): Promise<SyncStatus> {
+  const standaard: SyncStatus = { status: 'ok' }
+  if (!isSupabaseConfigured() || !supabase) return standaard
+  const uid = await eigenUserId()
+  if (!uid) return standaard
+  const { data, error } = await supabase
+    .from('email_sync_state')
+    .select('status, laatste_fout, laatste_succes_op')
+    .eq('user_id', uid)
+    .eq('folder', 'inbox')
+    .maybeSingle()
+  // Een fout hier is geen "alles goed": zonder migratie 244 bestaan deze
+  // kolommen niet, en terugvallen op ok liet de banner zwijgen terwijl de sync
+  // stilstond. Geen rij is wél normaal: die mailbox heeft nog nooit gesynct.
+  if (error) return { status: 'onbekend', laatsteFout: 'Gezondheid niet op te halen' }
+  if (!data) return standaard
+  return {
+    status: (data.status as SyncStatus['status']) || 'ok',
+    laatsteFout: data.laatste_fout || undefined,
+    laatsteSucces: data.laatste_succes_op || undefined,
+  }
 }
 
 /** PostgREST or-syntax gebruikt komma's en haakjes als structuur. */
@@ -249,17 +454,108 @@ export async function getEmail(id: string): Promise<Email | null> {
   return emails.find((e) => e.id === id) || null
 }
 
+type BodyRij = { email_id: string; body_html: string | null; body_text: string | null; quoted_html: string | null }
+
+/**
+ * Migratie 244 verhuist de bodies naar email_bodies. Zolang die migratie niet
+ * gedraaid is bestaat de tabel niet (42P01 of PGRST205) en staat de body nog
+ * in emails.body_html. Zonder terugval was er dan geen enkele bron meer en
+ * bleef elke mail leeg, want emails.body_html wordt nergens anders gelezen.
+ * De uitkomst wordt onthouden zodat we niet elke ronde op een fout wachten,
+ * maar niet voorgoed: draait de migratie terwijl er een tab openstaat, dan
+ * bleef die tab uit `emails` lezen terwijl 244 body_html juist op NULL zet, en
+ * kreeg elke mail een lege body. Na de wachttijd probeert hij het opnieuw.
+ */
+let bodiesTabelOntbreektTot = 0
+const TABEL_ONTBREEKT_WACHTTIJD_MS = 5 * 60 * 1000
+
+function bodiesTabelOntbreekt(): boolean {
+  return Date.now() < bodiesTabelOntbreektTot
+}
+
+function markeerBodiesTabelOntbreekt(): void {
+  bodiesTabelOntbreektTot = Date.now() + TABEL_ONTBREEKT_WACHTTIJD_MS
+}
+
+function tabelOntbreekt(fout: { code?: string; message?: string } | null | undefined): boolean {
+  if (!fout) return false
+  if (fout.code === '42P01' || fout.code === 'PGRST205' || fout.code === '42703' || fout.code === 'PGRST204') return true
+  return /relation .* does not exist|could not find the table/i.test(fout.message || '')
+}
+
+/** Terugval voor een database zonder 244: de body zoals die er al staat. */
+async function bodiesUitEmailsRijen(ids: string[]): Promise<BodyRij[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase
+    .from('emails')
+    .select('id, body_html, body_text')
+    .in('id', ids)
+  if (error) return []
+  return ((data || []) as Array<{ id: string; body_html: string | null; body_text: string | null }>)
+    .map((r) => ({ email_id: r.id, body_html: r.body_html, body_text: r.body_text, quoted_html: null }))
+}
+
+/**
+ * Leest bodies uit email_bodies (migratie 244). emails.body_html is sinds die
+ * migratie leeg; wie daar nog leest krijgt altijd NULL en valt onnodig terug
+ * op IMAP. Alleen rijen die bestaan komen terug: geen rij betekent "nog nooit
+ * geparsed", en dat hoort via prefetch of read-email te lopen. Bestaat de
+ * tabel nog niet, dan leest bodiesUitEmailsRijen wat er al in emails staat.
+ */
+export async function getEmailBodiesUitTabel(ids: string[]): Promise<EmailBody[]> {
+  if (!ids.length || !isSupabaseConfigured() || !supabase) return []
+  const client = supabase
+  const blokken: string[][] = []
+  for (let i = 0; i < ids.length; i += 100) blokken.push(ids.slice(i, i + 100))
+  const resultaten = await Promise.all(blokken.map(async (blok) => {
+    if (bodiesTabelOntbreekt()) return await bodiesUitEmailsRijen(blok)
+    const { data, error } = await client
+      .from('email_bodies')
+      .select('email_id, body_html, body_text, quoted_html')
+      .in('email_id', blok)
+    if (tabelOntbreekt(error)) {
+      markeerBodiesTabelOntbreekt()
+      return await bodiesUitEmailsRijen(blok)
+    }
+    if (error) return []
+    return (data || []) as BodyRij[]
+  }))
+  return resultaten.flat().map((r) => ({
+    emailId: r.email_id,
+    html: r.body_html,
+    tekst: r.body_text,
+    quotedHtml: r.quoted_html,
+  }))
+}
+
 /** Fetch only the body columns for a single email (fast, lightweight) */
 export async function getEmailBody(id: string): Promise<{ body_html: string | null; body_text: string | null; inhoud: string; attachment_meta?: unknown[] | null } | null> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
-      .from('emails')
-      .select('body_html, body_text, inhoud, attachment_meta')
-      .eq('id', id)
-      .maybeSingle()
-    if (error) throw error
-    return data
+    const [bodyQ, metaQ] = await Promise.all([
+      bodiesTabelOntbreekt()
+        ? Promise.resolve({ data: null, error: null } as { data: { body_html: string | null; body_text: string | null } | null; error: { code?: string; message?: string } | null })
+        : supabase.from('email_bodies').select('body_html, body_text').eq('email_id', id).maybeSingle(),
+      supabase.from('emails').select('body_text, inhoud, attachment_meta').eq('id', id).maybeSingle(),
+    ])
+    if (metaQ.error) throw metaQ.error
+    if (!metaQ.data) return null
+    let bodyHtml = bodyQ.data?.body_html ?? null
+    let bodyTekst = bodyQ.data?.body_text ?? null
+    if (bodiesTabelOntbreekt() || tabelOntbreekt(bodyQ.error)) {
+      // Alleen markeren bij een echte tabelfout: markeren op de latch zelf
+      // verlengde hem bij elk gebruik, waardoor hij nooit verliep.
+      if (tabelOntbreekt(bodyQ.error)) markeerBodiesTabelOntbreekt()
+      const terugval = (await bodiesUitEmailsRijen([id]))[0]
+      bodyHtml = terugval?.body_html ?? null
+      bodyTekst = terugval?.body_text ?? bodyTekst
+    }
+    return {
+      body_html: bodyHtml,
+      body_text: bodyTekst ?? metaQ.data.body_text ?? null,
+      inhoud: metaQ.data.inhoud || '',
+      attachment_meta: metaQ.data.attachment_meta,
+    }
   }
   const emails = getLocalData<Email>('emails')
   const found = emails.find((e) => e.id === id)
@@ -286,13 +582,26 @@ export async function getEmailBodies(
 
   const resultaten = await Promise.all(
     blokken.map(async (blok) => {
-      const { data, error } = await client
-        .from('emails')
-        .select('id, body_html, body_text, attachment_meta')
-        .in('id', blok)
-        .not('body_html', 'is', null)
-      if (error) return []
-      return data || []
+      const [bodiesQ, metaQ] = await Promise.all([
+        bodiesTabelOntbreekt()
+          ? Promise.resolve({ data: null, error: null } as { data: Array<{ email_id: string; body_html: string | null; body_text: string | null }> | null; error: { code?: string; message?: string } | null })
+          : client.from('email_bodies').select('email_id, body_html, body_text').in('email_id', blok).not('body_html', 'is', null),
+        client.from('emails').select('id, attachment_meta').in('id', blok),
+      ])
+      let rijen = (bodiesQ.data || []) as Array<{ email_id: string; body_html: string | null; body_text: string | null }>
+      if (bodiesTabelOntbreekt() || tabelOntbreekt(bodiesQ.error)) {
+        if (tabelOntbreekt(bodiesQ.error)) markeerBodiesTabelOntbreekt()
+        rijen = (await bodiesUitEmailsRijen(blok)).filter((r) => r.body_html)
+      } else if (bodiesQ.error) {
+        return []
+      }
+      const meta = new Map(((metaQ.data || []) as Array<{ id: string; attachment_meta: unknown[] | null }>).map((r) => [r.id, r.attachment_meta]))
+      return rijen.map((r) => ({
+        id: r.email_id,
+        body_html: r.body_html,
+        body_text: r.body_text,
+        attachment_meta: meta.get(r.email_id) ?? null,
+      }))
     })
   )
   return resultaten.flat()

@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react'
 import { toast } from 'sonner'
+import { isOutboxFout } from '@/services/gmailService'
 import { logger } from './logger'
 
 interface BackgroundSendOptions {
@@ -16,7 +17,8 @@ interface BackgroundSendOptions {
  * Voert een verzend-taak op de achtergrond uit zodat de UI direct kan sluiten.
  * Toont een live toast (laden → verzonden), en bij falen een error-toast met
  * een 'Opnieuw'-knop die exact dezelfde taak nogmaals draait. De payload blijft
- * in de closure van `task` bewaard, dus retry verliest geen concept.
+ * in de closure van `task` bewaard, dus retry verliest geen concept. Staat de
+ * mail al in de outbox, dan blijft die knop weg (zie isOutboxFout).
  *
  * Elke overgang ruimt de vorige toast op en zet er een verse neer, in plaats
  * van er een over te schrijven op id. Sonner merget dan namelijk velden van de
@@ -42,9 +44,11 @@ export function sendInBackground(task: () => Promise<void>, opts: BackgroundSend
           ? err.message
           : (opts.error ?? 'Verzenden mislukt')
         toast.dismiss(toastId)
+        // Staat de mail al in de outbox, dan geen 'Opnieuw': de cron verstuurt
+        // hem sowieso, en een geslaagde retry zou hem verdubbelen.
         toast.error(boodschap, {
           duration: 10000,
-          action: { label: 'Opnieuw', onClick: run },
+          action: isOutboxFout(err) ? undefined : { label: 'Opnieuw', onClick: run },
         })
       })
   }

@@ -126,6 +126,10 @@
       "schedule": "* * * * *"
     },
     {
+      "path": "/api/cron-mail-snooze",
+      "schedule": "* * * * *"
+    },
+    {
       "path": "/api/cron-tijd-sessies-opruimen",
       "schedule": "30 3 * * *"
     },

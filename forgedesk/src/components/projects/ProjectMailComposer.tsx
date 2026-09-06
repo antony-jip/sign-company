@@ -24,6 +24,7 @@ import type { Project, Klant, Contactpersoon, Document, Offerte, Factuur, Werkbo
 import { useOntvangerZoeker, OntvangerLijst, type Ontvanger } from '@/components/shared/OntvangerVeld'
 import { getAvatarStyle } from '@/components/email/emailHelpers'
 import { handtekeningAfbeeldingHtml, handtekeningBreedte } from '@/utils/handtekening'
+import { VerzendKnop } from '@/components/email/composer/VerzendKnop'
 
 const MAX_BIJLAGE_BYTES = 20 * 1024 * 1024
 const MAX_BIJLAGEN_TOTAAL_BYTES = 25 * 1024 * 1024
@@ -376,9 +377,6 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
   const modusZelfGekozenRef = useRef(false)
   const [openThreadMailId, setOpenThreadMailId] = useState<string | null>(null)
 
-  const [scheduleOpen, setScheduleOpen] = useState(false)
-  const [scheduleAt, setScheduleAt] = useState('')
-  const scheduleRef = useRef<HTMLDivElement>(null)
 
   // Klantgegevens kunnen ná het openen binnenkomen (paneel vanuit de lijst):
   // vul Aan dan alsnog, maar overschrijf nooit wat de gebruiker al typte.
@@ -421,7 +419,6 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
       setSubject(defaultSubject)
       setBody(defaultBody)
       setPickerOpen(false)
-      setScheduleOpen(false)
     }
     wasOpenRef.current = open
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -539,14 +536,6 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
   }, [vulProjectvelden, signatuurBlok])
 
   // Inplan-popover sluiten bij klik buiten
-  useEffect(() => {
-    if (!scheduleOpen) return
-    const handler = (e: MouseEvent) => {
-      if (scheduleRef.current && !scheduleRef.current.contains(e.target as Node)) setScheduleOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [scheduleOpen])
 
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files
@@ -881,18 +870,6 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
     textareaRef.current?.focus()
   }, [body, linkUrl])
 
-  function handleSchedule() {
-    if (!scheduleAt) {
-      toast.error('Kies een datum en tijd')
-      return
-    }
-    const when = new Date(scheduleAt)
-    if (Number.isNaN(when.getTime()) || when.getTime() <= Date.now()) {
-      toast.error('Kies een tijdstip in de toekomst')
-      return
-    }
-    handleSend(when.toISOString())
-  }
 
   async function handleSend(scheduledAt?: string) {
     if (toEmails.length === 0) {
@@ -998,8 +975,6 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
       setBccEmails([])
       setShowCcBcc(false)
       setOpvolgen(false)
-      setScheduleOpen(false)
-      setScheduleAt('')
       // Venster open houden + gesprek verversen zodat het verzonden bericht in de thread verschijnt
       loadThread()
     } catch (err) {
@@ -1491,63 +1466,13 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
             Opvolgen
           </button>
 
-          <div className="relative" ref={scheduleRef}>
-            <button
-              type="button"
-              onClick={() => setScheduleOpen((v) => !v)}
-              disabled={!canSend}
-              title="Later versturen"
-              className={cn(
-                "h-9 w-9 rounded-xl border flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
-                scheduleOpen ? "bg-petrol text-white border-petrol" : "border-border bg-white text-muted-foreground hover:text-foreground hover:border-petrol/40",
-              )}
-            >
-              <Clock className="h-4 w-4" />
-            </button>
-            {scheduleOpen && (
-              <div className="absolute bottom-full mb-2 right-0 z-50 w-[260px] rounded-2xl border border-border bg-white shadow-[0_12px_40px_rgba(0,0,0,0.16)] p-3 animate-in fade-in slide-in-from-bottom-1 duration-150">
-                <div className="text-[10px] font-semibold uppercase tracking-[0.1em] text-petrol mb-2">Later versturen</div>
-                <input
-                  type="datetime-local"
-                  value={scheduleAt}
-                  onChange={(e) => setScheduleAt(e.target.value)}
-                  className="w-full rounded-lg border border-border px-2.5 py-1.5 text-[12px] text-foreground outline-none focus:border-petrol/50 focus:ring-2 focus:ring-petrol/15"
-                />
-                <button
-                  type="button"
-                  onClick={handleSchedule}
-                  disabled={!scheduleAt || isSending}
-                  className="mt-2 w-full h-8 rounded-lg bg-petrol text-white text-[12px] font-semibold hover:bg-[#16454d] transition-colors disabled:opacity-50"
-                >
-                  Inplannen
-                </button>
-              </div>
-            )}
-          </div>
-
-          <button
-            type="button"
-            onClick={() => handleSend()}
-            disabled={!canSend}
-            className={cn(
-              "inline-flex items-center gap-2 h-9 px-6 rounded-[10px] text-[13px] font-semibold text-white transition-all duration-150 min-w-[120px] justify-center active:translate-y-0",
-              !canSend
-                ? "bg-[#9B9B95] cursor-not-allowed"
-                : "bg-flame shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_12px_rgba(241,80,37,0.35)] hover:-translate-y-px"
-            )}
-          >
-            {isSending ? (
-              <>
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                Verzenden...
-              </>
-            ) : (
-              <>
-                <Send className="h-3.5 w-3.5" />
-                Verzenden
-              </>
-            )}
-          </button>
+          {/* Dezelfde verzendknop als in de mailmodule: Verzenden in Flame met
+              een pijltje voor later versturen. */}
+          <VerzendKnop
+            onVerzend={() => { void handleSend() }}
+            onPlan={(iso) => { void handleSend(iso) }}
+            bezig={isSending || !canSend}
+          />
         </div>
       </div>
     </div>

@@ -72,7 +72,6 @@ const DocumentsLayout = lazy(() => import('@/components/documents/DocumentsLayou
 
 // Email
 const EmailLayout = lazy(() => import('@/components/email/EmailLayout'), 'EmailLayout')
-const EmailComposePage = lazy(() => import('@/components/email/EmailComposePage'), 'EmailComposePage')
 const NieuwsbriefLayout = lazy(() => import('@/components/nieuwsbrief/NieuwsbriefLayout'), 'NieuwsbriefLayout')
 // Planning
 const PlanningLayout = lazy(() => import('@/components/planning/PlanningLayout'), 'PlanningLayout')

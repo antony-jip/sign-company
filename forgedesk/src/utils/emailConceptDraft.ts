@@ -1,5 +1,11 @@
 // ============================================================
-// EMAIL-CONCEPTEN
+// EMAIL-CONCEPTEN (localStorage)
+//
+// @deprecated sinds de mail-ombouw (sep 2026). De nieuwe composer
+// (src/components/email/composer) bewaart concepten als rij in `emails`
+// via src/services/conceptService.ts, zodat ze op elk apparaat staan.
+// Dit bestand blijft staan tot EmailCompose.tsx in golf 2 is omgeschakeld;
+// bouw er niets nieuws meer op.
 //
 // De compose-body leeft als innerHTML in een contentEditable en de rest in
 // React-state. Bij unmount is alles weg: een mail aanklikken tijdens het

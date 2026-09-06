@@ -69,7 +69,17 @@ interface SendEmailOptions {
   wacht_op_reactie?: boolean
   // Threading
   in_reply_to?: string
+  /** Message-ID-keten voor de References-header; send-email pakt hem op zodra hij hem kent. */
+  references?: string[]
   thread_id?: string
+  /** Postvak waaruit verstuurd wordt (user_email_settings.id, migratie 245). */
+  account_id?: string
+  /**
+   * Laat het verzoek doorlopen nadat het tabblad weg is (`pagehide`). De
+   * browser begrenst zo'n verzoek op 64 kB body, dus een mail met bijlagen
+   * kan hierop stuklopen; dat is beter dan hem stil verliezen.
+   */
+  keepalive?: boolean
 }
 
 /**
@@ -82,19 +92,6 @@ async function enqueueOutbox(to: string, subject: string, body: string, options?
   try {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session?.user?.id) return false
-
-    // Server kan de mail WEL verstuurd hebben terwijl alleen de response
-    // wegviel — send-email persisteert verzonden mails in `emails`, dus
-    // check de verzonden-map van de laatste minuten voordat we enqueuen.
-    const { data: netVerzonden } = await supabase
-      .from('emails')
-      .select('id')
-      .eq('user_id', session.user.id)
-      .eq('map', 'verzonden')
-      .eq('onderwerp', subject)
-      .gte('datum', new Date(Date.now() - 5 * 60_000).toISOString())
-      .limit(1)
-    if (netVerzonden && netVerzonden.length > 0) return false
 
     // Dedup: nooit twee outbox-rijen voor dezelfde mail (dubbele clicks,
     // races, herhaalde fouten op rij).
@@ -132,9 +129,35 @@ async function enqueueOutbox(to: string, subject: string, body: string, options?
   }
 }
 
-/** Statussen waarbij opnieuw proberen zin heeft (alles behalve client-fouten). */
+/**
+ * Fout van een mail die in de outbox beland is. De verzend-cron levert hem af,
+ * dus de UI mag hier geen 'Opnieuw' bij aanbieden: slaagt die tweede poging,
+ * dan staat de outbox-rij nog op 'wachtend' en bezorgt de cron een minuut later
+ * dezelfde mail nog eens bij de klant.
+ *
+ * De rij vooraf annuleren is de onveiligere variant: tussen het lezen en het
+ * annuleren kan de cron hem al op 'verwerken' hebben gezet en aan het versturen
+ * zijn. Dan is de mail al weg en zou de retry hem alsnog verdubbelen. Wachten
+ * op de cron kost hooguit een minuut en levert nooit twee mails.
+ */
+function outboxFout(boodschap: string): Error {
+  const fout = new Error(boodschap) as Error & { outboxQueued?: boolean }
+  fout.outboxQueued = true
+  return fout
+}
+
+export function isOutboxFout(err: unknown): boolean {
+  return !!err && typeof err === 'object' && (err as { outboxQueued?: boolean }).outboxQueued === true
+}
+
+/**
+ * Alleen 502 gaat de outbox in: send-email geeft die bij een tijdelijke
+ * SMTP-storing en schrijft zelf al een outbox-rij op 'mislukt'. Een 401
+ * (wachtwoord geweigerd) of 500 (definitief afgewezen) herhalen heeft geen zin
+ * en zou bij een fout wachtwoord de provider tot een blokkade drijven.
+ */
 function isQueueableStatus(status: number): boolean {
-  return status === 429 || status >= 500
+  return status === 502
 }
 
 export async function sendEmail(
@@ -164,13 +187,16 @@ export async function sendEmail(
         scheduledAt: options?.scheduledAt,
         wacht_op_reactie: options?.wacht_op_reactie,
         in_reply_to: options?.in_reply_to,
+        references: options?.references,
         thread_id: options?.thread_id,
+        account_id: options?.account_id,
       }),
+      keepalive: options?.keepalive,
     })
   } catch (netErr) {
     // Netwerk weg — in de outbox, cron levert af zodra het weer kan
     if (await enqueueOutbox(to, subject, body, options)) {
-      throw new Error('Geen verbinding — de mail staat in de outbox en wordt automatisch opnieuw verstuurd')
+      throw outboxFout('Geen verbinding — de mail staat in de outbox en wordt automatisch opnieuw verstuurd')
     }
     throw netErr
   }
@@ -178,7 +204,7 @@ export async function sendEmail(
   if (!response.ok) {
     const error: { error?: string } = await response.json().catch(() => ({}))
     if (isQueueableStatus(response.status) && await enqueueOutbox(to, subject, body, options)) {
-      throw new Error('Verzenden mislukt — de mail staat in de outbox en wordt automatisch opnieuw verstuurd')
+      throw outboxFout('Verzenden mislukt — de mail staat in de outbox en wordt automatisch opnieuw verstuurd')
     }
     throw new Error(error?.error || `Email verzenden mislukt: ${response.status}`)
   }
@@ -224,6 +250,8 @@ export async function testEmailConnection(
     smtp_port?: number
     imap_host?: string
     imap_port?: number
+    /** google of microsoft test de opgeslagen koppeling; adres en wachtwoord doen dan niet mee. */
+    auth_type?: MailAuthType
   }
 ): Promise<{ imap_ok: boolean; smtp_ok: boolean; error?: string }> {
   const token = await getAuthToken()
@@ -236,6 +264,7 @@ export async function testEmailConnection(
     body: JSON.stringify({
       gmail_address,
       app_password,
+      auth_type: options?.auth_type,
       smtp_host: options?.smtp_host || 'smtp.gmail.com',
       smtp_port: options?.smtp_port || 587,
       imap_host: options?.imap_host || 'imap.gmail.com',
@@ -502,7 +531,13 @@ export interface EmailSettingsData {
   imap_port: number
   // Server geeft het wachtwoord niet meer terug; enkel of er één is opgeslagen.
   has_password?: boolean
+  /** 'wachtwoord' = app-wachtwoord, 'google'/'microsoft' = OAuth-koppeling. */
+  auth_type?: MailAuthType
+  /** Of er een refresh-token ligt. De tokens zelf verlaten de server nooit. */
+  has_oauth?: boolean
 }
+
+export type MailAuthType = 'wachtwoord' | 'google' | 'microsoft'
 
 export async function loadEmailSettingsFromDb(): Promise<EmailSettingsData | null> {
   try {
@@ -526,6 +561,8 @@ export async function loadEmailSettingsFromDb(): Promise<EmailSettingsData | nul
       gmail_address: data.gmail_address,
       app_password: '',
       has_password: !!data.has_password,
+      auth_type: (data.auth_type as MailAuthType) || 'wachtwoord',
+      has_oauth: !!data.has_oauth,
       smtp_host: data.smtp_host || 'smtp.gmail.com',
       smtp_port: data.smtp_port || 587,
       imap_host: data.imap_host || 'imap.gmail.com',
@@ -551,6 +588,7 @@ export async function saveEmailSettingsToDb(settings: EmailSettingsData): Promis
       // Leeg wachtwoord = ongewijzigd: stuur sentinel zodat de server de
       // bestaande versleutelde waarde behoudt in plaats van hem te wissen.
       app_password: settings.app_password || 'UNCHANGED',
+      auth_type: settings.auth_type,
       smtp_host: settings.smtp_host || 'smtp.gmail.com',
       smtp_port: settings.smtp_port || 587,
       imap_host: settings.imap_host || 'imap.gmail.com',
@@ -573,6 +611,37 @@ export async function deleteEmailSettingsFromDb(): Promise<void> {
       'Authorization': `Bearer ${token}`,
     },
   })
+}
+
+/**
+ * Stap 1 van koppelen met Google of Microsoft. Geeft de autorisatie-URL terug;
+ * de aanroeper doet daarna zelf `window.location.assign(url)`.
+ *
+ * Een gewone link zou hier niet werken: de server ondertekent de `state` met
+ * de ingelogde gebruiker erin en heeft daarvoor de sessie in de
+ * Authorization-header nodig. `nietGeconfigureerd` betekent dat de
+ * client-id op de server ontbreekt; dan hoort de knop uit te staan.
+ */
+export async function startMailKoppeling(
+  provider: 'google' | 'microsoft'
+): Promise<{ url?: string; nietGeconfigureerd?: boolean; error?: string }> {
+  try {
+    const token = await getAuthToken()
+    const response = await fetch('/api/mail-oauth-start', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ provider }),
+    })
+    if (response.status === 503) return { nietGeconfigureerd: true }
+    const data: { url?: string; error?: string } = await response.json().catch(() => ({}))
+    if (!response.ok || !data.url) return { error: data.error || `Koppelen mislukt: ${response.status}` }
+    return { url: data.url }
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'Koppelen mislukt' }
+  }
 }
 
 // Wis de gecachte emails van de huidige user. Nodig wanneer een gebruiker

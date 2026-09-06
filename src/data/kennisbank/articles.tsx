@@ -1102,8 +1102,8 @@ export const articles: Article[] = [
     slug: 'email-koppelen',
     title: 'Email koppelen aan doen.',
     category: 'Email',
-    excerpt: 'Je eigen zakelijke mailbox aan doen. hangen. IMAP/SMTP, per gebruiker, 5 minuten werk.',
-    updatedAt: '2026-04-23',
+    excerpt: 'Je eigen zakelijke mailbox aan doen. hangen. Gmail, Microsoft of eigen hosting, per gebruiker, 5 minuten werk.',
+    updatedAt: '2026-09-06',
     readingTime: 4,
     sections: [
       {
@@ -1129,14 +1129,18 @@ export const articles: Article[] = [
         content: (
           <>
             <P>
-              Voor Google-, Microsoft- en andere zakelijke mailboxen heb je meestal een <B>app-wachtwoord</B> nodig
-              (niet je gewone inlogwachtwoord). Dit is veiliger, zo kan doen. alleen bij je mail, niets anders.
+              Voor Google en andere zakelijke mailboxen heb je een <B>app-wachtwoord</B> nodig (niet je gewone
+              inlogwachtwoord). Dit is veiliger, zo kan doen. alleen bij je mail, niets anders.
             </P>
             <UL>
-              <LI><B>Google Workspace</B>: Account → Beveiliging → App-wachtwoorden</LI>
-              <LI><B>Microsoft 365</B>: Account → Beveiliging → App-wachtwoord aanmaken</LI>
-              <LI><B>Eigen hosting</B>: vraag je hostingpartij om IMAP/SMTP-gegevens</LI>
+              <LI><B>Google (Gmail en Workspace)</B>: 2-stapsverificatie aan, dan Account, Beveiliging, App-wachtwoorden</LI>
+              <LI><B>Eigen hosting</B>: vraag je hostingpartij om de IMAP-server (poort 993) en SMTP-server (poort 587)</LI>
             </UL>
+            <Callout>
+              <B>Microsoft 365 en Outlook.com</B>: Microsoft staat wachtwoord-login voor mailprogramma's niet meer toe.
+              Koppelen gaat straks met de knop "Aanmelden met Microsoft", in twee klikken. Tot die knop actief is werkt
+              een app-wachtwoord alleen als je beheerder SMTP AUTH en IMAP nog aan heeft staan.
+            </Callout>
           </>
         ),
       },
@@ -1146,17 +1150,18 @@ export const articles: Article[] = [
         content: (
           <>
             <P>
-              Ga naar <B>Instellingen → Email</B>. Kies je provider (Google, Microsoft, anders) en vul in:
+              Ga naar <B>Instellingen, E-mail</B>. Het scherm opent op Verbinding met drie kaarten: Google, Microsoft 365
+              / Outlook.com en Overig. Kies je kaart en vul in:
             </P>
             <UL>
               <LI>Je emailadres</LI>
               <LI>Je app-wachtwoord</LI>
-              <LI>IMAP-server (automatisch voor Google/Microsoft)</LI>
-              <LI>SMTP-server (automatisch voor Google/Microsoft)</LI>
+              <LI>Bij Overig: de IMAP- en SMTP-server (Google vult ze zelf in)</LI>
             </UL>
             <P>
-              doen. test de verbinding. Als 'm werkt, krijg je een groen vinkje. Inkomende mail wordt vanaf nu
-              gesynchroniseerd naar je doen.-inbox.
+              Klik <B>Test verbinding</B>: doen. test ontvangen en verzenden los van elkaar en zegt welke van de twee
+              weigert. Daarna zie je bovenaan de <B>gezondheidskaart</B>: groen met "laatst 2 min geleden" zodra de
+              eerste synchronisatie klaar is, oranje met de fout als het hapert, en een knop Opnieuw verbinden.
             </P>
           </>
         ),
@@ -1172,7 +1177,9 @@ export const articles: Article[] = [
             </P>
             <P>
               Verzonden mails via doen. (bijvoorbeeld een offerte-herinnering) gaan <B>vanaf jouw eigen domein</B>.
-              De klant ziet dus jouw naam en emailadres als afzender, niet "noreply@doen.team".
+              De klant ziet dus jouw naam en emailadres als afzender, niet "noreply@doen.team". De mail komt ook in de
+              <B>Verzonden-map van je eigen mailbox</B>, dus je ziet hem op je telefoon en in Outlook terug. Gelezen,
+              gearchiveerd en verwijderd gaat twee kanten op.
             </P>
           </>
         ),

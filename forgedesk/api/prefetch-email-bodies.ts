@@ -5,6 +5,34 @@ import crypto from 'crypto'
 import { createClient } from '@supabase/supabase-js'
 import { Ratelimit } from '@upstash/ratelimit'
 import { Redis } from '@upstash/redis'
+import * as Sentry from '@sentry/node'
+
+// ── Sentry init (inline; Vercel bundelt geen lokale modules in api/) ──
+if (process.env.SENTRY_DSN && !Sentry.getClient()) {
+  const SENS = /password|app_password|encrypted_app_password|betaal_token|payment_token|access_token|refresh_token|mollie_api_key|authorization|cookie|secret|api_key|to|cc|bcc|email/i
+  const scrub = (v: unknown, d = 0): unknown => {
+    if (d > 6 || v == null) return v
+    if (Array.isArray(v)) return v.map(x => scrub(x, d + 1))
+    if (typeof v === 'object') {
+      const o: Record<string, unknown> = {}
+      for (const [k, val] of Object.entries(v as Record<string, unknown>)) o[k] = SENS.test(k) ? '[Filtered]' : scrub(val, d + 1)
+      return o
+    }
+    return v
+  }
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.VERCEL_ENV || process.env.NODE_ENV || 'development',
+    tracesSampleRate: 0.1,
+    sendDefaultPii: false,
+    beforeSend(event) {
+      if (event.request?.headers) for (const k of Object.keys(event.request.headers)) if (/authorization|cookie/i.test(k)) (event.request.headers as Record<string, string>)[k] = '[Filtered]'
+      if (event.request?.data) event.request.data = scrub(event.request.data) as typeof event.request.data
+      if (event.user) { delete event.user.ip_address; delete event.user.email }
+      return event
+    },
+  })
+}
 
 // Waarom dit endpoint bestaat: api/fetch-emails.ts synct alleen ENVELOPE +
 // bodyStructure, dus elke mail miste zijn body tot je 'm opende. Openen kostte
@@ -26,14 +54,141 @@ async function verifyUser(req: VercelRequest): Promise<string> {
   const authHeader = req.headers.authorization
   if (!authHeader?.startsWith('Bearer ')) throw new Error('Niet geautoriseerd')
   const token = authHeader.split(' ')[1]
+
+  // Service-modus voor cron-mailsync-werker, gelijk aan fetch-emails: alleen
+  // met het cron-secret, en dat secret moet gezet zijn.
+  const cronSecret = process.env.CRON_SECRET
+  if (cronSecret && token === cronSecret) {
+    const serviceUser = req.body?.service_user_id
+    if (typeof serviceUser !== 'string' || !serviceUser) throw new Error('Niet geautoriseerd')
+    return serviceUser
+  }
+
   const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
   if (error || !user) throw new Error('Ongeldige sessie')
   return user.id
 }
 
+// ───── Bodies in email_bodies (migratie 244), kopie van api/read-email.ts ─────
+const MAX_BODY_TEXT = 20_000
+
+// ── CITAAT-SPLITSING: letterlijke kopie van src/lib/mail/quoted.ts ──
+// api/ importeert niets uit src; wijzig je daar iets, wijzig het hier en in
+// api/read-email.ts mee, anders splitsen server en client anders.
+const SPECIFIEKE_MARKERS: RegExp[] = [
+  /<div[^>]*\bclass\s*=\s*["'][^"']*\bgmail_quote\b/i,
+  /<div[^>]*\bid\s*=\s*["']divRplyFwdMsg["']/i,
+  /<div[^>]*\bid\s*=\s*["']appendonsend["']/i,
+  /<hr[^>]*\bid\s*=\s*["']stopSpelling["']/i,
+  /-{2,}\s*(?:Original Message|Oorspronkelijk bericht|Ursprüngliche Nachricht|Message d'origine)\s*-{2,}/i,
+  /(?:^|>|\n)\s*(?:<(?:b|strong|span)[^>]*>\s*)*(?:From|Van)\s*(?:<\/(?:b|strong|span)>\s*)*:[\s\S]{0,200}?(?:Sent|Verzonden|Date|Datum)\s*(?:<\/(?:b|strong|span)>\s*)*:/i,
+  /\bOp\s[\s\S]{4,200}?\sschreef\s[\s\S]{0,300}?:/i,
+  /\bOp\s[\s\S]{4,200}?\sheeft\s[\s\S]{0,300}?geschreven\s*:/i,
+  /\bOn\s[\s\S]{4,200}?\swrote\s*:/i,
+]
+
+const BLOCKQUOTE = /<blockquote\b/i
+
+const BLOK_TAGS = ['<div', '<p', '<blockquote', '<table', '<hr']
+const IS_BLOK_TAG = /^<(?:div|p|blockquote|table|hr)[\s>/]/i
+const OMSLUITENDE_OPENER = /<(?:div|blockquote|table|tbody|tr|td|th|section)\b[^>]*>\s*$/i
+const MAX_TERUG = 400
+
+function eersteTreffer(html: string, patronen: RegExp[]): number {
+  let beste = -1
+  for (const patroon of patronen) {
+    const m = patroon.exec(html)
+    if (!m) continue
+    let index = m.index
+    if (/^[>\n]/.test(m[0])) index += 1
+    if (beste === -1 || index < beste) beste = index
+  }
+  return beste
+}
+
+function naarBlokStart(html: string, index: number): number {
+  let pos = index
+  if (!IS_BLOK_TAG.test(html.slice(index, index + 12))) {
+    let dichtstbij = -1
+    for (const tag of BLOK_TAGS) {
+      const q = html.lastIndexOf(tag, index)
+      if (q === -1 || index - q > MAX_TERUG) continue
+      if (!IS_BLOK_TAG.test(html.slice(q, q + 12))) continue
+      if (q > dichtstbij) dichtstbij = q
+    }
+    if (dichtstbij !== -1) pos = dichtstbij
+  }
+  for (;;) {
+    const voor = html.slice(Math.max(0, pos - MAX_TERUG), pos)
+    const m = OMSLUITENDE_OPENER.exec(voor)
+    if (!m) break
+    pos -= m[0].length
+  }
+  return pos
+}
+
+function heeftTekst(html: string): boolean {
+  return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim().length > 0
+}
+
+function splitsCitaat(html: string): { eigen: string; geciteerd: string | null } {
+  if (!html) return { eigen: html || '', geciteerd: null }
+  let index = eersteTreffer(html, SPECIFIEKE_MARKERS)
+  if (index === -1) {
+    const bq = BLOCKQUOTE.exec(html)
+    index = bq ? bq.index : -1
+  }
+  if (index === -1) return { eigen: html, geciteerd: null }
+  const knip = naarBlokStart(html, index)
+  const eigen = html.slice(0, knip)
+  const geciteerd = html.slice(knip)
+  if (!heeftTekst(eigen)) return { eigen: html, geciteerd: null }
+  return { eigen, geciteerd }
+}
+// ── EINDE KOPIE ──
+
+/**
+ * Kandidaten: rijen met uid in deze map zonder rij in email_bodies, nieuwste
+ * eerst. PostgREST kent geen NOT EXISTS, dus in pagina's van 100 en per
+ * pagina tegen email_bodies afstrepen; hoogstens vijf pagina's.
+ */
+async function zoekKandidaten(user_id: string, mapValue: string, gewenst: number): Promise<{ rijen: Rij[]; meer: boolean }> {
+  const rijen: Rij[] = []
+  const PAGINA = 100
+  for (let pagina = 0; pagina < 5 && rijen.length <= gewenst; pagina++) {
+    const { data: blok, error } = await supabaseAdmin
+      .from('emails')
+      .select('id, uid')
+      .eq('user_id', user_id)
+      .eq('map', mapValue)
+      .not('uid', 'is', null)
+      .order('datum', { ascending: false })
+      .range(pagina * PAGINA, pagina * PAGINA + PAGINA - 1)
+    if (error) throw new Error(error.message)
+    if (!blok?.length) break
+
+    const ids = blok.map((r) => r.id as string)
+    const { data: metBody } = await supabaseAdmin
+      .from('email_bodies')
+      .select('email_id')
+      .in('email_id', ids)
+    const heeftBody = new Set((metBody || []).map((b) => b.email_id as string))
+    for (const r of blok) {
+      if (!heeftBody.has(r.id as string)) rijen.push({ id: r.id as string, uid: Number(r.uid) })
+    }
+    if (blok.length < PAGINA) break
+  }
+  return { rijen: rijen.slice(0, gewenst), meer: rijen.length > gewenst }
+}
+
 interface EmailCredentials {
   gmail_address: string
   app_password: string
+  user_id: string
+  auth_type: string
+  oauth_refresh_token_enc: string | null
+  oauth_access_token_enc: string | null
+  oauth_token_verloopt_op: string | null
   imap_host: string
   imap_port: number
 }
@@ -74,20 +229,224 @@ function decryptPassword(encrypted: string): string {
   }
 }
 
-async function getEmailCredentials(userId: string): Promise<EmailCredentials> {
-  const { data, error } = await supabaseAdmin
+// ── GEDEELD-MET-API BEGIN: OAuth-toegangstoken ────────────────────────────
+// Letterlijke kopie in api/mail-oauth-token.ts, api/fetch-emails.ts,
+// api/read-email.ts, api/prefetch-email-bodies.ts, api/email-imap-action.ts,
+// api/send-email.ts en api/test-email-connection.ts. Wijzig je er één, wijzig
+// dan alle zeven: zoek op "GEDEELD-MET-API: OAuth-toegangstoken".
+// api/mail-oauth-callback.ts heeft alleen versleutelToken uit dit blok.
+// Bewust gekopieerd en niet gedeeld: api/* is standalone, een import uit src/
+// of api/_lib bundelt Vercel niet mee. Leunt op `crypto`, `supabaseAdmin` en
+// `decryptPassword` uit het bestand zelf.
+
+interface OauthRij {
+  user_id?: string | null
+  auth_type?: string | null
+  oauth_refresh_token_enc?: string | null
+  oauth_access_token_enc?: string | null
+  oauth_token_verloopt_op?: string | null
+}
+
+function isOauthKoppeling(authType?: string | null): boolean {
+  return authType === 'google' || authType === 'microsoft'
+}
+
+/** Zelfde g1-vorm als api/email-settings.ts: AES-256-GCM, salt per waarde. */
+function versleutelToken(tekst: string): string {
+  const sleutel = process.env.EMAIL_ENCRYPTION_KEY
+  if (!sleutel) throw new Error('EMAIL_ENCRYPTION_KEY niet geconfigureerd')
+  const salt = crypto.randomBytes(16)
+  const key = crypto.scryptSync(sleutel, salt, 32)
+  const iv = crypto.randomBytes(12)
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv)
+  const ct = Buffer.concat([cipher.update(tekst, 'utf8'), cipher.final()])
+  return 'g1:' + Buffer.concat([salt, iv, cipher.getAuthTag(), ct]).toString('base64')
+}
+
+function oauthTokenUrl(provider: string): string {
+  if (provider === 'microsoft') {
+    const tenant = process.env.MAIL_OAUTH_MICROSOFT_TENANT || 'common'
+    return `https://login.microsoftonline.com/${encodeURIComponent(tenant)}/oauth2/v2.0/token`
+  }
+  return 'https://oauth2.googleapis.com/token'
+}
+
+function oauthClient(provider: string): { id: string; secret: string } | null {
+  const id = provider === 'microsoft'
+    ? process.env.MAIL_OAUTH_MICROSOFT_CLIENT_ID
+    : process.env.MAIL_OAUTH_GOOGLE_CLIENT_ID
+  const secret = provider === 'microsoft'
+    ? process.env.MAIL_OAUTH_MICROSOFT_CLIENT_SECRET
+    : process.env.MAIL_OAUTH_GOOGLE_CLIENT_SECRET
+  if (!id || !secret) return null
+  return { id, secret }
+}
+
+/**
+ * Een geldig access-token voor XOAUTH2, of een fout die zegt dat de gebruiker
+ * opnieuw moet koppelen.
+ *
+ * Ververst zodra het token binnen vijf minuten verloopt, en schrijft het
+ * nieuwe token versleuteld terug zodat de volgende aanroep hem gewoon leest.
+ * `forceer` is voor de tweede poging na een 401 van de mailserver: het token
+ * kan ingetrokken zijn terwijl de vervaldatum nog in de toekomst ligt.
+ */
+async function haalToegangstoken(rij: OauthRij, opties?: { forceer?: boolean }): Promise<string> {
+  const provider = rij.auth_type || ''
+  if (!isOauthKoppeling(provider)) throw new Error('Geen OAuth-koppeling op deze mailbox')
+
+  const nu = Date.now()
+  const verlooptOp = rij.oauth_token_verloopt_op ? Date.parse(rij.oauth_token_verloopt_op) : 0
+  if (!opties?.forceer && rij.oauth_access_token_enc && verlooptOp - nu > 5 * 60_000) {
+    return decryptPassword(rij.oauth_access_token_enc)
+  }
+
+  if (!rij.oauth_refresh_token_enc) throw new Error('Toegang ingetrokken, koppel opnieuw')
+  const client = oauthClient(provider)
+  if (!client) throw new Error('OAuth is niet geconfigureerd op de server')
+
+  const respons = await fetch(oauthTokenUrl(provider), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: client.id,
+      client_secret: client.secret,
+      refresh_token: decryptPassword(rij.oauth_refresh_token_enc),
+      grant_type: 'refresh_token',
+    }).toString(),
+    signal: AbortSignal.timeout(10_000),
+  })
+  const antwoord = (await respons.json().catch(() => ({}))) as {
+    access_token?: string
+    expires_in?: number
+    refresh_token?: string
+    error?: string
+  }
+  if (!respons.ok || !antwoord.access_token) {
+    throw new Error(`Toegang ingetrokken, koppel opnieuw (${antwoord.error || respons.status})`)
+  }
+
+  const nieuwVerlooptOp = new Date(nu + (Number(antwoord.expires_in) || 3600) * 1000).toISOString()
+  const patch: Record<string, unknown> = {
+    oauth_access_token_enc: versleutelToken(antwoord.access_token),
+    oauth_token_verloopt_op: nieuwVerlooptOp,
+    updated_at: new Date().toISOString(),
+  }
+  // Microsoft rouleert de refresh-token bij elke verversing, Google niet.
+  if (antwoord.refresh_token) patch.oauth_refresh_token_enc = versleutelToken(antwoord.refresh_token)
+
+  if (rij.user_id) {
+    const { error } = await supabaseAdmin.from('user_email_settings').update(patch).eq('user_id', rij.user_id)
+    if (error) console.warn('[oauth] nieuw token niet opgeslagen:', error.message)
+  }
+  rij.oauth_access_token_enc = patch.oauth_access_token_enc as string
+  rij.oauth_token_verloopt_op = nieuwVerlooptOp
+  return antwoord.access_token
+}
+
+/** Een 401 van IMAP of SMTP, in de bewoordingen die de servers gebruiken. */
+function isToegangGeweigerd(fout: unknown): boolean {
+  const melding = fout instanceof Error ? fout.message : String(fout)
+  return /authenticationfailed|invalid credentials|invalid_grant|authentication failed|\b401\b|EAUTH|535/i.test(melding)
+}
+
+/**
+ * De mailbox uitzetten met de melding die de gebruiker moet zien. Alleen na
+ * een tweede 401: de eerste kan een verlopen token zijn en die ververst
+ * haalToegangstoken zelf.
+ */
+async function meldToegangIngetrokken(userId: string): Promise<void> {
+  const nu = new Date().toISOString()
+  const { error } = await supabaseAdmin
+    .from('email_sync_state')
+    .upsert({
+      user_id: userId,
+      folder: 'inbox',
+      status: 'uitgezet',
+      laatste_fout: 'Toegang ingetrokken, koppel opnieuw',
+      laatste_fout_op: nu,
+      updated_at: nu,
+    }, { onConflict: 'user_id,folder' })
+  if (error) console.warn('[oauth] status uitgezet schrijven mislukt:', error.message)
+}
+// ── GEDEELD-MET-API EINDE: OAuth-toegangstoken ────────────────────────────
+
+// ── GEDEELD-MET-API: credentials zonder 244 ───────────────────────────────
+// auth_type en de drie oauth-kolommen komen uit migratie 244. Zolang die niet
+// gedraaid is antwoordt PostgREST met 42703 of PGRST204 en faalt de HELE
+// select, waarna er geen mailbox meer te vinden is: geen sync, geen mail
+// openen, geen IMAP-actie. Daarom eerst de volledige select, en pas bij een
+// kolomfout opnieuw met de kolommen van vóór 244.
+// Dezelfde helper hoort in fetch-emails, read-email, prefetch-email-bodies,
+// email-imap-action, email-settings, send-email en de twee mail-oauth-routes.
+interface CredentialRij {
+  gmail_address: string | null
+  encrypted_app_password: string | null
+  imap_host: string | null
+  imap_port: number | null
+  auth_type: string | null
+  oauth_refresh_token_enc: string | null
+  oauth_access_token_enc: string | null
+  oauth_token_verloopt_op: string | null
+}
+
+const CREDENTIAL_KOLOMMEN_VOOR_244 = 'gmail_address, encrypted_app_password, imap_host, imap_port'
+const CREDENTIAL_KOLOMMEN = `${CREDENTIAL_KOLOMMEN_VOOR_244}, auth_type, oauth_refresh_token_enc, oauth_access_token_enc, oauth_token_verloopt_op`
+
+function isKolomFout(fout: { code?: string; message?: string } | null): boolean {
+  if (!fout) return false
+  if (fout.code === '42703' || fout.code === 'PGRST204') return true
+  return /column .* does not exist|could not find the .* column/i.test(fout.message || '')
+}
+
+async function leesCredentialRij(userId: string): Promise<CredentialRij | null> {
+  const volledig = await supabaseAdmin
     .from('user_email_settings')
-    .select('gmail_address, encrypted_app_password, imap_host, imap_port')
+    .select(CREDENTIAL_KOLOMMEN)
     .eq('user_id', userId)
     .single()
+  if (!volledig.error) return volledig.data as unknown as CredentialRij
+  if (!isKolomFout(volledig.error)) return null
+  const oud = await supabaseAdmin
+    .from('user_email_settings')
+    .select(CREDENTIAL_KOLOMMEN_VOOR_244)
+    .eq('user_id', userId)
+    .single()
+  if (oud.error || !oud.data) return null
+  return {
+    ...(oud.data as unknown as CredentialRij),
+    auth_type: 'wachtwoord',
+    oauth_refresh_token_enc: null,
+    oauth_access_token_enc: null,
+    oauth_token_verloopt_op: null,
+  }
+}
+// ── GEDEELD-MET-API EINDE: credentials zonder 244 ─────────────────────────
 
-  if (error || !data?.gmail_address || !data?.encrypted_app_password) {
+async function getEmailCredentials(userId: string): Promise<EmailCredentials> {
+  const data = await leesCredentialRij(userId)
+
+  if (!data?.gmail_address) {
     throw new Error('Geen email instellingen gevonden. Configureer je email in Instellingen > Integraties.')
+  }
+  // Een OAuth-mailbox heeft geen app-wachtwoord: de tokens staan in
+  // oauth_refresh_token_enc en oauth_access_token_enc.
+  const oauthKoppeling = isOauthKoppeling(data.auth_type as string | null)
+  if (!oauthKoppeling && !data.encrypted_app_password) {
+    throw new Error('Geen email instellingen gevonden. Koppel je mailbox onder Instellingen > E-mail > Verbinding.')
+  }
+  if (oauthKoppeling && !data.oauth_refresh_token_enc) {
+    throw new Error('Toegang ingetrokken, koppel opnieuw')
   }
 
   return {
     gmail_address: data.gmail_address,
-    app_password: decryptPassword(data.encrypted_app_password),
+    app_password: data.encrypted_app_password ? decryptPassword(data.encrypted_app_password) : '',
+    user_id: userId,
+    auth_type: (data.auth_type as string) || 'wachtwoord',
+    oauth_refresh_token_enc: (data.oauth_refresh_token_enc as string) ?? null,
+    oauth_access_token_enc: (data.oauth_access_token_enc as string) ?? null,
+    oauth_token_verloopt_op: (data.oauth_token_verloopt_op as string) ?? null,
     imap_host: data.imap_host || 'imap.gmail.com',
     imap_port: data.imap_port || 993,
   }
@@ -228,22 +587,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const batchGrootte = Math.min(Math.max(Number(limit) || 25, 1), MAX_BATCH)
 
     // Nieuwste eerst: dat is wat de gebruiker zo gaat openen.
-    const { data: kandidaten, error: selectErr } = await supabaseAdmin
-      .from('emails')
-      .select('id, uid')
-      .eq('user_id', user_id)
-      .eq('map', mapValue)
-      .is('body_html', null)
-      .not('uid', 'is', null)
-      .order('datum', { ascending: false })
-      .limit(batchGrootte + 1)
-
-    if (selectErr) throw new Error(selectErr.message)
-
-    const rijen = ((kandidaten || []) as Rij[]).slice(0, batchGrootte)
-    // De extra rij uit de query vertelt of er nog meer werk ligt zonder een
-    // tweede count-query.
-    const meerBeschikbaar = (kandidaten || []).length > batchGrootte
+    const { rijen, meer: meerBeschikbaar } = await zoekKandidaten(user_id, mapValue, batchGrootte)
 
     if (rijen.length === 0) {
       return res.status(200).json({ verwerkt: 0, mislukt: 0, resterend: false })
@@ -256,7 +600,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       host: creds.imap_host,
       port: creds.imap_port,
       secure: creds.imap_port === 993,
-      auth: { user: creds.gmail_address, pass: creds.app_password },
+      auth: isOauthKoppeling(creds.auth_type)
+        ? { user: creds.gmail_address, accessToken: await haalToegangstoken(creds) }
+        : { user: creds.gmail_address, pass: creds.app_password },
       logger: false,
       emitLogs: false,
       greetingTimeout: 10000,
@@ -319,13 +665,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           })
           const echteBijlagen = attachmentMeta.filter((a) => !a.isInlineCid).length
 
-          const bodyText = parsed.text || ''
-          const { error: updateErr } = await supabaseAdmin
+          const bodyText = (parsed.text || '').slice(0, MAX_BODY_TEXT)
+          const { eigen, geciteerd } = splitsCitaat(bodyHtml)
+          // De rij in email_bodies is de marker "geparsed", ook bij een mail
+          // zonder HTML-deel (body_html leeg). emails.body_html blijft NULL.
+          const { error: bodyErr } = await supabaseAdmin
+            .from('email_bodies')
+            .upsert({
+              email_id: rijId,
+              user_id,
+              body_html: eigen,
+              body_text: bodyText || null,
+              quoted_html: geciteerd,
+              bijgewerkt_op: new Date().toISOString(),
+            }, { onConflict: 'email_id' })
+          const { error: updateErr } = bodyErr ? { error: bodyErr } : await supabaseAdmin
             .from('emails')
             .update({
-              // Lege string, niet null: null betekent "nooit geparsed" en zou
-              // read-email opnieuw de IMAP-route in sturen.
-              body_html: bodyHtml,
               body_text: bodyText || null,
               attachment_meta: attachmentMeta.length > 0 ? attachmentMeta : null,
               bijlagen: echteBijlagen,
@@ -360,6 +716,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(401).json({ error: msg })
     }
     console.error('[prefetch-email-bodies] mislukt:', error)
+    Sentry.captureException(error)
     return res.status(500).json({ error: msg })
   }
 }

@@ -2211,6 +2211,8 @@ export interface Bedrijfsprofiel {
 
 export * from './visualizer'
 
+export type { MailMap, EmailLijstItem, EmailBody, ComposerDocument, ComposerBijlage, Ontvanger, KoppelingSoort, EmailKoppeling, ThreadInfo, SyncStatus, Postvak, PostvakSoort, PostvakKeuze } from '@/lib/mail/types'
+
 export interface DocumentStyle {
   id: string;
   user_id?: string;
@@ -2502,6 +2504,7 @@ export interface IngeplandBericht {
   user_id: string
   ontvanger: string
   cc?: string
+  bcc?: string
   onderwerp: string
   body?: string
   html?: string

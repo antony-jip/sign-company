@@ -1,3109 +1,687 @@
-import { useState, useCallback, useRef, useEffect, useMemo, lazy, Suspense } from 'react'
-import { createPortal } from 'react-dom'
+import { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { useMediaQuery } from '@/hooks/useMediaQuery'
-import { Button } from '@/components/ui/button'
-import {
-  Search, Pencil, Inbox, Send, FileEdit, Trash2,
-  Loader2, Archive, RefreshCw, CheckCheck, X, Mail, MailOpen,
-  Rows3, StretchHorizontal, Clock, CalendarClock, Hourglass, Moon, Menu, Edit3, ChevronLeft, Target,
-} from 'lucide-react'
-import { sendEmail as sendEmailViaApi, fetchEmailsFromIMAP, readEmailFromIMAP, markeerEmailGelezenOpServer, backfillEmailsFromIMAP, classificeerAanvragen, authenticateGmail, emailImapActie, prefetchEmailBodies } from '@/services/gmailService'
-import { getEmails, getEmail, getEmailBody, searchEmailsFTS, updateEmail, deleteEmail as deleteEmailDb } from '@/services/supabaseService'
-import { getCached, setCached } from '@/lib/queryCache'
-import { leesMailCache, schrijfMailCache, maakEigenaarSleutel, leesBodies, bewaarBodies } from '@/lib/mailCache'
-import supabase from '@/services/supabaseClient'
-import { getSalesInboxWachtend, getSalesInboxBeantwoord, markeerHandmatigBeantwoord, wisWachtFlag, terugZettenNaarWacht, getEmailsPage, getMapTellers, getEmailBodies } from '@/services/emailService'
-import { cn } from '@/lib/utils'
+import { Loader2, Mails, PanelRight } from 'lucide-react'
 import { toast } from 'sonner'
-import { leesConcept, opschonen as ruimConceptenOp, type EmailConcept } from '@/utils/emailConceptDraft'
-import { EmailReader } from './EmailReader'
-import { koppelEmailAanProject } from '@/services/emailProjectService'
+import { useAuth } from '@/contexts/AuthContext'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
+import { useFunctie } from '@/hooks/useFunctie'
+import { hapticLight } from '@/utils/haptic'
+import { logger } from '@/utils/logger'
+import { cn } from '@/lib/utils'
+import { mailStore } from '@/lib/mail/mailStore'
+import { startRealtime } from '@/lib/mail/realtime'
+import { prefetchBodies, haalBody } from '@/lib/mail/bodyRepository'
+import { useMailLijst, useMapTellers, usePostvakken, useSyncStatus, useZoekresultaten } from '@/lib/mail/hooks'
+import type { EmailBody, EmailLijstItem, MailMap } from '@/lib/mail/types'
+import { getConcept } from '@/services/conceptService'
 import { updateLeadStatus } from '@/services/leadsService'
-import type { ComposeActions } from './EmailCompose'
-import { EmailListItem } from './EmailListItem'
+import { extractSenderEmail, extractSenderName, getAvatarStyle } from './emailHelpers'
 import { EmailMobileTopBar } from './EmailMobileTopBar'
 import { EmailFocusKaart } from './EmailFocusKaart'
-import type { Email, EmailAttachment } from '@/types'
-import { logger } from '../../utils/logger'
-import type { EmailFolder, FilterType, FontSize, ViewMode } from './emailTypes'
-import { extractSenderEmail, extractSenderName, parseSearchQuery, IMAP_FOLDER_MAP, KEYBOARD_SHORTCUTS, SNOOZE_OPTIONS, calculateSnoozeDate, getAvatarStyle, formatRelativeSync } from './emailHelpers'
-import { useVirtualizer } from '@tanstack/react-virtual'
-import { useAuth } from '@/contexts/AuthContext'
-import { useAppSettings } from '@/contexts/AppSettingsContext'
-import { Skeleton } from '@/components/ui/skeleton'
-import { hapticLight } from '@/utils/haptic'
-import { usePullToRefresh } from '@/hooks/usePullToRefresh'
-import { viewTransition } from '@/utils/viewTransition'
+import { Mappenrail, MobieleMappenLade } from './shell/Mappenrail'
+import { Lijstkop } from './shell/Lijstkop'
+import { MailLijst } from './shell/MailLijst'
+import { Zoekbalk } from './shell/Zoekbalk'
+import { Leesvenster } from './shell/Leesvenster'
+import { Klantkaart } from './shell/Klantkaart'
+import { KlantToevoegenDialog } from './shell/KlantToevoegenDialog'
+import { GezondheidBanner } from './shell/GezondheidBanner'
+import { OutboxRijen } from './shell/OutboxRijen'
+import { LegeStaat } from './shell/LegeStaat'
+import { SnoozeMenu } from './shell/SnoozeMenu'
+import { SneltoetsenKaart } from './shell/SneltoetsenKaart'
+import { useMailToetsen } from './shell/useMailToetsen'
+import { useMailSync } from './shell/useMailSync'
+import { toonUndo, meervoud } from './shell/undoToast'
+import { useAdresIndexen, classificeer } from './shell/afzenderClassificatie'
+import { chipVoor, useKoppelingChips } from './shell/koppelingChips'
+import {
+  legeStaatVoor, mapLabel, sorteerVoorLijst, voldoetAanFilter,
+  type LijstFilter, type SplitTab,
+} from './shell/mapConfig'
+import { useEigenSleutels } from './shell/toewijzing'
+import { VOORKEUR, useBoolVoorkeur, useVoorkeur, type Dichtheid, type SwipeLinks } from './shell/voorkeuren'
+import { GREEP_CLS, GREEP_LIJN_CLS, useSleepBreedte } from './shell/useSleepBreedte'
+import { chipsNaarQuery, heeftZoekopdracht, voegChipToe, type ZoekChip } from './shell/zoekChips'
+import { readerActies } from './reader'
+import { Composer, documentUitConcept, documentVoorAntwoord, documentVoorDoorsturen, documentVoorNieuw } from './composer'
+import type { ComposerVariant } from './composer'
+import type { ComposerDocument } from '@/lib/mail/types'
+import type { AntwoordModus } from './shell/Leesvenster'
 
-// Opstellen, de context-sidebar, leads en geplande berichten liggen niet op het
-// lees-pad. Statisch geïmporteerd reisden ze mee in dezelfde chunk, die je op
-// de telefoon binnenhaalt vóórdat je één mail kunt openen.
-const EmailCompose = lazy(() => import('./EmailCompose').then(m => ({ default: m.EmailCompose })))
-const EmailContextSidebar = lazy(() => import('./EmailContextSidebar').then(m => ({ default: m.EmailContextSidebar })))
-const LeadsPaneel = lazy(() => import('./LeadsPaneel').then(m => ({ default: m.LeadsPaneel })))
-const IngeplandeBerichtenLijst = lazy(() => import('./IngeplandeBerichtenLijst').then(m => ({ default: m.IngeplandeBerichtenLijst })))
+const LeadsPaneel = lazy(() => import('./LeadsPaneel').then((m) => ({ default: m.LeadsPaneel })))
+const IngeplandeBerichtenLijst = lazy(() => import('./IngeplandeBerichtenLijst').then((m) => ({ default: m.IngeplandeBerichtenLijst })))
 
-// Folder config
-const folderTabs: { id: EmailFolder; label: string; icon: React.ElementType }[] = [
-  { id: 'inbox', label: 'Inbox', icon: Inbox },
-  { id: 'verzonden', label: 'Verzonden', icon: Send },
-  { id: 'sales-wacht', label: 'Opvolgen', icon: Hourglass },
-  { id: 'sales-beantwoord', label: 'Beantwoord', icon: CheckCheck },
-  { id: 'gesnoozed', label: 'Gesnoozed', icon: Moon },
-  { id: 'concepten', label: 'Concepten', icon: FileEdit },
-  { id: 'leads', label: 'Leads', icon: Target },
-  { id: 'archief', label: 'Archief', icon: Archive },
-  { id: 'prullenbak', label: 'Prullenbak', icon: Trash2 },
-]
-
-// Filter config
-const filtersList: { id: FilterType; label: string }[] = [
-  { id: 'alle', label: 'Alle' },
-  { id: 'ongelezen', label: 'Ongelezen' },
-  { id: 'vastgepind', label: 'Vastgepind' },
-  { id: 'bijlagen', label: 'Bijlagen' },
-]
-
-const folderIds: EmailFolder[] = ['inbox', 'verzonden', 'concepten', 'gepland', 'gesnoozed', 'prullenbak', 'archief', 'sales-wacht', 'sales-beantwoord', 'leads']
-
-// Mobile drawer surfaces these two as primary; the rest sits below a divider.
-const PRIMARY_FOLDER_IDS = new Set<EmailFolder>(['inbox', 'sales-wacht'])
-
-// Mappen die in de DB (kolom `map`) leven en dus DB-gepagineerd kunnen
-// worden; afgeleide mappen (sales/gesnoozed/gepland) filteren client-side.
-const DB_MAP_FOLDERS: Partial<Record<EmailFolder, string>> = {
-  inbox: 'inbox',
-  verzonden: 'verzonden',
-  concepten: 'concepten',
-  prullenbak: 'prullenbak',
-  archief: 'archief',
+interface ComposerStand {
+  document: ComposerDocument
+  variant: ComposerVariant
+  /** Alleen bij heropenen na ongedaan maken: de File-objecten van de bijlagen. */
+  bestanden?: Map<string, File>
 }
 
+/**
+ * De shell van de mailmodule: mappen, lijst, leesvenster, composer en
+ * klantkaart. Alle maildata komt uit `mailStore` (zie CONTRACT.md sectie 3);
+ * deze component houdt alleen bij wat er op het scherm staat.
+ */
 export function EmailLayout() {
   const { user, organisatieId } = useAuth()
-  const { emailFetchLimit } = useAppSettings()
-
-  // ─── Core state ───
-  const [emails, setEmails] = useState<Email[]>(() => getCached<Email[]>('emails') ?? [])
-  // Sleutel waaronder de lijst op het toestel staat. Wisselt de gebruiker of
-  // de organisatie, dan matcht hij niet meer en lezen we niets.
-  const eigenaarRef = useRef(maakEigenaarSleutel(user?.id, organisatieId))
-  eigenaarRef.current = maakEigenaarSleutel(user?.id, organisatieId)
-  // null = nog niet bekend; false stuurt de lege inbox naar de koppel-uitleg.
-  const [mailboxGekoppeld, setMailboxGekoppeld] = useState<boolean | null>(null)
-  useEffect(() => {
-    let cancelled = false
-    authenticateGmail()
-      .then((ok) => { if (!cancelled) setMailboxGekoppeld(ok) })
-      .catch(() => { if (!cancelled) setMailboxGekoppeld(null) })
-    return () => { cancelled = true }
-  }, [])
-  const [selectedEmail, setSelectedEmail] = useState<Email | null>(null)
-  const [selectedFolder, setSelectedFolder] = useState<EmailFolder>('inbox')
-  const [viewMode, setViewMode] = useState<ViewMode>('idle')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [searchInput, setSearchInput] = useState('')
-  const [searchFocused, setSearchFocused] = useState(false)
-  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  // 5s undo-buffer voor delete: pending DB-mutaties worden hier vastgehouden
-  // zodat undo-toast de mutatie kan annuleren. Flush (= alsnog uitvoeren)
-  // op unmount, anders zou de UI-delete niet persisten.
-  const pendingDeleteTimersRef = useRef<Map<string, { timer: ReturnType<typeof setTimeout>; flush: () => void }>>(new Map())
-  const [searchResults, setSearchResults] = useState<Email[] | null>(null)
-  const [isSearching, setIsSearching] = useState(false)
-  const [filter, setFilter] = useState<FilterType>('alle')
-  const [fontSize, setFontSize] = useState<FontSize>(() => {
-    try {
-      const stored = localStorage.getItem('doen_email_font_size')
-      if (stored === 'small' || stored === 'medium' || stored === 'large') return stored
-    } catch { /* localStorage geblokkeerd, val terug op default */ }
-    return 'medium'
-  })
-  useEffect(() => {
-    try { localStorage.setItem('doen_email_font_size', fontSize) } catch { /* no-op */ }
-  }, [fontSize])
-  // Density-toggle: 'inline' = 3-regel ruim, 'stacked' = 1-regel compact.
-  // Persistente keuze via localStorage zodat refresh de selectie behoudt.
-  const [listStyle, setListStyle] = useState<'inline' | 'stacked'>(() => {
-    try {
-      const stored = localStorage.getItem('doen_email_list_style')
-      if (stored === 'inline' || stored === 'stacked') return stored
-    } catch { /* no-op */ }
-    return 'inline'
-  })
-  useEffect(() => {
-    try { localStorage.setItem('doen_email_list_style', listStyle) } catch { /* no-op */ }
-  }, [listStyle])
-
-  const [listWidth, setListWidth] = useState<number>(() => {
-    try {
-      const stored = parseInt(localStorage.getItem('doen_email_list_width') || '', 10)
-      if (stored >= 280 && stored <= 640) return stored
-    } catch { /* no-op */ }
-    return 360
-  })
-  useEffect(() => {
-    try { localStorage.setItem('doen_email_list_width', String(listWidth)) } catch { /* no-op */ }
-  }, [listWidth])
-  // Sidebar is ephemeral: opent alleen wanneer een actie in de drie-puntjes
-  // dropdown wordt geklikt (Klant/Project/Taak aanmaken). Geen localStorage
-  // persistentie · anders zou hij open blijven na refresh zodra je 'm één
-  // keer hebt geopend, wat de hele point van "dropdown ipv sidebar" tegenwerkt.
-  const [contextOpen, setContextOpen] = useState<boolean>(false)
-
-  // Acties-dropdown rechtsboven in reader: trigger om de context-sidebar te
-  // openen op een specifiek panel (Klant/Project/Taak aanmaken) of voor
-  // project-koppeling (default panel met EmailProjectKoppelingPanel).
-  // Versie-counter forceert remount zodat herhaalde clicks hetzelfde panel
-  // opnieuw openen.
-  const [requestedPanel, setRequestedPanel] = useState<'klant' | 'project' | 'taak' | undefined>(undefined)
-  const [panelKey, setPanelKey] = useState(0)
-  const handleOpenContextPanel = useCallback((panel: 'klant' | 'project' | 'taak' | 'koppel') => {
-    // 'koppel' = sidebar openen op default panel ('none') waar de auto-search
-    // project-koppeling panel verschijnt voor reading-mode threads.
-    setRequestedPanel(panel === 'koppel' ? undefined : panel)
-    setPanelKey(k => k + 1)
-    setContextOpen(true)
-  }, [])
-
-  // Belt-and-suspenders: forceer sidebar dicht bij elke mount, ongeacht of
-  // er nog state-residue is uit Fast Refresh of een eerdere mount-iteratie.
-  // Zonder dit hield Vite's HMR de oude contextOpen=true vast ondanks
-  // useState(false) in de declaratie.
-  useEffect(() => {
-    setContextOpen(false)
-    setRequestedPanel(undefined)
-  }, [])
-  const handleListResizeStart = useCallback((e: React.MouseEvent) => {
-    e.preventDefault()
-    const startX = e.clientX
-    const startWidth = listWidth
-    document.body.style.userSelect = 'none'
-    document.body.style.cursor = 'col-resize'
-    const handleMouseMove = (ev: MouseEvent) => {
-      const newWidth = Math.max(320, Math.min(640, startWidth + (ev.clientX - startX)))
-      setListWidth(newWidth)
-    }
-    const handleMouseUp = () => {
-      document.body.style.userSelect = ''
-      document.body.style.cursor = ''
-      document.removeEventListener('mousemove', handleMouseMove)
-      document.removeEventListener('mouseup', handleMouseUp)
-    }
-    document.addEventListener('mousemove', handleMouseMove)
-    document.addEventListener('mouseup', handleMouseUp)
-  }, [listWidth])
-  const [focusModus, setFocusModus] = useState<boolean>(() => {
-    try { return localStorage.getItem('doen_email_focus_modus') === 'true' } catch { return false }
-  })
-  useEffect(() => {
-    try { localStorage.setItem('doen_email_focus_modus', String(focusModus)) } catch { /* no-op */ }
-  }, [focusModus])
-  const [folderDrawerOpen, setFolderDrawerOpen] = useState(false)
-
-  // ─── Loading state ───
-  const [isLoading, setIsLoading] = useState(() => getCached('emails') === undefined)
-  const [isRefreshing, setIsRefreshing] = useState(false)
-  const [lastSyncAt, setLastSyncAt] = useState<number | null>(null)
-  const [nowTick, setNowTick] = useState(() => Date.now())
-  const [isLoadingBody, setIsLoadingBody] = useState(false)
-  const [isLoadingMore, setIsLoadingMore] = useState(false)
-  const [useIMAP, setUseIMAP] = useState(false)
-  const [imapTotal, setImapTotal] = useState(0)
-
-  // ─── Compose state ───
-  const [composeDefaults, setComposeDefaults] = useState<{
-    to?: string; subject?: string; body?: string; bodyIsBericht?: boolean; replyToText?: string; bodyHtml?: string
-  }>({})
-  // Identificeert de schrijfsessie voor de conceptopslag. Elke nieuwe
-  // compose krijgt een verse id, zodat het vorige concept onder zijn eigen
-  // sleutel blijft staan in plaats van overschreven te worden.
-  const [composeDraftId, setComposeDraftId] = useState<string>(() => crypto.randomUUID())
-  // Laatst bekende conceptstand, zodat we bij het verlaten van compose kunnen
-  // aanbieden hem te heropenen. Zonder dit is een bewaard concept wel veilig
-  // maar onbereikbaar, en dat lost de klacht niet op.
-  const laatsteConceptRef = useRef<EmailConcept | null>(null)
-  const [composeProjectId, setComposeProjectId] = useState<string | null>(null)
-  // Ref-mirror zodat handleSendEmail (lege deps) de actuele waarde leest
-  const composeProjectIdRef = useRef<string | null>(null)
-  composeProjectIdRef.current = composeProjectId
-  // Lead waarvoor deze mail wordt opgesteld; na verzenden gaat die op benaderd.
-  const [composeLeadId, setComposeLeadId] = useState<string | null>(null)
-  const [benaderdeLeadId, setBenaderdeLeadId] = useState<string | null>(null)
-  const composeLeadIdRef = useRef<string | null>(null)
-  composeLeadIdRef.current = composeLeadId
-
-  // ─── Compose-sidebar communication ───
-  const [composeToAddress, setComposeToAddress] = useState('')
-  const [composeReminder, setComposeReminder] = useState<string | null>(null)
-  const [composeForgieLoading, setComposeForgieLoading] = useState(false)
-  const composeActionsRef = useRef<ComposeActions | null>(null)
-
-  // ─── Sales Inbox v1: aparte data-bron voor de twee sales-tabs ───
-  const [salesEmails, setSalesEmails] = useState<Email[]>([])
-  const [salesBannerDismissed, setSalesBannerDismissed] = useState<boolean>(() => {
-    try { return localStorage.getItem('doen_email_sales_inbox_banner_v1') === 'dismissed' } catch { return false }
-  })
-  const [salesTabSeen, setSalesTabSeen] = useState<boolean>(() => {
-    try { return localStorage.getItem('doen_email_sales_tab_seen_v1') === 'true' } catch { return false }
-  })
-
-  // ─── Location-based compose detection ───
-  const location = useLocation()
-  const navigate = useNavigate()
-  // Mobile always uses the spacious two-line row layout regardless of the
-  // user's persisted listStyle preference (which only governs desktop).
   const isDesktop = useMediaQuery('(min-width: 768px)')
-  // Ref-mirror zodat de sync-helpers (lege deps) de actuele waarde lezen
-  const isDesktopRef = useRef(isDesktop)
-  isDesktopRef.current = isDesktop
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { navigateWithTab } = useNavigateWithTab()
+  const splitAan = useFunctie('mail_split_inbox')
+
+  // ── Voorkeuren ──
+  const [dichtheid, zetDichtheid] = useVoorkeur<Dichtheid>(VOORKEUR.dichtheid, 'comfortabel', ['comfortabel', 'compact'])
+  const [swipeLinks] = useVoorkeur<SwipeLinks>(VOORKEUR.swipeLinks, 'archiveren', ['archiveren', 'verwijderen'])
+  const [railLabels, zetRailLabels] = useBoolVoorkeur(VOORKEUR.railLabels, true)
+  // De kolommen zijn versleepbaar; dubbelklikken op de greep zet hem terug.
+  const lijstSleep = useSleepBreedte(VOORKEUR.lijstBreedte, 470, { min: 260, max: 720 })
+  const kaartSleep = useSleepBreedte(VOORKEUR.kaartBreedte, 340, { min: 260, max: 520 }, 'links')
+  const [klantkaartAan, zetKlantkaartAan] = useBoolVoorkeur(VOORKEUR.klantkaart, false)
+  const [focusModus, zetFocusModus] = useBoolVoorkeur(VOORKEUR.focusModus, false)
+
+  // ── Schermstand ──
+  const [map, zetMapState] = useState<MailMap>('inbox')
+  const [geselecteerdId, zetGeselecteerd] = useState<string | null>(null)
+  const [aangevinkt, zetAangevinkt] = useState<Set<string>>(new Set())
+  const [focusIndex, zetFocusIndex] = useState(-1)
+  const [filter, zetFilter] = useState<LijstFilter>('alle')
+  const [labelFilter, zetLabelFilter] = useState<string | null>(null)
+  const [splitTab, zetSplitTab] = useState<SplitTab>('aanvragen')
+  const [zoektekst, zetZoektekst] = useState('')
+  const [chips, zetChips] = useState<ZoekChip[]>([])
+  const [composer, zetComposer] = useState<ComposerStand | null>(null)
+  const [ladeOpen, zetLadeOpen] = useState(false)
+  const [snoozeOpen, zetSnoozeOpen] = useState(false)
+  const [kaartOpen, zetKaartOpen] = useState(false)
+  const [klantDialoog, zetKlantDialoog] = useState<{ naam: string; email: string; inhoud: string } | null>(null)
+  const [nu, zetNu] = useState(() => Date.now())
+  const laatsteVinkRef = useRef<string | null>(null)
+
+  const zoekt = heeftZoekopdracht(zoektekst, chips)
+  const lijstMap: MailMap = map
+  const mapLijst = useMailLijst(lijstMap)
+  const zoekLijst = useZoekresultaten()
+  const tellers = useMapTellers()
+  const sync = useSyncStatus()
+  const postvakken = usePostvakken()
+  const gedeeld = postvakken.huidig?.soort === 'gedeeld'
+  const eigenSleutels = useEigenSleutels(user?.id)
+  const { bezig, laatsteSync, mailboxGekoppeld } = useMailSync(map, isDesktop, !!user?.id)
+  const adresIndexen = useAdresIndexen(splitAan && map === 'inbox')
+
+  // ── Eigenaar en realtime ──
   useEffect(() => {
-    if (location.pathname.endsWith('/email/compose')) {
-      const params = new URLSearchParams(location.search)
-      setComposeDraftId(crypto.randomUUID())
-      setComposeDefaults({
-        to: params.get('to') || undefined,
-        subject: params.get('subject') || undefined,
-        body: params.get('body') || undefined,
-        bodyIsBericht: true,
-      })
-      setComposeLeadId(null)
-      setViewMode('composing')
-    }
-  }, [location.pathname, location.search])
+    mailStore.stelEigenaarIn(user?.id, organisatieId)
+  }, [user?.id, organisatieId])
 
-  // ─── Selection state (bulk actions) ───
-  const [checkedEmails, setCheckedEmails] = useState<Set<string>>(new Set())
-  const lastCheckedIdRef = useRef<string | null>(null)
-
-  // ─── Keyboard state ───
-  const [focusedIndex, setFocusedIndex] = useState<number>(-1)
-  const [showShortcuts, setShowShortcuts] = useState(false)
-
-  // ─── Refs ───
-  const emailListRef = useRef<HTMLDivElement>(null)
-  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const bodyCacheRef = useRef<Map<string, string>>(new Map())
-  const attachmentCacheRef = useRef<Map<string, EmailAttachment[]>>(new Map())
-  // Inline image-bytes meegestuurd door /api/read-email (cold-pad first-open).
-  // Bewaard per email-id zodat EmailReader meteen thumbnails kan tonen
-  // zonder tweede IMAP-roundtrip naar /api/email-attachment.
-  const attachmentBytesCacheRef = useRef<Map<string, Record<string, string>>>(new Map())
-  // Signed URLs uit de persistent attachment-cache (sprint 3). Snelst van
-  // alledrie: direct als <img src>, geen base64-decode of bulk-fetch nodig.
-  const attachmentUrlsCacheRef = useRef<Map<string, Record<string, string>>>(new Map())
-
-  const fetchLimit = emailFetchLimit || 200
-
-  // Refs for values used in loadEmails · prevents effect re-runs on auth/settings changes
-  const userIdRef = useRef(user?.id)
-  userIdRef.current = user?.id
-  const fetchLimitRef = useRef(fetchLimit)
-  fetchLimitRef.current = fetchLimit
-  // Hoeveel kopregels de lijst uit de database trekt. Los van fetchLimit, die
-  // over de IMAP-sync gaat. Op een telefoon is 200 rijen ophalen vóór het
-  // eerste beeld puur wachten: het scherm toont er hooguit acht en de
-  // infinite scroll vult de rest bij terwijl je leest.
-  const lijstLimietRef = useRef(fetchLimit)
-  lijstLimietRef.current = isDesktop ? fetchLimit : Math.min(fetchLimit, 60)
-
-  // ─── Ensure emails from Supabase have required fields ───
-  function normalizeEmails(raw: Email[]): Email[] {
-    return raw.map(e => ({
-      ...e,
-      labels: e.labels ?? [],
-      pinned: e.pinned ?? false,
-      gmail_id: e.gmail_id || String((e as unknown as Record<string, unknown>).uid || e.id),
-    }))
-  }
-
-  // ─── Read emails from Supabase (fast, no IMAP needed) ───
-  async function readFromSupabase(): Promise<Email[]> {
-    const raw = await getEmails(lijstLimietRef.current).catch(() => [])
-    const normalized = normalizeEmails(raw)
-    setCached('emails', normalized)
-    // Ook naar het toestel, zodat de volgende opening geen skeleton toont.
-    // Zestig rijen is ruim een scherm of tien; de rest komt toch van de server.
-    void schrijfMailCache('emails', eigenaarRef.current, normalized.slice(0, 60))
-    return normalized
-  }
-
-  // ─── Body-cache vullen uit de database, in één query ───
-  // De sync schrijft alleen kopregels weg; de bodies komen van
-  // api/prefetch-email-bodies. Zodra ze in de DB staan halen we ze hier in
-  // één keer op, zodat het openen van een mail nul netwerk kost. Vult alleen
-  // wat nog niet gecached is, dus herhaald aanroepen is goedkoop.
-  // Standaard 60 bodies vooruit ophalen is op een desktop gratis en op een
-  // telefoon het verschil tussen een lijst die er staat en een halve minuut
-  // wachten: het zijn volledige HTML-berichten. Mobiel houdt het bij een
-  // handvol; het venster-prefetch-effect hieronder vult bij wat je nadert.
-  const vulBodyCacheUitDb = useCallback(async (mails: Email[], maximum?: number) => {
-    // Het netwerkplafond blijft bescheiden; het toestel lezen we ruimer uit,
-    // want dat kost niets. Zo profiteert de hele zichtbare lijst van wat er
-    // vorige sessie al binnenkwam.
-    const plafond = maximum ?? (isDesktopRef.current ? 60 : 8)
-    const ontbreekt: string[] = []
-    for (const mail of mails) {
-      if (ontbreekt.length >= Math.max(plafond, 60)) break
-      if (mail.inhoud) continue
-      if (bodyCacheRef.current.has(mail.id)) continue
-      ontbreekt.push(mail.id)
-    }
-    if (ontbreekt.length === 0) return 0
-
-    // Eerst het toestel · dat kost geen netwerk en geen wachttijd. Wat daar
-    // staat hoeft de server niet nog eens te sturen.
-    const bewaard = await leesBodies(ontbreekt, eigenaarRef.current)
-    for (const [id, rij] of bewaard) {
-      bodyCacheRef.current.set(id, rij.html)
-      if (Array.isArray(rij.bijlagen) && rij.bijlagen.length > 0) {
-        attachmentCacheRef.current.set(id, rij.bijlagen as EmailAttachment[])
-      }
-    }
-
-    const restant = ontbreekt.filter((id) => !bewaard.has(id)).slice(0, plafond)
-    if (restant.length === 0) return bewaard.size
-
-    const rijen = await getEmailBodies(restant).catch(() => [])
-    const teBewaren: Array<{ id: string; html: string; bijlagen?: unknown[] }> = []
-    for (const rij of rijen) {
-      const body = rij.body_html || rij.body_text || ''
-      if (!body) continue
-      bodyCacheRef.current.set(rij.id, body)
-      const bijlagen = Array.isArray(rij.attachment_meta) && rij.attachment_meta.length > 0
-        ? rij.attachment_meta as EmailAttachment[]
-        : undefined
-      if (bijlagen) attachmentCacheRef.current.set(rij.id, bijlagen)
-      teBewaren.push({ id: rij.id, html: body, bijlagen })
-    }
-    void bewaarBodies(teBewaren, eigenaarRef.current)
-    return bewaard.size + rijen.length
-  }, [])
-
-  // ─── Bodies laten voorladen door de server ───
-  // Eén IMAP-verbinding voor tientallen mails, in plaats van één verbinding per
-  // mail op het moment dat je 'm aantikt. Draait op de achtergrond; mislukt hij,
-  // dan blijft het oude pad-per-mail gewoon werken.
-  const bodyPrefetchBezigRef = useRef(false)
-  const laadBodiesVoor = useCallback(async (folder: string, rondes = 2) => {
-    if (bodyPrefetchBezigRef.current) return false
-    bodyPrefetchBezigRef.current = true
-    let ietsGedaan = false
-    try {
-      for (let i = 0; i < rondes; i++) {
-        const uitkomst = await prefetchEmailBodies(folder, 25)
-        if (!uitkomst) break
-        if (uitkomst.verwerkt > 0) ietsGedaan = true
-        if (!uitkomst.resterend) break
-      }
-    } finally {
-      bodyPrefetchBezigRef.current = false
-    }
-    return ietsGedaan
-  }, [])
-
-  // ─── Trigger IMAP sync (background, writes to Supabase) ───
-  // Incrementele sync levert max ~600 nieuwe mails per call (oudste eerst);
-  // bij een grote achterstand geeft de API `remaining` terug en halen we
-  // door tot alles binnen is (met een ruime veiligheidsgrens).
-  // Op de telefoon blijft het bij één ronde: tien IMAP-calls achter elkaar
-  // vechten daar om dezelfde verbinding als de mail die je nú wil lezen. Een
-  // achterstand wordt vanzelf ingelopen bij de volgende poll of vanaf desktop.
-  async function triggerImapSync(folder: string): Promise<{ total: number; synced: number }> {
-    let total = 0
-    let synced = 0
-    const maxRondes = isDesktopRef.current ? 10 : 1
-    for (let i = 0; i < maxRondes; i++) {
-      // Mobiel vraagt de snelle variant: de sales- en lead-sweeps kosten daar
-      // tot 18 seconden aan het eind van elke sync, terwijl je zit te wachten
-      // op mail die allang binnen is. De cron werkt ze bij.
-      const result = await fetchEmailsFromIMAP(folder, fetchLimitRef.current, 0, undefined, !isDesktopRef.current)
-      if (result.errors) {
-        logger.warn('[Email] Sync errors:', result.errors)
-      }
-      total = result.total || 0
-      synced += result.synced || 0
-      if (!result.remaining || result.remaining <= 0) break
-    }
-    return { total, synced }
-  }
-
-  // ─── Aanvraagherkenning: draait na de sync, mail is dan al zichtbaar ───
-  // Levert de beoordeling op waar AanvraagKaart in de reader op afgaat. De
-  // lijst wordt alleen opnieuw gelezen als er daadwerkelijk iets herkend is.
-  // De ronde loopt na het openen én na elke poll; twee tegelijk zouden dezelfde
-  // mail dubbel langs Claude sturen.
-  const aanvraagBezigRef = useRef(false)
-  // De mail die je nu opent voor laten gaan. De ronde-classificatie loopt op
-  // eigen tempo achter de sync aan; open je een verse mail, dan sta je precies
-  // in dat gat te kijken en lijkt het of Daan hem niet als aanvraag ziet.
-  // Eén mail per keer, en alleen als er nog geen oordeel op staat.
-  const aanvraagVoorrangRef = useRef<Set<string>>(new Set())
-  const beoordeelDezeMail = useCallback(async (mail: Email) => {
-    if (mail.map !== 'inbox' || mail.is_aanvraag != null) return
-    if (aanvraagVoorrangRef.current.has(mail.id)) return
-    aanvraagVoorrangRef.current.add(mail.id)
-    const uitkomst = await classificeerAanvragen(mail.id).catch(() => null)
-    if (!uitkomst?.beoordeeld) return
-    // Alleen deze ene rij bijwerken · een volle lijstquery zou de bodies en de
-    // scrollpositie onnodig door de molen halen.
-    const vers = await getEmail(mail.id).catch(() => null)
-    if (!vers) return
-    const bijwerken = (e: Email) => e.id === mail.id
-      ? { ...e, is_aanvraag: vers.is_aanvraag, aanvraag_zekerheid: vers.aanvraag_zekerheid, aanvraag_samenvatting: vers.aanvraag_samenvatting }
-      : e
-    setEmails((vorige) => vorige.map(bijwerken))
-    setSelectedEmail((vorige) => (vorige && vorige.id === mail.id ? bijwerken(vorige) : vorige))
-  }, [])
-
-  const herkenAanvragen = useCallback(async () => {
-    if (aanvraagBezigRef.current) return
-    aanvraagBezigRef.current = true
-    let uitkomst: Awaited<ReturnType<typeof classificeerAanvragen>> = null
-    try {
-      uitkomst = await classificeerAanvragen()
-    } finally {
-      aanvraagBezigRef.current = false
-    }
-    if (!uitkomst?.aanvragen) return
-    const fresh = await readFromSupabase()
-    if (fresh.length > 0) setEmails(fresh)
-    logger.log(`[Email] Aanvraagherkenning: ${uitkomst.aanvragen} van ${uitkomst.beoordeeld} beoordeeld als aanvraag`)
-  }, [])
-
-  // ─── Historie-backfill: rustig op de achtergrond oudere mail binnenhalen ───
-  // Max 8 batches (±2400 mails) per map per sessie, met pauze tussen batches
-  // zodat de IMAP-server en de UI er geen last van hebben. Stopt vanzelf op
-  // backfill_done (cutoff bereikt of UID 1) of als de state nog niet klaar is.
-  // Op de telefoon slaan we hem over: zestien IMAP-calls op de achtergrond
-  // vechten daar om dezelfde verbinding als de mail die je nú wil lezen, en
-  // dezelfde mailbox wordt vanaf de desktop toch bijgewerkt.
-  const backfillStartedRef = useRef(false)
-  const runBackfillAchtergrond = useCallback(async () => {
-    if (backfillStartedRef.current) return
-    if (typeof window !== 'undefined' && !window.matchMedia('(min-width: 768px)').matches) return
-    backfillStartedRef.current = true
-    let opgehaald = 0
-    try {
-      for (const map of ['inbox', 'verzonden']) {
-        for (let i = 0; i < 8; i++) {
-          const r = await backfillEmailsFromIMAP(map)
-          opgehaald += r.synced || 0
-          if (r.done || r.pending) break
-          await new Promise((rust) => setTimeout(rust, 1500))
-        }
-      }
-      if (opgehaald > 0) {
-        const fresh = await readFromSupabase()
-        if (fresh.length > 0) setEmails(fresh)
-        logger.log(`[Email] Backfill: ${opgehaald} oudere mails binnengehaald`)
-      }
-    } catch (err) {
-      logger.warn('[Email] Backfill gestopt:', err instanceof Error ? err.message : err)
-    }
-  }, [])
-
-  // ─── Initial load: Supabase first, then IMAP sync in background ───
-  const initialLoadDone = useRef(false)
-  // ─── Eerst het toestel, dan het netwerk ───
-  // De lijst uit IndexedDB staat er binnen een paar milliseconden; de query
-  // erachter kost koud vier tot zes seconden. Zonder dit kijk je al die tijd
-  // naar een skeleton — op een telefoon elke keer opnieuw, want die gooit het
-  // tabblad weg. Verse data die eerder binnen is wint: dan laten we hem staan.
   useEffect(() => {
     if (!user?.id) return
-    let gestopt = false
-    void (async () => {
-      const bewaard = await leesMailCache<Email[]>('emails', eigenaarRef.current)
-      if (gestopt || !bewaard?.length) return
-      const lijst = normalizeEmails(bewaard)
-      setEmails((vorige) => (vorige.length > 0 ? vorige : lijst))
-      setIsLoading(false)
-      // De teksten staan naast de lijst op het toestel. Ze nú inlezen betekent
-      // dat de eerste mail die je aantikt al openligt voordat de server
-      // überhaupt geantwoord heeft.
-      if (!gestopt) void vulBodyCacheUitDb(lijst, 0)
-    })()
-    return () => { gestopt = true }
+    return startRealtime(user.id, () => map)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id])
 
   useEffect(() => {
-    if (initialLoadDone.current) return
-    initialLoadDone.current = true
-
-    async function init() {
-      try {
-        // Step 1: Try reading from Supabase (instant)
-        const dbEmails = await readFromSupabase()
-        if (dbEmails.length > 0) {
-          setEmails(dbEmails)
-          setIsLoading(false)
-          // Bodies die al in de DB staan meteen in de cache — dit is de reden
-          // dat een tik op een mail direct opent in plaats van te wachten.
-          void vulBodyCacheUitDb(dbEmails)
-          // Step 2: Background IMAP sync for fresh data
-          triggerImapSync('INBOX')
-            .then(async ({ total, synced }) => {
-              logger.log(`[Email] Sync klaar: ${synced} gesynct, ${total} totaal`)
-              setImapTotal(total)
-              setUseIMAP(true)
-              setLastSyncAt(Date.now())
-              // Re-read from Supabase after sync
-              const fresh = await readFromSupabase()
-              if (fresh.length > 0) setEmails(fresh)
-              // Meteen starten, niet achteraan de rij. De classificatie haalt
-              // ontbrekende mailtekst zelf op, dus ze hoeft niet te wachten op
-              // het voorladen hieronder · dat kostte minuten voordat er een
-              // aanvraagkaart stond.
-              const aanvraagRonde = herkenAanvragen().catch(() => {})
-              await vulBodyCacheUitDb(fresh.length > 0 ? fresh : dbEmails)
-              // Nieuw binnengekomen mail heeft nog geen body; die halen we in
-              // één ronde op. Daarna opnieuw lezen, want dat vult ook de
-              // preview-regels in de lijst.
-              const nieuweBodies = await laadBodiesVoor('INBOX')
-              // Eerst het oordeel binnenhalen: de verse lijst hieronder zou de
-              // zojuist gezette aanvraagvlaggen anders weer overschrijven.
-              await aanvraagRonde
-              if (nieuweBodies) {
-                const metBodies = await readFromSupabase()
-                if (metBodies.length > 0) {
-                  setEmails(metBodies)
-                  await vulBodyCacheUitDb(metBodies)
-                }
-              }
-              void runBackfillAchtergrond()
-            })
-            .catch((err) => {
-              logger.warn('[Email] Achtergrond IMAP sync mislukt:', err?.message || err)
-            })
-          return
-        }
-
-        // Step 1b: No Supabase data · need to wait for IMAP sync
-        try {
-          const { total } = await triggerImapSync('INBOX')
-          setImapTotal(total)
-          setUseIMAP(true)
-          // Read synced emails from Supabase
-          const synced = await readFromSupabase()
-          setEmails(synced)
-          setIsLoading(false)
-          const aanvraagRonde = herkenAanvragen().catch(() => {})
-          const nieuweBodies = await laadBodiesVoor('INBOX')
-          await aanvraagRonde
-          if (nieuweBodies) {
-            const metBodies = await readFromSupabase()
-            if (metBodies.length > 0) setEmails(metBodies)
-            await vulBodyCacheUitDb(metBodies.length > 0 ? metBodies : synced)
-          }
-          void runBackfillAchtergrond()
-        } catch (err) {
-          logger.error('IMAP sync failed:', err)
-          setUseIMAP(false)
-        }
-      } finally {
-        // ALWAYS stop the spinner, no matter what happened
-        setIsLoading(false)
-      }
-    }
-
-    init()
+    const t = setInterval(() => zetNu(Date.now()), 30_000)
+    return () => clearInterval(t)
   }, [])
 
-  // ─── Sales Inbox v1: laad data wanneer een sales-tab wordt geopend ───
-  // RLS scope't automatisch op de huidige user via de anon-client.
-  const loadSalesEmails = useCallback(async (folder: EmailFolder) => {
-    try {
-      const data = folder === 'sales-wacht'
-        ? await getSalesInboxWachtend()
-        : folder === 'sales-beantwoord'
-          ? await getSalesInboxBeantwoord()
-          : []
-      setSalesEmails(data)
-    } catch (err) {
-      logger.error('Sales Inbox laden mislukt:', err)
-      setSalesEmails([])
-    }
-  }, [])
+  useEffect(() => () => { mailStore.flushAlles() }, [])
 
+  // ── Zoeken ──
   useEffect(() => {
-    if (selectedFolder === 'sales-wacht' || selectedFolder === 'sales-beantwoord') {
-      loadSalesEmails(selectedFolder)
-    }
-  }, [selectedFolder, loadSalesEmails])
-
-  // ─── Server-side full-text search (gepagineerd, 50 per keer) ───
-  const SEARCH_PAGE_SIZE = 50
-  const searchHasMoreRef = useRef(false)
-  const searchLoadingMoreRef = useRef(false)
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setSearchResults(null)
-      searchHasMoreRef.current = false
-      return
-    }
-    let cancelled = false
-    // Meteen terug naar de lokale terugval: dan staan de treffers uit de al
-    // geladen mail er binnen een frame, in plaats van dat de vorige zoekvraag
-    // blijft staan tot de server antwoordt.
-    setSearchResults(null)
-    setIsSearching(true)
-    searchEmailsFTS(searchQuery, SEARCH_PAGE_SIZE, 0).then(results => {
-      if (!cancelled) {
-        setSearchResults(results as Email[])
-        searchHasMoreRef.current = results.length === SEARCH_PAGE_SIZE
-        setIsSearching(false)
-      }
-    }).catch(() => {
-      if (!cancelled) {
-        setSearchResults(null)
-        searchHasMoreRef.current = false
-        setIsSearching(false)
-      }
-    })
-    return () => { cancelled = true }
-  }, [searchQuery])
-
-  // Volgende pagina zoekresultaten (scroll naar onderen tijdens zoeken)
-  const loadMoreSearchResults = useCallback(async () => {
-    if (!searchQuery.trim() || !searchHasMoreRef.current || searchLoadingMoreRef.current) return
-    searchLoadingMoreRef.current = true
-    try {
-      const offset = searchResults?.length ?? 0
-      const page = await searchEmailsFTS(searchQuery, SEARCH_PAGE_SIZE, offset)
-      searchHasMoreRef.current = page.length === SEARCH_PAGE_SIZE
-      if (page.length > 0) {
-        setSearchResults(prev => {
-          const bekend = new Set((prev ?? []).map(e => e.id))
-          return [...(prev ?? []), ...(page as Email[]).filter(e => !bekend.has(e.id))]
-        })
-      }
-    } catch (err) {
-      logger.warn('Meer zoekresultaten laden mislukt:', err)
-    } finally {
-      searchLoadingMoreRef.current = false
-    }
-  }, [searchQuery, searchResults])
-
-  // ─── Unsnooze timer ───
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const now = new Date().toISOString()
-      setEmails((prev) => {
-        let changed = false
-        const next = prev.map((e) => {
-          if (e.snoozed_until && e.snoozed_until <= now) {
-            changed = true
-            // Ook wegschrijven. Zonder deze regel werd de mail alleen in de
-            // state gewekt en zette de eerstvolgende poll snoozed_until weer
-            // terug uit de database: "morgenochtend" werd dan "voorgoed weg".
-            updateEmail(e.id, { snoozed_until: null, map: 'inbox' }).catch(() => {})
-            return { ...e, snoozed_until: undefined, map: 'inbox' }
-          }
-          return e
-        })
-        return changed ? next : prev
-      })
-    }, 30000)
-    return () => clearInterval(interval)
-  }, [])
-
-  // ─── Server-side mappentellers ───
-  // Bij duizenden mails in de DB telt de client alleen zijn eigen venster;
-  // de echte aantallen komen van de server. Debounced her-ophalen zodra de
-  // lijst muteert (lezen, verwijderen, sync).
-  const [serverTellers, setServerTellers] = useState<{ inboxOngelezen: number; concepten: number; gepland: number; gesnoozed: number } | null>(null)
-  useEffect(() => {
-    const t = setTimeout(() => {
-      getMapTellers().then((tellers) => { if (tellers) setServerTellers(tellers) }).catch(() => { /* client-fallback blijft staan */ })
-    }, 800)
+    if (!zoekt) return
+    const query = chipsNaarQuery(zoektekst, chips)
+    const t = setTimeout(() => { void mailStore.zoek(query) }, 220)
     return () => clearTimeout(t)
-  }, [emails])
+  }, [zoekt, zoektekst, chips])
 
-  // ─── Filtering (inline from useEmailFilters) ───
-  const folderCounts = useMemo(() => {
-    const counts: Record<string, number> = {}
-    folderIds.forEach((id) => {
-      if (id === 'inbox') counts[id] = serverTellers?.inboxOngelezen ?? emails.filter((e) => e.map === 'inbox' && !e.gelezen).length
-      else if (id === 'concepten') counts[id] = serverTellers?.concepten ?? emails.filter((e) => e.map === 'concepten').length
-      else if (id === 'gepland') counts[id] = serverTellers?.gepland ?? emails.filter((e) => e.map === 'gepland').length
-      else if (id === 'gesnoozed') counts[id] = serverTellers?.gesnoozed ?? emails.filter((e) => e.snoozed_until).length
-      else counts[id] = 0
+  // ── Deeplink /email/compose?to=... ──
+  useEffect(() => {
+    if (!location.pathname.endsWith('/email/compose')) return
+    const params = new URLSearchParams(location.search)
+    zetComposer({
+      variant: isDesktop ? 'paneel' : 'volledig',
+      document: documentVoorNieuw({
+        aan: params.get('to') ? [{ email: params.get('to') as string }] : [],
+        onderwerp: params.get('subject') || '',
+        html: params.get('body') ? `<p>${params.get('body')}</p>` : '',
+      }),
     })
-    return counts
-  }, [emails, serverTellers])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname, location.search])
 
-  const filteredEmails = useMemo(() => {
-    // Als er server-side zoekresultaten zijn, gebruik die (alle mappen)
-    if (searchQuery.trim() && searchResults) {
-      let filtered = searchResults as Email[]
-      // Pas alleen client-side operator-filters toe die de server niet afhandelt
-      const { operators } = parseSearchQuery(searchQuery)
-      if (operators.has) {
-        const has = operators.has.toLowerCase()
-        if (has === 'bijlage' || has === 'attachment') filtered = filtered.filter((e) => e.bijlagen > 0)
-        if (has === 'pin' || has === 'pinned') filtered = filtered.filter((e) => e.pinned)
-      }
-      if (operators.label) {
-        const label = operators.label.toLowerCase()
-        filtered = filtered.filter((e) => e.labels.some((l) => l.toLowerCase() === label))
-      }
-      if (operators.before) {
-        const before = new Date(operators.before)
-        if (!isNaN(before.getTime())) filtered = filtered.filter((e) => new Date(e.datum) < before)
-      }
-      if (operators.after) {
-        const after = new Date(operators.after)
-        if (!isNaN(after.getTime())) filtered = filtered.filter((e) => new Date(e.datum) > after)
-      }
-      return filtered
+  // ── De zichtbare lijst ──
+  const bron = zoekt ? zoekLijst : mapLijst
+  const zichtbaar = useMemo(() => {
+    let items = bron.items.filter((i) => voldoetAanFilter(i, filter, eigenSleutels))
+    if (labelFilter) items = items.filter((i) => (i.labels || []).includes(labelFilter))
+    if (splitAan && map === 'inbox' && !zoekt) {
+      items = items.filter((i) => classificeer(i, adresIndexen.klanten, adresIndexen.leveranciers, chipVoor(i)) === splitTab)
     }
+    return sorteerVoorLijst(items)
+  }, [bron.items, filter, labelFilter, eigenSleutels, splitAan, map, zoekt, splitTab, adresIndexen])
 
-    let filtered: Email[]
-    if (selectedFolder === 'sales-wacht' || selectedFolder === 'sales-beantwoord') {
-      filtered = salesEmails
-    } else if (selectedFolder === 'gesnoozed') {
-      filtered = emails.filter((e) => e.snoozed_until)
-    } else {
-      filtered = emails.filter((e) => e.map === selectedFolder && !e.snoozed_until)
-    }
-
-    // Client-side fallback voor als FTS niet beschikbaar is
-    if (searchQuery.trim() && !searchResults) {
-      const { text, operators } = parseSearchQuery(searchQuery)
-      if (text) {
-        const q = text.toLowerCase()
-        filtered = filtered.filter(
-          (e) =>
-            e.onderwerp.toLowerCase().includes(q) ||
-            e.van.toLowerCase().includes(q) ||
-            e.aan.toLowerCase().includes(q) ||
-            (e.body_text || e.inhoud || '').toLowerCase().includes(q)
-        )
-      }
-      if (operators.from) {
-        const from = operators.from.toLowerCase()
-        filtered = filtered.filter((e) => e.van.toLowerCase().includes(from))
-      }
-      if (operators.to) {
-        const to = operators.to.toLowerCase()
-        filtered = filtered.filter((e) => e.aan.toLowerCase().includes(to))
-      }
-      if (operators.subject) {
-        const subj = operators.subject.toLowerCase()
-        filtered = filtered.filter((e) => e.onderwerp.toLowerCase().includes(subj))
-      }
-      if (operators.has) {
-        const has = operators.has.toLowerCase()
-        if (has === 'bijlage' || has === 'attachment') filtered = filtered.filter((e) => e.bijlagen > 0)
-        if (has === 'pin' || has === 'pinned') filtered = filtered.filter((e) => e.pinned)
-      }
-      if (operators.label) {
-        const label = operators.label.toLowerCase()
-        filtered = filtered.filter((e) => e.labels.some((l) => l.toLowerCase() === label))
-      }
-      if (operators.before) {
-        const before = new Date(operators.before)
-        if (!isNaN(before.getTime())) filtered = filtered.filter((e) => new Date(e.datum) < before)
-      }
-      if (operators.after) {
-        const after = new Date(operators.after)
-        if (!isNaN(after.getTime())) filtered = filtered.filter((e) => new Date(e.datum) > after)
-      }
-    }
-
-    switch (filter) {
-      case 'ongelezen': filtered = filtered.filter((e) => !e.gelezen); break
-      case 'vastgepind': filtered = filtered.filter((e) => e.pinned); break
-      case 'bijlagen': filtered = filtered.filter((e) => e.bijlagen > 0); break
-    }
-
-    // Sort: pinned first, then by date
-    const withTs = filtered.map(e => ({ e, ts: new Date(e.datum).getTime() }))
-    withTs.sort((a, b) => {
-      if (a.e.pinned && !b.e.pinned) return -1
-      if (!a.e.pinned && b.e.pinned) return 1
-      return b.ts - a.ts
-    })
-    return withTs.map(x => x.e)
-    // searchResults hoort in de deps: zonder die entry bleef de lijst hangen op
-    // de client-side terugval over de geladen mails, en werden de FTS-resultaten
-    // van de server pas zichtbaar als een andere dep toevallig veranderde.
-  }, [emails, salesEmails, selectedFolder, searchQuery, filter, searchResults])
-
-  // Thread grouping
-  const threadedEmails = useMemo(() => {
-    const threads = new Map<string, Email[]>()
-    const standalone: Email[] = []
-
-    filteredEmails.forEach((email) => {
-      if (email.thread_id) {
-        const existing = threads.get(email.thread_id) || []
-        existing.push(email)
-        threads.set(email.thread_id, existing)
-      } else {
-        standalone.push(email)
-      }
-    })
-
-    const result: (Email & { threadCount?: number })[] = []
-    threads.forEach((threadEmails) => {
-      threadEmails.sort((a, b) => Date.parse(b.datum) - Date.parse(a.datum))
-      result.push({ ...threadEmails[0], threadCount: threadEmails.length })
-    })
-    standalone.forEach((email) => result.push({ ...email, threadCount: 1 }))
-
-    const tsMap = new Map<string, number>()
-    result.forEach(e => tsMap.set(e.id, new Date(e.datum).getTime()))
-    result.sort((a, b) => {
-      if (a.pinned && !b.pinned) return -1
-      if (!a.pinned && b.pinned) return 1
-      return (tsMap.get(b.id) || 0) - (tsMap.get(a.id) || 0)
-    })
-    return result
-  }, [filteredEmails])
-
-  const filterCounts = useMemo(() => {
-    const folderEmails = selectedFolder === 'gesnoozed'
-      ? emails.filter((e) => e.snoozed_until)
-      : emails.filter((e) => e.map === selectedFolder)
+  const filterTellers = useMemo(() => {
+    const basis = bron.items
     return {
-      ongelezen: folderEmails.filter((e) => !e.gelezen).length,
-    }
-  }, [emails, selectedFolder])
+      alle: basis.length,
+      ongelezen: basis.filter((i) => !i.gelezen).length,
+      vastgepind: basis.filter((i) => i.pinned).length,
+      bijlagen: basis.filter((i) => i.has_attachments).length,
+    } as Partial<Record<LijstFilter, number>>
+  }, [bron.items])
 
-  // ─── Dag-groepering: map elke email naar zijn datum-groep ───
-  const getDateGroup = useCallback((dateStr: string): string => {
-    const d = new Date(dateStr)
-    if (isNaN(d.getTime())) return 'Eerder'
-    const now = new Date()
-    const startOfDay = (date: Date) => {
-      const x = new Date(date)
-      x.setHours(0, 0, 0, 0)
-      return x
-    }
-    const today = startOfDay(now)
-    const target = startOfDay(d)
-    const diffDays = Math.round((today.getTime() - target.getTime()) / (24 * 60 * 60 * 1000))
-    if (diffDays <= 0) return 'Vandaag'
-    if (diffDays === 1) return 'Gisteren'
-    if (diffDays <= 6) return 'Deze week'
-    if (diffDays <= 13) return 'Vorige week'
-    if (target.getMonth() === today.getMonth() && target.getFullYear() === today.getFullYear()) return 'Eerder deze maand'
-    if (target.getFullYear() === today.getFullYear()) return 'Eerder dit jaar'
-    return 'Vorig jaar of ouder'
-  }, [])
+  const splitTellers = useMemo(() => {
+    if (!splitAan || map !== 'inbox') return {} as Record<SplitTab, number>
+    const uit = { aanvragen: 0, klanten: 0, leveranciers: 0, overig: 0 } as Record<SplitTab, number>
+    for (const i of bron.items) uit[classificeer(i, adresIndexen.klanten, adresIndexen.leveranciers, chipVoor(i))]++
+    return uit
+  }, [splitAan, map, bron.items, adresIndexen])
 
-  const emailsByGroup = useMemo(() => {
-    const map = new Map<string, string[]>()
-    for (const email of threadedEmails) {
-      if (email.pinned) continue
-      const group = getDateGroup(email.datum)
-      const ids = map.get(group) || []
-      ids.push(email.id)
-      map.set(group, ids)
-    }
-    return map
-  }, [threadedEmails, getDateGroup])
+  const geselecteerd = useMemo(() => zichtbaar.find((i) => i.id === geselecteerdId) ?? mailStore.item(geselecteerdId ?? '') ?? null, [zichtbaar, geselecteerdId])
 
-  // Platte items-array voor virtualization: één entry per zichtbare rij
-  // (header of email). Headers blijven scrollen mee · geen sticky meer,
-  // want absolute positioning binnen de virtualizer maakt CSS-sticky stuk.
-  type FlatRow =
-    | { type: 'header-pinned' }
-    | { type: 'header-group'; group: string }
-    | { type: 'email'; email: Email; index: number }
-  const flatItems = useMemo<FlatRow[]>(() => {
-    if (threadedEmails.length === 0) return []
-    const items: FlatRow[] = []
-    let lastGroup: string | null = null
-    let inPinnedSection = !!threadedEmails[0].pinned
-    if (inPinnedSection) items.push({ type: 'header-pinned' })
-    threadedEmails.forEach((email, idx) => {
-      if (inPinnedSection && !email.pinned) {
-        inPinnedSection = false
-        lastGroup = null
-      }
-      if (!inPinnedSection) {
-        const group = getDateGroup(email.datum)
-        if (group !== lastGroup) {
-          items.push({ type: 'header-group', group })
-          lastGroup = group
-        }
-      }
-      items.push({ type: 'email', email, index: idx })
-    })
-    return items
-  }, [threadedEmails, getDateGroup])
-
-  const rowVirtualizer = useVirtualizer({
-    count: flatItems.length,
-    getScrollElement: () => emailListRef.current,
-    estimateSize: (i) => {
-      const it = flatItems[i]
-      if (!it) return 46
-      if (it.type === 'header-pinned' || it.type === 'header-group') return 36
-      // Stacked desktop = 46, inline / mobile = ~70
-      return isDesktop && listStyle === 'stacked' ? 46 : 70
-    },
-    overscan: 10,
-    getItemKey: (i) => {
-      const it = flatItems[i]
-      if (!it) return i
-      if (it.type === 'header-pinned') return 'header-pinned'
-      if (it.type === 'header-group') return `group-${it.group}`
-      return `email-${it.email.id}`
-    },
-  })
-
-  // Sticky date-group overlay: alleen tonen wanneer de ECHTE header van de
-  // huidige groep boven scroll-viewport is uitgescrold. Op scroll=0 staat de
-  // echte header gewoon in beeld en moet de overlay onzichtbaar blijven —
-  // anders dekt hij de checkbox van het echte rijtje af.
-  const [activeGroup, setActiveGroup] = useState<string | null>(null)
+  // Zichtbare bodies vooruit ophalen; de repository dedupliceert zelf.
   useEffect(() => {
-    const el = emailListRef.current
-    if (!el) return
-    const updateActiveGroup = () => {
-      const scrollTop = el.scrollTop
-      const measurements = rowVirtualizer.measurementsCache
-      let currentGroup: string | null = null
-      let currentHeaderEnd = 0
-      for (let i = 0; i < flatItems.length; i++) {
-        const m = measurements[i]
-        if (!m) continue
-        if (m.start > scrollTop + 1) break
-        const it = flatItems[i]
-        if (it.type === 'header-group') {
-          currentGroup = it.group
-          currentHeaderEnd = m.end
-        } else if (it.type === 'header-pinned') {
-          currentGroup = null
-          currentHeaderEnd = 0
-        }
-      }
-      // Alleen overlay tonen als de echte header onder scrollTop is verdwenen
-      setActiveGroup(currentGroup && scrollTop >= currentHeaderEnd ? currentGroup : null)
-    }
-    updateActiveGroup()
-    el.addEventListener('scroll', updateActiveGroup, { passive: true })
-    return () => el.removeEventListener('scroll', updateActiveGroup)
-  }, [flatItems, rowVirtualizer, threadedEmails])
+    if (!zichtbaar.length) return
+    prefetchBodies(zichtbaar.slice(0, 25).map((i) => i.id), 'zichtbaar')
+  }, [zichtbaar])
 
-  const toggleCheckGroup = useCallback((group: string) => {
-    const groupIds = emailsByGroup.get(group) || []
-    if (!groupIds.length) return
-    setCheckedEmails(prev => {
-      const next = new Set(prev)
-      const allSelected = groupIds.every(id => next.has(id))
-      if (allSelected) {
-        groupIds.forEach(id => next.delete(id))
-      } else {
-        groupIds.forEach(id => next.add(id))
-      }
-      return next
-    })
-  }, [emailsByGroup])
-
-  // ─── Selection helpers (inline from useEmailSelection) ───
-  const hasChecked = checkedEmails.size > 0
-  const allChecked = filteredEmails.length > 0 && checkedEmails.size === filteredEmails.length
-  const someChecked = hasChecked && !allChecked
-
-  const toggleCheckEmail = useCallback((id: string, e?: React.MouseEvent) => {
-    // Shift+klik op een checkbox: range select van laatst gecheckte t/m deze
-    if (e?.shiftKey && lastCheckedIdRef.current && lastCheckedIdRef.current !== id) {
-      const ids = filteredEmails.map((em) => em.id)
-      const startIdx = ids.indexOf(lastCheckedIdRef.current)
-      const endIdx = ids.indexOf(id)
-      if (startIdx >= 0 && endIdx >= 0) {
-        const [from, to] = startIdx < endIdx ? [startIdx, endIdx] : [endIdx, startIdx]
-        const range = ids.slice(from, to + 1)
-        setCheckedEmails((prev) => {
-          const next = new Set(prev)
-          range.forEach((rid) => next.add(rid))
-          return next
-        })
-        lastCheckedIdRef.current = id
-        return
-      }
-    }
-    setCheckedEmails((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-    lastCheckedIdRef.current = id
-  }, [filteredEmails])
-
-  const toggleCheckAll = useCallback(() => {
-    if (allChecked) setCheckedEmails(new Set())
-    else setCheckedEmails(new Set(filteredEmails.map((e) => e.id)))
-  }, [allChecked, filteredEmails])
-
-  const clearChecked = useCallback(() => setCheckedEmails(new Set()), [])
-
-  // ─── Bulk actions ───
-  const handleBulkDelete = useCallback(() => {
-    const ids = Array.from(checkedEmails)
-    setEmails((prev) => prev.map((e) => ids.includes(e.id) ? { ...e, map: 'prullenbak', labels: ['prullenbak'] } : e))
-    ids.forEach((id) => updateEmail(id, { map: 'prullenbak', labels: ['prullenbak'] }).catch(() => {}))
-    setCheckedEmails(new Set())
-    toast.success(`${ids.length} email${ids.length > 1 ? 's' : ''} verwijderd`)
-  }, [checkedEmails])
-
-  const handleBulkArchive = useCallback(() => {
-    const ids = Array.from(checkedEmails)
-    setEmails((prev) => prev.map((e) => ids.includes(e.id) ? { ...e, map: 'archief', labels: ['archief'] } : e))
-    ids.forEach((id) => updateEmail(id, { map: 'archief', labels: ['archief'] }).catch(() => {}))
-    setCheckedEmails(new Set())
-    toast.success(`${ids.length} email${ids.length > 1 ? 's' : ''} gearchiveerd`)
-  }, [checkedEmails])
-
-  const handleBulkMarkRead = useCallback(() => {
-    const ids = Array.from(checkedEmails)
-    setEmails((prev) => prev.map((e) => ids.includes(e.id) ? { ...e, gelezen: true } : e))
-    ids.forEach((id) => updateEmail(id, { gelezen: true }).catch(() => {}))
-    setCheckedEmails(new Set())
-    toast.success(`${ids.length} email${ids.length > 1 ? 's' : ''} als gelezen gemarkeerd`)
-  }, [checkedEmails])
-
-  const handleBulkMarkUnread = useCallback(() => {
-    const ids = Array.from(checkedEmails)
-    setEmails((prev) => prev.map((e) => ids.includes(e.id) ? { ...e, gelezen: false } : e))
-    ids.forEach((id) => updateEmail(id, { gelezen: false }).catch(() => {}))
-    setCheckedEmails(new Set())
-    toast.success(`${ids.length} email${ids.length > 1 ? 's' : ''} als ongelezen gemarkeerd`)
-  }, [checkedEmails])
-
-  // ─── Email actions (inline from useEmailActions) ───
-  const handleTogglePin = useCallback((email: Email) => {
-    const newPinned = !email.pinned
-    setEmails((prev) => prev.map((e) => (e.id === email.id ? { ...e, pinned: newPinned } : e)))
-    setSelectedEmail((prev) => prev?.id === email.id ? { ...prev, pinned: newPinned } : prev)
-    updateEmail(email.id, { pinned: newPinned }).catch(() => {})
+  // ── Mapwissel ──
+  const zetMap = useCallback((nieuw: MailMap) => {
+    zetMapState(nieuw)
+    zetGeselecteerd(null)
+    zetAangevinkt(new Set())
+    zetFocusIndex(-1)
+    zetFilter('alle')
+    zetLabelFilter(null)
+    zetLadeOpen(false)
   }, [])
 
-  const handleSnooze = useCallback((email: Email, hours: number) => {
-    const wakeAt = calculateSnoozeDate(hours).toISOString()
-    setEmails((prev) => prev.map((e) => (e.id === email.id ? { ...e, snoozed_until: wakeAt } : e)))
-    setSelectedEmail((prev) => prev?.id === email.id ? { ...prev, snoozed_until: wakeAt } : prev)
-    updateEmail(email.id, { snoozed_until: wakeAt }).catch(() => {})
-    const opt = SNOOZE_OPTIONS.find((o) => o.hours === hours)
-    toast.success(opt ? `Gesnoozed: ${opt.label.toLowerCase()}` : 'Gesnoozed')
-  }, [])
-
-  const handleUnsnooze = useCallback((email: Email) => {
-    setEmails((prev) => prev.map((e) => (e.id === email.id ? { ...e, snoozed_until: undefined } : e)))
-    setSelectedEmail((prev) => prev?.id === email.id ? { ...prev, snoozed_until: undefined } : prev)
-    updateEmail(email.id, { snoozed_until: null }).catch(() => {})
-    toast.success('Niet meer gesnoozed')
-  }, [])
-
-  const handleToggleLabel = useCallback((email: Email, label: string) => {
-    const current = email.labels || []
-    const next = current.includes(label)
-      ? current.filter((l) => l !== label)
-      : [...current, label]
-    setEmails((prev) => prev.map((e) => (e.id === email.id ? { ...e, labels: next } : e)))
-    setSelectedEmail((prev) => prev?.id === email.id ? { ...prev, labels: next } : prev)
-    updateEmail(email.id, { labels: next }).catch(() => {})
-  }, [])
-
-  const handleToggleRead = useCallback((email: Email) => {
-    const newGelezen = !email.gelezen
-    setEmails((prev) => prev.map((e) => (e.id === email.id ? { ...e, gelezen: newGelezen } : e)))
-    setSelectedEmail((prev) => prev?.id === email.id ? { ...prev, gelezen: newGelezen } : prev)
-    updateEmail(email.id, { gelezen: newGelezen }).catch(() => {})
-  }, [])
-
-  // Schrijft de actie door naar de echte mailbox. Staat EMAIL_IMAP_WRITEBACK
-  // uit, dan geeft het endpoint {overgeslagen:true} en blijft doen. de enige
-  // waarheid — precies het gedrag van vóór deze koppeling.
-  //
-  // Alleen aanroepen ná het verlopen van de 5s-undobuffer: dit endpoint kent
-  // geen omgekeerde actie, dus een undo ná een IMAP-move is niet terug te
-  // draaien. De bulk-acties hebben die buffer niet en zijn daarom bewust niet
-  // gekoppeld.
-  const imapDoorschrijven = useCallback(async (actie: 'trash' | 'purge' | 'archive', ids: string[]) => {
-    if (ids.length === 0) return
-    try {
-      const uitkomst = await emailImapActie(actie, ids)
-      if (uitkomst.overgeslagen) return
-      if ((uitkomst.mislukt ?? 0) > 0) {
-        toast.warning('Je mailbox is niet bijgewerkt', {
-          description: 'De mail is in doen. verplaatst, maar bij je mailprovider niet. Vernieuw om te zien wat er echt staat.',
-        })
-      }
-    } catch {
-      toast.warning('Je mailbox is niet bijgewerkt', {
-        description: 'De mail is in doen. verplaatst, maar bij je mailprovider niet.',
-      })
-    }
-  }, [])
-
-  const handleArchive = useCallback((email: Email) => {
-    // Archiveren schreef hiervoor niets weg: alleen uit de state filteren, dus
-    // na een refresh stond de mail er weer. Nu naar map 'archief', met dezelfde
-    // 5s-undobuffer als verwijderen zodat undo geen DB-schrijfactie kost.
-    const snapshot = { map: email.map, labels: email.labels }
-    viewTransition(() => {
-      setEmails((prev) => prev.map((e) => e.id === email.id ? { ...e, map: 'archief', labels: ['archief'] } : e))
-      setSelectedEmail(null)
-      setViewMode('idle')
-    }, 'back')
-    const flush = () => {
-      updateEmail(email.id, { map: 'archief', labels: ['archief'] }).catch(() => {})
-      imapDoorschrijven('archive', [email.id])
-      pendingDeleteTimersRef.current.delete(email.id)
-    }
-    const timer = setTimeout(flush, 5000)
-    pendingDeleteTimersRef.current.set(email.id, { timer, flush })
-    toast.success('Email gearchiveerd', {
-      duration: 5000,
-      action: {
-        label: 'Ongedaan maken',
-        onClick: () => {
-          const existing = pendingDeleteTimersRef.current.get(email.id)
-          if (existing) {
-            clearTimeout(existing.timer)
-            pendingDeleteTimersRef.current.delete(email.id)
-          }
-          setEmails((prev) => prev.map((e) => e.id === email.id ? { ...e, ...snapshot } : e))
-        },
-      },
-    })
-  }, [])
-
-  const handleDelete = useCallback((email: Email) => {
-    const wasInTrash = email.map === 'prullenbak'
-    const snapshot = { map: email.map, labels: email.labels }
-    viewTransition(() => {
-      if (wasInTrash) {
-        setEmails((prev) => prev.filter((e) => e.id !== email.id))
-      } else {
-        setEmails((prev) => prev.map((e) => e.id === email.id ? { ...e, map: 'prullenbak', labels: ['prullenbak'] } : e))
-      }
-      setSelectedEmail(null)
-      setViewMode('idle')
-    }, 'back')
-    // Vertraag de DB-mutatie met 5s zodat undo nog kan ingrijpen
-    const flush = () => {
-      // Volgorde telt: eerst IMAP. Purge weigert zodra de rij weg is, want dan
-      // kan het endpoint de bronmap niet meer tegen de Trash-map controleren.
-      imapDoorschrijven(wasInTrash ? 'purge' : 'trash', [email.id])
-      if (wasInTrash) {
-        deleteEmailDb(email.id).catch(() => {})
-      } else {
-        updateEmail(email.id, { map: 'prullenbak', labels: ['prullenbak'] }).catch(() => {})
-      }
-      pendingDeleteTimersRef.current.delete(email.id)
-    }
-    const timer = setTimeout(flush, 5000)
-    pendingDeleteTimersRef.current.set(email.id, { timer, flush })
-    toast.success(wasInTrash ? 'Definitief verwijderd' : 'Email verwijderd', {
-      duration: 5000,
-      action: {
-        label: 'Ongedaan maken',
-        onClick: () => {
-          const existing = pendingDeleteTimersRef.current.get(email.id)
-          if (existing) {
-            clearTimeout(existing.timer)
-            pendingDeleteTimersRef.current.delete(email.id)
-          }
-          setEmails((prev) => {
-            if (wasInTrash) {
-              return prev.some((e) => e.id === email.id) ? prev : [email, ...prev]
-            }
-            return prev.map((e) => e.id === email.id ? { ...e, ...snapshot } : e)
-          })
-        },
-      },
-    })
-  }, [])
-
-  // ─── Sales Inbox v1: per-rij correctie-acties ───
-  const handleSalesMarkeerBeantwoord = useCallback(async (id: string) => {
-    setSalesEmails((prev) => prev.filter((e) => e.id !== id))
-    try {
-      await markeerHandmatigBeantwoord(id)
-      toast.success('Gemarkeerd als beantwoord')
-    } catch (err) {
-      logger.error('Sales markeer mislukt:', err)
-      toast.error('Markeren mislukt')
-      if (selectedFolder === 'sales-wacht') loadSalesEmails(selectedFolder)
-    }
-  }, [selectedFolder, loadSalesEmails])
-
-  const handleSalesWisWacht = useCallback(async (id: string) => {
-    setSalesEmails((prev) => prev.filter((e) => e.id !== id))
-    try {
-      await wisWachtFlag(id)
-      toast.success('Niet meer opvolgen')
-    } catch (err) {
-      logger.error('Sales wis wacht-flag mislukt:', err)
-      toast.error('Verwijderen uit Wacht-tab mislukt')
-      if (selectedFolder === 'sales-wacht') loadSalesEmails(selectedFolder)
-    }
-  }, [selectedFolder, loadSalesEmails])
-
-  const handleSalesTerugNaarWacht = useCallback(async (outboundId: string, inkomendeMailId: string) => {
-    setSalesEmails((prev) => prev.filter((e) => e.id !== outboundId))
-    try {
-      await terugZettenNaarWacht(outboundId, inkomendeMailId)
-      toast.success('Teruggezet naar Opvolgen')
-    } catch (err) {
-      logger.error('Sales terug-naar-wacht mislukt:', err)
-      toast.error('Terugzetten mislukt')
-      if (selectedFolder === 'sales-beantwoord') loadSalesEmails(selectedFolder)
-    }
-  }, [selectedFolder, loadSalesEmails])
-
-  const dismissSalesBanner = useCallback(() => {
-    setSalesBannerDismissed(true)
-    try { localStorage.setItem('doen_email_sales_inbox_banner_v1', 'dismissed') } catch { /* ignore */ }
-  }, [])
-
-  // ─── Refresh: IMAP sync in background, re-read from Supabase ───
-  const handleRefresh = useCallback(async (folder: EmailFolder, silent = false) => {
-    if (!silent) setIsRefreshing(true)
-    const imapFolder = IMAP_FOLDER_MAP[folder] || 'INBOX'
-    // Retourneert de keten zodat wie wél wil wachten (trek-om-te-verversen)
-    // weet wanneer de lijst klopt. De poll en de knop negeren de promise.
-    return triggerImapSync(imapFolder)
-      .then(async ({ total }) => {
-        setImapTotal(total)
-        hasMoreDbRef.current = {}
-        const fresh = await readFromSupabase()
-        if (fresh.length > 0) setEmails(fresh)
-        setLastSyncAt(Date.now())
-        if (!silent) toast.success('Inbox vernieuwd')
-        // Nieuwe mail komt zonder body binnen; die halen we meteen op zodat
-        // openen ook voor de verse berichten geen wachttijd geeft. Bewust
-        // niet awaited: de ververs-knop is klaar zodra de lijst klopt, anders
-        // blijft de spinner draaien tot de laatste body binnen is.
-        void (async () => {
-          await vulBodyCacheUitDb(fresh)
-          if (await laadBodiesVoor(imapFolder, 1)) {
-            const metBodies = await readFromSupabase()
-            if (metBodies.length > 0) {
-              setEmails(metBodies)
-              await vulBodyCacheUitDb(metBodies)
-            }
-          }
-          // Ook na een poll beoordelen, niet alleen bij het openen van de
-          // module. Anders krijgt mail die binnenkomt terwijl je de inbox al
-          // open hebt staan nooit een oordeel, en blijft de aanvraagkaart weg
-          // tot je toevallig opnieuw binnenkomt.
-          if (imapFolder === 'INBOX') void herkenAanvragen()
-        })()
-      })
-      .catch(() => {
-        if (!silent) toast.error('Kon emails niet vernieuwen')
-      })
-      .finally(() => {
-        if (!silent) setIsRefreshing(false)
-      })
-  }, [vulBodyCacheUitDb, laadBodiesVoor, herkenAanvragen])
-
-  const handleFolderLoad = useCallback(async (folder: EmailFolder) => {
-    // Leads leven in een eigen tabel; geen e-mails ophalen voor die tab.
-    if (folder === 'leads') { setIsLoading(false); return }
-    // Read from Supabase only · no IMAP sync on folder switch
-    try {
-      const cached = await readFromSupabase()
-      setEmails(cached)
-      void vulBodyCacheUitDb(cached)
-    } catch (err) { logger.error('Folder load failed:', err) }
-    finally { setIsLoading(false) }
-  }, [vulBodyCacheUitDb])
-
-  // ─── Load more (infinite scroll) ───
-  // Bladeren gaat uit de eigen DB met keyset-paginatie (datum, id) · geen
-  // IMAP-offset meer. De historie-backfill vult de DB op de achtergrond,
-  // dus een lege pagina nu kan na verloop van tijd alsnog data hebben;
-  // daarom resetten we hasMore bij refresh/folderwissel.
-  const hasMoreDbRef = useRef<Record<string, boolean>>({})
-  const loadMoreEmails = useCallback(async (folder: EmailFolder) => {
-    if (isLoadingMore) return
-    const map = DB_MAP_FOLDERS[folder]
-    if (!map) return
-    if (hasMoreDbRef.current[map] === false) return
-    setIsLoadingMore(true)
-    try {
-      // Cursor = oudste mail van deze map die we al hebben
-      let oudste: Email | null = null
-      for (const e of emails) {
-        if (e.map !== map) continue
-        if (!oudste || (e.datum && e.datum < oudste.datum)) oudste = e
-      }
-      const page = await getEmailsPage(
-        map,
-        oudste ? { datum: oudste.datum, id: oudste.id } : null,
-        lijstLimietRef.current
-      )
-      if (page.length > 0) {
-        const meer = normalizeEmails(page)
-        setEmails((prev) => {
-          const bekend = new Set(prev.map((p) => p.id))
-          return [...prev, ...meer.filter((p) => !bekend.has(p.id))]
-        })
-      }
-      if (page.length < lijstLimietRef.current) {
-        hasMoreDbRef.current[map] = false
-      }
-    } catch (err) {
-      logger.error('Load more emails failed:', err)
-      toast.error('Kon meer emails niet laden')
-    } finally {
-      setIsLoadingMore(false)
-    }
-  }, [isLoadingMore, emails])
-
-  // ─── Load email body ───
-  // Track in-flight prefetches om dubbele requests te voorkomen wanneer iemand
-  // hovert, scrollt en opnieuw hovert binnen korte tijd.
-  const inFlightFetches = useRef<Map<string, Promise<string>>>(new Map())
-
-  // Lage-level fetch die ALLEEN de cache vult, geen UI state aanraakt.
-  // Gebruikt voor zowel prefetch (hover) als de echte click flow.
-  const fetchBodyToCache = useCallback(async (email: Email, folder: EmailFolder): Promise<string> => {
-    const cached = bodyCacheRef.current.get(email.id)
-    if (cached !== undefined) return cached
-    if (email.inhoud) {
-      bodyCacheRef.current.set(email.id, email.inhoud)
-      return email.inhoud
-    }
-
-    // Dedupe: als er al een fetch loopt voor deze email, hergebruik die promise
-    const existing = inFlightFetches.current.get(email.id)
-    if (existing) return existing
-
-    const promise = (async () => {
-      let tekstUitDb = ''
-      try {
-        // Step 1: Supabase eerst (snel). body_html NULL = de rij is nooit
-        // volledig geparsed; alleen tekst is dan de kale fallback van een
-        // HTML-mail, dus die slaan we over en halen we hem via IMAP op.
-        const dbBody = await getEmailBody(email.id).catch(() => null)
-        const volledigGeparsed = dbBody?.body_html !== null && dbBody?.body_html !== undefined
-        const body = volledigGeparsed
-          ? (dbBody?.body_html || dbBody?.body_text || dbBody?.inhoud || '')
-          : ''
-        if (body) {
-          bodyCacheRef.current.set(email.id, body)
-          const bijlagen = dbBody?.attachment_meta && Array.isArray(dbBody.attachment_meta) && dbBody.attachment_meta.length > 0
-            ? dbBody.attachment_meta as EmailAttachment[]
-            : undefined
-          if (bijlagen) attachmentCacheRef.current.set(email.id, bijlagen)
-          void bewaarBodies([{ id: email.id, html: body, bijlagen }], eigenaarRef.current)
-          return body
-        }
-
-        // Step 2: IMAP fallback. Levert die niets op, dan is de tekst uit de
-        // database nog altijd beter dan een leeg scherm.
-        tekstUitDb = dbBody?.body_text || dbBody?.inhoud || ''
-        const uid = Number(email.gmail_id || email.id)
-        if (isNaN(uid)) return tekstUitDb
-        const detail = await readEmailFromIMAP(uid, IMAP_FOLDER_MAP[folder] || 'INBOX')
-        const imapBody = detail.bodyHtml || detail.bodyText || tekstUitDb
-        bodyCacheRef.current.set(email.id, imapBody)
-        // Deze ronde kostte een IMAP-verbinding · die willen we nooit twee
-        // keer voor dezelfde mail betalen, ook niet na een herstart.
-        if (imapBody) void bewaarBodies([{ id: email.id, html: imapBody }], eigenaarRef.current)
-        if (detail.attachments?.length) {
-          const inlineBytes: Record<string, string> = {}
-          const signedUrls: Record<string, string> = {}
-          const metaOnly: EmailAttachment[] = detail.attachments.map((a) => {
-            if (a.content) inlineBytes[a.filename] = a.content
-            if (a.storage_url) signedUrls[a.filename] = a.storage_url
-            return { filename: a.filename, contentType: a.contentType, size: a.size }
-          })
-          attachmentCacheRef.current.set(email.id, metaOnly)
-          if (Object.keys(inlineBytes).length > 0) {
-            attachmentBytesCacheRef.current.set(email.id, inlineBytes)
-          }
-          if (Object.keys(signedUrls).length > 0) {
-            attachmentUrlsCacheRef.current.set(email.id, signedUrls)
-          }
-        }
-        return imapBody
-      } catch (err: unknown) {
-        logger.error('Email body ophalen mislukt:', err)
-        return tekstUitDb
-      } finally {
-        inFlightFetches.current.delete(email.id)
-      }
-    })()
-    inFlightFetches.current.set(email.id, promise)
-    return promise
-  }, [])
-
-  // Prefetch on hover · vult cache op de achtergrond, geen UI feedback.
-  const prefetchEmailBody = useCallback((email: Email) => {
-    if (bodyCacheRef.current.has(email.id)) return
-    if (email.inhoud) return
-    void fetchBodyToCache(email, selectedFolder)
-  }, [fetchBodyToCache, selectedFolder])
-
-  // Targeted IMAP fetch voor enkel attachment-metadata. Triggert wanneer de
-  // body al ergens vandaan komt (DB of cache) maar de bijlagen-meta ontbreekt
-  // · bv. bij oude mails die gesynced zijn voordat attachment_meta werd
-  // bijgehouden, of bij DB-rijen zonder meta. Voorkomt het "open opnieuw om
-  // de details te laden" dead-end.
-  const fetchAttachmentMeta = useCallback(async (email: Email, folder: EmailFolder): Promise<EmailAttachment[] | undefined> => {
-    const cached = attachmentCacheRef.current.get(email.id)
-    if (cached?.length) return cached
-    try {
-      const uid = Number(email.gmail_id || email.id)
-      if (isNaN(uid)) return undefined
-      const detail = await readEmailFromIMAP(uid, IMAP_FOLDER_MAP[folder] || 'INBOX')
-      if (detail.attachments?.length) {
-        const inlineBytes: Record<string, string> = {}
-        const signedUrls: Record<string, string> = {}
-        const metaOnly: EmailAttachment[] = detail.attachments.map((a) => {
-          if (a.content) inlineBytes[a.filename] = a.content
-          if (a.storage_url) signedUrls[a.filename] = a.storage_url
-          return { filename: a.filename, contentType: a.contentType, size: a.size }
-        })
-        attachmentCacheRef.current.set(email.id, metaOnly)
-        if (Object.keys(inlineBytes).length > 0) {
-          attachmentBytesCacheRef.current.set(email.id, inlineBytes)
-        }
-        if (Object.keys(signedUrls).length > 0) {
-          attachmentUrlsCacheRef.current.set(email.id, signedUrls)
-        }
-        return metaOnly
-      }
-    } catch (err) {
-      logger.error('Attachment meta-fetch mislukt:', err)
-    }
-    return undefined
-  }, [])
-
-  const loadEmailBody = useCallback(async (email: Email, folder: EmailFolder): Promise<Email> => {
-    const cachedAtt = attachmentCacheRef.current.get(email.id)
-    const cached = bodyCacheRef.current.get(email.id)
-    const hasAtt = (cachedAtt?.length ?? 0) > 0 || (email.attachment_meta?.length ?? 0) > 0
-    const needsAttFetch = (email.bijlagen ?? 0) > 0 && !hasAtt
-
-    if (cached !== undefined && !needsAttFetch) {
-      return { ...email, gelezen: true, inhoud: cached, attachment_meta: email.attachment_meta || cachedAtt || undefined }
-    }
-    if (email.inhoud && !needsAttFetch) return { ...email, gelezen: true }
-
-    setIsLoadingBody(true)
-    try {
-      // Body is al gecached, alleen bijlagen ontbreken · alleen attachment-fetch.
-      if (cached !== undefined) {
-        const att = await fetchAttachmentMeta(email, folder)
-        return { ...email, gelezen: true, inhoud: cached, attachment_meta: email.attachment_meta || att || cachedAtt || undefined }
-      }
-      // Body op email-object aanwezig (uit lijst), bijlagen niet · alleen attachment-fetch.
-      if (email.inhoud) {
-        const att = await fetchAttachmentMeta(email, folder)
-        return { ...email, gelezen: true, attachment_meta: email.attachment_meta || att || undefined }
-      }
-
-      // Niets gecached · volle body-fetch (vult ook attachments als IMAP-pad).
-      const body = await fetchBodyToCache(email, folder)
-      let att = attachmentCacheRef.current.get(email.id)
-      // Body kwam uit DB, maar attachments ontbraken in DB; haal ze nu via IMAP.
-      if (!att?.length && (email.bijlagen ?? 0) > 0) {
-        att = await fetchAttachmentMeta(email, folder)
-      }
-      return { ...email, gelezen: true, inhoud: body, attachment_meta: email.attachment_meta || att || undefined }
-    } finally {
-      setIsLoadingBody(false)
-    }
-  }, [fetchBodyToCache, fetchAttachmentMeta])
-
-  // ─── Prefetch top-N email bodies na lijst laden ───
-  // Zodra de lijst beschikbaar is, prefetch de eerste ~8 emails zodat
-  // klikken op een mail instant aanvoelt.
-  const prefetchedRef = useRef(false)
+  // Een reader die niet meer in het filter past, sluit.
   useEffect(() => {
-    if (!threadedEmails.length || prefetchedRef.current) return
-    prefetchedRef.current = true
-    let afgebroken = false
-    // Eerst alles wat de database al heeft, in één query. Pas daarna nog een
-    // paar losse IMAP-fetches voor mail die nog nooit een body kreeg.
-    void vulBodyCacheUitDb(threadedEmails, 60).then(() => {
-      if (afgebroken) return
-      const rest = threadedEmails
-        .filter((e) => !e.inhoud && !bodyCacheRef.current.has(e.id))
-        .slice(0, 3)
-      let i = 0
-      const volgende = () => {
-        if (afgebroken || i >= rest.length) return
-        void fetchBodyToCache(rest[i], selectedFolder).finally(() => {
-          i++
-          setTimeout(volgende, 150)
-        })
-      }
-      volgende()
-    })
-    return () => { afgebroken = true }
-  }, [threadedEmails, fetchBodyToCache, selectedFolder, vulBodyCacheUitDb])
+    if (!geselecteerdId) return
+    if (bron.laden) return
+    if (!zichtbaar.some((i) => i.id === geselecteerdId)) zetGeselecteerd(null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter, splitTab])
 
-  // ─── Mobiel: prefetch wat er in beeld staat ───
-  // Zonder hover is het zichtbare venster de enige voorspeller van wat je zo
-  // opent. Wacht tot het scrollen stilvalt en haalt er hoogstens vijf op, zo
-  // blijft een lange lijst doorscrollen zonder een golf aan requests.
-  const zichtbareRijen = rowVirtualizer.getVirtualItems()
-  const zichtbaarBereik = zichtbareRijen.length > 0
-    ? `${zichtbareRijen[0].index}-${zichtbareRijen[zichtbareRijen.length - 1].index}`
-    : ''
-  useEffect(() => {
-    if (isDesktop || !zichtbaarBereik) return
-    const [van, tot] = zichtbaarBereik.split('-').map(Number)
-    let afgebroken = false
-    const timer = setTimeout(() => {
-      // Iets ruimer dan het venster: wie hier stilstaat scrollt zo verder.
-      const kandidaten: Email[] = []
-      for (let i = Math.max(0, van - 2); i <= tot + 6 && kandidaten.length < 20; i++) {
-        const rij = flatItems[i]
-        if (!rij || rij.type !== 'email') continue
-        if (rij.email.inhoud || bodyCacheRef.current.has(rij.email.id)) continue
-        kandidaten.push(rij.email)
-      }
-      if (kandidaten.length === 0) return
-
-      // Eerst de goedkope weg: alles wat al in de database staat in één query.
-      void vulBodyCacheUitDb(kandidaten, 20).then(() => {
-        if (afgebroken) return
-        // Wat dan nog ontbreekt heeft nog nooit een body gehad. Hoogstens twee
-        // los ophalen — meer IMAP-verbindingen tegelijk vertragen juist de mail
-        // die je nú wil openen.
-        const rest = kandidaten.filter((m) => !bodyCacheRef.current.has(m.id)).slice(0, 2)
-        rest.forEach((mail, i) => {
-          setTimeout(() => {
-            if (afgebroken) return
-            void fetchBodyToCache(mail, selectedFolder)
-          }, i * 150)
-        })
-      })
-    }, 250)
-    return () => { afgebroken = true; clearTimeout(timer) }
-  }, [zichtbaarBereik, isDesktop, flatItems, fetchBodyToCache, selectedFolder, vulBodyCacheUitDb])
-
-  // ─── Voorraad aanleggen voor de vólgende keer ───
-  // Mobiel haalt tijdens het openen bewust maar een handvol bodies op, anders
-  // vecht dat met de mail die je nú aantikt. Een paar seconden later is die
-  // drukte voorbij en halen we een ruimere slok op. Die belandt op het toestel,
-  // dus vanaf de volgende sessie opent die mail zonder netwerk. Niet doen op
-  // een zuinige of trage verbinding: dan is dit andermans databundel.
-  const voorraadGedaanRef = useRef(false)
-  const voorraadLijstRef = useRef<Email[]>([])
-  voorraadLijstRef.current = emails
-  const heeftLijst = emails.length > 0
-  useEffect(() => {
-    if (isDesktop || !heeftLijst || voorraadGedaanRef.current) return
-    const verbinding = (navigator as unknown as { connection?: { saveData?: boolean; effectiveType?: string } }).connection
-    if (verbinding?.saveData) return
-    if (verbinding?.effectiveType && /(^|-)2g$/.test(verbinding.effectiveType)) return
-    voorraadGedaanRef.current = true
-    const timer = setTimeout(() => {
-      void vulBodyCacheUitDb(voorraadLijstRef.current, 30)
-    }, 4000)
-    return () => clearTimeout(timer)
-  }, [isDesktop, heeftLijst, vulBodyCacheUitDb])
-
-  // ─── Realtime: nieuwe mail schuift binnen zodra de rij landt ───
-  // Wie de sync deed doet er niet toe — eigen poll, tweede apparaat of de
-  // cron. Alleen INSERT: een verse mail komt zonder body binnen, dus de
-  // payload is een kopregel. De UPDATE die later body_html vult zou zwaar
-  // zijn en heeft hier niets toe te voegen.
-  useEffect(() => {
-    if (!supabase || !user?.id) return
-    const userId = user.id
-    const kanaal = supabase
-      .channel(`emails-${userId}`)
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'emails', filter: `user_id=eq.${userId}` },
-        (payload) => {
-          // Zelfde vorm als getEmails() teruggeeft (emails_list_view): body
-          // en html blijven eruit, die haalt de body-cache apart op. Zonder
-          // dit zou een realtime-rij anders zijn dan een gelezen rij.
-          const rij = { ...(payload.new as Email), inhoud: '', body_html: null }
-          const binnen = normalizeEmails([rij])[0]
-          if (!binnen) return
-          setEmails((prev) => {
-            if (prev.some((e) => e.id === binnen.id)) return prev
-            // Op datum invoegen in plaats van vooraan plakken: een sync die
-            // een achterstand inloopt levert ook oudere mail, en die hoort
-            // niet bovenaan de inbox te verschijnen.
-            const next = [...prev, binnen]
-            next.sort((a, b) => (b.datum || '').localeCompare(a.datum || ''))
-            return next
-          })
-          setLastSyncAt(Date.now())
-        },
-      )
-      .subscribe()
-    return () => { void supabase?.removeChannel(kanaal) }
-  }, [user?.id])
-
-  // ─── Polling: stille achtergrond-sync ───
-  // Niet tijdens lezen of opstellen: een sync opent een IMAP-verbinding en
-  // haalt daarna bodies op, en dat gaat precies ten koste van de mail die op
-  // dat moment onder je duim staat. De tik erna haalt het alsnog op.
-  // Mobiel tikt vaker: daar is dit vaak de enige sync die draait. De echte
-  // IMAP-sync doet de cron; deze poll is alleen een vangnet, dus hij mag traag.
-  const viewModeRef = useRef(viewMode)
-  viewModeRef.current = viewMode
-  useEffect(() => {
-    const tempo = isDesktop ? 600_000 : 300_000
-    pollingRef.current = setInterval(() => {
-      if (viewModeRef.current !== 'idle') return
-      handleRefresh(selectedFolder, true)
-    }, tempo)
-    return () => {
-      if (pollingRef.current) clearInterval(pollingRef.current)
-    }
-  }, [selectedFolder, handleRefresh, isDesktop])
-
-  // ─── Terug in beeld: stille sync ───
-  // De poll-timer hierboven staat stil zodra de telefoon de tab bevriest, dus
-  // wie terugkomt kijkt naar oude mail tot de eerste tick. De ondergrens stond
-  // op een minuut omdat elke sync een volle IMAP-ronde mét nabewerking was;
-  // met de snelle variant is terugkomen-en-syncen goedkoop genoeg om vrijwel
-  // meteen te doen — precies het moment waarop je nieuwe mail verwacht.
-  const laatstVerborgenRef = useRef<number | null>(null)
-  useEffect(() => {
-    const onZichtbaarheid = () => {
-      if (document.visibilityState === 'hidden') {
-        laatstVerborgenRef.current = Date.now()
-        return
-      }
-      const verborgenSinds = laatstVerborgenRef.current
-      laatstVerborgenRef.current = null
-      const drempel = isDesktop ? 60_000 : 15_000
-      if (!verborgenSinds || Date.now() - verborgenSinds < drempel) return
-      handleRefresh(selectedFolder, true)
-    }
-    document.addEventListener('visibilitychange', onZichtbaarheid)
-    return () => document.removeEventListener('visibilitychange', onZichtbaarheid)
-  }, [selectedFolder, handleRefresh, isDesktop])
-
-  // ─── Keyboard shortcuts (inline from useEmailKeyboard) ───
-  // callbacksRef wordt aan onder via useEffect na declaratie van alle
-  // handlers gevuld (handleReply / handleForward worden later gedeclareerd
-  // dus we kunnen ze niet op top-level lezen · TDZ).
-  const searchInputRef = useRef<HTMLInputElement | null>(null)
-  const callbacksRef = useRef<{
-    handleTogglePin: (e: Email) => void
-    handleArchive: (e: Email) => void
-    handleDelete: (e: Email) => void
-    handleReply: (e: Email) => void
-    handleForward: (e: Email) => void
-  } | null>(null)
-  const emailsRef = useRef(threadedEmails)
-  emailsRef.current = threadedEmails
-  const focusedRef = useRef(focusedIndex)
-  focusedRef.current = focusedIndex
-
-  useEffect(() => {
-    if (viewMode !== 'idle') return
-    function handleKeyDown(e: KeyboardEvent) {
-      const target = e.target as HTMLElement
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
-        // Escape op zoekveld: wis focus zodat globale shortcuts weer werken
-        if (e.key === 'Escape' && target === searchInputRef.current) {
-          target.blur()
-        }
-        return
-      }
-      const idx = focusedRef.current
-      const cb = callbacksRef.current
-      if (!cb) return
-      const list = emailsRef.current
-      switch (e.key) {
-        case 'j': e.preventDefault(); setFocusedIndex((prev) => Math.min(prev + 1, list.length - 1)); break
-        case 'k': e.preventDefault(); setFocusedIndex((prev) => Math.max(prev - 1, 0)); break
-        case 'o': case 'Enter':
-          e.preventDefault()
-          if (idx >= 0 && idx < list.length) handleSelectEmail(list[idx])
-          break
-        case 'p': e.preventDefault(); if (idx >= 0 && idx < list.length) cb.handleTogglePin(list[idx]); break
-        case 'e': e.preventDefault(); if (idx >= 0 && idx < list.length) cb.handleArchive(list[idx]); break
-        case '#': e.preventDefault(); if (idx >= 0 && idx < list.length) cb.handleDelete(list[idx]); break
-        case 'r': case 'a':
-          e.preventDefault()
-          if (idx >= 0 && idx < list.length) cb.handleReply(list[idx])
-          break
-        case 'f': e.preventDefault(); if (idx >= 0 && idx < list.length) cb.handleForward(list[idx]); break
-        case '/':
-          e.preventDefault()
-          searchInputRef.current?.focus()
-          break
-        case 'c': e.preventDefault(); handleCompose(); break
-        case '?': e.preventDefault(); setShowShortcuts((prev) => !prev); break
-        case 'Escape':
-          e.preventDefault()
-          setShowShortcuts(false)
-          // Wis ook actieve checkbox-selectie als die er is
-          if (checkedEmails.size > 0) setCheckedEmails(new Set())
-          break
-      }
-    }
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [viewMode])
-
-  // Houd de focused-row in view bij j/k-navigatie. Virtualizer scrolt
-  // gericht naar het flat-item (header of email) dat overeenkomt met het
-  // gefocuste email-id · gewoon scrollIntoView werkt niet bij absolute
-  // positioning.
-  useEffect(() => {
-    if (focusedIndex < 0 || viewMode !== 'idle') return
-    const email = threadedEmails[focusedIndex]
-    if (!email) return
-    const flatIdx = flatItems.findIndex((it) => it.type === 'email' && it.email.id === email.id)
-    if (flatIdx >= 0) rowVirtualizer.scrollToIndex(flatIdx, { align: 'auto' })
-  }, [focusedIndex, threadedEmails, viewMode, flatItems, rowVirtualizer])
-
-  // Tick elke 30s zodat "Bijgewerkt X min geleden"-indicator vanzelf doorloopt
-  useEffect(() => {
-    if (!lastSyncAt) return
-    const interval = setInterval(() => setNowTick(Date.now()), 30_000)
-    return () => clearInterval(interval)
-  }, [lastSyncAt])
-
-  // Bij unmount: alle pending delete-timers direct flushen, zodat de UI-mutatie
-  // ook in de DB blijft staan na pagina-wissel.
-  useEffect(() => {
-    const pending = pendingDeleteTimersRef.current
-    return () => {
-      pending.forEach(({ timer, flush }) => {
-        clearTimeout(timer)
-        flush()
-      })
-      pending.clear()
-    }
-  }, [])
-
-  // ─── Handlers ───
-  // Het ophalen van een body markeert niets meer, want prefetch en hover
-  // lopen over datzelfde pad. Alleen het openen van een mail zet de
-  // leesstatus door naar de database en de echte mailbox.
-  const markeerGelezen = useCallback((email: Email, folder: EmailFolder) => {
-    if (email.gelezen) return
-    updateEmail(email.id, { gelezen: true }).catch(() => {})
-    const uid = Number(email.gmail_id || email.id)
-    if (isNaN(uid)) return
-    markeerEmailGelezenOpServer(uid, IMAP_FOLDER_MAP[folder] || 'INBOX').catch((err) => {
-      logger.error('Markeren als gelezen mislukt:', err)
-    })
-  }, [])
-
-  const handleSelectEmail = useCallback(async (email: Email, e?: React.MouseEvent, markeerAlsGelezen = true) => {
-    // Shift / Cmd / Ctrl klik → toggle checkbox ipv mail openen.
-    // Zo kan je makkelijk meerdere mails selecteren voor bulk acties.
-    if (e && (e.shiftKey || e.metaKey || e.ctrlKey)) {
-      toggleCheckEmail(email.id, e)
+  // ── Selecteren ──
+  const openMail = useCallback((item: EmailLijstItem, markeerGelezen = true) => {
+    if (map === 'concepten') {
+      void (async () => {
+        const doc = await getConcept(item.id)
+        if (doc) { zetGeselecteerd(null); zetComposer({ document: documentUitConcept(doc), variant: isDesktop ? 'inline' : 'volledig' }) }
+        else toast.error('Concept kon niet worden geopend')
+      })()
       return
     }
-    // Normale klik: open de mail
-    if (markeerAlsGelezen) markeerGelezen(email, selectedFolder)
+    zetGeselecteerd(item.id)
+    zetFocusIndex(zichtbaar.findIndex((i) => i.id === item.id))
+    if (markeerGelezen && !item.gelezen) void mailStore.zetGelezen([item.id], true)
+  }, [map, isDesktop, zichtbaar])
 
-    // Staat de body al in de cache, dan gaat hij mee in dezelfde update als de
-    // mode-wissel. Zonder dit rendert de reader eerst leeg en pas een tick
-    // later de tekst — precies de flits die "traag" aanvoelt.
-    const gecachedeBody = bodyCacheRef.current.get(email.id)
-    const gecachedeBijlagen = attachmentCacheRef.current.get(email.id)
-    const teTonen: Email = {
-      ...email,
-      gelezen: markeerAlsGelezen ? true : email.gelezen,
-      inhoud: email.inhoud || gecachedeBody || '',
-      attachment_meta: email.attachment_meta || gecachedeBijlagen || undefined,
+  const naarBuur = useCallback((richting: 1 | -1) => {
+    if (!zichtbaar.length) return
+    const huidig = geselecteerdId ? zichtbaar.findIndex((i) => i.id === geselecteerdId) : focusIndex
+    const volgende = Math.min(zichtbaar.length - 1, Math.max(0, (huidig < 0 ? -1 : huidig) + richting))
+    zetFocusIndex(volgende)
+    if (geselecteerdId) openMail(zichtbaar[volgende])
+  }, [zichtbaar, geselecteerdId, focusIndex, openMail])
+
+  // ── Acties met undo ──
+  const doelIds = useCallback((item?: EmailLijstItem) => {
+    if (item) return [item.id]
+    if (aangevinkt.size) return [...aangevinkt]
+    if (geselecteerdId) return [geselecteerdId]
+    const gefocust = zichtbaar[focusIndex]
+    return gefocust ? [gefocust.id] : []
+  }, [aangevinkt, geselecteerdId, zichtbaar, focusIndex])
+
+  const naActie = useCallback((ids: string[]) => {
+    zetAangevinkt(new Set())
+    if (geselecteerdId && ids.includes(geselecteerdId)) {
+      const rest = zichtbaar.filter((i) => !ids.includes(i.id))
+      const volgende = rest[Math.min(focusIndex, rest.length - 1)]
+      if (volgende) openMail(volgende)
+      else zetGeselecteerd(null)
     }
+  }, [geselecteerdId, zichtbaar, focusIndex, openMail])
 
-    viewTransition(() => {
-      if (markeerAlsGelezen) {
-        setEmails(prev => prev.map(em => em.id === email.id ? { ...em, gelezen: true } : em))
-      }
-      setSelectedEmail(teTonen)
-      setViewMode('reading')
-    }, 'forward')
+  const archiveer = useCallback((item?: EmailLijstItem) => {
+    const ids = doelIds(item)
+    if (!ids.length) return
+    hapticLight()
+    const undo = mailStore.archiveer(ids)
+    toonUndo(`${meervoud(ids.length, 'Mail', 'mails')} gearchiveerd`, undo)
+    naActie(ids)
+  }, [doelIds, naActie])
 
-    // Load body in background (async)
-    loadEmailBody(email, selectedFolder).then((withBody) => {
-      setSelectedEmail(markeerAlsGelezen ? withBody : { ...withBody, gelezen: email.gelezen })
-    })
+  const verwijder = useCallback((item?: EmailLijstItem) => {
+    const ids = doelIds(item)
+    if (!ids.length) return
+    hapticLight()
+    const undo = mailStore.verwijder(ids)
+    toonUndo(`${meervoud(ids.length, 'Mail', 'mails')} verwijderd`, undo)
+    naActie(ids)
+  }, [doelIds, naActie])
 
-    // Nog geen oordeel? Dan deze mail nu laten beoordelen in plaats van te
-    // wachten tot de volgende ronde langskomt.
-    void beoordeelDezeMail(email)
-  }, [loadEmailBody, selectedFolder, toggleCheckEmail, markeerGelezen, beoordeelDezeMail])
+  const wisselGelezen = useCallback((item?: EmailLijstItem) => {
+    const ids = doelIds(item)
+    if (!ids.length) return
+    const eerste = mailStore.item(ids[0])
+    void mailStore.zetGelezen(ids, !eerste?.gelezen)
+    zetAangevinkt(new Set())
+  }, [doelIds])
 
-  // Verlopen concepten opruimen bij het openen van de module; zonder dit
-  // blijven ze eeuwig in localStorage staan.
-  useEffect(() => { ruimConceptenOp(30) }, [])
+  const wisselPin = useCallback((item?: EmailLijstItem) => {
+    const ids = doelIds(item)
+    if (!ids.length) return
+    const eerste = mailStore.item(ids[0])
+    void mailStore.pin(ids, !eerste?.pinned)
+  }, [doelIds])
 
-  // Compose verlaten met een niet-verzonden concept: bied direct aan hem te
-  // heropenen. Het concept staat dan al veilig in localStorage; deze toast is
-  // puur het terugvindpad, want "Nieuw bericht" begint bewust leeg.
-  const vorigeViewModeRef = useRef<ViewMode>('idle')
-  useEffect(() => {
-    const vorige = vorigeViewModeRef.current
-    vorigeViewModeRef.current = viewMode
-    if (vorige !== 'composing' || viewMode === 'composing') return
-    const concept = laatsteConceptRef.current
-    laatsteConceptRef.current = null
-    if (!concept) return
-    // Alleen als hij nog echt bestaat: na verzenden is hij gewist.
-    if (!leesConcept(concept.draftId)) return
-    const omschrijving = concept.subject.trim() || concept.to.trim() || 'zonder onderwerp'
-    toast('Concept bewaard', {
-      description: omschrijving,
-      duration: 8000,
-      action: {
-        label: 'Openen',
-        onClick: () => handleComposeRef.current?.({ draftId: concept.draftId }),
-      },
-    })
-  }, [viewMode])
+  // ── Composer ──
+  const eigenAdres = user?.email ?? null
 
-  const handleCompose = useCallback((defaults?: { to?: string; subject?: string; body?: string; bodyIsBericht?: boolean; replyToText?: string; bodyHtml?: string; draftId?: string }) => {
-    viewTransition(() => {
-      setComposeDraftId(defaults?.draftId || crypto.randomUUID())
-      setComposeDefaults(defaults || {})
-      // Verse compose-sessie: vorige project-koppelingskeuze niet hergebruiken
-      setComposeProjectId(null)
-      setComposeLeadId(null)
-      setViewMode('composing')
-      setSelectedEmail(null)
-    }, 'forward')
-  }, [])
+  const openAntwoord = useCallback(async (modus: AntwoordModus, mail: EmailLijstItem, body: EmailBody | null, voorstel?: string) => {
+    const inhoud = body ?? (await haalBody(mail.id, 'nu').catch(() => null))
+    const doc = modus === 'doorsturen'
+      ? documentVoorDoorsturen(mail, inhoud)
+      : documentVoorAntwoord(mail, modus === 'allen', inhoud, eigenAdres)
+    if (voorstel) doc.html = `<p>${voorstel}</p>${doc.html}`
+    zetComposer({ document: doc, variant: isDesktop ? 'inline' : 'volledig' })
+  }, [eigenAdres, isDesktop])
 
-  const handleComposeRef = useRef<typeof handleCompose | null>(null)
-  handleComposeRef.current = handleCompose
+  const antwoordOpHuidige = useCallback((modus: AntwoordModus) => {
+    const mail = geselecteerd ?? zichtbaar[focusIndex]
+    if (mail) void openAntwoord(modus, mail, null)
+  }, [geselecteerd, zichtbaar, focusIndex, openAntwoord])
 
-  const handleReply = useCallback((email: Email) => {
-    handleCompose({
-      to: extractSenderEmail(email.van),
-      subject: email.onderwerp.startsWith('Re: ') ? email.onderwerp : `Re: ${email.onderwerp}`,
-      body: `\n\n---------- Oorspronkelijk bericht ----------\nVan: ${email.van}\nDatum: ${email.datum}\n\n${email.inhoud?.replace(/<[^>]*>/g, '') || ''}`,
-      replyToText: `Van: ${email.van}\nOnderwerp: ${email.onderwerp}\n\n${email.inhoud?.replace(/<[^>]*>/g, '').trim() || ''}`,
-    })
-  }, [handleCompose])
+  // In de mailmodule schrijf je in het rechterscherm; het schuifpaneel hoort bij
+  // het projectbord, waar het bord zichtbaar moet blijven.
+  const nieuwBericht = useCallback((initieel?: Partial<ComposerDocument>) => {
+    zetGeselecteerd(null)
+    zetComposer({ document: documentVoorNieuw(initieel), variant: isDesktop ? 'inline' : 'volledig' })
+  }, [isDesktop])
 
-  const handleForward = useCallback((email: Email) => {
-    handleCompose({
-      subject: email.onderwerp.startsWith('Fwd: ') ? email.onderwerp : `Fwd: ${email.onderwerp}`,
-      body: `\n\n---------- Doorgestuurd bericht ----------\nVan: ${email.van}\nDatum: ${email.datum}\nOnderwerp: ${email.onderwerp}\n\n${email.inhoud?.replace(/<[^>]*>/g, '') || ''}`,
-    })
-  }, [handleCompose])
+  const sluitComposer = useCallback(() => {
+    zetComposer(null)
+    if (location.pathname.endsWith('/email/compose')) navigate('/email', { replace: true })
+  }, [location.pathname, navigate])
 
-  // Vul de callbacks-ref nu alle handlers gedeclareerd zijn (zie keyboard-handler hierboven).
-  callbacksRef.current = { handleTogglePin, handleArchive, handleDelete, handleReply, handleForward }
+  const naVerzenden = useCallback(() => {
+    zetComposer(null)
+    if (location.pathname.endsWith('/email/compose')) navigate('/email', { replace: true })
+    void mailStore.ververs('verzonden')
+    void mailStore.laadTellers()
+  }, [location.pathname, navigate])
 
-  // ─── Auto-open nieuwste mail op desktop bij eerste idle ───
-  // Vult de lege reader-kolom direct na openen van het Email-tab. Eén keer
-  // per sessie zodat handleBack niet meteen opnieuw triggert; alleen voor
-  // de inbox en alleen op desktop (mobiel is de lijst zelf de hoofdview).
-  // Zonder markeren bij het openen zelf: de gebruiker koos deze mail niet.
-  // De leestijd hieronder beslist of hij hem ook echt gelezen heeft.
-  const autoOpenedRef = useRef(false)
-  useEffect(() => {
-    if (autoOpenedRef.current) return
-    if (!isDesktop) return
-    if (isLoading) return
-    if (viewMode !== 'idle') return
-    if (selectedFolder !== 'inbox') return
-    if (threadedEmails.length === 0) return
-    autoOpenedRef.current = true
-    handleSelectEmail(threadedEmails[0], undefined, false)
-  }, [isDesktop, isLoading, viewMode, selectedFolder, threadedEmails, handleSelectEmail])
+  // ── Toetsen ──
+  useMailToetsen({
+    volgende: () => naarBuur(1),
+    vorige: () => naarBuur(-1),
+    openen: () => { const m = zichtbaar[focusIndex]; if (m) openMail(m) },
+    archiveren: () => archiveer(),
+    verwijderen: () => verwijder(),
+    antwoord: () => antwoordOpHuidige('antwoord'),
+    allen: () => antwoordOpHuidige('allen'),
+    doorsturen: () => antwoordOpHuidige('doorsturen'),
+    nieuw: () => nieuwBericht(),
+    snooze: () => zetSnoozeOpen(true),
+    pin: () => wisselPin(),
+    label: () => { const el = document.querySelector<HTMLButtonElement>('[title="Labels (l)"]'); if (el) el.click(); else toast('Open een mail om een label te kiezen') },
+    ongelezen: () => wisselGelezen(),
+    zoeken: () => { const el = document.querySelector<HTMLInputElement>('[data-mail-zoek]'); el?.focus() },
+    kaart: () => zetKaartOpen(true),
+    sluiten: () => { if (composer) sluitComposer(); else if (geselecteerdId) zetGeselecteerd(null) },
+    naarMap: zetMap,
+    readerOpen: !!geselecteerdId,
+    readerActies,
+  }, !composer || !isDesktop)
 
-  // ─── Leestijd: openstaande mail telt na twee seconden als gelezen ───
-  // Alleen de auto-open laat een mail ongelezen in de reader achter; een
-  // klik markeert meteen. Wie meteen doorklikt of wegnavigeert markeert
-  // niets, wie hem laat staan heeft hem gelezen. Zonder dit blijft juist
-  // de mail die je zit te lezen vetgedrukt in de lijst staan.
-  const LEESTIJD_MS = 2000
-  const selectedEmailRef = useRef<Email | null>(null)
-  selectedEmailRef.current = selectedEmail
-  const openOngelezenId = selectedEmail && !selectedEmail.gelezen ? selectedEmail.id : null
-  useEffect(() => {
-    if (!openOngelezenId || viewMode !== 'reading') return
-    const timer = setTimeout(() => {
-      const email = selectedEmailRef.current
-      if (!email || email.id !== openOngelezenId) return
-      markeerGelezen(email, selectedFolder)
-      setEmails((prev) => prev.map((e) => (e.id === openOngelezenId ? { ...e, gelezen: true } : e)))
-      setSelectedEmail((prev) => (prev?.id === openOngelezenId ? { ...prev, gelezen: true } : prev))
-    }, LEESTIJD_MS)
-    return () => clearTimeout(timer)
-  }, [openOngelezenId, viewMode, selectedFolder, markeerGelezen])
-
-  const handleSendEmail = useCallback(async (data: { to: string; subject: string; cc?: string; bcc?: string; body: string; html?: string; scheduledAt?: string; wacht_op_reactie?: boolean; attachments?: Array<{ filename: string; storagePath?: string; size?: number; content?: string; encoding?: 'base64' }> }) => {
-    try {
-      // Genereer thread_id client-side zodat we een eventueel gekoppeld
-      // project direct na verzenden kunnen aanhaken · de backend accepteert
-      // deze waarde en gebruikt 'm als de thread_id van de nieuwe mail.
-      const pendingProjectId = composeProjectIdRef.current
-      const clientThreadId = pendingProjectId ? crypto.randomUUID() : undefined
-      await sendEmailViaApi(data.to, data.subject, data.body, {
-        html: data.html,
-        // cc/bcc werden in compose wel ingevuld en gevalideerd, maar nooit
-        // meegestuurd: de payload had de velden simpelweg niet.
-        cc: data.cc,
-        bcc: data.bcc,
-        scheduledAt: data.scheduledAt,
-        wacht_op_reactie: data.wacht_op_reactie,
-        attachments: data.attachments,
-        thread_id: clientThreadId,
-      })
-      if (pendingProjectId && clientThreadId) {
-        try {
-          await koppelEmailAanProject(clientThreadId, pendingProjectId)
-        } catch (e) {
-          logger.warn('Project-koppeling na compose mislukt:', e)
+  // ── Vinken ──
+  const wisselVink = useCallback((id: string, e?: React.MouseEvent) => {
+    zetAangevinkt((oud) => {
+      const nieuw = new Set(oud)
+      if (e?.shiftKey && laatsteVinkRef.current) {
+        const van = zichtbaar.findIndex((i) => i.id === laatsteVinkRef.current)
+        const tot = zichtbaar.findIndex((i) => i.id === id)
+        if (van >= 0 && tot >= 0) {
+          for (let i = Math.min(van, tot); i <= Math.max(van, tot); i++) nieuw.add(zichtbaar[i].id)
+          return nieuw
         }
-        setComposeProjectId(null)
       }
-      const pendingLeadId = composeLeadIdRef.current
-      if (pendingLeadId) {
-        try {
-          await updateLeadStatus(pendingLeadId, 'benaderd')
-          setBenaderdeLeadId(pendingLeadId)
-        } catch (e) {
-          logger.warn('Leadstatus na verzenden bijwerken mislukt:', e)
-        }
-        setComposeLeadId(null)
-      }
-    } catch (err) {
-      logger.error('Email verzenden mislukt:', err)
-      throw err
-    }
+      if (nieuw.has(id)) nieuw.delete(id)
+      else nieuw.add(id)
+      laatsteVinkRef.current = id
+      return nieuw
+    })
+  }, [zichtbaar])
+
+  const wisselGroep = useCallback((ids: string[]) => {
+    zetAangevinkt((oud) => {
+      const nieuw = new Set(oud)
+      const allesAan = ids.every((id) => oud.has(id))
+      for (const id of ids) { if (allesAan) nieuw.delete(id); else nieuw.add(id) }
+      return nieuw
+    })
   }, [])
 
-  const handleSendReply = useCallback(async (data: { to: string; cc?: string; bcc?: string; subject: string; body: string; html?: string; scheduledAt?: string; attachments?: Array<{ filename: string; storagePath?: string; size?: number; content?: string; encoding?: 'base64' }> }) => {
-    try {
-      // Threading: geef message_id en thread_id mee zodat de verzonden
-      // mail aan dezelfde thread wordt gekoppeld als de originele mail.
-      const replyToMessageId = selectedEmail?.gmail_id
-        ? undefined // gmail_id is een UID, niet een Message-ID
-        : (selectedEmail as Record<string, unknown>)?.message_id as string | undefined
-      const replyThreadId = selectedEmail?.thread_id || undefined
-
-      await sendEmailViaApi(data.to, data.subject, data.body, {
-        cc: data.cc,
-        bcc: data.bcc,
-        html: data.html,
-        scheduledAt: data.scheduledAt,
-        attachments: data.attachments,
-        in_reply_to: replyToMessageId,
-        thread_id: replyThreadId,
-      })
-
-      // Na verzenden: alleen opnieuw uit de database lezen. api/send-email
-      // schrijft de verzonden mail zelf al weg, dus een volle IMAP-sync
-      // leverde niets nieuws op en hield de verbinding onnodig bezet.
-      const fresh = await readFromSupabase()
-      if (fresh.length > 0) setEmails(fresh)
-    } catch (err) {
-      logger.error('Reply verzenden mislukt:', err)
-      throw err
-    }
-  }, [selectedEmail])
-
-  const handleFolderChange = useCallback((folder: EmailFolder) => {
-    // Backfill kan intussen oudere mail hebben toegevoegd · geef bladeren
-    // weer een kans in deze map.
-    hasMoreDbRef.current = {}
-    setSelectedFolder(folder)
-    setSelectedEmail(null)
-    setViewMode('idle')
-    setFilter('alle')
-    setSearchQuery('')
-    setSearchInput('')
-    clearChecked()
-    setFolderDrawerOpen(false)
-    if (folder === 'sales-wacht' || folder === 'sales-beantwoord') {
-      setSalesTabSeen(true)
-      try { localStorage.setItem('doen_email_sales_tab_seen_v1', 'true') } catch { /* no-op */ }
-    }
-    handleFolderLoad(folder)
-  }, [clearChecked, handleFolderLoad])
-
-  useEffect(() => {
-    if (!folderDrawerOpen) return
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setFolderDrawerOpen(false) }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [folderDrawerOpen])
-
-  const handleSearchChange = useCallback((value: string) => {
-    setSearchInput(value)
-    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
-    searchDebounceRef.current = setTimeout(() => setSearchQuery(value), 200)
-  }, [])
-
-  const handleBack = useCallback(() => {
-    viewTransition(() => {
-      setSelectedEmail(null)
-      // Reset compose-keuzes zodat een afgebroken sessie niet bij een
-      // volgende compose (bv. via /email/compose deeplink) door-lekt.
-      setComposeProjectId(null)
-      setComposeLeadId(null)
-      setViewMode('idle')
-    }, 'back')
-  }, [])
-
-  const handleNavigate = useCallback((direction: 'prev' | 'next') => {
-    const currentIndex = selectedEmail ? threadedEmails.findIndex(e => e.id === selectedEmail.id) : -1
-    const nextIndex = direction === 'next' ? currentIndex + 1 : currentIndex - 1
-    if (nextIndex >= 0 && nextIndex < threadedEmails.length) {
-      handleSelectEmail(threadedEmails[nextIndex])
-    }
-  }, [selectedEmail, threadedEmails, handleSelectEmail])
-
-  const handleScroll = useCallback(() => {
-    if (!emailListRef.current || isLoadingMore) return
-    const { scrollTop, scrollHeight, clientHeight } = emailListRef.current
-    if (scrollHeight - scrollTop - clientHeight < 200) {
-      if (searchResults !== null) {
-        void loadMoreSearchResults()
-      } else {
-        loadMoreEmails(selectedFolder)
-      }
-    }
-  }, [isLoadingMore, loadMoreEmails, selectedFolder, searchResults, loadMoreSearchResults])
-
-  // Trek-om-te-verversen · alleen in de lijst, niet tijdens lezen of opstellen
-  // (dan is de lijst op mobiel toch uit beeld) en niet tijdens zoeken, waar
-  // een sync de resultaten onder je duim vandaan zou trekken.
-  const {
-    afstand: trekAfstand,
-    bezig: trekBezig,
-    gereed: trekGereed,
-  } = usePullToRefresh({
-    doel: emailListRef,
-    actief: !isDesktop && viewMode === 'idle' && searchResults === null,
-    onRefresh: async () => {
-      hapticLight()
-      await handleRefresh(selectedFolder)
-    },
-  })
-
-  const emailIndex = useMemo(
-    () => selectedEmail ? threadedEmails.findIndex(e => e.id === selectedEmail.id) : -1,
-    [selectedEmail, threadedEmails],
-  )
-
-  const navigateAfterAction = useCallback((action: (email: Email) => void) => (email: Email) => {
-    action(email)
-    const idx = threadedEmails.findIndex(e => e.id === email.id)
-    const nextIdx = idx + 1 < threadedEmails.length ? idx + 1 : idx - 1
-    if (nextIdx >= 0 && nextIdx < threadedEmails.length) {
-      handleSelectEmail(threadedEmails[nextIdx])
-    } else {
-      handleBack()
-    }
-  }, [threadedEmails, handleSelectEmail, handleBack])
-
-  const handleDeleteAndNavigate = useMemo(() => navigateAfterAction(handleDelete), [navigateAfterAction, handleDelete])
-  const handleArchiveAndNavigate = useMemo(() => navigateAfterAction(handleArchive), [navigateAfterAction, handleArchive])
-
-  // ─── Computed reading-mode props ───
-  const readerSenderName = selectedEmail ? extractSenderName(selectedEmail.van) : ''
-  const readerSenderEmail = selectedEmail ? extractSenderEmail(selectedEmail.van) : ''
-  // Avatar helpers kept in emailHelpers for EmailReader usage
-
-  // Mobile drawer account header · same fallback pattern as TopNav/Sidebar.
-  const userInitial = (user?.user_metadata?.voornaam?.[0] || user?.email?.[0] || 'U').toUpperCase()
-  const userName = user?.user_metadata?.voornaam
-    ? `${user.user_metadata.voornaam}${user.user_metadata.achternaam ? ' ' + user.user_metadata.achternaam : ''}`
-    : user?.email?.split('@')[0] || 'Gebruiker'
-  const userAvatarStyle = getAvatarStyle(userName)
-
-  const renderMobileFolderBtn = (folder: { id: EmailFolder; label: string; icon: React.ElementType }) => {
-    const isActive = selectedFolder === folder.id
-    const count = folderCounts[folder.id]
-    const Icon = folder.icon
-    const showNewBadge = folder.id === 'sales-wacht' && !salesTabSeen
-    return (
-      <button
-        key={folder.id}
-        onClick={() => handleFolderChange(folder.id)}
-        title={showNewBadge ? 'Markeer mails die je opvolgt · krijg een ping als er antwoord komt' : undefined}
-        className={cn(
-          'w-full py-3 px-4 flex items-center gap-2.5 rounded-lg text-[13px] font-medium transition-colors',
-          isActive
-            ? 'bg-petrol/[0.08] dark:bg-[#2A7A86]/[0.18] text-petrol dark:text-[#7FB5BF] font-medium'
-            : 'text-foreground/70 hover:bg-background hover:text-foreground',
-        )}
-      >
-        <Icon className={cn('h-4 w-4 flex-shrink-0', isActive && 'text-petrol')} />
-        <span className="flex-1 text-left">{folder.label}</span>
-        {showNewBadge && (
-          <span className="text-[10px] font-semibold text-flame tracking-wide">
-            Nieuw<span aria-hidden>.</span>
-          </span>
-        )}
-        {count > 0 && folder.id !== 'inbox' && (
-          <span className="text-[11px] font-mono px-1.5 py-0.5 rounded-full min-w-[20px] text-center text-muted-foreground">
-            {count}
-          </span>
-        )}
-      </button>
-    )
+  // ── Onderdelen van het scherm ──
+  const railTellers = tellers as Partial<Record<MailMap, number>>
+  const legeTekst = legeStaatVoor(map, railTellers, filter, zoekt)
+  const gebruiker = {
+    naam: [user?.user_metadata?.voornaam, user?.user_metadata?.achternaam].filter(Boolean).join(' ') || undefined,
+    email: user?.email,
+    initiaal: (user?.email?.[0] ?? 'D').toUpperCase(),
+    avatar: getAvatarStyle(user?.email ?? ''),
   }
 
-  // Shared between the inline desktop sidebar and the portaled mobile drawer.
-  const sidebarInner = (
+  const bovenin = (
     <>
-      {/* Mobile-only account header */}
-      <div className="md:hidden flex items-center gap-3 px-4 py-4 border-b border-border">
-        <div
-          className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-          style={{ backgroundColor: userAvatarStyle.bg, color: userAvatarStyle.text }}
-        >
-          <span className="text-[14px] font-bold">{userInitial}</span>
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-[14px] font-semibold text-foreground truncate">{userName}</p>
-          <p className="text-[12px] text-foreground/70 truncate">{user?.email}</p>
-        </div>
-      </div>
-
-      <div className="p-3">
-        <button
-          className="tap-press w-full h-10 rounded-[10px] flex items-center justify-center gap-2 text-[13px] font-semibold text-white bg-flame hover:bg-[#D8421F] shadow-[0_1px_3px_rgba(241,80,37,0.18)] hover:shadow-[0_3px_10px_rgba(241,80,37,0.24)] active:scale-[0.98] transition-[background-color,box-shadow,transform] duration-200"
-          onClick={() => { setFolderDrawerOpen(false); handleCompose() }}
-        >
-          <Pencil className="h-4 w-4" />
-          Nieuw bericht
-        </button>
-      </div>
-
-      <nav className="flex-1 overflow-y-auto px-2">
-        {/* Mobile: primary group → divider → secondary group (incl gepland) */}
-        <div className="md:hidden space-y-0">
-          {folderTabs.filter(f => PRIMARY_FOLDER_IDS.has(f.id)).map(renderMobileFolderBtn)}
-          <div className="my-2 border-t border-border/60" />
-          {folderTabs.filter(f => !PRIMARY_FOLDER_IDS.has(f.id)).map(renderMobileFolderBtn)}
-          <button
-            onClick={() => handleFolderChange('gepland')}
-            className={cn(
-              'w-full py-3 px-4 flex items-center gap-2.5 rounded-lg text-[13px] font-medium transition-colors',
-              selectedFolder === 'gepland'
-                ? 'bg-petrol/[0.08] dark:bg-[#2A7A86]/[0.18] text-petrol dark:text-[#7FB5BF] font-medium'
-                : 'text-foreground/70 hover:bg-background hover:text-foreground',
-            )}
-          >
-            <CalendarClock className={cn('h-4 w-4 flex-shrink-0', selectedFolder === 'gepland' && 'text-petrol')} />
-            <span className="flex-1 text-left">Ingeplande berichten</span>
-          </button>
-        </div>
-
-        {/* Desktop: existing layout, untouched */}
-        <div className="hidden md:block space-y-px">
-          {folderTabs.map(folder => {
-            const isActive = selectedFolder === folder.id
-            const count = folderCounts[folder.id]
-            const Icon = folder.icon
-            const showNewBadge = folder.id === 'sales-wacht' && !salesTabSeen
-            return (
-              <button
-                key={folder.id}
-                onClick={() => handleFolderChange(folder.id)}
-                title={showNewBadge ? 'Markeer mails die je opvolgt · krijg een ping als er antwoord komt' : undefined}
-                className={cn(
-                  'w-full h-[36px] flex items-center gap-3 px-2.5 rounded-[10px] text-[14px] tracking-[-0.01em] transition-all duration-200 active:scale-[0.98]',
-                  isActive
-                    ? 'bg-petrol/[0.10] text-petrol font-semibold'
-                    : 'text-[#3A3A36] font-medium hover:bg-black/[0.04]',
-                )}
-              >
-                <Icon className={cn('h-[17px] w-[17px] flex-shrink-0', isActive ? 'text-petrol' : 'text-muted-foreground')} />
-                <span className="flex-1 text-left truncate">{folder.label}</span>
-                {showNewBadge && (
-                  <span className="text-[10px] font-semibold text-flame tracking-wide">
-                    Nieuw<span aria-hidden>.</span>
-                  </span>
-                )}
-                {count > 0 && folder.id !== 'inbox' && (
-                  <span className={cn(
-                    'text-[11px] font-medium tabular-nums px-1.5 min-w-[20px] h-[18px] rounded-full inline-flex items-center justify-center',
-                    isActive ? 'bg-petrol/[0.14] text-petrol dark:bg-[#2A7A86]/[0.25] dark:text-[#7FB5BF]' : 'bg-black/[0.06] dark:bg-white/[0.08] text-foreground/70',
-                  )}>
-                    {count}
-                  </span>
-                )}
-              </button>
-            )
-          })}
-
-          <div className="my-2 border-t border-black/[0.05] dark:border-white/[0.06]" />
-
-          <button
-            onClick={() => { setFolderDrawerOpen(false); handleFolderChange('gepland') }}
-            className={cn(
-              'w-full h-[36px] flex items-center gap-3 px-2.5 rounded-[10px] text-[14px] tracking-[-0.01em] transition-all duration-200 active:scale-[0.98]',
-              selectedFolder === 'gepland'
-                ? 'bg-petrol/[0.10] dark:bg-[#2A7A86]/[0.18] text-petrol dark:text-[#7FB5BF] font-semibold'
-                : 'text-[#3A3A36] dark:text-foreground/80 font-medium hover:bg-black/[0.04] dark:hover:bg-white/[0.05]',
-            )}
-          >
-            <CalendarClock className={cn('h-[17px] w-[17px] flex-shrink-0', selectedFolder === 'gepland' ? 'text-petrol' : 'text-muted-foreground')} />
-            <span className="flex-1 text-left truncate">Ingeplande berichten</span>
-          </button>
-        </div>
-      </nav>
-
-      <div className="p-4 md:px-4 md:py-3 border-t border-border space-y-2.5">
-        <button
-          type="button"
-          role="switch"
-          aria-checked={focusModus}
-          aria-label="Focus modus aan/uit"
-          onClick={() => setFocusModus(!focusModus)}
-          className="w-full flex items-center gap-2 text-[12px] md:text-[11px] text-muted-foreground md:text-muted-foreground/80 hover:text-foreground transition-colors"
-        >
-          <Moon className="h-3 w-3" />
-          <span className="flex-1 text-left">Focus modus</span>
-          <span
-            className={cn(
-              'relative inline-flex h-4 w-7 items-center rounded-full transition-colors flex-shrink-0',
-              focusModus ? 'bg-petrol' : 'bg-[#D4D3CE] dark:bg-white/20'
-            )}
-          >
-            <span
-              className={cn(
-                'inline-block h-3 w-3 transform rounded-full bg-white shadow-sm transition-transform',
-                focusModus ? 'translate-x-[14px]' : 'translate-x-0.5'
-              )}
-            />
-          </span>
-        </button>
-        <div className="flex items-center gap-2 text-[12px] md:text-[11px] text-muted-foreground md:text-muted-foreground/80">
-          <Mail className="h-3 w-3" />
-          <span>doen<span className="text-flame">.</span> mail</span>
-        </div>
-      </div>
+      {sync.status !== 'ok' && <GezondheidBanner sync={sync} onVerbinden={() => navigate('/instellingen?tab=email')} />}
+      {map === 'verzonden' && <OutboxRijen actief />}
     </>
   )
 
-  // Mobile-only inbox-context counter: today's unread mails in current folder.
-  const todayUnreadCount = useMemo(() => {
-    const start = new Date()
-    start.setHours(0, 0, 0, 0)
-    return emails.filter((e) =>
-      e.map === selectedFolder
-      && !e.gelezen
-      && new Date(e.datum).getTime() >= start.getTime()
-    ).length
-  }, [emails, selectedFolder])
+  const lijst = (
+    <MailLijst
+      items={zichtbaar}
+      map={map}
+      geselecteerdId={geselecteerdId}
+      aangevinkt={aangevinkt}
+      focusIndex={focusIndex}
+      dichtheid={isDesktop ? dichtheid : 'comfortabel'}
+      swipeLinks={swipeLinks}
+      laden={bron.laden}
+      klaar={bron.klaar}
+      onLaadMeer={bron.laadMeer}
+      onSelect={(item) => openMail(item)}
+      onToggleCheck={wisselVink}
+      onToggleGroep={wisselGroep}
+      onPin={wisselPin}
+      onArchiveer={archiveer}
+      onVerwijder={verwijder}
+      onToggleGelezen={wisselGelezen}
+      legeStaat={<LegeStaat tekst={legeTekst} onSprong={zetMap} mailboxGekoppeld={mailboxGekoppeld} onKoppelen={() => navigate('/instellingen?tab=email')} />}
+      bovenin={bovenin}
+      toonToewijzing={gedeeld}
+      scrollSleutel={`${map}:${filter}:${labelFilter ?? ''}:${splitTab}:${zoekt ? 'zoek' : ''}`}
+      pullToRefresh={{ actief: !isDesktop, onRefresh: async () => { await mailStore.ververs(map) } }}
+    />
+  )
 
-  const selectedFolderLabel = (folderTabs.find((f) => f.id === selectedFolder)?.label
-    ?? (selectedFolder === 'gepland' ? 'Ingeplande berichten' : selectedFolder)).toUpperCase()
+  const composerNode = composer ? (
+    <Composer
+      document={composer.document}
+      variant={composer.variant}
+      bestanden={composer.bestanden}
+      losstaand={composer.variant === 'inline' && !geselecteerdId}
+      onVerzonden={naVerzenden}
+      onSluiten={sluitComposer}
+      onHeropen={(doc, bestanden) => zetComposer({ document: doc, variant: isDesktop ? 'inline' : 'volledig', bestanden })}
+    />
+  ) : null
 
-  // ─── UNIFIED 3-COLUMN LAYOUT ───
-  return (
-    <div className={cn('h-full flex flex-col overflow-hidden antialiased', viewMode === 'idle' || focusModus ? 'bg-background' : 'bg-card')}>
-      {focusModus ? (
-        <EmailFocusKaart onUitzetten={() => setFocusModus(false)} />
-      ) : (
-      <>
-      {viewMode === 'idle' && (
-        <EmailMobileTopBar
-          onOpenDrawer={() => setFolderDrawerOpen(true)}
-          searchInput={searchInput}
-          onSearchChange={handleSearchChange}
-          selectedFolder={selectedFolder}
-          selectedFolderLabel={selectedFolderLabel}
-          todayUnreadCount={todayUnreadCount}
-          userInitial={userInitial}
-          onOpenAI={() => navigate('/forgie')}
-          onRefresh={() => { hapticLight(); void handleRefresh(selectedFolder) }}
-          isRefreshing={isRefreshing || trekBezig}
-          lastSyncAt={lastSyncAt}
-          nowTick={nowTick}
-        />
-      )}
-      <div className="flex flex-1 min-h-0 overflow-hidden">
-      {/* Desktop folder-icon-sidebar · iOS-inspired met subtiele petrol-infusie:
-          zachte verticale gradient, petrol-tinted hairlines, cooler grey iconen,
-          en hover-state in petrol ipv neutraal zwart. */}
-      <div className="hidden md:flex w-[64px] bg-gradient-to-b from-[#E9EEEF] via-[#E4EBEC] to-[#DDE7E8] dark:from-[hsl(190_40%_6%)] dark:via-[hsl(190_38%_5%)] dark:to-[hsl(190_42%_4%)] border-r border-petrol/[0.10] dark:border-petrol/[0.22] flex-col flex-shrink-0 relative">
-        {/* Subtiele binnen-highlight aan de linkerkant · geeft diepte */}
-        <div className="absolute inset-y-0 left-0 w-px bg-white/40 dark:bg-white/[0.04] pointer-events-none" aria-hidden />
-
-        <nav className="flex-1 overflow-y-auto pt-3 pb-2 px-2 space-y-1 relative">
-          {folderTabs.map(folder => {
-            const isActive = selectedFolder === folder.id
-            const count = folderCounts[folder.id]
-            const Icon = folder.icon
-            const showNewBadge = folder.id === 'sales-wacht' && !salesTabSeen
-            return (
-              <button
-                key={folder.id}
-                onClick={() => handleFolderChange(folder.id)}
-                title={`${folder.label}${count > 0 && folder.id !== 'inbox' ? ` (${count})` : ''}${showNewBadge ? ' · Nieuw' : ''}`}
-                className={cn(
-                  'tap-press relative w-full h-11 flex items-center justify-center rounded-[12px] transition-all duration-200 active:scale-[0.94]',
-                  isActive
-                    ? 'bg-gradient-to-b from-[#1F606A] to-[#164850] text-white shadow-[0_3px_10px_-2px_rgba(26,83,92,0.45),0_0_0_0.5px_rgba(255,255,255,0.06)_inset,0_-1px_0_rgba(0,0,0,0.05)_inset]'
-                    : 'text-[#8FA0A4] hover:text-petrol hover:bg-petrol/[0.06] dark:text-[#6A8085] dark:hover:text-[#5FB5C0] dark:hover:bg-petrol/[0.22]',
-                )}
-              >
-                <Icon className="h-[19px] w-[19px]" strokeWidth={isActive ? 2.2 : 1.8} />
-                {showNewBadge && (
-                  <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-flame ring-2 ring-[#F1F5F5] dark:ring-[hsl(190_40%_5%)]" />
-                )}
-                {count > 0 && folder.id !== 'inbox' && !showNewBadge && (
-                  <span className={cn(
-                    'absolute top-0.5 right-0.5 text-[10px] font-semibold tabular-nums min-w-[16px] h-[16px] px-1 rounded-full inline-flex items-center justify-center leading-none ring-2 ring-[#F1F5F5] dark:ring-[hsl(190_40%_5%)]',
-                    isActive ? 'bg-white text-petrol' : 'bg-flame text-white',
-                  )}>{count}</span>
-                )}
-              </button>
-            )
-          })}
-
-          <div className="my-2 mx-3 h-px bg-gradient-to-r from-transparent via-petrol/[0.12] to-transparent" aria-hidden />
-
-          <button
-            onClick={() => handleFolderChange('gepland')}
-            title="Ingeplande berichten"
-            className={cn(
-              'tap-press w-full h-11 flex items-center justify-center rounded-[12px] transition-all duration-200 active:scale-[0.94]',
-              selectedFolder === 'gepland'
-                ? 'bg-gradient-to-b from-[#1F606A] to-[#164850] text-white shadow-[0_3px_10px_-2px_rgba(26,83,92,0.45),0_0_0_0.5px_rgba(255,255,255,0.06)_inset,0_-1px_0_rgba(0,0,0,0.05)_inset]'
-                : 'text-[#8FA0A4] hover:text-petrol hover:bg-petrol/[0.06] dark:text-[#6A8085] dark:hover:text-[#5FB5C0] dark:hover:bg-petrol/[0.22]',
-            )}
-          >
-            <CalendarClock className="h-[19px] w-[19px]" strokeWidth={selectedFolder === 'gepland' ? 2.2 : 1.8} />
-          </button>
-        </nav>
-
-        {/* Footer: Focus modus toggle · subtieler petrol-tinted divider */}
-        <div className="border-t border-petrol/[0.08] py-2 px-2 bg-gradient-to-b from-transparent to-petrol/[0.04]">
-          <button
-            type="button"
-            role="switch"
-            aria-checked={focusModus}
-            aria-label="Focus modus aan/uit"
-            onClick={() => setFocusModus(!focusModus)}
-            title={focusModus ? 'Focus modus · aan' : 'Focus modus · uit'}
-            className={cn(
-              'tap-press w-full h-11 flex items-center justify-center rounded-[12px] transition-all duration-200 active:scale-[0.94]',
-              focusModus
-                ? 'bg-gradient-to-b from-[#2A2A2A] to-[#141414] text-white shadow-[0_3px_10px_-2px_rgba(0,0,0,0.30),0_0_0_0.5px_rgba(255,255,255,0.06)_inset]'
-                : 'text-[#8FA0A4] dark:text-[#6A8085] hover:text-foreground hover:bg-black/[0.05] dark:hover:bg-white/[0.06]',
-            )}
-          >
-            <Moon className="h-[19px] w-[19px]" strokeWidth={focusModus ? 2.2 : 1.8} />
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile drawer + backdrop · portaled to body so the slide-over escapes
-          the parent's stacking context (main carries zIndex:0 in topnav layout,
-          which would otherwise hide the drawer's top behind the global header). */}
-      {createPortal(
-        <>
-          {folderDrawerOpen && (
-            <div
-              className="fixed inset-0 z-40 bg-black/40 md:hidden"
-              onClick={() => setFolderDrawerOpen(false)}
-              aria-hidden="true"
-            />
-          )}
-          <div
-            className={cn(
-              'md:hidden fixed inset-y-0 left-0 z-50 w-[80vw] max-w-[300px] bg-card border-r border-border flex flex-col transform transition-transform duration-300 ease-in-out',
-              folderDrawerOpen ? 'translate-x-0' : '-translate-x-full',
-            )}
-          >
-            {sidebarInner}
-          </div>
-        </>,
-        document.body,
-      )}
-
-      {/* Mobile floating "Opstellen" pill · bottom-right, vrij van de Daan-knop.
-          Portaled to body to escape main's stacking context. Verberg tijdens
-          bulk-selectie zodat de bulk action-bar (zelfde y-positie) niet
-          overlapt met de pill. */}
-      {viewMode === 'idle' && checkedEmails.size === 0 && createPortal(
+  const leesvenster = geselecteerdId ? (
+    <Leesvenster
+      emailId={geselecteerdId}
+      compact={!isDesktop}
+      onSluiten={() => zetGeselecteerd(null)}
+      onVolgende={() => naarBuur(1)}
+      onVorige={() => naarBuur(-1)}
+      onAntwoord={(modus, mail, body, voorstel) => { void openAntwoord(modus, mail, body, voorstel) }}
+      voet={composer?.variant === 'inline' ? composerNode : null}
+      onBeantwoorden={() => antwoordOpHuidige('antwoord')}
+      gedeeld={gedeeld}
+      kopActies={isDesktop ? (
         <button
           type="button"
-          onClick={() => { hapticLight(); handleCompose() }}
-          aria-label="Nieuw bericht opstellen"
-          className="md:hidden fixed right-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 inline-flex items-center gap-2 px-5 py-3 rounded-full text-white text-[14px] font-medium bg-flame/[0.94] backdrop-blur-xl shadow-[0_8px_24px_rgba(241,80,37,0.32)] active:scale-[0.94] transition-transform duration-100"
+          onClick={() => zetKlantkaartAan(!klantkaartAan)}
+          aria-pressed={klantkaartAan}
+          title="Klantkaart tonen of verbergen"
+          className={cn(
+            'inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[12.5px] font-semibold transition-colors',
+            klantkaartAan ? 'bg-petrol/10 text-petrol' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+          )}
         >
-          <Edit3 className="h-[17px] w-[17px]" />
-          Opstellen
-        </button>,
-        document.body,
-      )}
+          <PanelRight className="h-4 w-4" strokeWidth={1.75} />
+          Klantkaart
+        </button>
+      ) : undefined}
+    />
+  ) : null
 
-      {/* ─── LEADS · eigen tabel, dus eigen paneel in plaats van de e-mailkolommen ─── */}
-      {selectedFolder === 'leads' && (
-        <Suspense fallback={<div className="flex-1 flex items-center justify-center"><Loader2 className="h-4 w-4 animate-spin text-petrol/40" /></div>}>
-        <LeadsPaneel
-          onMailLead={(email, body, leadId, onderwerp) => {
-            handleCompose({ to: email, subject: onderwerp, body, bodyIsBericht: true })
-            setComposeLeadId(leadId || null)
-          }}
-          naastCompose={viewMode !== 'idle'}
-          mailDirect={isDesktop}
-          benaderdeLeadId={benaderdeLeadId}
-          onBeantwoordMail={(mail) => {
-            loadEmailBody(mail, 'inbox')
-              .then((metBody) => handleReply(metBody))
-              .catch(() => handleReply(mail))
-          }}
+  // ── Mobiel ──
+  if (!isDesktop) {
+    return (
+      <div className="h-full flex flex-col min-h-0 overflow-hidden bg-background">
+        {!geselecteerdId && !composer && (
+          <EmailMobileTopBar
+            onOpenDrawer={() => zetLadeOpen(true)}
+            searchInput={zoektekst}
+            onSearchChange={zetZoektekst}
+            selectedFolder={map}
+            selectedFolderLabel={mapLabel(map)}
+            todayUnreadCount={railTellers.inbox ?? 0}
+            userInitial={gebruiker.initiaal}
+            onOpenAI={() => navigate('/forgie')}
+            onRefresh={() => { hapticLight(); void mailStore.ververs(map) }}
+            isRefreshing={bezig}
+            lastSyncAt={laatsteSync}
+            nowTick={nu}
+          />
+        )}
+        {composer?.variant === 'volledig' ? composerNode : geselecteerdId ? leesvenster : (
+          map === 'leads' ? (
+            <Suspense fallback={<Laden />}>
+              <LeadsPaneel onMailLead={(email, body, leadId, onderwerp) => { nieuwBericht({ aan: [{ email }], onderwerp: onderwerp || '', html: body || '' }); if (leadId) void updateLeadStatus(leadId, 'benaderd').catch(() => {}) }} />
+            </Suspense>
+          ) : map === 'ingepland' ? (
+            <Suspense fallback={<Laden />}>
+              <IngeplandeBerichtenLijst onBewerk={(doc) => zetComposer({ document: doc, variant: 'volledig' })} />
+            </Suspense>
+          ) : lijst
+        )}
+        <MobieleMappenLade
+          open={ladeOpen}
+          onSluiten={() => zetLadeOpen(false)}
+          actieveMap={map}
+          tellers={railTellers}
+          onKies={zetMap}
+          onNieuw={() => { zetLadeOpen(false); nieuwBericht() }}
+          gebruiker={gebruiker}
+          focusModus={focusModus}
+          onFocusModus={zetFocusModus}
+          postvakken={postvakken.postvakken}
+          actiefPostvak={postvakken.actief}
+          onPostvak={postvakken.kies}
         />
+        <SnoozeMenu open={snoozeOpen} onSluiten={() => zetSnoozeOpen(false)} onKies={(tot) => { const ids = doelIds(); if (ids.length) void mailStore.snooze(ids, tot ? tot.toISOString() : null); zetSnoozeOpen(false); naActie(ids) }} gesnoozed={map === 'gesnoozed'} />
+      </div>
+    )
+  }
+
+  // ── Desktop ──
+  return (
+    <div className="h-full flex min-h-0 overflow-hidden bg-background">
+      <Mappenrail
+        actieveMap={map}
+        tellers={railTellers}
+        onKies={zetMap}
+        onNieuw={() => nieuwBericht()}
+        labels={railLabels}
+        onLabels={zetRailLabels}
+        focusModus={focusModus}
+        onFocusModus={zetFocusModus}
+        onInstellingen={() => navigate('/instellingen?tab=email')}
+        postvakken={postvakken.postvakken}
+        actiefPostvak={postvakken.actief}
+        onPostvak={postvakken.kies}
+        labelFilter={labelFilter}
+        onLabelFilter={(l) => { zetLabelFilter(l); zetGeselecteerd(null) }}
+      />
+
+      {focusModus ? (
+        <EmailFocusKaart onUitzetten={() => zetFocusModus(false)} />
+      ) : map === 'leads' ? (
+        <Suspense fallback={<Laden />}>
+          <LeadsPaneel
+            naastCompose={!!composer}
+            onMailLead={(email, body, leadId, onderwerp) => { nieuwBericht({ aan: [{ email }], onderwerp: onderwerp || '', html: body || '' }); if (leadId) void updateLeadStatus(leadId, 'benaderd').catch((e) => logger.error('lead-status', e)) }}
+          />
         </Suspense>
-      )}
-
-      {/* ─── LIST COLUMN · altijd zichtbaar op desktop (resizable), op mobile alleen wanneer idle ─── */}
-      <div
-        className={cn(
-          'bg-card flex-col min-w-0 relative',
-          'md:flex-shrink-0 md:border-r md:border-border md:flex',
-          viewMode === 'idle' ? 'flex flex-1' : 'hidden',
-          selectedFolder === 'leads' && 'hidden md:hidden',
-        )}
-        style={isDesktop ? { width: listWidth } : undefined}
-      >
-
-      {/* Ingeplande berichten lijst (gepland folder) */}
-      {selectedFolder === 'gepland' && (
-        <Suspense fallback={<div className="flex-1 flex items-center justify-center py-8"><Loader2 className="h-4 w-4 animate-spin text-petrol/40" /></div>}>
-          <IngeplandeBerichtenLijst />
+      ) : map === 'ingepland' ? (
+        <Suspense fallback={<Laden />}>
+          <IngeplandeBerichtenLijst onBewerk={(doc) => zetComposer({ document: doc, variant: 'inline' })} />
         </Suspense>
-      )}
-
-      {/* Email list (idle view) */}
-      {selectedFolder !== 'gepland' && (<>
-        {/* Sticky header + toolbar · desktop only */}
-        <div className="sticky top-0 z-20 bg-gradient-to-b from-[#F3F7F7] to-white dark:from-white/[0.05] dark:to-card flex-shrink-0 hidden md:block">
-          <div className="flex items-center justify-between px-4 h-[52px]">
-            <div className="flex items-baseline gap-2 min-w-0">
-              <h1 className="font-heading text-[20px] font-bold tracking-[-0.01em] text-foreground leading-none">
-                {folderTabs.find((f) => f.id === selectedFolder)?.label || 'Inbox'}<span className="text-flame">.</span>
-              </h1>
-              {folderCounts[selectedFolder] > 0 && (
-                // Tekst met een flame-punt, geen gekleurde pill · het aantal
-                // hoort naast de titel te fluisteren, niet te roepen.
-                <span className="font-mono tabular-nums text-[11px] leading-none text-muted-foreground">
-                  {folderCounts[selectedFolder]} nieuw<span className="text-flame">.</span>
-                </span>
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={() => handleCompose()}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-semibold text-white bg-flame hover:bg-[#D8421F] shadow-[0_1px_3px_rgba(241,80,37,0.18)] hover:shadow-[0_3px_10px_rgba(241,80,37,0.24)] transition-[background-color,box-shadow] duration-200"
-              title="Nieuw bericht opstellen (c)"
-            >
-              <Pencil className="h-3.5 w-3.5" />
-              Nieuw bericht
-            </button>
-          </div>
-        <div className="flex items-center justify-between gap-2 px-4 h-11 min-w-0 overflow-hidden">
-          <div className="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
-            <input
-              type="checkbox"
-              checked={allChecked}
-              ref={(el) => { if (el) el.indeterminate = someChecked }}
-              onChange={toggleCheckAll}
-              className="h-4 w-4 rounded border-foreground/20 cursor-pointer accent-petrol flex-shrink-0"
-            />
-
-            {hasChecked ? (
-              <div className="flex items-center gap-0.5">
-                <Button variant="ghost" size="sm" className="h-8 text-[12px] gap-1.5 text-foreground/70 hover:text-foreground hover:bg-muted rounded-lg" onClick={handleBulkArchive}>
-                  <Archive className="h-3.5 w-3.5" /> Archief
-                </Button>
-                <Button variant="ghost" size="sm" className="h-8 text-[12px] gap-1.5 text-foreground/70 hover:text-foreground hover:bg-muted rounded-lg" onClick={handleBulkDelete}>
-                  <Trash2 className="h-3.5 w-3.5" /> Verwijder
-                </Button>
-                <Button variant="ghost" size="sm" className="h-8 text-[12px] gap-1.5 text-foreground/70 hover:text-foreground hover:bg-muted rounded-lg" onClick={handleBulkMarkRead}>
-                  <CheckCheck className="h-3.5 w-3.5" /> Gelezen
-                </Button>
-                <Button variant="ghost" size="sm" className="h-8 text-[12px] text-foreground/70 hover:text-foreground hover:bg-muted rounded-lg" onClick={handleBulkMarkUnread}>
-                  Ongelezen
-                </Button>
-              </div>
-            ) : (
-              // Filters zijn tekstlinks, geen pills · een gevulde donkere pill
-              // trekt hier meer aandacht dan de mail eronder.
-              <div className="flex items-center gap-4 min-w-0 overflow-x-auto scrollbar-none">
-                {filtersList.map(f => {
-                  const isActiveFilter = filter === f.id
-                  return (
-                    <button
-                      key={f.id}
-                      onClick={() => setFilter(f.id)}
-                      className={cn(
-                        'relative py-1 text-[12px] whitespace-nowrap transition-colors duration-150',
-                        isActiveFilter
-                          ? 'font-semibold text-foreground'
-                          : 'text-muted-foreground hover:text-foreground/80',
-                      )}
-                    >
-                      {f.label}
-                      {isActiveFilter && (
-                        <span className="absolute -bottom-0.5 left-0 right-0 h-px bg-flame" aria-hidden />
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center flex-shrink-0">
-            {/* List-style + font-size toggles · verborgen in 3-kolom layout (te smal).
-                Logica blijft intact, kan via settings/popover terug. */}
-
-            {/* Sync-tijd alleen als de lijstkolom breed genoeg is; anders schuift
-                hij over de filterpills heen. */}
-            {lastSyncAt && listWidth >= 470 && (
-              <span
-                className="text-[11px] text-muted-foreground tabular-nums whitespace-nowrap mr-1"
-                title={new Date(lastSyncAt).toLocaleString('nl-NL')}
-              >
-                {formatRelativeSync(lastSyncAt, nowTick)}
-              </span>
-            )}
-
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground/70 hover:bg-muted/60 rounded-[10px] transition-colors duration-150"
-              onClick={() => setListStyle(s => s === 'inline' ? 'stacked' : 'inline')}
-              title={listStyle === 'inline' ? 'Compacte weergave' : 'Ruime weergave'}
-              aria-label={listStyle === 'inline' ? 'Compacte weergave' : 'Ruime weergave'}
-            >
-              {listStyle === 'inline' ? <StretchHorizontal className="h-4 w-4" /> : <Rows3 className="h-4 w-4" />}
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground/70 hover:bg-muted/60 rounded-[10px] transition-colors duration-150"
-              onClick={() => handleRefresh(selectedFolder)}
-              disabled={isRefreshing}
-            >
-              <RefreshCw className={cn('h-4 w-4', isRefreshing && 'animate-spin')} />
-            </Button>
-          </div>
-        </div>
-        </div>
-
-        {/* Search bar · desktop only; mobile uses de topbar pill. */}
-        <div className="hidden md:block px-4 pb-2.5 border-b border-[rgba(26,83,92,0.08)] dark:border-white/10 bg-card">
-          <div className="flex items-center gap-2.5 h-10 px-3 bg-background rounded-[10px] focus-within:ring-2 focus-within:ring-petrol/20 transition-shadow">
-            <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            <input
-              ref={searchInputRef}
-              type="text"
-              value={searchInput}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
-              placeholder="Zoek in e-mails"
-              className="flex-1 bg-transparent text-[14px] text-foreground outline-none placeholder:text-muted-foreground"
-            />
-            {!searchInput && !searchFocused && (
-              <kbd className="hidden lg:inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 rounded-[5px] border border-black/[0.08] dark:border-white/15 bg-white dark:bg-white/[0.06] font-mono text-[10px] text-muted-foreground leading-none">
-                /
-              </kbd>
-            )}
-            {searchInput && (
-              <button onClick={() => { setSearchInput(''); setSearchQuery('') }} className="p-1 hover:bg-border rounded">
-                <X className="h-3.5 w-3.5 text-muted-foreground" />
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Sales-banner zit BUITEN de scroll-container zodat de virtualizer
-            niet hoeft te compenseren voor een non-virtual element binnen
-            zijn scroll-element (was bron van overlap-bug bij sales-folders). */}
-        {(selectedFolder === 'sales-wacht' || selectedFolder === 'sales-beantwoord') && !salesBannerDismissed && !isLoading && threadedEmails.length > 0 && (
-          <div className="mx-4 mt-3 px-4 py-3 bg-amber-50/80 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/40 rounded-lg text-[12px] text-amber-900 dark:text-amber-200 leading-relaxed flex-shrink-0">
-            <p className="font-medium mb-1">Hoe werkt Opvolgen?</p>
-            <p>
-              "Beantwoord" wordt bepaald op basis van het afzender-emailadres, niet op echte
-              email-threads. Bij koude acquisitie kan een antwoord van een ander adres komen
-              (zoals info@) · die blijft dan in "Opvolgen". Andersom kan een mail over een
-              ander onderwerp ten onrechte als reactie tellen. Gebruik de per-rij knoppen om
-              dit te corrigeren.
-            </p>
-            <button
-              type="button"
-              onClick={dismissSalesBanner}
-              className="mt-2 text-amber-700 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-200 underline text-[11px]"
-            >
-              Begrepen, niet meer tonen
-            </button>
-          </div>
-        )}
-
-        {/* Email list */}
-        <div
-          ref={emailListRef}
-          // overflow-x expliciet dicht: met alleen overflow-y rekent CSS de
-          // andere as om naar auto, en dan schuift de lijst tijdens het
-          // scrollen zijwaarts mee zodra één rij te breed uitvalt — een lang
-          // onderwerp zonder spaties is al genoeg.
-          className="flex-1 overflow-y-auto overflow-x-hidden overscroll-x-none scroll-smooth relative bg-[#F7FAFA] dark:bg-transparent"
-          onScroll={handleScroll}
-        >
-          {/* Trek-om-te-verversen · alleen mobiel, alleen bovenaan de lijst */}
-          {(trekAfstand > 0 || trekBezig) && (
-            <div
-              className="md:hidden absolute inset-x-0 top-0 z-20 flex items-center justify-center pointer-events-none"
-              style={{ height: trekAfstand }}
-            >
-              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card border border-border shadow-[0_2px_8px_rgba(0,0,0,0.08)] text-[11px] font-medium text-muted-foreground">
-                <RefreshCw
-                  className={cn('h-3.5 w-3.5', trekBezig && 'animate-spin')}
-                  style={trekBezig ? undefined : { transform: `rotate(${trekAfstand * 4}deg)` }}
-                />
-                {trekBezig ? 'Ophalen' : trekGereed ? 'Loslaten om te verversen' : 'Trek om te verversen'}
-              </span>
-            </div>
-          )}
-          {/* Sticky date-group overlay · toont actieve groep bovenaan tijdens
-              scroll. Virtualizer rendert echte headers absolute, dus deze
-              overlay vult de gap. */}
-          {activeGroup && (
-            <div className="sticky top-0 z-10 px-4 pl-10 pt-3 pb-2 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-petrol/65 dark:text-foreground/60 bg-card/85 backdrop-blur-xl border-b border-black/[0.05] dark:border-white/[0.06] -mb-[36px]">
-              {activeGroup === 'Vandaag' ? (
-                <>
-                  <span className="md:hidden">Eerder vandaag</span>
-                  <span className="hidden md:inline">{activeGroup}</span>
-                </>
-              ) : activeGroup}<span className="text-flame tracking-normal">.</span>
-            </div>
-          )}
-
-          {isLoading ? (
-            <div>
-              {/* Date-group header placeholder */}
-              <div className="px-4 pt-5 pb-2">
-                <Skeleton className="h-3 w-16" />
-              </div>
-              {/* De vorm volgt de echte rij · een compacte regel waar straks
-                  drie regels komen laat de lijst zichtbaar verspringen zodra
-                  de mail binnen is. */}
-              {Array.from({ length: 12 }).map((_, i) => (
-                isDesktop && listStyle === 'stacked' ? (
-                  <div
-                    key={i}
-                    className="flex items-center gap-2.5 pl-3 pr-3 h-[46px] animate-in fade-in fill-mode-both duration-300"
-                    style={{ animationDelay: `${i * 35}ms` }}
-                  >
-                    <div className="flex-shrink-0 h-5 w-4" />
-                    <Skeleton className="w-[26px] h-[26px] rounded-md flex-shrink-0" />
-                    <Skeleton className="h-3.5 flex-shrink-0" style={{ width: i % 3 === 0 ? 130 : i % 2 === 0 ? 100 : 150 }} />
-                    <Skeleton className="h-3.5 flex-1 max-w-[60%]" />
-                    <Skeleton className="h-3 w-10 flex-shrink-0 ml-auto" />
-                  </div>
-                ) : (
-                  <div
-                    key={i}
-                    className="flex items-start gap-2.5 pl-3 pr-3 h-[70px] pt-3.5 animate-in fade-in fill-mode-both duration-300"
-                    style={{ animationDelay: `${i * 35}ms` }}
-                  >
-                    <Skeleton className="w-[26px] h-[26px] rounded-md flex-shrink-0" />
-                    <div className="flex-1 min-w-0 space-y-[7px]">
-                      <div className="flex items-center gap-2">
-                        <Skeleton className="h-2.5" style={{ width: i % 3 === 0 ? 108 : i % 2 === 0 ? 84 : 126 }} />
-                        <Skeleton className="h-2.5 w-8 ml-auto flex-shrink-0" />
-                      </div>
-                      <Skeleton className="h-3" style={{ width: i % 2 === 0 ? '78%' : '62%' }} />
-                      <Skeleton className="h-2.5" style={{ width: i % 3 === 0 ? '52%' : '88%' }} />
-                    </div>
-                  </div>
-                )
-              ))}
-            </div>
-          ) : threadedEmails.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-center px-8">
-              <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mb-5">
-                <Inbox className="h-6 w-6 text-muted-foreground/80" />
-              </div>
-              <h3 className="font-heading text-[16px] font-bold text-foreground tracking-[-0.01em] mb-1.5">
-                {searchQuery
-                  ? 'Geen resultaten'
-                  : filter !== 'alle'
-                    ? 'Geen emails met dit filter'
-                    : mailboxGekoppeld === false
-                      ? 'Koppel je mailbox'
-                      : 'Inbox is leeg'}
-              </h3>
-              <p className="text-[13px] text-foreground/70 max-w-[280px] leading-relaxed">
-                {searchQuery
-                  ? `Geen emails gevonden voor "${searchQuery}"`
-                  : filter !== 'alle'
-                    ? 'Probeer een ander filter of bekijk alle emails'
-                    : mailboxGekoppeld === false
-                      ? 'Verbind je zakelijke mailbox en behandel klantmail, offertes en leads gewoon hier in doen.'
-                      : 'Nieuwe emails verschijnen hier automatisch'
-                }
-              </p>
-              {!searchQuery && filter === 'alle' && mailboxGekoppeld === false && (
-                <button
-                  type="button"
-                  onClick={() => navigate('/instellingen?tab=email')}
-                  className="mt-4 text-sm text-flame hover:underline focus-visible:outline-none focus-visible:underline"
-                >
-                  Mailbox koppelen →
-                </button>
-              )}
-            </div>
-          ) : (
-            <div>
-              {searchQuery.trim() && searchResults !== null && (
-                <div className="flex items-center gap-2 px-4 py-2 border-b border-border/50">
-                  {isSearching && <Loader2 className="h-3 w-3 animate-spin text-petrol/50" />}
-                  <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                    <span className="font-mono tabular-nums">{threadedEmails.length}</span>
-                    {' '}resultaten{searchHasMoreRef.current ? ' · scroll voor meer' : ''}
-                  </span>
-                </div>
-              )}
-              <div
-                style={{
-                  height: rowVirtualizer.getTotalSize(),
-                  position: 'relative',
-                  width: '100%',
-                }}
-              >
-                {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-                  const it = flatItems[virtualRow.index]
-                  if (!it) return null
-                  return (
-                    <div
-                      key={virtualRow.key}
-                      data-index={virtualRow.index}
-                      ref={rowVirtualizer.measureElement}
-                      style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        width: '100%',
-                        transform: `translateY(${virtualRow.start}px)`,
-                      }}
-                    >
-                      {it.type === 'header-pinned' ? (
-                        <div className="px-4 pl-10 pt-5 pb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-petrol/50 dark:text-foreground/55">
-                          Vastgepind<span className="text-flame tracking-normal">.</span>
-                        </div>
-                      ) : it.type === 'header-group' ? (() => {
-                        const groupIds = emailsByGroup.get(it.group) || []
-                        const allGroupChecked = groupIds.length > 0 && groupIds.every(id => checkedEmails.has(id))
-                        const someGroupChecked = !allGroupChecked && groupIds.some(id => checkedEmails.has(id))
-                        return (
-                          <div className="px-4 pt-5 pb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-petrol/65 dark:text-foreground/60 flex items-center gap-2.5">
-                            <input
-                              type="checkbox"
-                              checked={allGroupChecked}
-                              ref={(el) => { if (el) el.indeterminate = someGroupChecked }}
-                              onChange={() => toggleCheckGroup(it.group)}
-                              className="h-3.5 w-3.5 rounded border-foreground/20 cursor-pointer accent-petrol"
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                            <span className="font-semibold whitespace-nowrap">
-                              {it.group === 'Vandaag' ? (
-                                <>
-                                  <span className="md:hidden">Eerder vandaag</span>
-                                  <span className="hidden md:inline">{it.group}</span>
-                                </>
-                              ) : it.group}<span className="text-flame tracking-normal">.</span>
-                            </span>
-                            <span className="flex-1 h-px bg-gradient-to-r from-petrol/[0.14] to-transparent dark:from-white/10" aria-hidden />
-                            <span className="tabular-nums tracking-normal text-petrol/40 dark:text-foreground/40">{groupIds.length}</span>
-                          </div>
-                        )
-                      })() : (
-                        <EmailListItem
-                          email={it.email}
-                          isActive={selectedEmail?.id === it.email.id}
-                          isChecked={checkedEmails.has(it.email.id)}
-                          isFocused={focusedIndex === it.index}
-                          fontSize={fontSize}
-                          stacked={isDesktop && listStyle === 'stacked'}
-                          onSelect={handleSelectEmail}
-                          onTogglePin={handleTogglePin}
-                          onToggleCheck={toggleCheckEmail}
-                          onPrefetch={prefetchEmailBody}
-                          onArchive={handleArchive}
-                          onDelete={handleDelete}
-                          onToggleRead={handleToggleRead}
-                          salesMode={selectedFolder === 'sales-wacht' ? 'wacht' : selectedFolder === 'sales-beantwoord' ? 'beantwoord' : undefined}
-                          onMarkeerBeantwoord={selectedFolder === 'sales-wacht' ? handleSalesMarkeerBeantwoord : undefined}
-                          onWisWacht={selectedFolder === 'sales-wacht' ? handleSalesWisWacht : undefined}
-                          onTerugNaarWacht={selectedFolder === 'sales-beantwoord' ? handleSalesTerugNaarWacht : undefined}
-                        />
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-              {isLoadingMore && (
-                <div className="flex items-center justify-center py-5">
-                  <Loader2 className="h-4 w-4 animate-spin text-petrol/40 mr-2" />
-                  <span className="text-[12px] text-muted-foreground/80">Meer laden...</span>
-                </div>
-              )}
-              {threadedEmails.length < imapTotal && !isLoadingMore && (
-                <button
-                  onClick={() => loadMoreEmails(selectedFolder)}
-                  className="w-full py-4 text-[12px] text-muted-foreground hover:text-petrol hover:bg-petrol/[0.03] transition-colors duration-150"
-                >
-                  Meer laden ({threadedEmails.length} van {imapTotal})
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-      {/* Keyboard shortcuts overlay */}
-      {showShortcuts && (
+      ) : (
         <>
-          <div className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm" onClick={() => setShowShortcuts(false)} />
-          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-card dark:border dark:border-white/10 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.08)] p-8 w-[360px]">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="font-heading text-[18px] font-bold text-foreground tracking-[-0.01em]">Sneltoetsen</h3>
-              <button onClick={() => setShowShortcuts(false)} className="p-1.5 hover:bg-muted rounded-lg transition-colors duration-150">
-                <X className="h-4 w-4 text-muted-foreground" />
-              </button>
+          {/* De lijst houdt altijd dezelfde breedte en het leesvenster staat er
+              altijd naast. Een lijst die over de volle breedte uitrekt leest
+              als een muur tekst. */}
+          <div
+            className={cn(
+              'relative flex flex-shrink-0 flex-col border-r border-border/70',
+              !lijstSleep.sleept && 'transition-[width] duration-200',
+            )}
+            style={{ width: klantkaartAan && geselecteerd ? Math.min(lijstSleep.breedte, 360) : lijstSleep.breedte }}
+          >
+            <div className="px-3 pt-3 pb-2 border-b border-border/60 flex-shrink-0">
+              <Zoekbalk
+                tekst={zoektekst}
+                onTekst={zetZoektekst}
+                chips={chips}
+                onChip={(chip) => zetChips((c) => voegChipToe(c, chip))}
+                onChipWeg={(i) => zetChips((c) => c.filter((_, idx) => idx !== i))}
+                onWis={() => { zetZoektekst(''); zetChips([]) }}
+                bezig={zoekt && zoekLijst.laden}
+              />
             </div>
-            <div className="space-y-3">
-              {KEYBOARD_SHORTCUTS.map(s => (
-                <div key={s.key} className="flex items-center justify-between">
-                  <span className="text-[14px] text-foreground/70">{s.action}</span>
-                  <kbd className="px-2.5 py-1 bg-muted rounded-lg text-[12px] font-mono text-foreground/70">{s.key}</kbd>
+            <Lijstkop
+              map={map}
+              teller={zichtbaar.length}
+              filter={filter}
+              onFilter={zetFilter}
+              filterTellers={filterTellers}
+              aangevinkt={aangevinkt.size}
+              allesAangevinkt={!!zichtbaar.length && aangevinkt.size === zichtbaar.length}
+              deelsAangevinkt={aangevinkt.size > 0 && aangevinkt.size < zichtbaar.length}
+              onAllesVinken={() => zetAangevinkt((oud) => (oud.size === zichtbaar.length ? new Set() : new Set(zichtbaar.map((i) => i.id))))}
+              onWisSelectie={() => zetAangevinkt(new Set())}
+              onBulkArchiveer={() => archiveer()}
+              onBulkVerwijder={() => verwijder()}
+              onBulkGelezen={() => { void mailStore.zetGelezen([...aangevinkt], true); zetAangevinkt(new Set()) }}
+              onBulkOngelezen={() => { void mailStore.zetGelezen([...aangevinkt], false); zetAangevinkt(new Set()) }}
+              dichtheid={dichtheid}
+              onDichtheid={zetDichtheid}
+              onVerversen={() => { void mailStore.ververs(map) }}
+              bezig={bezig}
+              laatsteSync={laatsteSync}
+              nu={nu}
+              onNieuw={() => nieuwBericht()}
+              breed={false}
+              splitTabs={splitAan && map === 'inbox' && !zoekt}
+              splitTab={splitTab}
+              onSplitTab={(t) => { zetSplitTab(t); zetGeselecteerd(null) }}
+              splitTellers={splitTellers}
+              gedeeld={gedeeld}
+              onBulkToewijzen={(sleutel) => { void mailStore.wijsToe([...aangevinkt], sleutel); zetAangevinkt(new Set()) }}
+              onBulkLabel={(label, aan) => { void mailStore.label([...aangevinkt], label, aan) }}
+            />
+            {lijst}
+            <div
+              {...lijstSleep.greepProps}
+              className={cn(GREEP_CLS, '-right-[3px]')}
+              role="separator"
+              aria-orientation="vertical"
+              aria-label="Breedte van de lijst"
+              title="Sleep om de lijst breder of smaller te maken. Dubbelklik zet hem terug."
+            >
+              <span className={GREEP_LIJN_CLS} />
+            </div>
+          </div>
+
+          <div className="relative flex-1 flex flex-col min-w-[420px]">
+            {!geselecteerdId && composer?.variant === 'inline' ? (
+              <div className="flex flex-1 min-h-0 flex-col">{composerNode}</div>
+            ) : geselecteerdId ? (
+              <>
+                {/* De kaart schuift over het leesvenster; de mail houdt zijn
+                    eigen ruimte zodat de titel er niet onder verdwijnt. */}
+                <div
+                  className={cn('flex flex-1 min-h-0 flex-col', klantkaartAan && geselecteerd && 'lg:pr-[var(--kaart-breedte)]')}
+                  style={{ ['--kaart-breedte' as string]: `${kaartSleep.breedte}px` }}
+                >
+                  {leesvenster}
                 </div>
-              ))}
-            </div>
+                {klantkaartAan && geselecteerd && (
+                  <Klantkaart
+                    breedte={kaartSleep.breedte}
+                    greep={(
+                      <div
+                        {...kaartSleep.greepProps}
+                        className={cn(GREEP_CLS, '-left-[3px]')}
+                        role="separator"
+                        aria-orientation="vertical"
+                        aria-label="Breedte van de klantkaart"
+                        title="Sleep om de klantkaart breder of smaller te maken. Dubbelklik zet hem terug."
+                      >
+                        <span className={GREEP_LIJN_CLS} />
+                      </div>
+                    )}
+                    mail={geselecteerd}
+                    open
+                    onSluiten={() => zetKlantkaartAan(false)}
+                    onZoekKlant={(klantId, label) => navigateWithTab({ path: `/klanten/${klantId}`, label, id: `/klanten/${klantId}` })}
+                    onSelectMail={(id) => { const m = mailStore.item(id); if (m) openMail(m) }}
+                    eigenAdres={eigenAdres ?? undefined}
+                  />
+                )}
+              </>
+            ) : (
+              <div className="flex flex-1 flex-col items-center justify-center gap-2 px-8 text-center">
+                <Mails className="h-7 w-7 text-petrol/25" strokeWidth={1.5} />
+                <p className="text-[14px] font-semibold text-foreground/70">Kies een mail</p>
+                <p className="max-w-[280px] text-[12.5px] text-muted-foreground">
+                  Met j en k loop je door de lijst, Enter opent. Druk op ? voor alle toetsen.
+                </p>
+              </div>
+            )}
           </div>
         </>
       )}
-      </>)}
 
-      {/* Resize handle · sleep om lijst-kolom breedte aan te passen (desktop only) */}
-      <div
-        onMouseDown={handleListResizeStart}
-        className="hidden md:block absolute top-0 right-0 bottom-0 w-1 cursor-col-resize hover:bg-petrol/20 active:bg-petrol/30 z-30 transition-colors"
-        title="Sleep om breedte aan te passen"
+
+      <SnoozeMenu
+        open={snoozeOpen}
+        onSluiten={() => zetSnoozeOpen(false)}
+        onKies={(tot) => { const ids = doelIds(); if (ids.length) void mailStore.snooze(ids, tot ? tot.toISOString() : null); zetSnoozeOpen(false); naActie(ids) }}
+        gesnoozed={map === 'gesnoozed'}
       />
-      </div>
-
-      {/* ─── READER COLUMN · flex-1 op desktop, op mobile zichtbaar bij reading/composing ─── */}
-      <div className={cn(
-        'bg-card flex-col min-w-0',
-        'md:flex md:flex-1',
-        viewMode === 'idle' ? 'hidden md:flex' : 'flex flex-1',
-        selectedFolder === 'leads' && viewMode === 'idle' && 'hidden md:hidden',
-      )}>
-
-        {/* Compose view */}
-        {viewMode === 'composing' && (
-          <Suspense fallback={<div className="flex-1 flex items-center justify-center"><Loader2 className="h-5 w-5 animate-spin text-petrol/40" /></div>}>
-          <EmailCompose
-            open={true}
-            onOpenChange={(open) => { if (!open) handleBack() }}
-            defaultTo={composeDefaults.to}
-            defaultSubject={composeDefaults.subject}
-            defaultBody={composeDefaults.body}
-            defaultBodyIsBericht={composeDefaults.bodyIsBericht}
-            defaultBodyHtml={composeDefaults.bodyHtml}
-            draftId={composeDraftId}
-            onDraftChange={(c) => { laatsteConceptRef.current = c }}
-            replyToText={composeDefaults.replyToText}
-            defaultWachtOpReactie={selectedFolder === 'leads'}
-            onSend={handleSendEmail}
-            allEmails={emails}
-            onToChange={setComposeToAddress}
-            onRegisterActions={(a) => { composeActionsRef.current = a }}
-            onForgieLoadingChange={setComposeForgieLoading}
-            titel={selectedFolder === 'leads' ? 'Mail deze lead' : 'Nieuw bericht'}
-            sluitLabel={selectedFolder === 'leads' ? 'Terug naar leads' : 'Terug naar inbox'}
-          />
-          </Suspense>
-        )}
-
-        {/* Reader view */}
-        {viewMode === 'reading' && selectedEmail && (() => {
-          const threadEmails = selectedEmail.thread_id
-            ? emails
-                .filter((e) => e.thread_id === selectedEmail.thread_id)
-                .sort((a, b) => Date.parse(a.datum) - Date.parse(b.datum))
-            : []
-          return (
-            <EmailReader
-              email={selectedEmail}
-              threadEmails={threadEmails}
-              isLoadingBody={isLoadingBody}
-              emailIndex={emailIndex}
-              emailTotal={threadedEmails.length}
-              allEmails={emails}
-              imapFolder={IMAP_FOLDER_MAP[selectedFolder] || 'INBOX'}
-              eigenAdres={user?.email}
-              prefetchedAttachmentBytes={attachmentBytesCacheRef.current.get(selectedEmail.id)}
-              prefetchedAttachmentUrls={attachmentUrlsCacheRef.current.get(selectedEmail.id)}
-              onTogglePin={handleTogglePin}
-              onSnooze={handleSnooze}
-              onUnsnooze={handleUnsnooze}
-              onToggleLabel={handleToggleLabel}
-              onToggleRead={handleToggleRead}
-              onDelete={handleDeleteAndNavigate}
-              onArchive={handleArchiveAndNavigate}
-              onBack={handleBack}
-              onNavigate={handleNavigate}
-              onSendReply={handleSendReply}
-              onSelectEmail={handleSelectEmail}
-              onOpenContextPanel={handleOpenContextPanel}
-            />
-          )
-        })()}
-
-        {/* Empty state · desktop only, getoond wanneer geen mail is geselecteerd */}
-        {viewMode === 'idle' && (
-          <div
-            className="hidden md:flex flex-1 flex-col items-center justify-center text-center px-8 relative overflow-hidden"
-            style={{
-              backgroundImage:
-                'radial-gradient(ellipse 70% 55% at 50% 32%, rgba(26,83,92,0.05), transparent 70%), radial-gradient(ellipse 60% 50% at 50% 100%, rgba(241,80,37,0.045), transparent 65%)',
-            }}
-          >
-            <div className="relative mb-6">
-              <div className="w-16 h-16 rounded-2xl bg-white dark:bg-white/[0.06] flex items-center justify-center shadow-[0_4px_20px_rgba(26,83,92,0.10),inset_0_0_0_0.5px_rgba(255,255,255,0.8)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.35),inset_0_0_0_0.5px_rgba(255,255,255,0.10)]">
-                <Mail className="h-7 w-7 text-petrol dark:text-[#7FB5BF]" strokeWidth={1.6} />
-              </div>
-              <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-flame ring-[3px] ring-background" />
-            </div>
-            <h3 className="font-heading text-[18px] font-bold text-foreground tracking-[-0.01em] mb-2">
-              Niets geopend<span className="text-flame">.</span>
-            </h3>
-            <p
-              className="doen-subtitel max-w-[280px] leading-relaxed"
-            >
-              kies een bericht uit de lijst, dan lees je het hier rustig na.
-            </p>
-          </div>
-        )}
-
-      </div>
-
-      {/* Bulk action bar · verschijnt onderaan zodra er emails zijn aangevinkt.
-          Floating, met undo/cancel + de meest gebruikte bulk acties. */}
-      {hasChecked && viewMode === 'idle' && (
-        <div className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] md:bottom-6 inset-x-3 md:inset-x-auto md:left-1/2 md:-translate-x-1/2 z-50 animate-in slide-in-from-bottom-2 fade-in duration-200">
-          <div className="bg-[#1A1A1A] text-white rounded-2xl md:rounded-xl shadow-xl overflow-hidden">
-            {/* Mobiel: telling en sluiten op een eigen regel. Als één rij was
-                de balk ruim 500px breed en viel hij op een telefoon aan beide
-                kanten buiten beeld. */}
-            <div className="flex md:hidden items-center justify-between pl-4 pr-2 pt-2.5 pb-1">
-              <span className="text-[13px] font-medium">
-                {checkedEmails.size} geselecteerd
-              </span>
-              <button
-                type="button"
-                onClick={clearChecked}
-                aria-label="Selectie wissen"
-                className="tap-press w-9 h-9 rounded-lg flex items-center justify-center text-white/70 active:bg-white/10 transition-colors"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="flex items-stretch md:items-center gap-1 md:gap-2 px-2 md:px-3 pb-2 md:py-2">
-              <span className="hidden md:inline text-[12px] font-medium px-2">
-                {checkedEmails.size} geselecteerd
-              </span>
-              <div className="hidden md:block w-px h-5 bg-white/20" />
-
-              {([
-                { label: 'Archiveer', icoon: Archive, actie: handleBulkArchive, titel: 'Archiveren', gevaar: false },
-                { label: 'Gelezen', icoon: MailOpen, actie: handleBulkMarkRead, titel: 'Markeer als gelezen', gevaar: false },
-                { label: 'Ongelezen', icoon: Mail, actie: handleBulkMarkUnread, titel: 'Markeer als ongelezen', gevaar: false },
-                { label: 'Verwijder', icoon: Trash2, actie: handleBulkDelete, titel: 'Verwijderen', gevaar: true },
-              ]).map((knop) => {
-                const KnopIcoon = knop.icoon
-                return (
-                  <button
-                    key={knop.label}
-                    type="button"
-                    onClick={knop.actie}
-                    title={knop.titel}
-                    className={cn(
-                      'tap-press flex-1 md:flex-none flex flex-col md:flex-row items-center justify-center gap-1 md:gap-1.5',
-                      'text-[11px] md:text-[12px] font-medium px-1 md:px-2.5 py-2 md:py-1.5 rounded-lg transition-colors min-w-0',
-                      knop.gevaar
-                        ? 'hover:bg-[#C0451A]/20 hover:text-[#FDA38C] active:bg-[#C0451A]/25'
-                        : 'hover:bg-white/10 active:bg-white/15',
-                    )}
-                  >
-                    <KnopIcoon className="h-[15px] w-[15px] md:h-3.5 md:w-3.5 flex-shrink-0" />
-                    <span className="truncate max-w-full">{knop.label}</span>
-                  </button>
-                )
-              })}
-
-              <div className="hidden md:block w-px h-5 bg-white/20" />
-              <button
-                type="button"
-                onClick={clearChecked}
-                className="hidden md:flex items-center justify-center h-7 w-7 rounded-md hover:bg-white/10 transition-colors"
-                title="Selectie wissen (Esc)"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          </div>
-        </div>
+      <SneltoetsenKaart open={kaartOpen} readerOpen={!!geselecteerdId} onSluiten={() => zetKaartOpen(false)} />
+      {klantDialoog && (
+        <KlantToevoegenDialog
+          open
+          onSluiten={() => zetKlantDialoog(null)}
+          afzenderNaam={klantDialoog.naam}
+          afzenderEmail={klantDialoog.email}
+          inhoud={klantDialoog.inhoud}
+          onAangemaakt={() => { zetKlantDialoog(null); toast.success('Klant toegevoegd') }}
+        />
       )}
+    </div>
+  )
+}
 
-      {/* Right context sidebar · opent via toggle-knop in email-header.
-          Bevat klant-koppeling, project-aanmaken, taak-aanmaken, etc.
-          Default open, klap dicht via knop in reader. */}
-      {/* EmailContextSidebar wordt onzichtbaar gemount (display:none) wanneer
-          een dropdown-actie wordt geklikt. De Dialogs binnenin (Klant/Project/
-          Taak) gebruiken Radix Portal en renderen dus visible bovenop alles —
-          de sidebar zelf hoeft niet zichtbaar te zijn. */}
-      {contextOpen && (viewMode === 'reading' || viewMode === 'composing') && (
-        <div className="hidden" aria-hidden>
-          <Suspense fallback={null}>
-          <EmailContextSidebar
-            key={panelKey}
-            initialActivePanel={requestedPanel}
-            mode={viewMode === 'composing' ? 'compose' : 'reading'}
-            composeToAddress={composeToAddress}
-            composeReminder={composeReminder}
-            onComposeReminderChange={setComposeReminder}
-            composeProjectId={composeProjectId}
-            onComposeProjectChange={setComposeProjectId}
-            allEmails={emails}
-            email={selectedEmail}
-            senderName={readerSenderName}
-            senderEmail={readerSenderEmail}
-            onSelectEmail={handleSelectEmail}
-            onCompose={() => handleCompose()}
-            unreadCount={serverTellers?.inboxOngelezen ?? emails.filter(e => !e.gelezen).length}
-            onClose={() => setContextOpen(false)}
-          />
-          </Suspense>
-        </div>
-      )}
-      </div>
-      </>
-      )}
+function Laden() {
+  return (
+    <div className="flex-1 flex items-center justify-center py-10">
+      <Loader2 className="h-4 w-4 animate-spin text-petrol/40" />
     </div>
   )
 }
