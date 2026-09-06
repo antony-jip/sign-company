@@ -200,6 +200,9 @@ function decryptPassword(encrypted: string): string {
 // `decryptPassword` uit het bestand zelf.
 
 interface OauthRij {
+  /** Rij-id van het postvak (migratie 245); `account_id` als de aanroeper EmailCredentials doorgeeft. */
+  id?: string | null
+  account_id?: string | null
   user_id?: string | null
   auth_type?: string | null
   oauth_refresh_token_enc?: string | null
@@ -295,8 +298,14 @@ async function haalToegangstoken(rij: OauthRij, opties?: { forceer?: boolean }):
   // Microsoft rouleert de refresh-token bij elke verversing, Google niet.
   if (antwoord.refresh_token) patch.oauth_refresh_token_enc = versleutelToken(antwoord.refresh_token)
 
-  if (rij.user_id) {
-    const { error } = await supabaseAdmin.from('user_email_settings').update(patch).eq('user_id', rij.user_id)
+  // Op de rij-id zodra we die kennen: met twee postvakken schrijft een update
+  // op user_id het verse token ook over het andere postvak heen.
+  const postvakId = rij.id ?? rij.account_id ?? null
+  if (postvakId || rij.user_id) {
+    const doel = () => supabaseAdmin.from('user_email_settings').update(patch)
+    const { error } = postvakId
+      ? await doel().eq('id', postvakId)
+      : await doel().eq('user_id', rij.user_id as string)
     if (error) console.warn('[oauth] nieuw token niet opgeslagen:', error.message)
   }
   rij.oauth_access_token_enc = patch.oauth_access_token_enc as string

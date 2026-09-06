@@ -51,6 +51,8 @@ async function verifyUser(req: VercelRequest): Promise<string> {
 }
 
 interface EmailCredentials {
+  /** Rij-id van het postvak; pas gevuld als migratie 245 gedraaid is. */
+  account_id: string | null
   gmail_address: string
   app_password: string
   user_id: string
@@ -115,6 +117,9 @@ function decryptPassword(encrypted: string): string {
 // `decryptPassword` uit het bestand zelf.
 
 interface OauthRij {
+  /** Rij-id van het postvak (migratie 245); `account_id` als de aanroeper EmailCredentials doorgeeft. */
+  id?: string | null
+  account_id?: string | null
   user_id?: string | null
   auth_type?: string | null
   oauth_refresh_token_enc?: string | null
@@ -210,8 +215,14 @@ async function haalToegangstoken(rij: OauthRij, opties?: { forceer?: boolean }):
   // Microsoft rouleert de refresh-token bij elke verversing, Google niet.
   if (antwoord.refresh_token) patch.oauth_refresh_token_enc = versleutelToken(antwoord.refresh_token)
 
-  if (rij.user_id) {
-    const { error } = await supabaseAdmin.from('user_email_settings').update(patch).eq('user_id', rij.user_id)
+  // Op de rij-id zodra we die kennen: met twee postvakken schrijft een update
+  // op user_id het verse token ook over het andere postvak heen.
+  const postvakId = rij.id ?? rij.account_id ?? null
+  if (postvakId || rij.user_id) {
+    const doel = () => supabaseAdmin.from('user_email_settings').update(patch)
+    const { error } = postvakId
+      ? await doel().eq('id', postvakId)
+      : await doel().eq('user_id', rij.user_id as string)
     if (error) console.warn('[oauth] nieuw token niet opgeslagen:', error.message)
   }
   rij.oauth_access_token_enc = patch.oauth_access_token_enc as string
@@ -246,15 +257,19 @@ async function meldToegangIngetrokken(userId: string): Promise<void> {
 }
 // ── GEDEELD-MET-API EINDE: OAuth-toegangstoken ────────────────────────────
 
-// ── GEDEELD-MET-API: credentials zonder 244 ───────────────────────────────
-// auth_type en de drie oauth-kolommen komen uit migratie 244. Zolang die niet
-// gedraaid is antwoordt PostgREST met 42703 of PGRST204 en faalt de HELE
-// select, waarna er geen mailbox meer te vinden is: geen sync, geen mail
-// openen, geen IMAP-actie. Daarom eerst de volledige select, en pas bij een
-// kolomfout opnieuw met de kolommen van vóór 244.
+// ── GEDEELD-MET-API: credentials per postvak ──────────────────────────────
+// Een gebruiker kan meer postvakken hebben (migratie 245, activering in 246),
+// dus `.single()` op user_id klapt zodra er een tweede rij bijkomt en meldt dan
+// misleidend dat er geen instellingen zijn. Volgorde: het meegestuurde
+// account_id, anders het postvak met `is_standaard`, anders de enige rij.
+// auth_type en de drie oauth-kolommen komen uit migratie 244; ontbreken die,
+// dan antwoordt PostgREST met 42703 of PGRST204 en faalt de HELE select, dus
+// blijft de terugval op de kolommen van vóór 244 staan.
 // Dezelfde helper hoort in fetch-emails, read-email, prefetch-email-bodies,
-// email-imap-action, email-settings, send-email en de twee mail-oauth-routes.
+// email-imap-action, backfill-emails, test-email-connection, email-settings,
+// send-email, mail-oauth-token en cron-verzend-geplande-berichten.
 interface CredentialRij {
+  id?: string | null
   gmail_address: string | null
   encrypted_app_password: string | null
   smtp_host: string | null
@@ -267,7 +282,7 @@ interface CredentialRij {
   oauth_token_verloopt_op: string | null
 }
 
-const CREDENTIAL_KOLOMMEN_VOOR_244 = 'gmail_address, encrypted_app_password, smtp_host, smtp_port, imap_host, imap_port'
+const CREDENTIAL_KOLOMMEN_VOOR_244 = 'id, gmail_address, encrypted_app_password, smtp_host, smtp_port, imap_host, imap_port'
 const CREDENTIAL_KOLOMMEN = `${CREDENTIAL_KOLOMMEN_VOOR_244}, auth_type, oauth_refresh_token_enc, oauth_access_token_enc, oauth_token_verloopt_op`
 
 function isKolomFout(fout: { code?: string; message?: string } | null): boolean {
@@ -276,32 +291,47 @@ function isKolomFout(fout: { code?: string; message?: string } | null): boolean 
   return /column .* does not exist|could not find the .* column/i.test(fout.message || '')
 }
 
-async function leesCredentialRij(userId: string): Promise<CredentialRij | null> {
-  const volledig = await supabaseAdmin
-    .from('user_email_settings')
-    .select(CREDENTIAL_KOLOMMEN)
-    .eq('user_id', userId)
-    .single()
-  if (!volledig.error) return volledig.data as unknown as CredentialRij
-  if (!isKolomFout(volledig.error)) return null
-  const oud = await supabaseAdmin
-    .from('user_email_settings')
-    .select(CREDENTIAL_KOLOMMEN_VOOR_244)
-    .eq('user_id', userId)
-    .single()
-  if (oud.error || !oud.data) return null
-  return {
-    ...(oud.data as unknown as CredentialRij),
-    auth_type: 'wachtwoord',
-    oauth_refresh_token_enc: null,
-    oauth_access_token_enc: null,
-    oauth_token_verloopt_op: null,
+async function leesCredentialRij(userId: string, accountId?: string | null): Promise<CredentialRij | null> {
+  async function haalRij(keuze: 'account' | 'standaard' | 'enige') {
+    const bouw = (kolommen: string) => {
+      let vraag = supabaseAdmin.from('user_email_settings').select(kolommen).eq('user_id', userId)
+      if (keuze === 'account') vraag = vraag.eq('id', accountId as string)
+      if (keuze === 'standaard') vraag = vraag.eq('is_standaard', true)
+      return vraag.maybeSingle()
+    }
+    const volledig = await bouw(CREDENTIAL_KOLOMMEN)
+    if (!isKolomFout(volledig.error)) {
+      return { rij: (volledig.data as unknown as CredentialRij | null) ?? null, fout: volledig.error }
+    }
+    const oud = await bouw(CREDENTIAL_KOLOMMEN_VOOR_244)
+    const rij = (oud.data as unknown as CredentialRij | null) ?? null
+    return {
+      rij: rij ? { ...rij, auth_type: 'wachtwoord', oauth_refresh_token_enc: null, oauth_access_token_enc: null, oauth_token_verloopt_op: null } : null,
+      fout: oud.error,
+    }
   }
-}
-// ── GEDEELD-MET-API EINDE: credentials zonder 244 ─────────────────────────
 
-async function getEmailCredentials(userId: string): Promise<EmailCredentials> {
-  const data = await leesCredentialRij(userId)
+  if (accountId) {
+    const uitkomst = await haalRij('account')
+    if (uitkomst.fout || !uitkomst.rij) {
+      throw new Error('Dit postvak bestaat niet of hoort niet bij jou. Kies een ander postvak onder Instellingen > E-mail.')
+    }
+    return uitkomst.rij
+  }
+  // is_standaard bestaat pas sinds migratie 245; ontbreekt de kolom of staan er
+  // meer standaard-rijen, dan beslist de volgende poging.
+  const standaard = await haalRij('standaard')
+  if (!standaard.fout && standaard.rij) return standaard.rij
+  const enige = await haalRij('enige')
+  if (enige.fout) {
+    throw new Error('Er zijn meer postvakken gekoppeld en geen ervan is de standaard. Kies een postvak onder Instellingen > E-mail.')
+  }
+  return enige.rij
+}
+// ── GEDEELD-MET-API EINDE: credentials per postvak ────────────────────────
+
+async function getEmailCredentials(userId: string, accountId?: string | null): Promise<EmailCredentials> {
+  const data = await leesCredentialRij(userId, accountId)
 
   if (!data?.gmail_address) {
     throw new Error('Geen email instellingen gevonden. Configureer je email in Instellingen > Integraties.')
@@ -317,6 +347,7 @@ async function getEmailCredentials(userId: string): Promise<EmailCredentials> {
   }
 
   return {
+    account_id: (data.id as string) ?? null,
     gmail_address: data.gmail_address,
     app_password: data.encrypted_app_password ? decryptPassword(data.encrypted_app_password) : '',
     user_id: userId,

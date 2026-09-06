@@ -127,15 +127,20 @@ async function herstelSyncStatus(userId: string): Promise<void> {
   }
 }
 
-// ── GEDEELD-MET-API: credentials zonder 244 ───────────────────────────────
-// auth_type en de oauth-kolommen komen uit migratie 244. Zolang die niet
-// gedraaid is antwoordt PostgREST met 42703 of PGRST204 en faalt de HELE
+// ── GEDEELD-MET-API: credentials per postvak ──────────────────────────────
+// Een gebruiker kan meer postvakken hebben (migratie 245, activering in 246),
+// dus `.maybeSingle()` op user_id klapt zodra er een tweede rij bijkomt.
+// Volgorde: het meegestuurde account_id, anders het postvak met `is_standaard`,
+// anders de enige rij. auth_type en de oauth-kolommen komen uit migratie 244;
+// ontbreken die, dan antwoordt PostgREST met 42703 of PGRST204 en faalt de HELE
 // select, waarna deze GET 404 gaf en Instellingen "geen mailbox gekoppeld"
-// meldde terwijl de mailbox gewoon bestond. Daarom eerst de volledige select,
-// en pas bij een kolomfout opnieuw met de kolommen van vóór 244.
+// meldde terwijl de mailbox gewoon bestond. Vandaar de terugval op de kolommen
+// van vóór 244.
 // Dezelfde helper hoort in fetch-emails, read-email, prefetch-email-bodies,
-// email-imap-action, send-email en de twee mail-oauth-routes.
+// email-imap-action, backfill-emails, test-email-connection, send-email,
+// cron-verzend-geplande-berichten en de twee mail-oauth-routes.
 interface InstellingenRij {
+  id?: string | null
   gmail_address: string | null
   encrypted_app_password: string | null
   smtp_host: string | null
@@ -156,23 +161,55 @@ function isKolomFout(fout: { code?: string; message?: string } | null): boolean 
 }
 
 /** Kolommen uit 244 mogen ontbreken; de rij zelf moet dan nog wel terugkomen. */
-async function leesInstellingenRij(userId: string, kolommen: string, kolommenVoor244: string): Promise<Record<string, unknown> | null> {
-  const volledig = await supabaseAdmin
-    .from('user_email_settings')
-    .select(kolommen)
-    .eq('user_id', userId)
-    .maybeSingle()
-  if (!volledig.error) return (volledig.data as unknown as Record<string, unknown> | null) ?? null
-  if (!isKolomFout(volledig.error)) return null
-  const oud = await supabaseAdmin
-    .from('user_email_settings')
-    .select(kolommenVoor244)
-    .eq('user_id', userId)
-    .maybeSingle()
-  if (oud.error || !oud.data) return null
-  return { ...(oud.data as unknown as Record<string, unknown>), auth_type: 'wachtwoord', oauth_refresh_token_enc: null }
+async function leesInstellingenRij(
+  userId: string,
+  kolommen: string,
+  kolommenVoor244: string,
+  accountId?: string | null,
+): Promise<Record<string, unknown> | null> {
+  async function haalRij(keuze: 'account' | 'standaard' | 'enige') {
+    const bouw = (kols: string) => {
+      let vraag = supabaseAdmin.from('user_email_settings').select(`id, ${kols}`).eq('user_id', userId)
+      if (keuze === 'account') vraag = vraag.eq('id', accountId as string)
+      if (keuze === 'standaard') vraag = vraag.eq('is_standaard', true)
+      return vraag.maybeSingle()
+    }
+    const volledig = await bouw(kolommen)
+    if (!isKolomFout(volledig.error)) {
+      return { rij: (volledig.data as unknown as Record<string, unknown> | null) ?? null, fout: volledig.error }
+    }
+    const oud = await bouw(kolommenVoor244)
+    const rij = (oud.data as unknown as Record<string, unknown> | null) ?? null
+    return { rij: rij ? { ...rij, auth_type: 'wachtwoord', oauth_refresh_token_enc: null } : null, fout: oud.error }
+  }
+
+  if (accountId) {
+    const uitkomst = await haalRij('account')
+    return uitkomst.fout ? null : uitkomst.rij
+  }
+  // is_standaard bestaat pas sinds migratie 245; ontbreekt de kolom of staan er
+  // meer standaard-rijen, dan beslist de volgende poging.
+  const standaard = await haalRij('standaard')
+  if (!standaard.fout && standaard.rij) return standaard.rij
+  const enige = await haalRij('enige')
+  return enige.fout ? null : enige.rij
 }
-// ── GEDEELD-MET-API EINDE: credentials zonder 244 ─────────────────────────
+
+/** Alle postvakken van deze gebruiker, nieuwste kolommen waar ze bestaan. */
+async function leesPostvakken(userId: string, kolommen: string, kolommenVoor244: string): Promise<Record<string, unknown>[]> {
+  const bouw = (kols: string) => supabaseAdmin
+    .from('user_email_settings')
+    .select(`id, ${kols}`)
+    .eq('user_id', userId)
+    .order('created_at', { ascending: true })
+  const volledig = await bouw(kolommen)
+  if (!volledig.error) return (volledig.data as unknown as Record<string, unknown>[]) ?? []
+  if (!isKolomFout(volledig.error)) return []
+  const oud = await bouw(kolommenVoor244)
+  if (oud.error) return []
+  return ((oud.data as unknown as Record<string, unknown>[]) ?? []).map((r) => ({ ...r, auth_type: 'wachtwoord', oauth_refresh_token_enc: null }))
+}
+// ── GEDEELD-MET-API EINDE: credentials per postvak ────────────────────────
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()

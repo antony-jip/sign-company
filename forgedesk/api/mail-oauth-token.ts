@@ -111,6 +111,9 @@ function decryptPassword(encrypted: string): string {
 // kopieën hebben die bescherming nog niet; zie LOGBOEK.md.
 
 interface OauthRij {
+  /** Rij-id van het postvak (migratie 245); `account_id` als de aanroeper EmailCredentials doorgeeft. */
+  id?: string | null
+  account_id?: string | null
   user_id?: string | null
   auth_type?: string | null
   oauth_refresh_token_enc?: string | null
@@ -206,24 +209,25 @@ async function haalToegangstoken(rij: OauthRij, opties?: { forceer?: boolean }):
   // Microsoft rouleert de refresh-token bij elke verversing, Google niet.
   if (antwoord.refresh_token) patch.oauth_refresh_token_enc = versleutelToken(antwoord.refresh_token)
 
-  if (rij.user_id) {
+  // Op de rij-id zodra we die kennen: met twee postvakken schrijft een update
+  // op user_id het verse token ook over het andere postvak heen.
+  const postvakId = rij.id ?? rij.account_id ?? null
+  if (postvakId || rij.user_id) {
+    const doel = () => {
+      const vraag = supabaseAdmin.from('user_email_settings').update(patch)
+      return postvakId ? vraag.eq('id', postvakId) : vraag.eq('user_id', rij.user_id as string)
+    }
     // Microsoft rouleert refresh-tokens, dus twee verversingen tegelijk kunnen
     // elkaar overschrijven. Wint de trage, dan staat er een refresh-token in de
     // rij dat al vervangen is en valt de mailbox stil. Alleen schrijven als de
     // opgeslagen vervaldatum ouder is dan de nieuwe: dan wint altijd de
     // nieuwste. Geen .or(): die faalt op UPDATE, vandaar twee pogingen.
-    const { data, error } = await supabaseAdmin
-      .from('user_email_settings')
-      .update(patch)
-      .eq('user_id', rij.user_id)
+    const { data, error } = await doel()
       .lt('oauth_token_verloopt_op', nieuwVerlooptOp)
       .select('user_id')
     if (error) console.warn('[oauth] nieuw token niet opgeslagen:', error.message)
     else if (!data || data.length === 0) {
-      const leeg = await supabaseAdmin
-        .from('user_email_settings')
-        .update(patch)
-        .eq('user_id', rij.user_id)
+      const leeg = await doel()
         .is('oauth_token_verloopt_op', null)
         .select('user_id')
       if (leeg.error) console.warn('[oauth] nieuw token niet opgeslagen:', leeg.error.message)
@@ -264,6 +268,30 @@ async function meldToegangIngetrokken(userId: string): Promise<void> {
 }
 // ── GEDEELD-MET-API EINDE: OAuth-toegangstoken ────────────────────────────
 
+// ── GEDEELD-MET-API: credentials per postvak ──────────────────────────────
+// De volledige helper staat in api/send-email.ts; dit endpoint leest alleen de
+// OAuth-kolommen, dus hier staat alleen de keuzeladder: het meegestuurde
+// account_id, anders het postvak met `is_standaard`, anders de enige rij. Een
+// kale `.maybeSingle()` op user_id klapt zodra er een tweede postvak is.
+// `is_standaard` komt uit migratie 245; ontbreekt die kolom, dan faalt die
+// poging en beslist de laatste.
+type PostvakUitkomst = { data: Record<string, unknown> | null; error: { code?: string; message?: string } | null }
+
+async function leesPostvakRij(userId: string, accountId: string | null, kolommen: string): Promise<PostvakUitkomst> {
+  const bouw = async (keuze: 'account' | 'standaard' | 'enige'): Promise<PostvakUitkomst> => {
+    let vraag = supabaseAdmin.from('user_email_settings').select(kolommen).eq('user_id', userId)
+    if (keuze === 'account') vraag = vraag.eq('id', accountId as string)
+    if (keuze === 'standaard') vraag = vraag.eq('is_standaard', true)
+    const { data, error } = await vraag.maybeSingle()
+    return { data: (data as unknown as Record<string, unknown> | null) ?? null, error }
+  }
+  if (accountId) return await bouw('account')
+  const standaard = await bouw('standaard')
+  if (!standaard.error && standaard.data) return standaard
+  return await bouw('enige')
+}
+// ── GEDEELD-MET-API EINDE: credentials per postvak ────────────────────────
+
 export const config = { maxDuration: 15 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -283,11 +311,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const userId = typeof req.body?.service_user_id === 'string' ? req.body.service_user_id : null
   if (!userId) return res.status(400).json({ error: 'service_user_id ontbreekt' })
 
-  const { data, error } = await supabaseAdmin
-    .from('user_email_settings')
-    .select('user_id, gmail_address, auth_type, imap_host, imap_port, oauth_refresh_token_enc, oauth_access_token_enc, oauth_token_verloopt_op')
-    .eq('user_id', userId)
-    .maybeSingle()
+  const accountId = typeof req.body?.account_id === 'string' ? req.body.account_id : null
+  const { data, error } = await leesPostvakRij(
+    userId,
+    accountId,
+    'id, user_id, gmail_address, auth_type, imap_host, imap_port, oauth_refresh_token_enc, oauth_access_token_enc, oauth_token_verloopt_op',
+  )
   // Zonder migratie 244 bestaan de oauth-kolommen niet en faalt de select. Dat
   // is geen kapotte mailbox maar een omgeving die nog niet klaar is voor OAuth;
   // zeg dat, in plaats van "geen instellingen gevonden".
@@ -306,6 +335,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       verloopt_op: data.oauth_token_verloopt_op,
       gmail_address: data.gmail_address,
       auth_type: data.auth_type,
+      account_id: (data as Record<string, unknown>).id ?? null,
       imap_host: data.imap_host || 'imap.gmail.com',
       imap_port: data.imap_port || 993,
     })

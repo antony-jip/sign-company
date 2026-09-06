@@ -73,6 +73,9 @@ function decryptPassword(encrypted: string): string {
 // `decryptPassword` uit het bestand zelf.
 
 interface OauthRij {
+  /** Rij-id van het postvak (migratie 245); `account_id` als de aanroeper EmailCredentials doorgeeft. */
+  id?: string | null
+  account_id?: string | null
   user_id?: string | null
   auth_type?: string | null
   oauth_refresh_token_enc?: string | null
@@ -168,8 +171,14 @@ async function haalToegangstoken(rij: OauthRij, opties?: { forceer?: boolean }):
   // Microsoft rouleert de refresh-token bij elke verversing, Google niet.
   if (antwoord.refresh_token) patch.oauth_refresh_token_enc = versleutelToken(antwoord.refresh_token)
 
-  if (rij.user_id) {
-    const { error } = await supabaseAdmin.from('user_email_settings').update(patch).eq('user_id', rij.user_id)
+  // Op de rij-id zodra we die kennen: met twee postvakken schrijft een update
+  // op user_id het verse token ook over het andere postvak heen.
+  const postvakId = rij.id ?? rij.account_id ?? null
+  if (postvakId || rij.user_id) {
+    const doel = () => supabaseAdmin.from('user_email_settings').update(patch)
+    const { error } = postvakId
+      ? await doel().eq('id', postvakId)
+      : await doel().eq('user_id', rij.user_id as string)
     if (error) console.warn('[oauth] nieuw token niet opgeslagen:', error.message)
   }
   rij.oauth_access_token_enc = patch.oauth_access_token_enc as string
@@ -296,12 +305,36 @@ function isKolomFout(fout: { code?: string; message?: string } | null): boolean 
 }
 // ── GEDEELD-MET-API EINDE: credentials zonder 244 ─────────────────────────
 
-async function testOauthKoppeling(userId: string, res: VercelResponse) {
-  const { data, error } = await supabaseAdmin
-    .from('user_email_settings')
-    .select('user_id, gmail_address, auth_type, imap_host, imap_port, smtp_host, smtp_port, oauth_refresh_token_enc, oauth_access_token_enc, oauth_token_verloopt_op')
-    .eq('user_id', userId)
-    .maybeSingle()
+// ── GEDEELD-MET-API: credentials per postvak ──────────────────────────────
+// De volledige helper staat in api/send-email.ts; dit endpoint leest alleen de
+// OAuth-kolommen, dus hier staat alleen de keuzeladder: het meegestuurde
+// account_id, anders het postvak met `is_standaard`, anders de enige rij. Een
+// kale `.maybeSingle()` op user_id klapt zodra er een tweede postvak is.
+// `is_standaard` komt uit migratie 245; ontbreekt die kolom, dan faalt die
+// poging en beslist de laatste.
+type PostvakUitkomst = { data: Record<string, unknown> | null; error: { code?: string; message?: string } | null }
+
+async function leesPostvakRij(userId: string, accountId: string | null, kolommen: string): Promise<PostvakUitkomst> {
+  const bouw = async (keuze: 'account' | 'standaard' | 'enige'): Promise<PostvakUitkomst> => {
+    let vraag = supabaseAdmin.from('user_email_settings').select(kolommen).eq('user_id', userId)
+    if (keuze === 'account') vraag = vraag.eq('id', accountId as string)
+    if (keuze === 'standaard') vraag = vraag.eq('is_standaard', true)
+    const { data, error } = await vraag.maybeSingle()
+    return { data: (data as unknown as Record<string, unknown> | null) ?? null, error }
+  }
+  if (accountId) return await bouw('account')
+  const standaard = await bouw('standaard')
+  if (!standaard.error && standaard.data) return standaard
+  return await bouw('enige')
+}
+// ── GEDEELD-MET-API EINDE: credentials per postvak ────────────────────────
+
+async function testOauthKoppeling(userId: string, accountId: string | null, res: VercelResponse) {
+  const { data, error } = await leesPostvakRij(
+    userId,
+    accountId,
+    'id, user_id, gmail_address, auth_type, imap_host, imap_port, smtp_host, smtp_port, oauth_refresh_token_enc, oauth_access_token_enc, oauth_token_verloopt_op',
+  )
   if (isKolomFout(error)) {
     return res.status(400).json({ imap_ok: false, smtp_ok: false, error: 'Koppelen met Google of Microsoft is nog niet beschikbaar. Gebruik een app-wachtwoord.' })
   }
@@ -385,7 +418,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Een OAuth-koppeling heeft geen velden om te testen: adres, hosts en
     // tokens staan al opgeslagen. De test is dan of het token nog werkt.
     if (isOauthKoppeling(body.auth_type)) {
-      return await testOauthKoppeling(userId, res)
+      return await testOauthKoppeling(userId, typeof body.account_id === 'string' ? body.account_id : null, res)
     }
 
     const gmail_address = body.gmail_address
