@@ -13,6 +13,8 @@ interface VerzendKnopProps {
   className?: string
 }
 
+const TIJDEN = ['07:00', '08:00', '08:30', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00']
+
 const menuKnopCls = 'w-full px-3.5 py-2.5 text-left text-[13px] text-foreground hover:bg-background transition-colors duration-150 flex items-center justify-between'
 
 /**
@@ -86,12 +88,24 @@ export function VerzendKnop({ onVerzend, onPlan, onConceptVerwijderen, bezig = f
               ) : (
                 <div className="px-3.5 py-2.5 space-y-2">
                   <DatePicker value={datum} onChange={setDatum} min={new Date().toISOString().split('T')[0]} asInput className="w-full font-mono" />
-                  <input
-                    type="time"
-                    value={tijd}
-                    onChange={(e) => setTijd(e.target.value)}
-                    className="w-full px-2.5 py-1.5 text-[13px] text-foreground bg-background rounded-lg border border-border outline-none focus:border-petrol transition-colors font-mono"
-                  />
+                  {/* Eigen tijdkeuze in plaats van de tijdkiezer van de
+                      browser: die is felblauw en past niet in de app. Halve
+                      uren tussen 07:00 en 20:00 dekken de werkdag. */}
+                  <div className="grid grid-cols-4 gap-1">
+                    {TIJDEN.map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setTijd(t)}
+                        className={cn(
+                          'rounded-lg py-1 font-mono text-[12px] tabular-nums transition-colors',
+                          tijd === t ? 'bg-petrol text-white' : 'text-foreground/75 hover:bg-background',
+                        )}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
                   <button
                     type="button"
                     onClick={() => {

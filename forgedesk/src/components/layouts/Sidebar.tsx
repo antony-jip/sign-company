@@ -273,11 +273,14 @@ export function Sidebar() {
               {active && <span className="doen-sidebar-flame-accent z-10" />}
 
               {item.path === '/email' && mailOngelezen > 0 && (
-                /* Klein en binnen de tegel: een badge die eroverheen steekt
-                   maakt de rail rommelig, zeker bij "99+". */
-                <span className="pointer-events-none absolute right-1.5 top-1.5 z-10 inline-flex h-[15px] min-w-[15px] items-center justify-center rounded-full bg-flame px-[3px] font-mono text-[8.5px] font-bold leading-none tabular-nums text-white ring-[1.5px] ring-background">
-                  {mailBadge}
-                </span>
+                /* Alleen een stip in de smalle rail. "99+" past niet in een
+                   tegel van 40 pixels en stak er altijd overheen; het getal
+                   staat in de mailmodule zelf. */
+                <span
+                  className="pointer-events-none absolute right-[13px] top-[7px] z-10 h-[7px] w-[7px] rounded-full bg-flame ring-2 ring-background"
+                  aria-label={`${mailBadge} ongelezen`}
+                  title={`${mailBadge} ongelezen`}
+                />
               )}
 
               <div
