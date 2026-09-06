@@ -13,6 +13,7 @@ import { StatusBadge } from '@/components/shared/StatusBadge'
 import { getProjectUrenBudget, type ProjectUrenBudget } from '@/services/projectUrenService'
 import { kostprijsVoor, uurtariefVoorkeuze } from '@/utils/kostprijs'
 import { contractOpDatum, contractUrenOpDag, datumPlusDagen, maandagVan } from '@/utils/contracturen'
+import { isPseudoMedewerker, koppelbaarMedewerkerId } from '@/utils/medewerkerKoppeling'
 import type { AppSettings, Medewerker, MedewerkerContract, Project, Tijdregistratie } from '@/types'
 
 export const DAG_KORT = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo']
@@ -187,7 +188,7 @@ export function Weekstaat({
           duur_minuten: doel,
           uurtarief: uurtariefVoorkeuze(tarief, eigenMedewerker, settings),
           kostprijs_uur: kostprijsVoor(eigenMedewerker, settings),
-          medewerker_id: eigenMedewerker?.id,
+          medewerker_id: koppelbaarMedewerkerId(eigenMedewerker),
           medewerker_naam: eigenMedewerker?.naam,
           facturabel: true,
           gefactureerd: false,
@@ -372,7 +373,7 @@ export function Weekstaat({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {!eigenMedewerker && (
+        {(!eigenMedewerker || isPseudoMedewerker(eigenMedewerker.id)) && (
           <p className="text-sm text-muted-foreground">Je account is nog niet aan een medewerker gekoppeld. Uren worden op je gebruiker geschreven.</p>
         )}
 

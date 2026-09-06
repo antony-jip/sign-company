@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import type { TijdSessie, Medewerker } from '@/types'
 import { kostprijsVoor } from '@/utils/kostprijs'
+import { koppelbaarMedewerkerId } from '@/utils/medewerkerKoppeling'
 import { standaardUrenStatus } from '@/services/tijdregistratieService'
 
 const POLL_MS = 30_000
@@ -115,7 +116,7 @@ export function useTijdSessies({ projectId, projectNaam, medewerker }: Opties) {
       const { vorige } = await startTijdSessie(user.id, {
         project_id: doelProject,
         project_naam: doel?.projectNaam ?? projectNaam,
-        medewerker_id: medewerker?.id,
+        medewerker_id: koppelbaarMedewerkerId(medewerker),
         medewerker_naam: medewerker?.naam,
         omschrijving: doel?.omschrijving,
         urenveld: doel?.urenveld ?? null,

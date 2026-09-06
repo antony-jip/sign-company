@@ -68,6 +68,7 @@ import { Weekstaat, vandaagIso } from "./Weekstaat";
 import { contractOpDatum, contractUrenPerWeek } from "@/utils/contracturen";
 import { UrenKeuren } from "./UrenKeuren";
 import { isAdminUser } from "@/utils/authHelpers";
+import { koppelbaarMedewerkerId } from "@/utils/medewerkerKoppeling";
 import { useSearchParams } from "react-router-dom";
 import { getCached, fetchQuery } from "@/lib/queryCache";
 import type { Tijdregistratie, Project, Klant, Medewerker, MedewerkerContract } from "@/types";
@@ -434,7 +435,7 @@ export function TijdregistratieLayout() {
     // Kostprijs alleen bij een nieuwe regel vastleggen: een momentopname wijzig je niet achteraf.
     if (!editingId) {
       entry.kostprijs_uur = kostprijsVoor(eigenMedewerker, settings);
-      entry.medewerker_id = eigenMedewerker?.id;
+      entry.medewerker_id = koppelbaarMedewerkerId(eigenMedewerker);
       entry.medewerker_naam = eigenMedewerker?.naam;
       entry.status = standaardUrenStatus(settings.functies);
     }

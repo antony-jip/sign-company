@@ -3,6 +3,7 @@ import { claimWerkbonUren, updateWerkbon } from './werkbonService'
 import { getMontageAfspraak } from './planningService'
 import { getProjectUrenBudget, type ProjectUrenBudget } from './projectUrenService'
 import { kostprijsVoor, uurtariefVoorkeuze } from '@/utils/kostprijs'
+import { koppelbaarMedewerkerId } from '@/utils/medewerkerKoppeling'
 import { logger } from '@/utils/logger'
 import type { AppSettings, Medewerker, Tijdregistratie, Werkbon } from '@/types'
 
@@ -91,7 +92,7 @@ export async function boekWerkbonUren(input: BoekWerkbonUrenInput): Promise<Tijd
   const entries = personen.map((medewerker, i) => ({
     project_id: projectId,
     urenveld: bewerking,
-    medewerker_id: medewerker?.id,
+    medewerker_id: koppelbaarMedewerkerId(medewerker),
     medewerker_naam: medewerker?.naam || afronderNaam || undefined,
     omschrijving: `Werkbon ${werkbon.werkbon_nummer}`,
     datum,
