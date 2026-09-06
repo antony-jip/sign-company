@@ -415,8 +415,8 @@ Per plek: wat er staat, welke persoonsgegevens, regio en bewaartermijn.
 
 | Verwerker | Wat | Persoonsgegevens | Regio en bewaring |
 |---|---|---|---|
-| Supabase (Postgres) | alle tabellen: klanten, offertes, facturen, werkbonnen, uren, mailkopie (`emails`), notificaties, tokens versleuteld | ja | EU (eu-west-1); dagelijkse back-up, PITR pas na aanzetten |
-| Supabase (Storage, 13 buckets) | pdf's (facturen, inkoopfacturen, abonnement), werkbonfoto's en documenten, maatjes, mailbijlagen-cache, portaaluploads, handtekeningen en briefpapier, klantpandfoto's, avatars | ja | EU; **niet in de database-back-up** |
+| Supabase (Postgres) | alle tabellen: klanten, offertes, facturen, werkbonnen, uren, mailkopie (`emails`), notificaties, tokens versleuteld | ja | EU (eu-central-1, Frankfurt; project "Doen.", Micro compute); dagelijkse back-up, PITR staat uit (gecontroleerd 6 sep 2026) |
+| Supabase (Storage, 13 buckets) | pdf's (facturen, inkoopfacturen, abonnement), werkbonfoto's en documenten, maatjes, mailbijlagen-cache, portaaluploads, handtekeningen en briefpapier, klantpandfoto's, avatars | ja | EU; **niet in de database-back-up**; sinds 6 sep 2026 nachtelijke kopie op de Mac van Antony (`scripts/storage-backup.mjs`, `~/doen-backups/storage`) |
 | Vercel | hosting, api-routes, crons, geheimen (env), functielogs | ja (logs) | geen vaste regio ingesteld |
 | Trigger.dev | achtergrondtaken (nachtploeg, herinneringen, mailintake, Drive-sync), runlogs met payloads, kopie van de env | ja | cloud, logs 7 tot 30 dagen naar plan |
 | Resend | transactiemail, notificaties, nieuwsbrieven; `api/nieuwsbrief-contacten-sync.ts` zet klantnamen en adressen in een Resend Audience | ja | verzendregio EU instelbaar; logs 30 dagen |
