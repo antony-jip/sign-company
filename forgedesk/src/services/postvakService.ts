@@ -28,6 +28,18 @@ export function isZonder245(fout: unknown): boolean {
 
 const KOLOMMEN_245 = 'id, gmail_address, naam, is_standaard, soort, organisatie_id, user_id'
 
+/**
+ * Of de 245-kolommen bij de laatste ophaalronde leesbaar waren. `null` zolang
+ * er nog niets is opgehaald. De instellingen-UI hangt haar postvakkenlijst
+ * hieraan op: zonder die kolommen is er per definitie één postvak en hoort er
+ * geen lijst en geen "Postvak toevoegen" te staan.
+ */
+let kolommen245Leesbaar: boolean | null = null
+
+export function postvakkenUitgebreid(): boolean {
+  return kolommen245Leesbaar === true
+}
+
 type Rij = {
   id: string
   gmail_address?: string | null
@@ -53,6 +65,7 @@ function naarPostvak(rij: Rij): Postvak {
 
 /** Het ene postvak van vóór migratie 245: adres uit de kolom die wél leesbaar is. */
 async function enkelPostvak(userId: string): Promise<Postvak[]> {
+  kolommen245Leesbaar = false
   if (!supabase) return []
   const { data, error } = await supabase
     .from('user_email_settings')
@@ -92,6 +105,7 @@ export async function getPostvakken(): Promise<Postvak[]> {
 
   const postvakken = ((data || []) as unknown as Rij[]).map(naarPostvak)
   if (postvakken.length === 0) return enkelPostvak(userId)
+  kolommen245Leesbaar = true
   if (!postvakken.some((p) => p.isStandaard)) postvakken[0].isStandaard = true
   return postvakken
 }

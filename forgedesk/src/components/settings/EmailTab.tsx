@@ -40,12 +40,15 @@ import {
   ArrowRight,
   KeyRound,
   Filter,
+  Pencil,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useFunctie } from '@/hooks/useFunctie'
 import { useSyncStatus } from '@/lib/mail/hooks'
 import { mailStore } from '@/lib/mail/mailStore'
+import { getPostvakken, hernoem, postvakkenUitgebreid, zetStandaard } from '@/services/postvakService'
+import type { Postvak } from '@/lib/mail/types'
 import { getBackfillTarget, setBackfillTarget, type BackfillTarget } from '@/services/emailService'
 import { getProfile, getProfielenVoorTeam, getAppSettings, updateAppSettings, getMedewerkers, getEmailTemplates, createEmailTemplate, updateEmailTemplate, deleteEmailTemplate, type EmailTemplate } from '@/services/supabaseService'
 import { isSupabaseConfigured } from '@/services/supabaseClient'
@@ -205,6 +208,199 @@ function MailboxGezondheidKaart({ settings, isConnected }: { settings: EmailSett
   )
 }
 
+
+/**
+ * De gekoppelde postvakken, met hernoemen, standaard maken en ontkoppelen.
+ *
+ * De lijst verschijnt pas als de kolommen uit migratie 245 leesbaar zijn of er
+ * meer dan één postvak is. Daarvoor is er per definitie één mailbox en zou een
+ * lijst van één regel alleen maar ruis boven het formulier zijn.
+ */
+function PostvakkenLijst({
+  postvakken,
+  laden,
+  onVernieuw,
+  onToevoegen,
+  toevoegenOpen,
+  onOntkoppel,
+}: {
+  postvakken: Postvak[]
+  laden: boolean
+  onVernieuw: () => void
+  onToevoegen: () => void
+  toevoegenOpen: boolean
+  onOntkoppel: (postvak: Postvak) => Promise<void>
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Mail className="w-5 h-5" />
+          Postvakken
+        </CardTitle>
+        <CardDescription>
+          {postvakken.length === 1
+            ? 'Eén mailbox gekoppeld. Voeg er een tweede toe als je bijvoorbeeld ook studio@ leest.'
+            : `${postvakken.length} mailboxen gekoppeld. De kiezer boven je mappen laat je wisselen.`}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-1">
+        {laden && postvakken.length === 0 ? (
+          <Skeleton className="h-12 w-full" />
+        ) : (
+          postvakken.map((p) => (
+            <PostvakRij key={p.id} postvak={p} enige={postvakken.length === 1} onVernieuw={onVernieuw} onOntkoppel={onOntkoppel} />
+          ))
+        )}
+        <div className="pt-3">
+          <button
+            type="button"
+            onClick={onToevoegen}
+            className="text-sm font-medium text-flame hover:text-flame/80 transition-colors"
+          >
+            {toevoegenOpen ? 'Bezig met toevoegen…' : 'Postvak toevoegen'}
+          </button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function PostvakRij({
+  postvak,
+  enige,
+  onVernieuw,
+  onOntkoppel,
+}: {
+  postvak: Postvak
+  enige: boolean
+  onVernieuw: () => void
+  onOntkoppel: (postvak: Postvak) => Promise<void>
+}) {
+  const [naam, setNaam] = useState(postvak.naam)
+  const [hernoemt, setHernoemt] = useState(false)
+  const [vraagtOntkoppel, setVraagtOntkoppel] = useState(false)
+  const [bezig, setBezig] = useState(false)
+
+  const bewaarNaam = async () => {
+    const schoon = naam.trim()
+    if (!schoon || schoon === postvak.naam) { setHernoemt(false); setNaam(postvak.naam); return }
+    setBezig(true)
+    try {
+      await hernoem(postvak.id, schoon)
+      setHernoemt(false)
+      onVernieuw()
+      toast.success(<>Hernoemd<span style={{ color: '#F15025' }}>.</span></>)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Hernoemen mislukt')
+      setNaam(postvak.naam)
+    } finally {
+      setBezig(false)
+    }
+  }
+
+  const maakStandaard = async () => {
+    setBezig(true)
+    try {
+      await zetStandaard(postvak.id)
+      onVernieuw()
+      toast.success(<>Standaard postvak gewijzigd<span style={{ color: '#F15025' }}>.</span></>)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Standaard instellen mislukt')
+    } finally {
+      setBezig(false)
+    }
+  }
+
+  const ontkoppel = async () => {
+    setBezig(true)
+    try {
+      await onOntkoppel(postvak)
+      setVraagtOntkoppel(false)
+    } finally {
+      setBezig(false)
+    }
+  }
+
+  return (
+    <div className="rounded-lg px-3 py-3 -mx-3 hover:bg-background transition-colors">
+      <div className="flex items-start gap-3">
+        <div className="min-w-0 flex-1">
+          {hernoemt ? (
+            <div className="flex items-center gap-2">
+              <Input
+                value={naam}
+                autoFocus
+                maxLength={60}
+                onChange={(e) => setNaam(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') void bewaarNaam()
+                  if (e.key === 'Escape') { setHernoemt(false); setNaam(postvak.naam) }
+                }}
+                className="h-8 max-w-[260px]"
+              />
+              <Button size="sm" variant="outline" onClick={() => void bewaarNaam()} disabled={bezig}>Bewaren</Button>
+              <button type="button" className="text-xs text-muted-foreground hover:text-foreground" onClick={() => { setHernoemt(false); setNaam(postvak.naam) }}>
+                Annuleren
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span className="text-sm font-semibold text-foreground">{postvak.naam}</span>
+              {postvak.isStandaard && (
+                <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                  standaard<span style={{ color: '#F15025' }}>.</span>
+                </span>
+              )}
+              {postvak.soort === 'gedeeld' && (
+                <span className="inline-flex items-center gap-1 text-[11px] uppercase tracking-wider text-muted-foreground">
+                  <Users className="w-3 h-3" />
+                  gedeeld
+                </span>
+              )}
+            </div>
+          )}
+          {postvak.adres && postvak.adres !== postvak.naam && !hernoemt && (
+            <p className="mt-0.5 text-xs font-mono text-muted-foreground break-all">{postvak.adres}</p>
+          )}
+        </div>
+        {!hernoemt && !vraagtOntkoppel && (
+          <div className="flex items-center gap-3 shrink-0 text-xs">
+            <button type="button" className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground" onClick={() => setHernoemt(true)}>
+              <Pencil className="w-3 h-3" />
+              Hernoemen
+            </button>
+            {!postvak.isStandaard && (
+              <button type="button" className="text-muted-foreground hover:text-foreground" onClick={() => void maakStandaard()} disabled={bezig}>
+                Als standaard
+              </button>
+            )}
+            <button type="button" className="text-flame hover:text-flame/80" onClick={() => setVraagtOntkoppel(true)}>
+              Ontkoppelen
+            </button>
+          </div>
+        )}
+      </div>
+      {vraagtOntkoppel && (
+        <div className="mt-3 rounded-lg border border-border bg-background p-3">
+          <p className="text-xs text-foreground/80">
+            {enige
+              ? 'Ontkoppelen haalt de koppeling en het wachtwoord weg. Je mail blijft in doen. staan; er komt alleen niets nieuws meer binnen.'
+              : 'Ontkoppelen haalt de koppeling en het wachtwoord van dit postvak weg. De mail van dit postvak blijft in doen. staan.'}
+          </p>
+          <div className="mt-2.5 flex items-center gap-3">
+            <Button size="sm" variant="outline" className="text-flame border-flame/40 hover:bg-flame/5" onClick={() => void ontkoppel()} disabled={bezig}>
+              {bezig ? 'Bezig…' : 'Ontkoppelen'}
+            </Button>
+            <button type="button" className="text-xs text-muted-foreground hover:text-foreground" onClick={() => setVraagtOntkoppel(false)}>
+              Annuleren
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 const STANDAARD_TEMPLATES = [
   { naam: 'Offerte + tekening', onderwerp: 'Offerte + tekening [projectnaam]', body: 'Beste [naam],\n\nBedankt voor je aanvraag. Hierbij de offerte en tekening voor [projectnaam].\n\nKijk het op je gemak door. Mocht je vragen hebben of willen aanpassen, laat het gerust weten.\n\nHoor graag van je!' },
@@ -787,6 +983,29 @@ export function EmailTab() {
   const [emailSettings, setEmailSettings] = useState<EmailSettings>(DEFAULT_EMAIL_SETTINGS)
   const [emailConnected, setEmailConnected] = useState(false)
 
+  // Postvakken · lijst boven het formulier. `nieuwPostvak` zet het formulier in
+  // de stand "nieuw": een leeg formulier dat een extra rij aanmaakt in plaats
+  // van de bestaande bij te werken.
+  const [postvakken, setPostvakken] = useState<Postvak[]>([])
+  const [postvakkenLaden, setPostvakkenLaden] = useState(true)
+  const [nieuwPostvak, setNieuwPostvak] = useState<EmailSettings | null>(null)
+
+  const laadPostvakken = useCallback(async () => {
+    setPostvakkenLaden(true)
+    try {
+      setPostvakken(await getPostvakken())
+    } catch {
+      setPostvakken([])
+    } finally {
+      setPostvakkenLaden(false)
+    }
+    void mailStore.laadPostvakken(true)
+  }, [])
+
+  useEffect(() => { void laadPostvakken() }, [laadPostvakken])
+
+  const toonPostvakkenLijst = emailConnected && (postvakken.length > 1 || postvakkenUitgebreid())
+
   const checkEmailStatus = useCallback(() => {
     setEmailConnected(!!emailSettings.gmail_address && (!!emailSettings.has_password || !!emailSettings.app_password))
   }, [emailSettings])
@@ -1056,12 +1275,50 @@ export function EmailTab() {
               </div>
             </CardContent>
           </Card>
-          <EmailSettingsInline
-            onSaved={checkEmailStatus}
-            settings={emailSettings}
-            setSettings={setEmailSettings}
-            isConnected={emailConnected}
-          />
+          {toonPostvakkenLijst && (
+            <PostvakkenLijst
+              postvakken={postvakken}
+              laden={postvakkenLaden}
+              onVernieuw={() => void laadPostvakken()}
+              toevoegenOpen={!!nieuwPostvak}
+              onToevoegen={() => setNieuwPostvak({ ...DEFAULT_EMAIL_SETTINGS })}
+              onOntkoppel={async (postvak) => {
+                try {
+                  const { deleteEmailSettingsFromDb, clearEmailCache } = await import('@/services/gmailService')
+                  await deleteEmailSettingsFromDb()
+                  await clearEmailCache()
+                  if (postvak.adres === emailSettings.gmail_address) {
+                    sessionStorage.removeItem('doen_email_settings')
+                    localStorage.removeItem('doen_email_settings')
+                    setEmailSettings(DEFAULT_EMAIL_SETTINGS)
+                  }
+                  await laadPostvakken()
+                  checkEmailStatus()
+                  toast.success(<>Postvak ontkoppeld<span style={{ color: '#F15025' }}>.</span> Je mail blijft in doen. staan.</>)
+                } catch (err) {
+                  toast.error(err instanceof Error ? err.message : 'Ontkoppelen mislukt')
+                }
+              }}
+            />
+          )}
+          {nieuwPostvak ? (
+            <EmailSettingsInline
+              onSaved={() => { setNieuwPostvak(null); void laadPostvakken(); checkEmailStatus() }}
+              settings={nieuwPostvak}
+              setSettings={setNieuwPostvak}
+              isConnected={false}
+              stand="nieuw"
+              onAnnuleer={() => setNieuwPostvak(null)}
+            />
+          ) : (
+            <EmailSettingsInline
+              onSaved={() => { checkEmailStatus(); void laadPostvakken() }}
+              settings={emailSettings}
+              setSettings={setEmailSettings}
+              isConnected={emailConnected}
+              stand="bewerken"
+            />
+          )}
         </div>
       )}
 
@@ -1147,12 +1404,18 @@ function EmailSettingsInline({
   settings,
   setSettings,
   isConnected,
+  stand = 'bewerken',
+  onAnnuleer,
 }: {
   onSaved: () => void
   settings: EmailSettings
   setSettings: (s: EmailSettings) => void
   isConnected: boolean
+  /** 'nieuw' koppelt een extra postvak; 'bewerken' werkt het bestaande bij. */
+  stand?: 'bewerken' | 'nieuw'
+  onAnnuleer?: () => void
 }) {
+  const nieuw = stand === 'nieuw'
   const [isSaving, setIsSaving] = useState(false)
   const [isTesting, setIsTesting] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -1210,8 +1473,9 @@ function EmailSettingsInline({
       })
 
       // Wis de cache van de vorige mailbox zodat de inbox-view alleen nog
-      // mails van het zojuist gekoppelde adres toont.
-      await clearEmailCache()
+      // mails van het zojuist gekoppelde adres toont. Bij een extra postvak
+      // juist niet: de mail van het eerste postvak hoort gewoon te blijven.
+      if (!nieuw) await clearEmailCache()
       void mailStore.laadSyncStatus()
 
       // Na opslaan is er een wachtwoord bekend; wachtwoord zelf niet in state/cache houden.
@@ -1220,7 +1484,7 @@ function EmailSettingsInline({
       // Cache in sessionStorage for quick loads · zonder wachtwoord.
       sessionStorage.setItem('doen_email_settings', JSON.stringify(opgeslagen))
 
-      setSuccess('E-mailinstellingen opgeslagen!')
+      setSuccess(nieuw ? 'Postvak toegevoegd. De eerste synchronisatie start vanzelf.' : 'E-mailinstellingen opgeslagen!')
       onSaved()
     } catch (err: unknown) {
       setError(`Opslaan mislukt: ${err instanceof Error ? err.message : 'Onbekende fout'}`)
@@ -1293,7 +1557,7 @@ function EmailSettingsInline({
           <div className="w-8 h-8 bg-flame/10 dark:bg-flame/20 rounded-lg flex items-center justify-center">
             <Mail className="w-4 h-4 text-flame" />
           </div>
-          Mailbox koppelen
+          {nieuw ? 'Postvak toevoegen' : 'Mailbox koppelen'}
         </CardTitle>
         <CardDescription>
           Kies waar je mail staat. Google en Microsoft vullen de servers zelf in; bij Overig vul je IMAP en SMTP in.
@@ -1483,9 +1747,14 @@ function EmailSettingsInline({
           <div className="flex items-center gap-2 pt-2">
             <Button onClick={handleSave} disabled={isSaving} className="gap-2">
               <Save className="w-4 h-4" />
-              {isSaving ? 'Opslaan...' : 'Opslaan'}
+              {isSaving ? 'Opslaan...' : nieuw ? 'Postvak opslaan' : 'Opslaan'}
             </Button>
-            {isConnected && (
+            {nieuw && onAnnuleer && (
+              <button type="button" onClick={onAnnuleer} className="text-sm text-muted-foreground hover:text-foreground">
+                Annuleren
+              </button>
+            )}
+            {isConnected && !nieuw && (
               <Button variant="ghost" onClick={handleDisconnect} className="gap-2 text-flame hover:text-flame/80 hover:bg-flame/5">
                 <Trash2 className="w-4 h-4" />
                 Verwijderen
