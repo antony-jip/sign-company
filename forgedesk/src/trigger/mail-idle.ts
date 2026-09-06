@@ -57,6 +57,15 @@ const START_INTERVAL_MIN = 10
 const FOUT_DREMPEL = 3
 const STRAF_MS = 60 * 60 * 1000
 
+/**
+ * Alles wat niet terminaal is telt als "er loopt al iets". PENDING_VERSION
+ * hoort er nadrukkelijk bij: een run die op een nog niet uitgerolde versie
+ * wacht was anders onzichtbaar en de starttaak zette er tijdens en vlak na een
+ * deploy een tweede naast. Terminaal zijn COMPLETED, CANCELED, FAILED,
+ * CRASHED, SYSTEM_FAILURE, EXPIRED en TIMED_OUT.
+ */
+const LOPENDE_STATUSSEN = ['PENDING_VERSION', 'QUEUED', 'DEQUEUED', 'EXECUTING', 'WAITING', 'DELAYED'] as const
+
 interface IdleLading {
   userId: string
   ronde?: number
@@ -239,11 +248,18 @@ type MailIdleTaak = Task<typeof TAAK_ID, IdleLading, IdleUitkomst>
  * retries staan uit: mislukt de verbinding, dan is opnieuw proberen binnen
  * seconden precies het verkeerde (zie FOUT_DREMPEL). De starttaak pakt hem
  * over tien minuten weer op, of laat hem een uur met rust.
+ *
+ * De queue met concurrencyLimit 1 plus een concurrencyKey per postvak is de
+ * echte sluitboom. Kijken of er al een run loopt en dan pas triggeren is
+ * check-dan-doe zonder claim: tussen die twee stappen past een tweede starter.
+ * Met een eigen wachtrij per postvak wacht een tweede run in QUEUED tot de
+ * eerste klaar is, dus staan er nooit twee IMAP-verbindingen naast elkaar.
  */
 export const mailIdleWerker: MailIdleTaak = task({
   id: TAAK_ID,
   maxDuration: Math.floor(IDLE_DUUR_MS / 1000) + 120,
   machine: 'micro',
+  queue: { concurrencyLimit: 1 },
   retry: { maxAttempts: 1 },
   run: async (lading: IdleLading): Promise<IdleUitkomst> => {
     const supabase = getSupabaseAdmin()
@@ -386,6 +402,7 @@ export const mailIdleWerker: MailIdleTaak = task({
       try {
         await tasks.trigger<MailIdleTaak>(TAAK_ID, { userId: lading.userId, ronde: (lading.ronde ?? 1) + 1 }, {
           tags: ['mail-idle', `mailbox:${lading.userId}`],
+          concurrencyKey: lading.userId,
         })
         opnieuw = true
       } catch (err) {
@@ -455,7 +472,7 @@ export const mailIdleStart = schedules.task({
         const bestaande = await runs.list({
           taskIdentifier: TAAK_ID,
           tag: `mailbox:${postvak.user_id}`,
-          status: ['QUEUED', 'DEQUEUED', 'EXECUTING', 'WAITING', 'DELAYED'],
+          status: [...LOPENDE_STATUSSEN],
           limit: 1,
         })
         alLopend = bestaande.data.length > 0
@@ -472,6 +489,7 @@ export const mailIdleStart = schedules.task({
       if (alLopend) { lopend += 1; continue }
       await tasks.trigger<MailIdleTaak>(TAAK_ID, { userId: postvak.user_id, ronde: 1 }, {
         tags: ['mail-idle', `mailbox:${postvak.user_id}`],
+        concurrencyKey: postvak.user_id,
       })
       gestart += 1
     }
