@@ -195,3 +195,47 @@ export function handtekeningAfbeeldingHtml({
     ? `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;border:0;">${img}</a>`
     : img
 }
+
+/**
+ * De hele handtekening als HTML: de tekst (of oude platte tekst) met daaronder
+ * de banner. Dit is de enige plek die beslist hoe die twee zich tot elkaar
+ * verhouden.
+ *
+ * Waarom één plek: elke mailsoort bouwde dit zelf, en elk deed het net anders.
+ * De projectmail liet de tekst door de markdown-omzetter lopen en verloor zo
+ * alle opmaak, én liet hem helemaal weg zodra er een banner was. De offertemail
+ * met een eigen bericht zette de handtekening er twee keer in, waarvan één keer
+ * ge-escaped. De factuurmail stuurde de banner nooit mee. Dat waren drie
+ * verschillende bugs met dezelfde oorzaak.
+ */
+export function bouwHandtekeningHtml({
+  tekst,
+  afbeeldingUrl,
+  afbeeldingLink,
+  afbeeldingBreedte,
+  terugval = '',
+  afbeeldingStyle = '',
+  scheiding = '<br />',
+}: {
+  tekst?: string | null
+  afbeeldingUrl?: string | null
+  afbeeldingLink?: string | null
+  afbeeldingBreedte?: number | null
+  /** Wat er staat als er geen handtekening is ingesteld, bijvoorbeeld de bedrijfsnaam. */
+  terugval?: string
+  afbeeldingStyle?: string
+  scheiding?: string
+}): string {
+  const delen: string[] = []
+  const tekstHtml = handtekeningNaarHtml(tekst)
+  if (tekstHtml) delen.push(tekstHtml)
+  const img = handtekeningAfbeeldingHtml({
+    url: afbeeldingUrl,
+    link: afbeeldingLink,
+    breedte: afbeeldingBreedte,
+    extraStyle: afbeeldingStyle,
+  })
+  if (img) delen.push(img)
+  if (delen.length === 0 && terugval.trim()) delen.push(handtekeningNaarHtml(terugval))
+  return delen.join(scheiding)
+}

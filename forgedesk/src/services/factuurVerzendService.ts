@@ -48,6 +48,11 @@ export type FactuurVerzendStijl = {
   bedrijfsnaam: string
   primaireKleur: string
   emailHandtekening?: string
+  // De banner hoorde er ook bij. Factuurmail stuurde hem nooit mee, dus de
+  // offertemail had wél een handtekening-afbeelding en de factuurmail niet.
+  handtekeningAfbeelding?: string
+  handtekeningAfbeeldingLink?: string
+  handtekeningAfbeeldingGrootte?: number
   logoUrl?: string
 }
 
@@ -389,6 +394,9 @@ export async function verwerkEnVerzendFactuur(opts: {
     bedrijfsnaam: stijl.bedrijfsnaam,
     primaireKleur: stijl.primaireKleur,
     handtekening: stijl.emailHandtekening || undefined,
+    handtekeningAfbeelding: stijl.handtekeningAfbeelding,
+    handtekeningAfbeeldingLink: stijl.handtekeningAfbeeldingLink,
+    handtekeningAfbeeldingGrootte: stijl.handtekeningAfbeeldingGrootte,
     logoUrl: stijl.logoUrl,
     betaalUrl: factuur.betaal_link || undefined,
   })

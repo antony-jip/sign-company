@@ -556,6 +556,9 @@ export function FactuurEditor() {
     bedrijfsnaam,
     primaireKleur,
     emailHandtekening,
+    handtekeningAfbeelding,
+    handtekeningAfbeeldingLink,
+    handtekeningAfbeeldingGrootte,
     profile,
   } = useAppSettings()
   const documentStyle = useDocumentStyle()
@@ -1859,6 +1862,9 @@ export function FactuurEditor() {
           bedrijfsnaam,
           primaireKleur,
           emailHandtekening: emailHandtekening || undefined,
+          handtekeningAfbeelding: handtekeningAfbeelding || undefined,
+          handtekeningAfbeeldingLink: handtekeningAfbeeldingLink || undefined,
+          handtekeningAfbeeldingGrootte: handtekeningAfbeeldingGrootte || undefined,
           logoUrl: profile?.logo_url || undefined,
         },
         metExact,
@@ -2114,6 +2120,9 @@ export function FactuurEditor() {
         bedrijfsnaam,
         primaireKleur,
         handtekening: emailHandtekening || undefined,
+        handtekeningAfbeelding: handtekeningAfbeelding || undefined,
+        handtekeningAfbeeldingLink: handtekeningAfbeeldingLink || undefined,
+        handtekeningAfbeeldingGrootte: handtekeningAfbeeldingGrootte || undefined,
         logoUrl: profile?.logo_url || undefined,
         betaalUrl: existingFactuur.betaal_link || undefined,
         persoonlijkBericht: persoonlijkBericht.trim() || undefined,
@@ -2306,7 +2315,7 @@ export function FactuurEditor() {
     } finally {
       setIsSending(false)
     }
-  }, [existingFactuur, selectedKlant, resolvedCp, verzendAan, nummer, titel, totaal, vervaldatum, bedrijfsnaam, primaireKleur, emailHandtekening, profile, factuurdatum, subtotaal, btwBedrag, notities, voorwaarden, validItems, isCreditFactuur, documentStyle, werkbonId, projectId, dialogBijlagen, selectedBijlageIds, medewerkers, stuurOfferteMee, offerteId, allOffertes, persoonlijkBericht])
+  }, [existingFactuur, selectedKlant, resolvedCp, verzendAan, nummer, titel, totaal, vervaldatum, bedrijfsnaam, primaireKleur, emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingLink, handtekeningAfbeeldingGrootte, profile, factuurdatum, subtotaal, btwBedrag, notities, voorwaarden, validItems, isCreditFactuur, documentStyle, werkbonId, projectId, dialogBijlagen, selectedBijlageIds, medewerkers, stuurOfferteMee, offerteId, allOffertes, persoonlijkBericht])
 
   // Live e-mailvoorbeeld voor het verzendvenster: exact dezelfde template als
   // de daadwerkelijke verzending, zodat persoonlijk bericht én standaardtekst
@@ -2323,6 +2332,9 @@ export function FactuurEditor() {
         bedrijfsnaam,
         primaireKleur,
         handtekening: emailHandtekening || undefined,
+        handtekeningAfbeelding: handtekeningAfbeelding || undefined,
+        handtekeningAfbeeldingLink: handtekeningAfbeeldingLink || undefined,
+        handtekeningAfbeeldingGrootte: handtekeningAfbeeldingGrootte || undefined,
         logoUrl: profile?.logo_url || undefined,
         betaalUrl: existingFactuur?.betaal_link || undefined,
         persoonlijkBericht: persoonlijkBericht.trim() || undefined,
@@ -2331,7 +2343,7 @@ export function FactuurEditor() {
     } catch {
       return ''
     }
-  }, [selectedKlant, resolvedCp, nummer, titel, totaal, vervaldatum, bedrijfsnaam, primaireKleur, emailHandtekening, profile, existingFactuur, persoonlijkBericht])
+  }, [selectedKlant, resolvedCp, nummer, titel, totaal, vervaldatum, bedrijfsnaam, primaireKleur, emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingLink, handtekeningAfbeeldingGrootte, profile, existingFactuur, persoonlijkBericht])
 
   // ============ OPVOLGING PAUZEREN ============
 

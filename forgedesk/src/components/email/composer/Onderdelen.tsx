@@ -166,3 +166,26 @@ export function CitaatBlok({ citaat, onVerwijder }: CitaatBlokProps) {
     </div>
   )
 }
+
+/** Kleine aan/uit-schakelaar in de werkbalk. Staat hier omdat zowel de
+ * composer als de handtekeningkiezer hem gebruikt. */
+export function MiniSchakelaar({ aan, onChange, label, titel }: { aan: boolean; onChange: (v: boolean) => void; label: string; titel?: string }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={aan}
+      title={titel}
+      onClick={() => onChange(!aan)}
+      className={cn(
+        'inline-flex items-center gap-1.5 h-7 px-1.5 rounded-lg text-[12px] font-medium transition-colors select-none',
+        aan ? 'text-petrol' : 'text-muted-foreground hover:text-foreground',
+      )}
+    >
+      <span className={cn('relative inline-block h-4 w-7 rounded-full transition-colors', aan ? 'bg-petrol' : 'bg-[#D4D2CC] dark:bg-white/20')}>
+        <span className={cn('absolute top-0.5 h-3 w-3 rounded-full bg-white shadow transition-all', aan ? 'left-3.5' : 'left-0.5')} />
+      </span>
+      {label}
+    </button>
+  )
+}

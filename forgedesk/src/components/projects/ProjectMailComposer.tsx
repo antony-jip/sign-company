@@ -23,7 +23,7 @@ import { isSupabaseConfigured } from '@/services/supabaseClient'
 import type { Project, Klant, Contactpersoon, Document, Offerte, Factuur, Werkbon, OfferteItem, SigningVisualisatie } from '@/types'
 import { useOntvangerZoeker, OntvangerLijst, type Ontvanger } from '@/components/shared/OntvangerVeld'
 import { getAvatarStyle } from '@/components/email/emailHelpers'
-import { handtekeningAfbeeldingHtml, handtekeningBreedte } from '@/utils/handtekening'
+import { bouwHandtekeningHtml, handtekeningBreedte } from '@/utils/handtekening'
 import { VerzendKnop } from '@/components/email/composer/VerzendKnop'
 
 const MAX_BIJLAGE_BYTES = 20 * 1024 * 1024
@@ -334,7 +334,9 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
   const aanhef = voornaam ? `Beste ${voornaam}` : 'Beste'
   const defaultSubject = `[${project.project_nummer || 'PRJ'}] ${project.naam}`
   const hasPngSignature = !!handtekeningAfbeelding?.trim()
-  const textSignatuur = !hasPngSignature && emailHandtekening?.trim() ? emailHandtekening.trim() : ''
+  // Ook mét een banner hoort de tekst in het vak te staan: hij gaat straks als
+  // HTML mee, en je wilt hem kunnen aanpassen voor je verstuurt.
+  const textSignatuur = emailHandtekening?.trim() || ''
   const signatuurBlok = textSignatuur ? `\n\n${textSignatuur}` : ''
   const defaultBody = `${aanhef},\n\n${signatuurBlok}`
 
@@ -915,15 +917,23 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
         return
       }
 
-      const bodyHtml = markdownNaarHtml(body)
-      const sigImg = handtekeningAfbeeldingHtml({
-        url: handtekeningAfbeelding,
-        link: handtekeningAfbeeldingLink,
-        breedte: handtekeningAfbeeldingGrootte,
-        extraStyle: 'display:block;',
+      // De handtekening staat als platte tekst onderaan het tekstvak zodat je
+      // hem daar kunt bijschaven. Voor de HTML-versie knippen we hem er weer af
+      // en bouwen we hem opnieuw op: door de markdown-omzetter verloor hij zijn
+      // opmaak, en met een banner viel de tekst helemaal weg.
+      const bodyZonderHandtekening = signatuurBlok && body.endsWith(signatuurBlok)
+        ? body.slice(0, -signatuurBlok.length)
+        : body
+      const bodyHtml = markdownNaarHtml(bodyZonderHandtekening)
+      const sig = bouwHandtekeningHtml({
+        tekst: emailHandtekening,
+        afbeeldingUrl: handtekeningAfbeelding,
+        afbeeldingLink: handtekeningAfbeeldingLink,
+        afbeeldingBreedte: handtekeningAfbeeldingGrootte,
+        afbeeldingStyle: 'display:block;',
       })
-      const signaturImg = sigImg ? `<br/><br/>${sigImg}` : ''
-      const html = `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;line-height:1.5;color:#1A1A1A">${bodyHtml}${signaturImg}</div>`
+      const sigHtml = sig ? `<br/><br/>${sig}` : ''
+      const html = `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;line-height:1.5;color:#1A1A1A">${bodyHtml}${sigHtml}</div>`
 
       const toStr = toEmails.join(', ')
       // Antwoorden haakt aan het lopende gesprek: hetzelfde thread_id binnen

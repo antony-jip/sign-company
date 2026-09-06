@@ -2,7 +2,7 @@
 // All templates are in Dutch and return { subject, html, text } objects
 
 import { supabase, isSupabaseConfigured } from './supabaseHelpers'
-import { handtekeningAfbeeldingHtml, handtekeningNaarHtml } from '@/utils/handtekening'
+import { bouwHandtekeningHtml } from '@/utils/handtekening'
 
 // ---------------------------------------------------------------------------
 // Interfaces
@@ -145,20 +145,20 @@ export function getBaseTemplate(data: EmailTemplateData): {
     // afbeeldingen blokkeert.
     const headerHtml = `<span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 22px; font-weight: 700; letter-spacing: -0.3px; color: #ffffff;">${escapeHtml(bedrijf)}</span>`
 
-    const sigImg = handtekeningAfbeeldingHtml({
-      url: data.handtekeningAfbeelding,
-      link: data.handtekeningAfbeeldingLink,
-      breedte: data.handtekeningAfbeeldingGrootte,
-      extraStyle: 'margin-top:8px;display:block;',
+    // Eén bouwer voor alle mailsoorten: tekst plus banner, in die volgorde, en
+    // nooit het een in plaats van het ander.
+    const sig = bouwHandtekeningHtml({
+      tekst: data.handtekening,
+      afbeeldingUrl: data.handtekeningAfbeelding,
+      afbeeldingLink: data.handtekeningAfbeeldingLink,
+      afbeeldingBreedte: data.handtekeningAfbeeldingGrootte,
+      afbeeldingStyle: 'margin-top:8px;display:block;',
     })
-    const sigImgHtml = sigImg ? `<br />${sigImg}` : ''
-    // De handtekening kan opmaak bevatten. handtekeningNaarHtml schoont die en
-    // zet oude platte tekst om, dus hier mag het als HTML de mail in.
-    const handtekeningHtml = data.handtekening
+    const handtekeningHtml = sig
       ? `
           <tr>
             <td style="padding: 24px 32px 0 32px; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; line-height: 1.6; color: #555555;">
-              ${handtekeningNaarHtml(data.handtekening)}${sigImgHtml}
+              ${sig}
             </td>
           </tr>`
       : ''
@@ -264,21 +264,14 @@ export function offerteVerzendTemplate(data: OfferteEmailData): EmailResult {
       .join('\n    ')
   }
 
-  // De handtekening afbeelding apart renderen (niet escapen — is HTML/img)
-  const signatureHtml = data.handtekeningAfbeelding
-    ? `<div style="margin-top: 16px;">${handtekeningAfbeeldingHtml({
-        url: data.handtekeningAfbeelding,
-        link: data.handtekeningAfbeeldingLink,
-        breedte: data.handtekeningAfbeeldingGrootte,
-      })}</div>`
-    : data.handtekening
-      ? `<div style="margin-top: 16px; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: #555555; white-space: pre-line;">${escapeHtml(data.handtekening)}</div>`
-      : ''
+  // Hier stond een tweede handtekening, alleen voor het eigen-bericht-pad. Die
+  // toonde óf de banner óf de tekst (ge-escaped, dus zonder opmaak), en kwam
+  // bovenop de handtekening die wrap() er hieronder al onder zet. Wie een eigen
+  // bericht schreef kreeg hem dus twee keer, waarvan één keer verminkt.
 
   const bodyHtml = data.customBody
     ? `
     ${buildCustomBody(data.customBody)}
-    ${signatureHtml}
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; margin: 24px 0 16px 0; border: 1px solid #eeeeee; border-radius: 6px;">
       <tr>
         <td style="padding: 16px; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: #555555;">

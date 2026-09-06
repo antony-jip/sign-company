@@ -578,7 +578,7 @@ export function FacturenLayout() {
   const { medewerkers } = useMedewerkers()
   const { isBlocked: isTrialBlocked, showDialog: showTrialDialog, setShowDialog: setShowTrialDialog } = useTrialGuard()
   // App settings (bedrijfsprofiel for PDF generation)
-  const { settings, profile, primaireKleur, emailHandtekening, bedrijfsnaam, factuurPrefix, factuurStartNummer, creditnotaDoornummeren, creditnotaPrefix, factuurBetaaltermijnDagen, factuurVoorwaarden } = useAppSettings()
+  const { settings, profile, primaireKleur, emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingLink, handtekeningAfbeeldingGrootte, bedrijfsnaam, factuurPrefix, factuurStartNummer, creditnotaDoornummeren, creditnotaPrefix, factuurBetaaltermijnDagen, factuurVoorwaarden } = useAppSettings()
   const exactConnected = settings.exact_online_connected ?? false
   const stepperAan = useFunctie('factuur_stepper')
   const actieTabAan = useFunctie('factuur_actie_tab')
@@ -1501,8 +1501,11 @@ export function FacturenLayout() {
     bedrijfsnaam,
     primaireKleur,
     emailHandtekening: emailHandtekening || undefined,
+    handtekeningAfbeelding: handtekeningAfbeelding || undefined,
+    handtekeningAfbeeldingLink: handtekeningAfbeeldingLink || undefined,
+    handtekeningAfbeeldingGrootte: handtekeningAfbeeldingGrootte || undefined,
     logoUrl: profile?.logo_url || undefined,
-  }), [profile, primaireKleur, documentStyle, bedrijfsnaam, emailHandtekening])
+  }), [profile, primaireKleur, documentStyle, bedrijfsnaam, emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingLink, handtekeningAfbeeldingGrootte])
 
   const handleSendFactuur = useCallback(
     async (factuur: Factuur) => {
