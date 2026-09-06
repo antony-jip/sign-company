@@ -57,6 +57,7 @@ import {
   Flame,
   ChevronDown,
   StickyNote,
+  Users,
 } from "lucide-react";
 import {
   getMontageAfspraken,
@@ -692,6 +693,7 @@ export function MontagePlanningLayout() {
   // vergelijken, zodat handmatig doorklikken hem vanzelf loslaat.
   const weergavenAan = useFunctie('planning_weergaven');
   const herhalenAan = useFunctie('planning_herhalen');
+  const bezettingAan = useFunctie('planning_bezetting');
   const [weergaven, setWeergaven] = useState<PlanningWeergave[]>([]);
   const [weergaveDialogOpen, setWeergaveDialogOpen] = useState(false);
   const [weergaveNaam, setWeergaveNaam] = useState('');
@@ -3097,6 +3099,12 @@ export function MontagePlanningLayout() {
                 <Printer className="h-4 w-4 mr-2 opacity-70" />
                 Print week
               </DropdownMenuItem>
+              {bezettingAan && (
+                <DropdownMenuItem onClick={() => navigateWithTab({ path: '/team?tab=bezetting', label: 'Bezetting', id: '/team?tab=bezetting' })}>
+                  <Users className="h-4 w-4 mr-2 opacity-70" />
+                  Bezetting
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </ModuleToolbar>

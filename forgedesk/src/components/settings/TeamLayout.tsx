@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { logger } from '@/utils/logger';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -66,6 +67,10 @@ import { cn, getInitials } from '@/lib/utils';
 import { toast } from 'sonner';
 
 type TeamTab = 'overzicht' | 'beschikbaarheid' | 'bezetting' | 'vaardigheden' | 'prestaties';
+const TEAM_TABS: TeamTab[] = ['overzicht', 'beschikbaarheid', 'bezetting', 'vaardigheden', 'prestaties'];
+function isTeamTab(v: string | null): v is TeamTab {
+  return v != null && (TEAM_TABS as string[]).includes(v);
+}
 
 
 // ---------------------------------------------------------------------------
@@ -179,7 +184,12 @@ export function TeamLayout() {
   const magKostprijs = isAdminUser(userRol);
   const bezettingAan = useFunctie('planning_bezetting');
   // ---- state ---------------------------------------------------------------
-  const [activeTab, setActiveTab] = useState<TeamTab>('overzicht');
+  const [searchParams] = useSearchParams();
+  const tabUitUrl = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState<TeamTab>(isTeamTab(tabUitUrl) ? tabUitUrl : 'overzicht');
+  useEffect(() => {
+    if (isTeamTab(tabUitUrl)) setActiveTab(tabUitUrl);
+  }, [tabUitUrl]);
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>([]);
   const [verlofLijst, setVerlofLijst] = useState<Verlof[]>([]);
   const [loading, setLoading] = useState(true);
