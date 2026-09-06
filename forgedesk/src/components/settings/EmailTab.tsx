@@ -77,8 +77,9 @@ const EMAIL_TABS: SubTab[] = [
   { id: 'algemeen', label: 'Algemeen', icon: Mail },
 ]
 
-/* OAuth-knoppen gaan pas aan als de app-registratie bij Google of Microsoft
-   rond is (golf 3). Tot die tijd staat de knop er wel, met "Binnenkort". */
+/* De OAuth-knop verschijnt pas als de app-registratie bij Google of Microsoft
+   rond is. Een knop die niets doet, met of zonder "Binnenkort", helpt niemand:
+   tot die tijd staat er alleen de route die wél werkt. */
 function oauthAan(sleutel: 'VITE_MAIL_OAUTH_GOOGLE' | 'VITE_MAIL_OAUTH_MICROSOFT'): boolean {
   const env = import.meta.env as unknown as Record<string, string | undefined>
   return env[sleutel] === 'aan'
@@ -98,14 +99,12 @@ const PROVIDER_KAARTEN: { id: EmailProvider; naam: string; sub: string }[] = [
 ]
 
 function OAuthKnop({ label, aan }: { label: string; aan: boolean }) {
+  if (!aan) return null
   return (
-    <div className="flex items-center gap-2">
-      <Button type="button" variant="outline" disabled={!aan} className="gap-2" title={aan ? undefined : 'Koppelen met één klik komt binnenkort'}>
-        <KeyRound className="w-4 h-4" />
-        {label}
-      </Button>
-      {!aan && <span className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground">Binnenkort</span>}
-    </div>
+    <Button type="button" variant="outline" className="gap-2">
+      <KeyRound className="w-4 h-4" />
+      {label}
+    </Button>
   )
 }
 
@@ -1324,7 +1323,7 @@ function EmailSettingsInline({
             <div className="rounded-lg border border-border bg-muted/30 p-3.5 space-y-3">
               <OAuthKnop label="Aanmelden met Google" aan={oauthAan('VITE_MAIL_OAUTH_GOOGLE')} />
               <div className="text-xs text-foreground/80 space-y-1.5">
-                <p className="font-medium text-foreground">Nu koppelen met een app-wachtwoord</p>
+                <p className="font-medium text-foreground">Koppelen met een app-wachtwoord</p>
                 <ol className="list-decimal pl-4 space-y-1">
                   <li>Zet <strong>2-stapsverificatie</strong> aan op je Google-account.</li>
                   <li>
@@ -1343,8 +1342,8 @@ function EmailSettingsInline({
             <div className="rounded-lg border border-border bg-muted/30 p-3.5 space-y-3">
               <OAuthKnop label="Aanmelden met Microsoft" aan={oauthAan('VITE_MAIL_OAUTH_MICROSOFT')} />
               <p className="text-xs text-foreground/80">
-                Microsoft staat wachtwoord-login niet meer toe; zodra de knop actief is, koppel je in twee klikken.
-                Heeft je beheerder SMTP AUTH en IMAP nog aanstaan, dan werkt een app-wachtwoord hieronder soms nog.
+                Microsoft zet wachtwoord-login op IMAP en SMTP steeds verder uit. Staan ze bij jouw beheerder nog aan,
+                dan werkt een app-wachtwoord hieronder. Anders wacht je op aanmelden met Microsoft.
               </p>
             </div>
           )}
