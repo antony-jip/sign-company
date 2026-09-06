@@ -9,7 +9,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { getMontageAfspraken, getTaken } from '@/services/supabaseService';
 import { getAfwezigheid, getVrijPatronen, getBedrijfssluitingsdagen } from '@/services/planningService';
 import { buildAfwezigheidIndex, resolveAfwezig } from '@/utils/afwezigheid';
-import { contractUrenOpDag, maandagVan, datumPlusDagen } from '@/utils/contracturen';
+import { contractUrenOpDag, maandagVan, datumPlusDagen, lokaleIso } from '@/utils/contracturen';
 import type { Medewerker, MedewerkerContract, Verlof, MontageAfspraak, Taak, Afwezigheid, VrijPatroon, Bedrijfssluitingsdag } from '@/types';
 import { cn, getInitials } from '@/lib/utils';
 
@@ -36,7 +36,7 @@ const AANTAL_WEKEN = 4;
 const STANDAARD_AFSPRAAK_UREN = 8;
 
 function vandaagIso(): string {
-  return new Date().toISOString().slice(0, 10);
+  return lokaleIso(new Date());
 }
 
 function isoWeekNummer(datumIso: string): number {

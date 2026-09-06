@@ -27,16 +27,23 @@ export function contractUrenPerWeek(c: MedewerkerContract | null | undefined): n
   return VELDEN.reduce((som, v) => som + Number(c[v] ?? 0), 0)
 }
 
+/** Lokale datum als YYYY-MM-DD, zonder de UTC-verschuiving van toISOString (die maakt van maandag 00:00 in Nederland zondag). */
+export function lokaleIso(d: Date): string {
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const dag = String(d.getDate()).padStart(2, '0')
+  return `${d.getFullYear()}-${m}-${dag}`
+}
+
 /** Maandag (ISO-datum) van de week waarin een datum valt. */
 export function maandagVan(datumIso: string): string {
   const d = new Date(datumIso.slice(0, 10) + 'T00:00:00')
   const verschil = (d.getDay() + 6) % 7
   d.setDate(d.getDate() - verschil)
-  return d.toISOString().slice(0, 10)
+  return lokaleIso(d)
 }
 
 export function datumPlusDagen(datumIso: string, dagen: number): string {
   const d = new Date(datumIso.slice(0, 10) + 'T00:00:00')
   d.setDate(d.getDate() + dagen)
-  return d.toISOString().slice(0, 10)
+  return lokaleIso(d)
 }
