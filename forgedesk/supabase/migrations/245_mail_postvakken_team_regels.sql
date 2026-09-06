@@ -15,6 +15,14 @@
 -- 6. IDLE-werker: tijdstip van het laatste IDLE-event per postvak.
 --
 -- Veilig om vóór of na de deploy van branch mail-outlook te draaien.
+--
+-- Deze migratie doet meerdere ALTER TABLE op emails plus een UPDATE over de
+-- hele tabel. Een ALTER die op de draaiende mailsync staat te wachten, houdt
+-- ondertussen élke lezer van emails tegen: dan staat de mail voor iedereen
+-- stil. Met lock_timeout geeft hij liever op dan te blijven wachten; komt hij
+-- daardoor niet door, draai hem dan gewoon opnieuw (hij is idempotent).
+SET lock_timeout = '4s';
+SET statement_timeout = '120s';
 
 BEGIN;
 
@@ -49,7 +57,11 @@ FROM user_email_settings s WHERE s.user_id = st.user_id AND st.account_id IS NUL
 CREATE UNIQUE INDEX IF NOT EXISTS uq_email_sync_state_account_folder ON email_sync_state (account_id, folder);
 ALTER TABLE email_sync_state ADD COLUMN IF NOT EXISTS idle_laatst_op TIMESTAMPTZ;
 
-ALTER TABLE mailsync_taken ADD COLUMN IF NOT EXISTS account_id UUID;
+-- mailsync_taken.account_id stond hier, maar hoort in 247. Zodra die kolom
+-- bestaat schakelt de wachtrij-werker over op één taak per postvak, terwijl de
+-- unieke index uit 202 er nog maar één per gebruiker toestaat: postvak 2 zou
+-- dan nooit een sync-taak krijgen. 247 voegt de kolom en de nieuwe index in
+-- dezelfde transactie toe, dus dat venster bestaat daar niet.
 
 -- 2. Gedeeld postvak: leden van de organisatie lezen en bewerken de mail van
 --    een postvak met soort 'gedeeld'. Persoonlijke postvakken blijven user-only.
@@ -83,6 +95,12 @@ CREATE POLICY "Team leest gedeeld postvak" ON emails
   FOR SELECT TO authenticated
   USING (account_id IS NOT NULL AND is_gedeeld_postvak_van_mijn_org(account_id));
 
+-- Let op de reikwijdte: RLS kan geen kolommen beperken en een policy kan de
+-- oude rij niet met de nieuwe vergelijken. Een teamlid dat het gedeelde postvak
+-- mag bewerken kan daarmee élke kolom van die mailrijen wijzigen, ook user_id.
+-- Binnen één organisatie en zolang een gedeeld postvak alleen met de hand in
+-- SQL ontstaat is dat te dragen; wordt het aanmaken in de app gezet, zet er dan
+-- eerst een trigger op die user_id vastpint.
 DROP POLICY IF EXISTS "Team wijzigt gedeeld postvak" ON emails;
 CREATE POLICY "Team wijzigt gedeeld postvak" ON emails
   FOR UPDATE TO authenticated

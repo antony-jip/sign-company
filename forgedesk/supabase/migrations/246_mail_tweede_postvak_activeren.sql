@@ -6,6 +6,22 @@
 -- Wat er weggaat: user_email_settings UNIQUE (user_id) uit migratie 037,
 -- emails UNIQUE (user_id, message_id) uit 038 en email_sync_state
 -- UNIQUE (user_id, folder) uit 131. De vervangers op account_id staan in 245.
+--
+-- OPEN PUNT VOOR DEZE MIGRATIE DRAAIT.
+-- Zolang emails_user_message_id_unique bestaat, vangt die een postvak dat
+-- ontkoppeld en opnieuw gekoppeld wordt op. Daarna niet meer: ontkoppelen zet
+-- emails.account_id op NULL (FK ON DELETE SET NULL in 245), opnieuw koppelen
+-- levert een nieuw account_id op, en dan haalt de sync de hele mailbox binnen
+-- als een tweede set rijen. Bij 24.000 mails is dat 24.000 dubbelen zonder
+-- herstelknop in de app. Los dat eerst op (ontkoppelen als soft-delete, zodat
+-- opnieuw koppelen hetzelfde postvak-id terugkrijgt) en draai deze migratie
+-- pas daarna.
+--
+-- Ook eerst nodig: het postvak-formulier moet weigeren op te slaan zonder te
+-- weten wélk postvak het bijwerkt. Zonder die poort valt schrijfPostvak na deze
+-- migratie terug op een update op user_id en krijgen álle postvakken hetzelfde
+-- adres. (Die poort zit sinds deze branch in api/email-settings.ts; controleer
+-- dat die live staat.)
 
 BEGIN;
 
