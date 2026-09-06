@@ -13,6 +13,7 @@ import { guidanceAan, zetGuidance } from '@/lib/guidance'
 import { useSidebar, RAIL_WIDTH, EXPANDED_WIDTH } from '@/contexts/SidebarContext'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useSupportAttentie } from '@/hooks/useSupportInbox'
+import { useMapTellers } from '@/lib/mail/hooks'
 import { ADMIN_USER_ID } from '@/services/supportChatService'
 import { useAuth } from '@/contexts/AuthContext'
 import { usePalette } from '@/contexts/PaletteContext'
@@ -46,6 +47,9 @@ export function Sidebar() {
   const isSupportAdmin = user?.id === ADMIN_USER_ID
   const isEigenaar = user?.id === ADMIN_USER_ID
   const supportAttentie = useSupportAttentie('support-nav', isSupportAdmin)
+  // Ongelezen inbox uit de mail-store; zonder gekoppelde mailbox blijft dit 0.
+  const mailOngelezen = useMapTellers().inbox
+  const mailBadge = mailOngelezen > 99 ? '99+' : String(mailOngelezen)
   const { appThemeId, setAppThemeId } = usePalette()
   const isDarkTheme = appThemeId === 'dark'
   const { settings, updateSettings } = useAppSettings()
@@ -268,6 +272,12 @@ export function Sidebar() {
               {/* Flame accent ook in rail-mode · zelfde signatuur als expanded */}
               {active && <span className="doen-sidebar-flame-accent z-10" />}
 
+              {item.path === '/email' && mailOngelezen > 0 && (
+                <span className="absolute top-1 right-2 z-10 min-w-[16px] h-[16px] px-1 rounded-full bg-petrol text-white text-[9px] font-mono font-semibold tabular-nums inline-flex items-center justify-center pointer-events-none ring-2 ring-background">
+                  {mailBadge}
+                </span>
+              )}
+
               <div
                 className={cn(
                   'relative z-10 transition-transform duration-300 ease-out',
@@ -349,6 +359,12 @@ export function Sidebar() {
         )}>
           {item.label}
         </span>
+
+        {item.path === '/email' && mailOngelezen > 0 && !editMode && (
+          <span className="relative z-10 ml-auto min-w-[18px] h-[18px] px-1.5 rounded-full bg-petrol text-white text-[10px] font-mono font-semibold tabular-nums inline-flex items-center justify-center">
+            {mailBadge}
+          </span>
+        )}
 
         {/* Bewerk-modus: verwijderen naar Overig */}
         {editMode && !isBottom && item.label !== 'Maatjes' && (
