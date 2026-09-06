@@ -65,6 +65,9 @@ import { standaardUrenStatus } from "@/services/tijdregistratieService";
 import { getMedewerkerContracten } from "@/services/planningService";
 import { useFunctie } from "@/hooks/useFunctie";
 import { Weekstaat } from "./Weekstaat";
+import { UrenKeuren } from "./UrenKeuren";
+import { isAdminUser } from "@/utils/authHelpers";
+import { useSearchParams } from "react-router-dom";
 import { getCached, fetchQuery } from "@/lib/queryCache";
 import type { Tijdregistratie, Project, Klant, Medewerker, MedewerkerContract } from "@/types";
 import { round2 } from "@/utils/budgetUtils";
@@ -180,7 +183,9 @@ const EMPTY_FORM: FormData = {
 };
 
 export function TijdregistratieLayout() {
-  const { user } = useAuth();
+  const { user, userRol } = useAuth();
+  const [searchParams] = useSearchParams();
+  const keurenDeeplink = searchParams.get("keuren") === "1";
   const [registraties, setRegistraties] = useState<Tijdregistratie[]>(() => getCached<Tijdregistratie[]>('tijdregistraties') ?? []);
   const [projecten, setProjecten] = useState<Project[]>(() => getCached<Project[]>('projecten') ?? []);
   const [klanten, setKlanten] = useState<Klant[]>(() => getCached<Klant[]>('klanten') ?? []);
@@ -663,6 +668,16 @@ export function TijdregistratieLayout() {
           </Button>
         </div>
       </div>
+
+      {goedkeurenAan && isAdminUser(userRol) && (
+        <UrenKeuren
+          registraties={registraties}
+          medewerkers={medewerkers}
+          userId={user?.id}
+          standaardOpen={keurenDeeplink}
+          onGewijzigd={loadData}
+        />
+      )}
 
       {/* Inklokken · dezelfde sessie als op de projectpagina */}
       <Card
