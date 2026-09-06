@@ -157,7 +157,8 @@ export const EmailListItem = memo(function EmailListItem({
         onTouchMove={touchMove}
         onTouchEnd={touchEnd}
         className={cn(
-          'group relative flex items-start gap-3 pl-4 pr-3 cursor-pointer select-none min-w-0 max-w-full overflow-hidden',
+          'group relative flex gap-3 pl-4 pr-3 cursor-pointer select-none min-w-0 max-w-full overflow-hidden',
+          compact ? 'items-center' : 'items-start',
           compact ? 'py-2' : 'py-3',
           'border-b border-[rgba(26,83,92,0.06)] dark:border-white/[0.06]',
           'transition-colors duration-100 ease-out',
@@ -180,7 +181,7 @@ export const EmailListItem = memo(function EmailListItem({
           <div className={cn('absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full', actief ? 'bg-petrol dark:bg-[#2A7A86]' : 'bg-petrol/45 dark:bg-[#2A7A86]/70')} aria-hidden />
         )}
 
-        <div className="relative flex-shrink-0 mt-0.5">
+        <div className={cn('relative flex-shrink-0', compact ? '' : 'mt-0.5')}>
           <div
             className={cn('rounded-[11px] flex items-center justify-center transition-opacity duration-150 ring-1 ring-inset ring-black/[0.06] dark:ring-white/[0.08]', compact ? 'w-7 h-7' : 'w-9 h-9', 'group-hover:opacity-0', aangevinkt && 'opacity-0')}
             style={{ backgroundColor: avatar.bg }}
@@ -192,6 +193,57 @@ export const EmailListItem = memo(function EmailListItem({
           </div>
         </div>
 
+        {compact ? (
+          // Compact is één regel: afzender in een vaste kolom, daarnaast het
+          // onderwerp met de preview erachter, tijd rechts. Twee regels maakten
+          // de lijst even hoog als comfortabel en dus zinloos.
+          <div className="flex-1 min-w-0 flex items-center gap-2 transition-[padding] duration-150 md:group-hover:pr-[124px]">
+            <span
+              className={cn(
+                'w-[150px] flex-shrink-0 truncate text-[13px] leading-none tracking-[-0.005em]',
+                ongelezen ? 'font-bold text-foreground' : 'font-medium text-foreground/75',
+              )}
+              title={afzender}
+            >
+              {afzender}
+            </span>
+            {zichtbareLabels.map((l) => (
+              <LabelStip key={l.naam} kleur={l.kleur} formaat={6} />
+            ))}
+            <span
+              className={cn(
+                'min-w-0 truncate text-[13px] leading-none tracking-[-0.005em]',
+                ongelezen ? 'font-bold text-foreground' : 'font-medium text-foreground/70 dark:text-muted-foreground',
+              )}
+            >
+              {item.onderwerp || '(geen onderwerp)'}
+            </span>
+            {preview && (
+              <span className="hidden min-w-0 flex-1 truncate text-[12px] leading-none text-muted-foreground/80 md:inline">
+                {preview}
+              </span>
+            )}
+            <span className="ml-auto flex flex-shrink-0 items-center gap-1.5">
+              {threadAantal > 1 && (
+                <span className="rounded-full bg-petrol/[0.08] px-1.5 py-px font-mono text-[10px] font-semibold leading-none tabular-nums text-petrol/80 dark:bg-[#2A7A86]/20 dark:text-[#7FB5BF]" title={`${threadAantal} berichten in dit gesprek`}>
+                  {threadAantal}
+                </span>
+              )}
+              {toegewezen && <ToewijsAvatar doel={toegewezen} formaat={15} />}
+              {bijlagen && <Paperclip className="h-3 w-3 text-petrol/45 dark:text-muted-foreground" aria-label="Bijlage" />}
+              {item.pinned && <Pin className="h-3 w-3 -rotate-45 fill-flame text-flame" aria-label="Vastgepind" />}
+              {chip && ChipIcoon && (
+                <span className="inline-flex h-5 max-w-[130px] items-center gap-1 rounded-[6px] bg-black/[0.05] pl-1.5 pr-2 text-[11px] text-foreground/70 dark:bg-white/[0.08]" title={`${chip.soort}: ${chip.label}`}>
+                  <ChipIcoon className="h-3 w-3 flex-shrink-0 opacity-70" />
+                  <span className="truncate">{chip.label}</span>
+                </span>
+              )}
+              <span className={cn('pl-1 font-mono text-[11.5px] leading-none tabular-nums transition-opacity md:group-hover:opacity-0', ongelezen ? 'font-semibold text-petrol dark:text-[#7FB5BF]' : 'text-muted-foreground/80')}>
+                {formatShortDate(item.datum)}
+              </span>
+            </span>
+          </div>
+        ) : (
         <div className="flex-1 min-w-0 pt-px transition-[padding] duration-150 md:group-hover:pr-[124px]">
           <div className="flex items-center gap-1.5 mb-[3px] min-w-0">
             <span className={cn('truncate leading-none tracking-[-0.005em]', compact ? 'text-[13px]' : 'text-[13.5px]', ongelezen ? 'font-bold text-foreground' : 'font-medium text-foreground/75')}>
@@ -217,7 +269,6 @@ export const EmailListItem = memo(function EmailListItem({
             <span className={cn('truncate leading-snug tracking-[-0.005em]', compact ? 'text-[13px]' : 'text-[14px]', ongelezen ? 'font-bold text-foreground' : 'font-medium text-foreground/70 dark:text-muted-foreground')}>
               {item.onderwerp || '(geen onderwerp)'}
             </span>
-            {compact && preview && <span className="truncate text-[12px] text-muted-foreground/80 hidden md:inline">· {preview}</span>}
             {chip && ChipIcoon && (
               <span className="ml-auto inline-flex items-center gap-1 h-5 pl-1.5 pr-2 rounded-[6px] bg-black/[0.05] dark:bg-white/[0.08] text-[11px] text-foreground/70 max-w-[140px] flex-shrink-0" title={`${chip.soort}: ${chip.label}`}>
                 <ChipIcoon className="h-3 w-3 flex-shrink-0 opacity-70" />
@@ -232,6 +283,7 @@ export const EmailListItem = memo(function EmailListItem({
             </p>
           )}
         </div>
+        )}
         {acties}
       </div>
 

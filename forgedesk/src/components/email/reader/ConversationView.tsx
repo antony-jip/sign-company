@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { ChevronDown, ChevronUp, X, UserPlus, Reply, Loader2 } from 'lucide-react'
+import { ChevronDown, ChevronUp, Forward, Loader2, Reply, ReplyAll, UserPlus, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Email } from '@/types'
 import type { EmailBody, EmailKoppeling, EmailLijstItem, KoppelingSoort } from '@/lib/mail/types'
@@ -272,8 +272,10 @@ export function ConversationView({ emailId, onSluiten, onAntwoord, onVolgende, o
   const laatste = berichten[berichten.length - 1]
 
   return (
-    <div className="doen-reader flex h-full min-h-0 flex-col bg-background">
-      <header className={cn('flex-shrink-0 border-b border-border', compact ? 'px-3 py-2.5' : 'px-6 py-4')}>
+    <div className="doen-reader flex h-full min-h-0 flex-col bg-card">
+      {/* relative z-20: de zoekvelden van de maak-acties zijn absoluut
+          gepositioneerd en verdwenen anders achter het berichtenblok. */}
+      <header className={cn('relative z-20 flex-shrink-0 border-b border-border bg-card', compact ? 'px-3 py-2' : 'px-6 py-3')}>
         <div className="flex items-start gap-2">
           <div className="min-w-0 flex-1">
             <h1 className={cn('font-semibold tracking-[-0.3px] text-foreground [overflow-wrap:anywhere]', compact ? 'text-[15px] leading-tight' : 'text-[18px] leading-snug')}>
@@ -313,15 +315,26 @@ export function ConversationView({ emailId, onSluiten, onAntwoord, onVolgende, o
 
         {/* De maak-acties staan op hun eigen regel: in een smal leesvenster
             duwden ze het onderwerp anders tot één letter per regel. */}
-        <div className="mt-2 -mx-1 overflow-x-auto scrollbar-none">
-          <div className="px-1">
-            <EmailActionsPopover email={alsEmail(mail, geselecteerdeBody)} openKlantSignal={klantSignal} onOpenProjectDialog={() => zetKoppelOpen(true)} />
+        {/* Maak-acties en Daan delen één regel; los onder elkaar kostte de kop
+            twee regels lucht boven elke mail. */}
+        {/* Geen overflow-auto: het zoekveld van de maak-acties is absoluut
+            gepositioneerd en werd door de scrollcontainer afgeknipt. */}
+        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+          <EmailActionsPopover email={alsEmail(mail, geselecteerdeBody)} openKlantSignal={klantSignal} onOpenProjectDialog={() => zetKoppelOpen(true)} />
+          <div className="ml-auto flex-shrink-0">
+            <DaanBlok
+              berichten={berichten}
+              geselecteerd={mail}
+              body={geselecteerdeBody}
+              onConcept={(voorstel) => onAntwoord('antwoord', mail, geselecteerdeBody, voorstel)}
+              compact={compact}
+            />
           </div>
         </div>
 
         {/* De koppel-knop staat al in de actiebalk hierboven; hier alleen de
             chips, met de popover als onzichtbaar anker. */}
-        <div className="mt-2.5 flex flex-wrap items-center gap-1.5 empty:hidden">
+        <div className="mt-1.5 flex flex-wrap items-center gap-1.5 empty:hidden">
           {chips.map((chip) => (
             <Chip key={chip.koppeling.id} chip={chip} onOpen={() => openChip(chip)} onOntkoppel={() => handleOntkoppel(chip)} />
           ))}
@@ -335,23 +348,60 @@ export function ConversationView({ emailId, onSluiten, onAntwoord, onVolgende, o
           />
         </div>
 
-        <div className="mt-2.5 empty:hidden">
+        <div className="mt-1.5 empty:hidden">
           <AfzenderBanner email={alsEmail(mail, geselecteerdeBody)} onOpenKlant={() => zetKlantSignal((n) => n + 1)} />
         </div>
 
-        <div className="mt-2.5">
-          <DaanBlok
-            berichten={berichten}
-            geselecteerd={mail}
-            body={geselecteerdeBody}
-            onConcept={(voorstel) => onAntwoord('antwoord', mail, geselecteerdeBody, voorstel)}
-            compact={compact}
-          />
-        </div>
       </header>
 
       <EmailReaderAIToolbar containerRef={scrollRef} />
-      <div ref={scrollRef} className={cn('min-h-0 flex-1 overflow-y-auto', compact ? 'px-3 py-3' : 'px-6 py-4')}>
+      <div ref={scrollRef} className={cn('relative z-0 min-h-0 flex-1 overflow-y-auto bg-card', compact ? 'px-3 py-3' : 'px-6 py-4')}>
+        {/* Antwoorden staat boven het gesprek: je typt bovenaan en het gesprek
+            schuift eronder door, in plaats van scrollen naar de onderkant. */}
+        {voet && <div className="mb-4">{voet}</div>}
+
+        {/* Antwoorden is de handeling waarvoor je een mail opent, dus hij staat
+            onder het laatste bericht als knop, niet alleen achter een hover of
+            een toets. */}
+        {!voet && laatste && (
+          <div className={cn('mb-4 bg-card', compact && 'pb-1')}>
+            <div className={cn('flex items-center gap-2', compact ? 'flex-col' : '')}>
+              <button
+                type="button"
+                onClick={() => onAntwoord('antwoord', laatste, laatste.id === emailId ? geselecteerdeBody : null)}
+                className={cn(
+                  'inline-flex items-center justify-center gap-2 rounded-lg bg-flame font-semibold text-white transition-colors hover:bg-[#D8421F]',
+                  compact ? 'h-11 w-full text-[14px]' : 'h-10 px-5 text-[13.5px]',
+                )}
+              >
+                <Reply className="h-4 w-4" strokeWidth={2} />
+                Beantwoorden
+              </button>
+              {!compact && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => onAntwoord('allen', laatste, laatste.id === emailId ? geselecteerdeBody : null)}
+                    className="inline-flex h-10 items-center gap-2 rounded-lg border border-border px-4 text-[13.5px] font-semibold text-foreground/80 transition-colors hover:bg-muted"
+                  >
+                    <ReplyAll className="h-4 w-4" strokeWidth={1.75} />
+                    Allen
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onAntwoord('doorsturen', laatste, laatste.id === emailId ? geselecteerdeBody : null)}
+                    className="inline-flex h-10 items-center gap-2 rounded-lg border border-border px-4 text-[13.5px] font-semibold text-foreground/80 transition-colors hover:bg-muted"
+                  >
+                    <Forward className="h-4 w-4" strokeWidth={1.75} />
+                    Doorsturen
+                  </button>
+                  <span className="ml-auto font-mono text-[11px] text-muted-foreground/70">r · a · f</span>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
         <div className="space-y-2.5">
           {berichten.map((bericht) => (
             <Bericht
@@ -394,20 +444,6 @@ export function ConversationView({ emailId, onSluiten, onAntwoord, onVolgende, o
           </div>
         )}
 
-        {voet && <div className="mt-4">{voet}</div>}
-
-        {compact && !voet && laatste && (
-          <div className="sticky bottom-0 mt-4 bg-background pb-[env(safe-area-inset-bottom)] pt-2">
-            <button
-              type="button"
-              onClick={() => onAntwoord('antwoord', laatste, laatste.id === emailId ? geselecteerdeBody : null)}
-              className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-flame text-[14px] font-semibold text-white"
-            >
-              <Reply className="h-4 w-4" strokeWidth={2} />
-              Beantwoorden
-            </button>
-          </div>
-        )}
       </div>
     </div>
   )

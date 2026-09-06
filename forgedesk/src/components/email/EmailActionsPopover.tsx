@@ -47,6 +47,17 @@ export function getKlantenGedeeld(): Promise<Klant[]> {
 }
 
 let leveranciersCache: { op: number; belofte: Promise<Leverancier[]> } | null = null
+/**
+ * Na het aanmaken van een klant of contactpersoon moet de banner "staat nog
+ * niet in doen." meteen weg. De cache leegmaken is niet genoeg: de hooks
+ * hebben hun eigen state, dus ze krijgen ook een seintje.
+ */
+const klantLuisteraars = new Set<() => void>()
+export function meldKlantenGewijzigd(): void {
+  klantenCache = null
+  for (const cb of klantLuisteraars) cb()
+}
+
 export function getLeveranciersGedeeld(): Promise<Leverancier[]> {
   if (!leveranciersCache || Date.now() - leveranciersCache.op > 60_000) {
     leveranciersCache = { op: Date.now(), belofte: getLeveranciers().catch(() => { leveranciersCache = null; return [] as Leverancier[] }) }
@@ -61,8 +72,14 @@ export function useAfzenderStatus(email: Email | null) {
   const [klantenGeladen, setKlantenGeladen] = useState(false)
   const [leveranciers, setLeveranciers] = useState<Leverancier[]>([])
   useEffect(() => {
-    getKlantenGedeeld().then(k => { setKlanten(k); setKlantenGeladen(true) })
-    getLeveranciersGedeeld().then(setLeveranciers)
+    let afgebroken = false
+    const laad = () => {
+      getKlantenGedeeld().then(k => { if (!afgebroken) { setKlanten(k); setKlantenGeladen(true) } })
+      getLeveranciersGedeeld().then((l) => { if (!afgebroken) setLeveranciers(l) })
+    }
+    laad()
+    klantLuisteraars.add(laad)
+    return () => { afgebroken = true; klantLuisteraars.delete(laad) }
   }, [])
   const leverancier = useMemo(() => {
     const a = senderEmail.toLowerCase()
@@ -269,6 +286,7 @@ export function EmailActionsPopover({ email, onOpenProjectDialog, openKlantSigna
         is_primair: false,
       }
       await updateKlant(addToKlant.id, { contactpersonen: [...bestaande, nieuw] })
+      meldKlantenGewijzigd()
       toast.success(`${klantForm.contactpersoon} toegevoegd aan ${addToKlant.bedrijfsnaam || addToKlant.contactpersoon}`)
       setOpen(false)
     } catch (err) {
@@ -323,6 +341,7 @@ export function EmailActionsPopover({ email, onOpenProjectDialog, openKlantSigna
         contactpersonen: [{ id: crypto.randomUUID(), naam: klantForm.contactpersoon, functie: klantForm.functie, email: klantForm.email, telefoon: klantForm.mobiel || klantForm.telefoon, is_primair: true }],
       })
       logCreate({ user, medewerkers, entityType: 'klant', entityId: newKlant.id })
+      meldKlantenGewijzigd()
       toast.success('Klant aangemaakt')
       setOpen(false)
     } catch (err) {

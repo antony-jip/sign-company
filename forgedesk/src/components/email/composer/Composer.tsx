@@ -75,8 +75,8 @@ const MODUS_LABEL: Record<ComposerDocument['modus'], string> = {
   doorsturen: 'Doorsturen',
 }
 
-const veldLabelCls = 'w-[64px] md:w-[74px] flex-shrink-0 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground/70 select-none pt-[3px]'
-const veldRijCls = 'flex items-start gap-3 border-b border-border/70 py-2.5 focus-within:border-petrol transition-colors duration-150 min-w-0'
+const veldLabelCls = 'w-[64px] md:w-[74px] flex-shrink-0 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground/70 select-none'
+const veldRijCls = 'flex items-center gap-3 border-b border-border/70 py-1.5 focus-within:border-petrol transition-colors duration-150 min-w-0'
 const toolChipCls = 'inline-flex items-center gap-1.5 h-7 px-2.5 rounded-[9px] text-[12px] font-medium text-foreground/70 border border-border hover:text-petrol hover:border-petrol/30 hover:bg-petrol/[0.05] transition-colors duration-150'
 const aiChipCls = 'inline-flex items-center gap-1.5 h-7 px-2.5 rounded-[9px] text-[12px] font-semibold text-flame border border-flame/25 bg-flame/[0.06] hover:bg-flame/[0.12] transition-colors duration-150 disabled:opacity-40'
 const menuCls = 'absolute left-0 top-full mt-2 bg-white dark:bg-popover dark:border dark:border-white/10 rounded-xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] z-50 py-1.5 overflow-hidden'

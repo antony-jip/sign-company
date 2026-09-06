@@ -342,16 +342,18 @@ export function OntvangerChips({
             key={`${o.email}-${i}`}
             title={o.email}
             className={cn(
-              'group inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-full border text-[12px] leading-5 max-w-full',
+              'group inline-flex h-6 items-center gap-1 pl-2 pr-1 rounded-full border text-[12px] leading-none max-w-full',
               geldig
                 ? 'border-petrol/15 bg-petrol/[0.06] text-petrol'
                 : 'border-[#C0451A]/30 bg-[#FDE8E4] text-[#C0451A]',
             )}
           >
-            <span className="flex flex-col min-w-0 leading-tight py-0.5">
+            {/* Eén regel: naam en adres naast elkaar. Twee regels maakten het
+                Aan-veld twee keer zo hoog als de rest van de composer. */}
+            <span className="flex min-w-0 items-baseline gap-1.5 leading-none" title={naam ? `${naam} · ${o.email}` : o.email}>
               <span className="truncate font-medium">{naam || o.email}</span>
               {(naam || o.bedrijf) && (
-                <span className={cn('truncate text-[10px]', geldig ? 'text-petrol/60' : 'text-[#C0451A]/70')}>
+                <span className={cn('truncate text-[10.5px]', geldig ? 'text-petrol/55' : 'text-[#C0451A]/70')}>
                   {o.bedrijf || o.email}
                 </span>
               )}

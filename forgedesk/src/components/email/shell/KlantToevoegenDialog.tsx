@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { meldKlantenGewijzigd } from '../EmailActionsPopover'
 import { Check, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -66,7 +67,7 @@ export function KlantToevoegenDialog({ open, onSluiten, afzenderNaam, afzenderEm
     zetBezig(true)
     try {
       const bestaand = (await getKlanten()).find((k) => k.email?.toLowerCase() === form.email.toLowerCase())
-      if (bestaand) { toast.success('Klant bestond al, gekoppeld'); onAangemaakt(bestaand); onSluiten(); return }
+      if (bestaand) { meldKlantenGewijzigd(); toast.success('Klant bestond al, gekoppeld'); onAangemaakt(bestaand); onSluiten(); return }
       const domein = form.email.match(/@(.+)/)?.[1]?.toLowerCase()
       const klant = await createKlant({
         bedrijfsnaam: form.bedrijfsnaam, contactpersoon: form.contactpersoon,
@@ -77,6 +78,7 @@ export function KlantToevoegenDialog({ open, onSluiten, afzenderNaam, afzenderEm
         contactpersonen: [{ id: crypto.randomUUID(), naam: form.contactpersoon, functie: form.functie, email: form.email, telefoon: form.mobiel || form.telefoon, is_primair: true }],
       })
       toast.success('Klant aangemaakt')
+      meldKlantenGewijzigd()
       onAangemaakt(klant)
       onSluiten()
     } catch (err) {

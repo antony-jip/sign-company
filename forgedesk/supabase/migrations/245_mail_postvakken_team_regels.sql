@@ -37,14 +37,16 @@ ALTER TABLE emails ADD COLUMN IF NOT EXISTS account_id UUID REFERENCES user_emai
 UPDATE emails e SET account_id = s.id
 FROM user_email_settings s WHERE s.user_id = e.user_id AND e.account_id IS NULL;
 CREATE INDEX IF NOT EXISTS idx_emails_account_datum ON emails (account_id, datum DESC);
-CREATE UNIQUE INDEX IF NOT EXISTS uq_emails_account_message ON emails (account_id, message_id)
-  WHERE account_id IS NOT NULL AND message_id IS NOT NULL;
+-- Bewust geen partiële index: PostgREST stuurt bij een upsert alleen de
+-- kolommen mee en niet het WHERE-predicaat, waardoor een partiële index als
+-- ON CONFLICT-arbiter een 42P10 geeft. NULL is in een unieke index sowieso
+-- distinct, dus rijen zonder account_id of message_id botsen niet.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_emails_account_message ON emails (account_id, message_id);
 
 ALTER TABLE email_sync_state ADD COLUMN IF NOT EXISTS account_id UUID REFERENCES user_email_settings(id) ON DELETE CASCADE;
 UPDATE email_sync_state st SET account_id = s.id
 FROM user_email_settings s WHERE s.user_id = st.user_id AND st.account_id IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uq_email_sync_state_account_folder ON email_sync_state (account_id, folder)
-  WHERE account_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_email_sync_state_account_folder ON email_sync_state (account_id, folder);
 ALTER TABLE email_sync_state ADD COLUMN IF NOT EXISTS idle_laatst_op TIMESTAMPTZ;
 
 ALTER TABLE mailsync_taken ADD COLUMN IF NOT EXISTS account_id UUID;
@@ -227,7 +229,11 @@ END $$;
 
 -- Threads per postvak: zonder account_id smelten twee postvakken van dezelfde
 -- gebruiker samen en ziet een collega de threads van een gedeeld postvak nooit.
-CREATE OR REPLACE VIEW email_threads_view
+-- CREATE OR REPLACE staat alleen nieuwe kolommen aan het eind toe; account_id
+-- op positie twee zou "cannot change name of view column" geven en de hele
+-- migratie terugdraaien.
+DROP VIEW IF EXISTS email_threads_view;
+CREATE VIEW email_threads_view
 WITH (security_invoker = on) AS
 SELECT
   user_id,

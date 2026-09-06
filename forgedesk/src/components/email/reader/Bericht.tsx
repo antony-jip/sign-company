@@ -129,7 +129,7 @@ export const Bericht = forwardRef<HTMLDivElement, BerichtProps>(function Bericht
       ref={ref}
       data-bericht={bericht.id}
       className={cn(
-        'group rounded-xl border bg-background',
+        'group rounded-xl border bg-card',
         geselecteerd ? 'border-petrol/40' : 'border-border',
       )}
     >
