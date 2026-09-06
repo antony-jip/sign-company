@@ -19,12 +19,72 @@
 -- Deze migratie doet meerdere ALTER TABLE op emails plus een UPDATE over de
 -- hele tabel. Een ALTER die op de draaiende mailsync staat te wachten, houdt
 -- ondertussen élke lezer van emails tegen: dan staat de mail voor iedereen
--- stil. Met lock_timeout geeft hij liever op dan te blijven wachten; komt hij
--- daardoor niet door, draai hem dan gewoon opnieuw (hij is idempotent).
-SET lock_timeout = '4s';
-SET statement_timeout = '120s';
+-- stil.
+--
+-- Drie dingen daartegen:
+--
+-- 1. `SET LOCAL` BINNEN elke transactie, niet `SET` erbuiten. Een SET buiten de
+--    transactie geldt voor de sessie, en via een pooler in transaction mode
+--    landt die op een andere verbinding dan de BEGIN erna. Dan draait de ALTER
+--    zonder lock_timeout en blijft hij eindeloos wachten. Dat gebeurde bij de
+--    eerste poging.
+-- 2. Negen kleine transacties in plaats van één grote. Wat af is blijft staan,
+--    en een blok dat op een lock stukloopt houdt de rest niet tegen. Alles is
+--    idempotent, dus opnieuw draaien pakt gewoon op waar hij gebleven was.
+-- 3. `doen_lock_hertry` hieronder. Alleen een lock_timeout was niet genoeg: de
+--    mailsync schrijft zo vaak in `emails` dat vier seconden zelden een gaatje
+--    opleveren. Het hulpje blijft het proberen tot hij er één vindt, zonder
+--    ondertussen iets vast te houden.
+--
+-- Loopt een blok alsnog stuk op "Geen gaatje gevonden", dan is er iets dat de
+-- lock lang vasthoudt. Kijk dan met dit vraagje in een tweede tabblad wie dat
+-- is:
+--
+--   SELECT pid, state, now() - query_start AS looptijd, wait_event_type,
+--          pg_blocking_pids(pid) AS geblokkeerd_door, left(query, 120)
+--     FROM pg_stat_activity
+--    WHERE datname = current_database() AND state <> 'idle'
+--    ORDER BY query_start;
 
+-- ── Blok 0: een hulpje dat op een gaatje wacht ──────────────────────────
+-- De mailsync schrijft bijna onafgebroken in `emails` (een cron elke minuut,
+-- een elke drie minuten, plus de app zelf). Een ALTER of CREATE POLICY heeft
+-- een ACCESS EXCLUSIVE-lock nodig en krijgt die alleen op een moment dat er
+-- niets loopt. Met alleen een lock_timeout geeft hij na een paar seconden op,
+-- en dan moet je toevallig het goede moment te pakken hebben.
+--
+-- Dit hulpje probeert de lock keer op keer, telkens met een korte timeout.
+-- Mislukt een poging, dan rolt de subtransactie terug en houdt hij niets vast:
+-- er ontstaat dus geen file van wachtende lezers achter een wachtende ALTER.
+-- Tussen de pogingen door slaapt hij twee seconden.
+CREATE OR REPLACE FUNCTION public.doen_lock_hertry(p_tabel TEXT, p_pogingen INT DEFAULT 40, p_wacht NUMERIC DEFAULT 2)
+RETURNS VOID
+LANGUAGE plpgsql
+SET search_path = public, pg_temp
+AS $hertry$
+DECLARE
+  poging INT := 0;
+BEGIN
+  LOOP
+    poging := poging + 1;
+    BEGIN
+      EXECUTE format('LOCK TABLE public.%I IN ACCESS EXCLUSIVE MODE', p_tabel);
+      RAISE NOTICE 'lock op % genomen bij poging %', p_tabel, poging;
+      RETURN;
+    EXCEPTION WHEN lock_not_available THEN
+      IF poging >= p_pogingen THEN
+        RAISE EXCEPTION 'Geen gaatje gevonden voor % na % pogingen. De mailsync is te druk; probeer het zo nog eens.', p_tabel, poging;
+      END IF;
+      PERFORM pg_sleep(p_wacht);
+    END;
+  END LOOP;
+END;
+$hertry$;
+
+-- ── Blok 1: postvakken (kleine tabel, weinig verkeer) ────────────────────
 BEGIN;
+SET LOCAL lock_timeout = '4s';
+SET LOCAL statement_timeout = '120s';
 
 -- 1. Postvakken
 ALTER TABLE user_email_settings ADD COLUMN IF NOT EXISTS naam TEXT;
@@ -41,18 +101,60 @@ END $$;
 UPDATE user_email_settings s SET organisatie_id = p.organisatie_id
 FROM profiles p WHERE p.id = s.user_id AND s.organisatie_id IS NULL;
 
+COMMIT;
+
+-- ── Blok 2a: alleen de kolom erbij. Dit is de enige stap die een
+--    ACCESS EXCLUSIVE-lock op emails nodig heeft, en dus de enige die de hele
+--    mailmodule even stilzet. Zo kort mogelijk houden: apart, zonder de UPDATE
+--    en de indexen erachteraan. ──
+BEGIN;
+-- Kort per poging, want doen_lock_hertry probeert het gewoon opnieuw.
+SET LOCAL lock_timeout = '2s';
+-- Ruim, want de lus mag minuten naar een gaatje zoeken. Hij houdt tijdens het
+-- wachten niets vast, dus dit blokkeert niemand.
+SET LOCAL statement_timeout = '300s';
+SELECT public.doen_lock_hertry('emails');
+
 ALTER TABLE emails ADD COLUMN IF NOT EXISTS account_id UUID REFERENCES user_email_settings(id) ON DELETE SET NULL;
+
+COMMIT;
+
+-- ── Blok 2b: de bestaande mail aan het standaardpostvak hangen. Neemt
+--    rij-locks, geen tafel-lock: lezers hebben er geen last van. ──
+BEGIN;
+SET LOCAL lock_timeout = '4s';
+SET LOCAL statement_timeout = '120s';
+
 -- is_standaard erbij: zonder die voorwaarde kiest Postgres bij meerdere rijen
 -- willekeurig een postvak.
 UPDATE emails e SET account_id = s.id
 FROM user_email_settings s
 WHERE s.user_id = e.user_id AND s.is_standaard AND e.account_id IS NULL;
+
+COMMIT;
+
+-- ── Blok 2c: de indexen. Blokkeren schrijvers zolang ze bouwen, lezers niet. ──
+BEGIN;
+-- Kort per poging, want doen_lock_hertry probeert het gewoon opnieuw.
+SET LOCAL lock_timeout = '2s';
+-- Ruim, want de lus mag minuten naar een gaatje zoeken. Hij houdt tijdens het
+-- wachten niets vast, dus dit blokkeert niemand.
+SET LOCAL statement_timeout = '600s';
+SELECT public.doen_lock_hertry('emails');
+
 CREATE INDEX IF NOT EXISTS idx_emails_account_datum ON emails (account_id, datum DESC);
 -- Bewust geen partiële index: PostgREST stuurt bij een upsert alleen de
 -- kolommen mee en niet het WHERE-predicaat, waardoor een partiële index als
 -- ON CONFLICT-arbiter een 42P10 geeft. NULL is in een unieke index sowieso
 -- distinct, dus rijen zonder account_id of message_id botsen niet.
 CREATE UNIQUE INDEX IF NOT EXISTS uq_emails_account_message ON emails (account_id, message_id);
+
+COMMIT;
+
+-- ── Blok 3: email_sync_state per postvak ──
+BEGIN;
+SET LOCAL lock_timeout = '4s';
+SET LOCAL statement_timeout = '120s';
 
 ALTER TABLE email_sync_state ADD COLUMN IF NOT EXISTS account_id UUID REFERENCES user_email_settings(id) ON DELETE CASCADE;
 -- is_standaard erbij: zonder die voorwaarde kiest Postgres bij meerdere rijen
@@ -68,6 +170,17 @@ ALTER TABLE email_sync_state ADD COLUMN IF NOT EXISTS idle_laatst_op TIMESTAMPTZ
 -- unieke index uit 202 er nog maar één per gebruiker toestaat: postvak 2 zou
 -- dan nooit een sync-taak krijgen. 247 voegt de kolom en de nieuwe index in
 -- dezelfde transactie toe, dus dat venster bestaat daar niet.
+
+COMMIT;
+
+-- ── Blok 4: gedeeld postvak, functies en policies ──
+BEGIN;
+-- Kort per poging, want doen_lock_hertry probeert het gewoon opnieuw.
+SET LOCAL lock_timeout = '2s';
+-- Ruim, want de lus mag minuten naar een gaatje zoeken. Hij houdt tijdens het
+-- wachten niets vast, dus dit blokkeert niemand.
+SET LOCAL statement_timeout = '300s';
+SELECT public.doen_lock_hertry('emails');
 
 -- 2. Gedeeld postvak: leden van de organisatie lezen en bewerken de mail van
 --    een postvak met soort 'gedeeld'. Persoonlijke postvakken blijven user-only.
@@ -217,6 +330,17 @@ DROP POLICY IF EXISTS "Eigenaar verwijdert notitie" ON email_notities;
 CREATE POLICY "Eigenaar verwijdert notitie" ON email_notities
   FOR DELETE TO authenticated USING (user_id = auth.uid());
 
+COMMIT;
+
+-- ── Blok 5: regels en labels ──
+BEGIN;
+-- Kort per poging, want doen_lock_hertry probeert het gewoon opnieuw.
+SET LOCAL lock_timeout = '2s';
+-- Ruim, want de lus mag minuten naar een gaatje zoeken. Hij houdt tijdens het
+-- wachten niets vast, dus dit blokkeert niemand.
+SET LOCAL statement_timeout = '300s';
+SELECT public.doen_lock_hertry('emails');
+
 -- 3. Regels
 CREATE TABLE IF NOT EXISTS email_regels (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -255,6 +379,17 @@ CREATE POLICY "Eigenaar beheert labels" ON email_labels
   FOR ALL TO authenticated USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid() AND organisatie_id = auth_organisatie_id());
 CREATE INDEX IF NOT EXISTS idx_emails_labels ON emails USING GIN (labels) WHERE labels IS NOT NULL;
 
+COMMIT;
+
+-- ── Blok 6: outbox ──
+BEGIN;
+-- Kort per poging, want doen_lock_hertry probeert het gewoon opnieuw.
+SET LOCAL lock_timeout = '2s';
+-- Ruim, want de lus mag minuten naar een gaatje zoeken. Hij houdt tijdens het
+-- wachten niets vast, dus dit blokkeert niemand.
+SET LOCAL statement_timeout = '300s';
+SELECT public.doen_lock_hertry('ingeplande_berichten');
+
 -- 5. Outbox
 ALTER TABLE ingeplande_berichten DROP CONSTRAINT IF EXISTS ingeplande_berichten_status_check;
 ALTER TABLE ingeplande_berichten
@@ -285,6 +420,13 @@ BEGIN
     EXECUTE format('GRANT SELECT (%s) ON public.user_email_settings TO authenticated', kolommen);
   END IF;
 END $$;
+
+COMMIT;
+
+-- ── Blok 7: de views. Raakt emails alleen als lezer ──
+BEGIN;
+SET LOCAL lock_timeout = '4s';
+SET LOCAL statement_timeout = '120s';
 
 -- De lijst-view somt zijn kolommen expliciet op, dus account_id, toegewezen_aan
 -- en toegewezen_op komen er niet vanzelf bij. CREATE OR REPLACE staat alleen
@@ -328,6 +470,9 @@ GROUP BY user_id, account_id, thread_id;
 GRANT SELECT ON email_threads_view TO authenticated;
 
 COMMIT;
+
+-- Het hulpje was alleen voor deze migratie.
+DROP FUNCTION IF EXISTS public.doen_lock_hertry(TEXT, INT, NUMERIC);
 
 NOTIFY pgrst, 'reload schema';
 

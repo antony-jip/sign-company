@@ -8,10 +8,12 @@
 -- Draai dit vóór het eerste tweede postvak, en vóór migratie 246.
 -- Veilig om opnieuw te draaien.
 
-SET lock_timeout = '4s';
-SET statement_timeout = '60s';
-
+-- SET LOCAL binnen de transactie, niet SET erbuiten: via een pooler in
+-- transaction mode landt een SET erbuiten op een andere verbinding dan de
+-- BEGIN erna, en dan draait dit zonder lock_timeout.
 BEGIN;
+SET LOCAL lock_timeout = '4s';
+SET LOCAL statement_timeout = '60s';
 
 ALTER TABLE mailsync_taken ADD COLUMN IF NOT EXISTS account_id UUID;
 
