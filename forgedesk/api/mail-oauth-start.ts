@@ -11,6 +11,15 @@
  * header niet meesturen). Ontbreekt de client-id, dan komt er een 503 met
  * `{ reden: 'niet_geconfigureerd' }` zodat de knop uit kan blijven.
  *
+ * Een handtekening op de user_id alleen is niet genoeg. Een aanvaller met een
+ * eigen doen.-account haalt hier een geldige state op voor zijn eigen user_id,
+ * lokt het slachtoffer naar die autorisatie-URL, en het postvak van het
+ * slachtoffer hangt daarna aan het account van de aanvaller, inclusief IMAP en
+ * SMTP. Daarom hoort de state ook aan de browsersessie vast: een willekeurige
+ * nonce gaat mee in een HttpOnly-cookie en in de HMAC-kern, en de callback
+ * eist dat beide dezelfde nonce dragen. PKCE (S256) sluit daarnaast af dat een
+ * onderschepte `code` elders in te wisselen is.
+ *
  * Env: MAIL_OAUTH_GOOGLE_CLIENT_ID, MAIL_OAUTH_MICROSOFT_CLIENT_ID,
  * MAIL_OAUTH_MICROSOFT_TENANT (standaard 'common'), MAIL_OAUTH_REDIRECT
  * (standaard https://app.doen.team/api/mail-oauth-callback),
@@ -86,14 +95,56 @@ function stateGeheim(): string | null {
   return process.env.MAIL_OAUTH_STATE_SECRET || process.env.EMAIL_ENCRYPTION_KEY || null
 }
 
-function tekenState(userId: string, provider: Provider, tijd: number, geheim: string): string {
-  const kern = `${userId}.${provider}.${tijd}`
+/**
+ * De nonce bindt de state aan de browser die het koppelen begon. Hij staat in
+ * de HMAC-kern én in een HttpOnly-cookie; de callback eist dat beide gelijk
+ * zijn. Path=/api omdat alleen de callback hem hoeft te lezen, SameSite=Lax
+ * omdat de terugkeer van Google of Microsoft een top-level navigatie is.
+ */
+const NONCE_COOKIE = 'doen_mail_oauth'
+const NONCE_COOKIE_MAX_AGE = 600
+
+function nonceCookie(nonce: string): string {
+  return `${NONCE_COOKIE}=${nonce}; HttpOnly; Secure; SameSite=Lax; Path=/api; Max-Age=${NONCE_COOKIE_MAX_AGE}`
+}
+
+function leegNonceCookie(): string {
+  return `${NONCE_COOKIE}=; HttpOnly; Secure; SameSite=Lax; Path=/api; Max-Age=0`
+}
+
+function leesNonceCookie(cookieHeader: string | undefined): string | null {
+  if (!cookieHeader) return null
+  for (const deel of cookieHeader.split(';')) {
+    const gelijk = deel.indexOf('=')
+    if (gelijk <= 0) continue
+    if (deel.slice(0, gelijk).trim() !== NONCE_COOKIE) continue
+    const waarde = deel.slice(gelijk + 1).trim()
+    return waarde || null
+  }
+  return null
+}
+
+function tekenState(userId: string, provider: Provider, tijd: number, nonce: string, geheim: string): string {
+  const kern = `${userId}.${provider}.${tijd}.${nonce}`
   const hmac = crypto.createHmac('sha256', geheim).update(kern).digest('base64url')
   return `${Buffer.from(kern, 'utf8').toString('base64url')}.${hmac}`
 }
+
+/**
+ * PKCE-verifier afgeleid van de nonce, niet apart opgeslagen: dan hoeft er
+ * niets extra's in het cookie en kan de callback hem opnieuw berekenen. 43
+ * tekens base64url valt binnen de 43-128 van RFC 7636.
+ */
+function pkceVerifier(nonce: string, geheim: string): string {
+  return crypto.createHmac('sha256', geheim).update(`pkce.${nonce}`).digest('base64url')
+}
+
+function pkceUitdaging(verifier: string): string {
+  return crypto.createHash('sha256').update(verifier).digest('base64url')
+}
 // ── GEDEELD-MET-API EINDE: OAuth-providers ────────────────────────────────
 
-function autorisatieUrl(provider: Provider, clientId: string, state: string): string {
+function autorisatieUrl(provider: Provider, clientId: string, state: string, uitdaging: string): string {
   const config = PROVIDERS[provider]
   if (provider === 'microsoft') {
     const tenant = process.env.MAIL_OAUTH_MICROSOFT_TENANT || 'common'
@@ -105,6 +156,8 @@ function autorisatieUrl(provider: Provider, clientId: string, state: string): st
       scope: config.scopes.join(' '),
       state,
       prompt: 'select_account',
+      code_challenge: uitdaging,
+      code_challenge_method: 'S256',
     })
     return `https://login.microsoftonline.com/${encodeURIComponent(tenant)}/oauth2/v2.0/authorize?${params.toString()}`
   }
@@ -114,6 +167,8 @@ function autorisatieUrl(provider: Provider, clientId: string, state: string): st
     redirect_uri: redirectUri(),
     scope: config.scopes.join(' '),
     state,
+    code_challenge: uitdaging,
+    code_challenge_method: 'S256',
     // Zonder access_type=offline en prompt=consent geeft Google alleen bij de
     // allereerste toestemming een refresh-token. Wie opnieuw koppelt zou dan
     // een mailbox krijgen die na een uur stilvalt.
@@ -151,9 +206,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(503).json({ reden: 'niet_geconfigureerd', provider })
   }
 
-  const state = tekenState(userId, provider, Date.now(), geheim)
+  const nonce = crypto.randomBytes(32).toString('base64url')
+  const state = tekenState(userId, provider, Date.now(), nonce, geheim)
+  const uitdaging = pkceUitdaging(pkceVerifier(nonce, geheim))
+  res.setHeader('Set-Cookie', nonceCookie(nonce))
   return res.status(200).json({
-    url: autorisatieUrl(provider, clientId, state),
+    url: autorisatieUrl(provider, clientId, state, uitdaging),
     provider,
     redirect_uri: redirectUri(),
   })

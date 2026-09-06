@@ -6,9 +6,16 @@
  *
  * Geen Authorization-header: dit is een browser-redirect. De koppeling aan een
  * gebruiker komt daarom uit de ondertekende `state` uit api/mail-oauth-start.ts
- * — HMAC-SHA256 over user_id, provider en tijd, hoogstens tien minuten oud.
- * Zonder die handtekening zou iemand met een eigen `code` de mailbox van een
- * ander kunnen overschrijven.
+ * — HMAC-SHA256 over user_id, provider, tijd en een nonce, hoogstens tien
+ * minuten oud. Zonder die handtekening zou iemand met een eigen `code` de
+ * mailbox van een ander kunnen overschrijven.
+ *
+ * De handtekening alleen volstaat niet: een aanvaller kan bij start een
+ * geldige state voor zijn eigen account ophalen en het slachtoffer naar die
+ * URL lokken. Daarom moet de nonce uit de state gelijk zijn aan de nonce in
+ * het HttpOnly-cookie dat start heeft gezet, en gaat de PKCE-verifier (uit
+ * diezelfde nonce afgeleid) mee bij het inwisselen van de code. Het cookie
+ * wordt bij elk antwoord gewist.
  *
  * Antwoordt altijd met een redirect naar de instellingenpagina, ook bij een
  * fout: dit endpoint zit in de adresbalk van de gebruiker, niet in een fetch.
@@ -74,31 +81,77 @@ function stateGeheim(): string | null {
   return process.env.MAIL_OAUTH_STATE_SECRET || process.env.EMAIL_ENCRYPTION_KEY || null
 }
 
-function tekenState(userId: string, provider: Provider, tijd: number, geheim: string): string {
-  const kern = `${userId}.${provider}.${tijd}`
+/**
+ * De nonce bindt de state aan de browser die het koppelen begon. Hij staat in
+ * de HMAC-kern én in een HttpOnly-cookie; de callback eist dat beide gelijk
+ * zijn. Path=/api omdat alleen de callback hem hoeft te lezen, SameSite=Lax
+ * omdat de terugkeer van Google of Microsoft een top-level navigatie is.
+ */
+const NONCE_COOKIE = 'doen_mail_oauth'
+const NONCE_COOKIE_MAX_AGE = 600
+
+function nonceCookie(nonce: string): string {
+  return `${NONCE_COOKIE}=${nonce}; HttpOnly; Secure; SameSite=Lax; Path=/api; Max-Age=${NONCE_COOKIE_MAX_AGE}`
+}
+
+function leegNonceCookie(): string {
+  return `${NONCE_COOKIE}=; HttpOnly; Secure; SameSite=Lax; Path=/api; Max-Age=0`
+}
+
+function leesNonceCookie(cookieHeader: string | undefined): string | null {
+  if (!cookieHeader) return null
+  for (const deel of cookieHeader.split(';')) {
+    const gelijk = deel.indexOf('=')
+    if (gelijk <= 0) continue
+    if (deel.slice(0, gelijk).trim() !== NONCE_COOKIE) continue
+    const waarde = deel.slice(gelijk + 1).trim()
+    return waarde || null
+  }
+  return null
+}
+
+function tekenState(userId: string, provider: Provider, tijd: number, nonce: string, geheim: string): string {
+  const kern = `${userId}.${provider}.${tijd}.${nonce}`
   const hmac = crypto.createHmac('sha256', geheim).update(kern).digest('base64url')
   return `${Buffer.from(kern, 'utf8').toString('base64url')}.${hmac}`
+}
+
+/**
+ * PKCE-verifier afgeleid van de nonce, niet apart opgeslagen: dan hoeft er
+ * niets extra's in het cookie en kan de callback hem opnieuw berekenen. 43
+ * tekens base64url valt binnen de 43-128 van RFC 7636.
+ */
+function pkceVerifier(nonce: string, geheim: string): string {
+  return crypto.createHmac('sha256', geheim).update(`pkce.${nonce}`).digest('base64url')
+}
+
+function pkceUitdaging(verifier: string): string {
+  return crypto.createHash('sha256').update(verifier).digest('base64url')
 }
 // ── GEDEELD-MET-API EINDE: OAuth-providers ────────────────────────────────
 
 const STATE_GELDIG_MS = 10 * 60_000
 
-function leesState(state: string, geheim: string): { userId: string; provider: Provider } | null {
+function gelijk(a: string, b: string): boolean {
+  const ba = Buffer.from(a)
+  const bb = Buffer.from(b)
+  return ba.length === bb.length && crypto.timingSafeEqual(ba, bb)
+}
+
+function leesState(state: string, geheim: string): { userId: string; provider: Provider; nonce: string } | null {
   const punt = state.lastIndexOf('.')
   if (punt <= 0) return null
   const kern = Buffer.from(state.slice(0, punt), 'base64url').toString('utf8')
   const delen = kern.split('.')
-  if (delen.length !== 3) return null
-  const [userId, provider, tijdTekst] = delen
+  if (delen.length !== 4) return null
+  const [userId, provider, tijdTekst, nonce] = delen
   if (!isProvider(provider)) return null
+  if (!nonce) return null
   const tijd = Number(tijdTekst)
   if (!Number.isFinite(tijd) || Math.abs(Date.now() - tijd) > STATE_GELDIG_MS) return null
 
-  const verwacht = tekenState(userId, provider, tijd, geheim)
-  const a = Buffer.from(state)
-  const b = Buffer.from(verwacht)
-  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null
-  return { userId, provider }
+  if (!gelijk(state, tekenState(userId, provider, tijd, nonce, geheim))) return null
+  return { userId, provider, nonce }
 }
 
 /** Zelfde g1-vorm als api/email-settings.ts: AES-256-GCM, salt per waarde. */
@@ -148,6 +201,9 @@ function appUrl(): string {
 
 function terug(res: VercelResponse, params: Record<string, string>) {
   const query = new URLSearchParams({ tab: 'email', ...params })
+  // Het nonce-cookie is eenmalig: wissen op elk pad, ook op het foutpad, zodat
+  // een half afgebroken poging niet later alsnog ingewisseld kan worden.
+  res.setHeader('Set-Cookie', leegNonceCookie())
   res.setHeader('Location', `${appUrl()}/instellingen?${query.toString()}`)
   return res.status(302).end()
 }
@@ -214,7 +270,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const gelezen = leesState(state, geheim)
   if (!gelezen) return terug(res, { mail: 'fout', reden: 'state' })
-  const { userId, provider } = gelezen
+  const { userId, provider, nonce } = gelezen
+
+  // De browser die het koppelen begon moet dezelfde zijn als de browser die
+  // hier terugkomt. Zonder deze controle kan een aanvaller een state voor zijn
+  // eigen account laten tekenen en het postvak van een ander eraan hangen.
+  const cookieNonce = leesNonceCookie(req.headers.cookie)
+  if (!cookieNonce || !gelijk(cookieNonce, nonce)) {
+    return terug(res, { mail: 'fout', reden: 'sessie' })
+  }
 
   const clientId = provider === 'microsoft'
     ? process.env.MAIL_OAUTH_MICROSOFT_CLIENT_ID
@@ -234,6 +298,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         code,
         grant_type: 'authorization_code',
         redirect_uri: redirectUri(),
+        code_verifier: pkceVerifier(nonce, geheim),
       }).toString(),
       signal: AbortSignal.timeout(15_000),
     })
