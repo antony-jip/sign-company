@@ -13,7 +13,7 @@ import {
   updateEmail, deleteEmail,
   type EmailPageCursor,
 } from '@/services/emailService'
-import { imapActie, type ImapActie } from './imapActie'
+import { imapActie, type ImapActie, type MoveDoel } from './imapActie'
 import { leesMapLijst, schrijfMapLijst, maakEigenaarSleutel } from '@/lib/mailCache'
 import { supabase } from '@/services/supabaseClient'
 import { getOrgId } from '@/services/supabaseHelpers'
@@ -771,8 +771,28 @@ class MailStore {
     return Promise.all(ids.map((id) => updateEmail(id, deel).catch(() => {}))).then(() => {})
   }
 
+  /**
+   * Eén verzoek per postvak. In de stand "Alle postvakken" staan er mails van
+   * twee mailboxen in dezelfde selectie, en het endpoint opent per aanroep één
+   * IMAP-verbinding: zonder deze groepering zou een actie op postvak 2 in de
+   * mailbox van postvak 1 landen.
+   *
+   * `postvakVan` is er voor de acties die de rij lokaal al hebben weggehaald
+   * (definitief verwijderen), want dan is `this.items` leeg voor die id.
+   */
+  private imapPerPostvak(actie: ImapActie, ids: string[], doel: MoveDoel | undefined, keepalive: boolean, postvakVan?: Map<string, string | null>): Promise<void> {
+    const groepen = new Map<string | null, string[]>()
+    for (const id of ids) {
+      const acc = postvakVan ? (postvakVan.get(id) ?? null) : (this.items.get(id)?.account_id ?? null)
+      groepen.set(acc, [...(groepen.get(acc) || []), id])
+    }
+    return Promise.all([...groepen].map(([acc, groep]) =>
+      imapActie(actie, groep, doel, { keepalive, accountId: acc }).catch(() => {}),
+    )).then(() => {})
+  }
+
   private imap(actie: ImapActie, ids: string[], keepalive = false): void {
-    void imapActie(actie, ids, undefined, { keepalive }).catch(() => {})
+    void this.imapPerPostvak(actie, ids, undefined, keepalive)
   }
 
   async zetGelezen(ids: string[], gelezen: boolean): Promise<void> {
@@ -844,7 +864,7 @@ class MailStore {
       this.patch(id, { map: 'inbox', labels })
     }
     await Promise.all([...patches].map(([id, deel]) => updateEmail(id, deel).catch(() => {})))
-    void imapActie('move', [...patches.keys()], 'inbox').catch(() => {})
+    void this.imapPerPostvak('move', [...patches.keys()], 'inbox', false)
   }
 
   archiveer(ids: string[]): Undo {
@@ -866,10 +886,14 @@ class MailStore {
     }
     if (inPrullenbak.length) {
       const bewaard = inPrullenbak.map((id) => this.items.get(id)!)
+      // Het postvak nu vastleggen: na verwijderLokaal is de rij weg en zou de
+      // purge in het standaardpostvak landen. Definitief wissen in de verkeerde
+      // mailbox is niet terug te draaien.
+      const postvakVan = new Map(bewaard.map((i) => [i.id, i.account_id ?? null]))
       for (const id of inPrullenbak) this.verwijderLokaal(id)
       undos.push(this.buffer(inPrullenbak, (nog, keepalive) => {
         // Eerst IMAP: purge wil de rij nog kunnen lezen om de map te controleren.
-        void imapActie('purge', nog, undefined, { keepalive }).catch(() => {}).finally(() => {
+        void this.imapPerPostvak('purge', nog, undefined, keepalive, postvakVan).finally(() => {
           for (const id of nog) void deleteEmail(id).catch(() => {})
         })
       }, (nog) => {

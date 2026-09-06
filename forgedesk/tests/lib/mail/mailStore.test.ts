@@ -88,7 +88,7 @@ describe('mailStore: optimistische patch met undo', () => {
     expect(mailStore.item('m0000')?.map).toBe('prullenbak')
     vi.advanceTimersByTime(UNDO_MS + 10)
     expect(mocks.updateEmail).toHaveBeenCalledWith('m0000', { map: 'prullenbak', labels: ['prullenbak'] })
-    expect(mocks.imapActie).toHaveBeenCalledWith('trash', ['m0000'], undefined, { keepalive: false })
+    expect(mocks.imapActie).toHaveBeenCalledWith('trash', ['m0000'], undefined, { keepalive: false, accountId: null })
   })
 
   it('verwijderen uit de prullenbak haalt lokaal weg en purge gaat vóór delete', async () => {
@@ -111,7 +111,7 @@ describe('mailStore: optimistische patch met undo', () => {
 
     expect(mocks.updateEmail).toHaveBeenCalledTimes(1)
     expect(mocks.updateEmail).toHaveBeenCalledWith('m0000', { map: 'inbox', labels: [] })
-    expect(mocks.imapActie).not.toHaveBeenCalledWith('archive', ['m0000'], undefined, { keepalive: false })
+    expect(mocks.imapActie).not.toHaveBeenCalledWith('archive', ['m0000'], undefined, { keepalive: false, accountId: null })
     expect(mailStore.item('m0000')?.map).toBe('inbox')
     expect(mailStore.lijstItems('inbox').map((i) => i.id)).toEqual(['m0000', 'm0001'])
   })
@@ -122,7 +122,28 @@ describe('mailStore: optimistische patch met undo', () => {
     await mailStore.zetGelezen(['m0000'], true)
     expect(mailStore.item('m0000')?.gelezen).toBe(true)
     expect(mocks.updateEmail).toHaveBeenCalledWith('m0000', { gelezen: true })
-    expect(mocks.imapActie).toHaveBeenCalledWith('seen', ['m0000'], undefined, { keepalive: false })
+    expect(mocks.imapActie).toHaveBeenCalledWith('seen', ['m0000'], undefined, { keepalive: false, accountId: null })
+  })
+
+  it('een selectie uit twee postvakken wordt één verzoek per postvak', async () => {
+    // In de stand "Alle postvakken" staan mails van twee mailboxen in dezelfde
+    // lijst. Het endpoint opent per aanroep één IMAP-verbinding, dus zonder
+    // deze groepering zou de mail van postvak B in de mailbox van postvak A
+    // gearchiveerd worden.
+    mocks.getEmailsPage.mockResolvedValueOnce([
+      mail('m0000', '2026-09-01T12:00:00.000Z', { account_id: 'postvak-a' }),
+      mail('m0001', '2026-09-01T11:59:00.000Z', { account_id: 'postvak-b' }),
+      mail('m0002', '2026-09-01T11:58:00.000Z', { account_id: 'postvak-a' }),
+    ])
+    await mailStore.laadMap('inbox')
+    mailStore.archiveer(['m0000', 'm0001', 'm0002'])
+    vi.advanceTimersByTime(UNDO_MS + 10)
+    await Promise.resolve()
+
+    const aanroepen = mocks.imapActie.mock.calls.filter((c: unknown[]) => c[0] === 'archive')
+    expect(aanroepen).toHaveLength(2)
+    expect(aanroepen).toContainEqual(['archive', ['m0000', 'm0002'], undefined, { keepalive: false, accountId: 'postvak-a' }])
+    expect(aanroepen).toContainEqual(['archive', ['m0001'], undefined, { keepalive: false, accountId: 'postvak-b' }])
   })
 })
 

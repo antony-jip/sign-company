@@ -9,6 +9,19 @@ const IMAP_MAP: Partial<Record<MailMap, string>> = {
 }
 
 /**
+ * Welke postvakken deze ronde meedoen: het gekozen postvak, of bij "Alle
+ * postvakken" ze allemaal. Kent de store er geen (nog niet geladen, of een
+ * database zonder migratie 245), dan één ronde zonder account_id en dat is
+ * precies het gedrag van vandaag.
+ */
+function teSyncenPostvakken(): Array<string | undefined> {
+  const gekozen = mailStore.actiefAccountId()
+  if (gekozen) return [gekozen]
+  const alle = mailStore.getPostvakkenLokaal()
+  return alle.length > 1 ? alle.map((p) => p.id) : [undefined]
+}
+
+/**
  * Het stukje sync dat bij de shell hoort: één snelle IMAP-ronde bij het
  * openen en bij de ververs-knop, een stille ronde als je na een minuut
  * terugkomt, aanvraagherkenning na een ronde en op de desktop de rustige
@@ -48,12 +61,16 @@ export function useMailSync(actieveMap: MailMap, isDesktop: boolean, ingelogd: b
     backfillGedaan.current = true
     let opgehaald = 0
     try {
-      for (const map of ['inbox', 'verzonden']) {
-        for (let i = 0; i < 8; i++) {
-          const r = await backfillEmailsFromIMAP(map)
-          opgehaald += r.synced || 0
-          if (r.done || r.pending) break
-          await new Promise((rust) => setTimeout(rust, 1500))
+      // Elk postvak apart: zonder account_id haalt het endpoint altijd de
+      // historie van het standaardpostvak op, en dan blijft postvak 2 leeg.
+      for (const postvak of teSyncenPostvakken()) {
+        for (const map of ['inbox', 'verzonden']) {
+          for (let i = 0; i < 8; i++) {
+            const r = await backfillEmailsFromIMAP(map, postvak)
+            opgehaald += r.synced || 0
+            if (r.done || r.pending) break
+            await new Promise((rust) => setTimeout(rust, 1500))
+          }
         }
       }
       if (opgehaald > 0) logger.log(`[Mail] Backfill: ${opgehaald} oudere mails binnengehaald`)
@@ -67,7 +84,11 @@ export function useMailSync(actieveMap: MailMap, isDesktop: boolean, ingelogd: b
     const imapMap = IMAP_MAP[map] ?? 'INBOX'
     if (!opties?.stil) zetBezig(true)
     try {
-      await fetchEmailsFromIMAP(imapMap, undefined, undefined, undefined, true)
+      // Ook hier per postvak: staat de lijst op "Alle postvakken", dan haalt
+      // de ververs-knop anders alleen het standaardpostvak op.
+      for (const postvak of teSyncenPostvakken()) {
+        await fetchEmailsFromIMAP(imapMap, undefined, undefined, undefined, true, postvak)
+      }
       zetLaatsteSync(Date.now())
       await mailStore.ververs(map)
       void mailStore.laadSyncStatus()

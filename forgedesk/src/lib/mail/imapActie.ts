@@ -13,11 +13,12 @@ export interface ImapActieUitkomst {
 
 /**
  * Schrijft een actie door naar de echte mailbox, met dezelfde body-vorm als
- * EmailLayout altijd stuurde: { action, emailIds }. Het endpoint zoekt uid en
- * map zelf op bij de rijen van de ingelogde gebruiker. Staat writeback uit,
- * dan komt { overgeslagen: true } terug en blijft doen. de enige waarheid.
+ * EmailLayout altijd stuurde: { action, emailIds }, met het postvak erbij.
+ * Het endpoint zoekt uid en map zelf op bij de rijen van de ingelogde
+ * gebruiker. Staat writeback uit, dan komt { overgeslagen: true } terug en
+ * blijft doen. de enige waarheid.
  */
-export async function imapActie(actie: ImapActie, emailIds: string[], doel?: MoveDoel, opties?: { keepalive?: boolean }): Promise<ImapActieUitkomst> {
+export async function imapActie(actie: ImapActie, emailIds: string[], doel?: MoveDoel, opties?: { keepalive?: boolean; accountId?: string | null }): Promise<ImapActieUitkomst> {
   if (emailIds.length === 0) return { geslaagd: 0, mislukt: 0 }
   if (!supabase) throw new Error('Supabase niet geconfigureerd')
   const { data: { session } } = await supabase.auth.getSession()
@@ -25,7 +26,15 @@ export async function imapActie(actie: ImapActie, emailIds: string[], doel?: Mov
   const response = await fetch('/api/email-imap-action', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-    body: JSON.stringify(actie === 'move' ? { action: actie, emailIds, doel } : { action: actie, emailIds }),
+    // account_id erbij: het endpoint opent er de IMAP-verbinding mee. Laat je
+    // hem weg, dan wordt élke actie op het standaardpostvak uitgevoerd, en dan
+    // archiveert of wist postvak 2 in de mailbox van postvak 1.
+    body: JSON.stringify({
+      action: actie,
+      emailIds,
+      ...(actie === 'move' ? { doel } : {}),
+      ...(opties?.accountId ? { account_id: opties.accountId } : {}),
+    }),
     // Bij het verlaten van de pagina: laat het verzoek doorlopen. Het endpoint
     // schrijft ook de map-kolom, dus dit is meteen het vangnet voor de
     // supabase-update die met het tabblad verdwijnt.
