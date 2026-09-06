@@ -31,7 +31,8 @@ const MAX_SUGGESTIE = 90
 // ── Rate limiting (inline; Vercel bundelt geen lokale imports in api/) ──
 const rlConfigured = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
 if (!rlConfigured) {
-  console.warn('[ratelimit] UPSTASH env vars missing for ai-suggestie, requests will not be rate limited')
+  if (process.env.VERCEL_ENV === 'production') console.error('ratelimit niet geconfigureerd: api/ai-suggestie.ts')
+  else console.warn('[ratelimit] UPSTASH env vars missing for ai-suggestie, requests will not be rate limited')
 }
 const ratelimit = rlConfigured
   ? new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(120, '60 s'), prefix: 'rl:ai-suggestie', timeout: 1000 })

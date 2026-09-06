@@ -390,7 +390,8 @@ async function logOrgUsage(
 // ── Rate limiting (inline; Vercel bundelt geen lokale imports in api/) ──
 const rlConfigured = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
 if (!rlConfigured) {
-  console.warn('[ratelimit] UPSTASH env vars missing for ai-rewrite, requests will not be rate limited')
+  if (process.env.VERCEL_ENV === 'production') console.error('ratelimit niet geconfigureerd: api/ai-rewrite.ts')
+  else console.warn('[ratelimit] UPSTASH env vars missing for ai-rewrite, requests will not be rate limited')
 }
 const ratelimit = rlConfigured
   ? new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(30, '60 s'), prefix: 'rl:ai-rewrite', timeout: 2000 })
@@ -505,7 +506,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const errorData = await response.json().catch(() => ({})) as Record<string, unknown>
       console.error('Anthropic API fout:', response.status, errorData)
       if (response.status === 429) {
-        return res.status(429).json({ error: 'Te veel verzoeken. Probeer het later opnieuw.' })
+        const anthropicType = (errorData?.error as { type?: string } | undefined)?.type
+        if (anthropicType === 'enforced_spend_limit') {
+          console.error('[anthropic-spend-limit] ai-rewrite: Anthropic-budget van doen. bereikt')
+          return res.status(429).json({ error: 'AI-budget van doen. is bereikt, we zijn ermee bezig.', type: anthropicType })
+        }
+        return res.status(429).json({ error: 'Te veel verzoeken, probeer zo opnieuw.', type: anthropicType ?? 'rate_limit_error' })
       }
       return res.status(response.status).json({
         error: (errorData?.error as Record<string, string>)?.message || 'AI fout',

@@ -2,6 +2,34 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { Ratelimit } from '@upstash/ratelimit'
 import { Redis } from '@upstash/redis'
+import * as Sentry from '@sentry/node'
+
+// ── Sentry init (inline; Vercel bundelt geen lokale modules in api/) ──
+if (process.env.SENTRY_DSN && !Sentry.getClient()) {
+  const SENS = /password|app_password|encrypted_app_password|betaal_token|payment_token|access_token|refresh_token|mollie_api_key|authorization|cookie|secret|api_key|to|cc|bcc|email/i
+  const scrub = (v: unknown, d = 0): unknown => {
+    if (d > 6 || v == null) return v
+    if (Array.isArray(v)) return v.map(x => scrub(x, d + 1))
+    if (typeof v === 'object') {
+      const o: Record<string, unknown> = {}
+      for (const [k, val] of Object.entries(v as Record<string, unknown>)) o[k] = SENS.test(k) ? '[Filtered]' : scrub(val, d + 1)
+      return o
+    }
+    return v
+  }
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.VERCEL_ENV || process.env.NODE_ENV || 'development',
+    tracesSampleRate: 0.1,
+    sendDefaultPii: false,
+    beforeSend(event) {
+      if (event.request?.headers) for (const k of Object.keys(event.request.headers)) if (/authorization|cookie/i.test(k)) (event.request.headers as Record<string, string>)[k] = '[Filtered]'
+      if (event.request?.data) event.request.data = scrub(event.request.data) as typeof event.request.data
+      if (event.user) { delete event.user.ip_address; delete event.user.email }
+      return event
+    },
+  })
+}
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL || '',
@@ -228,7 +256,8 @@ const MONTHLY_LIMIT = 15.0
 // ── Rate limiting (inline; Vercel bundelt geen lokale imports in api/) ──
 const rlConfigured = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
 if (!rlConfigured) {
-  console.warn('[ratelimit] UPSTASH env vars missing for ai-chat, requests will not be rate limited')
+  if (process.env.VERCEL_ENV === 'production') Sentry.captureMessage('ratelimit niet geconfigureerd: api/ai-chat.ts', { level: 'error' })
+  else console.warn('[ratelimit] UPSTASH env vars missing for ai-chat, requests will not be rate limited')
 }
 const ratelimit = rlConfigured
   ? new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(20, '60 s'), prefix: 'rl:ai-chat', timeout: 2000 })
@@ -1109,7 +1138,12 @@ ${JSON.stringify(dataContext, null, 2)}`
       const errorData = await response.json().catch(() => ({})) as Record<string, unknown>
       console.error('Anthropic API fout:', response.status, errorData)
       if (response.status === 429) {
-        return res.status(429).json({ error: 'Te veel verzoeken. Probeer het later opnieuw.' })
+        const anthropicType = (errorData?.error as { type?: string } | undefined)?.type
+        if (anthropicType === 'enforced_spend_limit') {
+          Sentry.captureMessage('Anthropic enforced_spend_limit bereikt in api/ai-chat.ts', { level: 'error' })
+          return res.status(429).json({ error: 'AI-budget van doen. is bereikt, we zijn ermee bezig.', type: anthropicType })
+        }
+        return res.status(429).json({ error: 'Te veel verzoeken, probeer zo opnieuw.', type: anthropicType ?? 'rate_limit_error' })
       }
       return res.status(response.status).json({
         error: (errorData?.error as Record<string, string>)?.message || 'Anthropic API fout',
