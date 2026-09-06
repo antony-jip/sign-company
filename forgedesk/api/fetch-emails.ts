@@ -609,16 +609,18 @@ function isToegangGeweigerd(fout: unknown): boolean {
 // Migratie 245 zet (account_id, folder) naast (user_id, folder); migratie 246
 // laat de oude sleutel vallen. Zolang beide werelden kunnen bestaan proberen we
 // de nieuwe sleutel eerst en vallen we terug op de oude. PostgREST geeft 42703
-// als de kolom er nog niet is en 42P10 als er bij de opgegeven kolommen geen
-// unieke index te vinden is; de terugval in deze bestanden ving alleen dat
-// eerste geval, dus na 246 zou de write blijven falen. account_id gaat ook in
-// de rij mee, anders vindt de nieuwe sleutel nooit een bestaande rij.
+// bij een select op een kolom die er nog niet is, PGRST204 als die kolom in de
+// lading van een insert of upsert staat, en 42P10 als er bij de opgegeven
+// kolommen geen unieke index te vinden is. Alle drie horen erbij: zonder
+// PGRST204 staat de sync stil op een database zonder 245, zonder 42P10 na 246.
+// account_id gaat ook in de rij mee, anders vindt de nieuwe sleutel nooit een
+// bestaande rij.
 // Dezelfde ladder staat in src/trigger/mail-idle.ts en in de andere
 // api-mailbestanden.
 function isOnbekendeSleutel(fout: { code?: string; message?: string } | null): boolean {
   if (!fout) return false
-  return fout.code === '42703' || fout.code === '42P10'
-    || /column .* does not exist|no unique or exclusion constraint/i.test(fout.message || '')
+  return fout.code === '42703' || fout.code === '42P10' || fout.code === 'PGRST204'
+    || /column .* does not exist|could not find the .* column|no unique or exclusion constraint/i.test(fout.message || '')
 }
 
 type SyncStateUitkomst = { error: { message: string; code?: string } | null }
@@ -738,6 +740,24 @@ function isKolomFout(fout: { code?: string; message?: string } | null): boolean 
   if (!fout) return false
   if (fout.code === '42703' || fout.code === 'PGRST204') return true
   return /column .* does not exist|could not find the .* column/i.test(fout.message || '')
+}
+
+/**
+ * Een select met `account_id` erbij zodra we het postvak kennen, met terugval
+ * op dezelfde vraag zonder dat filter voor een database van vóór migratie 245.
+ * Zonder dit filter leest een gebruiker met twee postvakken de rijen van beide
+ * door elkaar; op een `.maybeSingle()` levert dat PGRST116 op en dan valt de
+ * hele stap uit.
+ */
+async function leesMetAccount<T extends { error: { code?: string; message?: string } | null }>(
+  accountId: string | null | undefined,
+  bouw: (metAccount: boolean) => PromiseLike<T>,
+): Promise<T> {
+  if (accountId) {
+    const metAccount = await bouw(true)
+    if (!isKolomFout(metAccount.error)) return metAccount
+  }
+  return await bouw(false)
 }
 
 async function leesCredentialRij(userId: string, accountId?: string | null): Promise<CredentialRij | null> {
@@ -1164,12 +1184,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // kleiner venster: daar wacht niemand op en het tijdbudget is al deels op.
     const MAX_PER_RUN = mapValue === 'inbox' ? 600 : 200
 
-    const { data: syncState } = await supabaseAdmin
-      .from('email_sync_state')
-      .select('uidvalidity, last_seen_uid')
-      .eq('user_id', user_id)
-      .eq('folder', mapValue)
-      .maybeSingle()
+    // Per postvak: met twee postvakken staan er twee inbox-rijen en zou
+    // maybeSingle() PGRST116 geven, waarna stateBruikbaar permanent false is
+    // en de incrementele sync voor béide postvakken uitvalt.
+    const { data: syncState } = await leesMetAccount(accountIdVoorTik, (metAccount) => {
+      const basis = supabaseAdmin
+        .from('email_sync_state')
+        .select('uidvalidity, last_seen_uid')
+        .eq('user_id', user_id)
+        .eq('folder', mapValue)
+      return (metAccount ? basis.eq('account_id', accountIdVoorTik as string) : basis).maybeSingle()
+    })
 
     const stateBruikbaar = !!syncState
       && Number(syncState.uidvalidity) === uidValidity
@@ -1331,16 +1356,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           const waterlijn = Number(syncState!.last_seen_uid)
           const dbRijen: Array<{ id: string; uid: number; message_id: string | null }> = []
           for (let van = 0; van < 5000 && binnenBudget(); van += 1000) {
-            const { data: blok } = await supabaseAdmin
-              .from('emails')
-              .select('id, uid, message_id')
-              .eq('user_id', user_id)
-              .eq('map', 'inbox')
-              .eq('imap_folder', imapFolder)
-              .not('uid', 'is', null)
-              .lte('uid', waterlijn)
-              .order('uid', { ascending: false })
-              .range(van, van + 999)
+            // Ook per postvak: `opServer` bevat alleen de UID's van het
+            // postvak dat nu synchroniseert. Zonder dit filter belandt de
+            // hele inbox van het ándere postvak in `ontbrekend` en wordt hij
+            // ronde na ronde naar de prullenbak verplaatst.
+            const { data: blok } = await leesMetAccount(accountIdVoorTik, (metAccount) => {
+              const basis = supabaseAdmin
+                .from('emails')
+                .select('id, uid, message_id')
+                .eq('user_id', user_id)
+                .eq('map', 'inbox')
+                .eq('imap_folder', imapFolder)
+                .not('uid', 'is', null)
+                .lte('uid', waterlijn)
+              return (metAccount ? basis.eq('account_id', accountIdVoorTik as string) : basis)
+                .order('uid', { ascending: false })
+                .range(van, van + 999)
+            })
             if (!blok?.length) break
             dbRijen.push(...(blok as typeof dbRijen))
             if (blok.length < 1000) break
@@ -1472,12 +1504,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         for (const email of batch) {
           // For emails with message_id: check if exists, then insert or update
           if (email.message_id) {
-            const { data: existing } = await supabaseAdmin
-              .from('emails')
-              .select('id')
-              .eq('user_id', user_id)
-              .eq('message_id', email.message_id)
-              .maybeSingle()
+            // Dezelfde mail kan in twee postvakken liggen (aan beide adressen
+            // gericht). Zonder account_id zou de rij van het ene postvak de uid
+            // van het andere krijgen.
+            const { data: existing } = await leesMetAccount(accountIdVoorTik, (metAccount) => {
+              const basis = supabaseAdmin
+                .from('emails')
+                .select('id')
+                .eq('user_id', user_id)
+                .eq('message_id', email.message_id as string)
+              return (metAccount ? basis.eq('account_id', accountIdVoorTik as string) : basis).maybeSingle()
+            })
 
             if (existing) {
               // Update existing — only update flags (gelezen) and uid
@@ -1496,13 +1533,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             }
           } else {
             // No message_id: check by uid + folder to avoid duplicates
-            const { data: existing } = await supabaseAdmin
-              .from('emails')
-              .select('id')
-              .eq('user_id', user_id)
-              .eq('uid', email.uid)
-              .eq('imap_folder', email.imap_folder)
-              .maybeSingle()
+            // uid 1234 in INBOX bestaat in élk postvak; zonder account_id
+            // wordt de mail van postvak 2 als "bestaat al" geteld en nooit
+            // opgeslagen.
+            const { data: existing } = await leesMetAccount(accountIdVoorTik, (metAccount) => {
+              const basis = supabaseAdmin
+                .from('emails')
+                .select('id')
+                .eq('user_id', user_id)
+                .eq('uid', email.uid as number)
+                .eq('imap_folder', email.imap_folder as string)
+              return (metAccount ? basis.eq('account_id', accountIdVoorTik as string) : basis).maybeSingle()
+            })
 
             if (!existing) {
               const { error: insertErr } = await supabaseAdmin

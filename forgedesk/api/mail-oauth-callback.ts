@@ -285,8 +285,8 @@ async function zoekPostvakRij(userId: string, adres: string): Promise<{ rij: Pos
 // Dezelfde ladder staat in api/mail-oauth-callback.ts en api/email-settings.ts.
 function isOnbekendeSleutel(fout: { code?: string; message?: string } | null): boolean {
   if (!fout) return false
-  return fout.code === '42703' || fout.code === '42P10'
-    || /column .* does not exist|no unique or exclusion constraint/i.test(fout.message || '')
+  return fout.code === '42703' || fout.code === '42P10' || fout.code === 'PGRST204'
+    || /column .* does not exist|could not find the .* column|no unique or exclusion constraint/i.test(fout.message || '')
 }
 
 /** Schrijft het postvak weg: op id als we dat kennen, anders over de oude sleutel. */

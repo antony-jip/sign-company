@@ -102,6 +102,21 @@ interface CredentialRij {
 const CREDENTIAL_KOLOMMEN_VOOR_244 = 'id, gmail_address, encrypted_app_password, smtp_host, smtp_port, imap_host, imap_port'
 const CREDENTIAL_KOLOMMEN = `${CREDENTIAL_KOLOMMEN_VOOR_244}, auth_type, oauth_refresh_token_enc, oauth_access_token_enc, oauth_token_verloopt_op`
 
+/**
+ * Een select met `account_id` erbij zodra we het postvak kennen, met terugval
+ * op dezelfde vraag zonder dat filter voor een database van vóór migratie 245.
+ */
+async function leesMetAccount<T extends { error: { code?: string; message?: string } | null }>(
+  accountId: string | null | undefined,
+  bouw: (metAccount: boolean) => PromiseLike<T>,
+): Promise<T> {
+  if (accountId) {
+    const metAccount = await bouw(true)
+    if (!isKolomFout(metAccount.error)) return metAccount
+  }
+  return await bouw(false)
+}
+
 function isKolomFout(fout: { code?: string; message?: string } | null): boolean {
   if (!fout) return false
   if (fout.code === '42703' || fout.code === 'PGRST204') return true
@@ -211,8 +226,8 @@ function leesAccountId(req: VercelRequest): string | null {
 // api-mailbestanden.
 function isOnbekendeSleutel(fout: { code?: string; message?: string } | null): boolean {
   if (!fout) return false
-  return fout.code === '42703' || fout.code === '42P10'
-    || /column .* does not exist|no unique or exclusion constraint/i.test(fout.message || '')
+  return fout.code === '42703' || fout.code === '42P10' || fout.code === 'PGRST204'
+    || /column .* does not exist|could not find the .* column|no unique or exclusion constraint/i.test(fout.message || '')
 }
 
 type EmailsUpsertUitkomst = { error: { message: string; code?: string } | null }
@@ -270,12 +285,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     const mapValue = String(folder).toUpperCase() === 'INBOX' ? 'inbox' : String(folder).toLowerCase()
 
-    const { data: state, error: stateErr } = await supabaseAdmin
-      .from('email_sync_state')
-      .select('id, imap_folder, uidvalidity, backfill_low_uid, backfill_done, backfill_target')
-      .eq('user_id', user_id)
-      .eq('folder', mapValue)
-      .maybeSingle()
+    // De credentials eerst: we hebben het account_id nodig om de juiste
+    // sync-state-rij te lezen. Met twee postvakken staan er twee rijen voor
+    // dezelfde map, en dan gaf maybeSingle() PGRST116 en dit endpoint een 503.
+    const creds = await getEmailCredentials(user_id, leesAccountId(req))
+
+    const { data: state, error: stateErr } = await leesMetAccount(creds.account_id, (metAccount) => {
+      const basis = supabaseAdmin
+        .from('email_sync_state')
+        .select('id, imap_folder, uidvalidity, backfill_low_uid, backfill_done, backfill_target')
+        .eq('user_id', user_id)
+        .eq('folder', mapValue)
+      return (metAccount ? basis.eq('account_id', creds.account_id as string) : basis).maybeSingle()
+    })
 
     if (stateErr) {
       return res.status(503).json({ error: 'Sync-state niet beschikbaar — is migratie 131 gedraaid?', done: false })
@@ -296,7 +318,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ done: true, synced: 0 })
     }
 
-    const creds = await getEmailCredentials(user_id, leesAccountId(req))
     client = new ImapFlow({
       host: creds.imap_host,
       port: creds.imap_port,

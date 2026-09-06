@@ -266,16 +266,18 @@ function isToegangGeweigerd(fout: unknown): boolean {
 // Migratie 245 zet (account_id, folder) naast (user_id, folder); migratie 246
 // laat de oude sleutel vallen. Zolang beide werelden kunnen bestaan proberen we
 // de nieuwe sleutel eerst en vallen we terug op de oude. PostgREST geeft 42703
-// als de kolom er nog niet is en 42P10 als er bij de opgegeven kolommen geen
-// unieke index te vinden is; de terugval in deze bestanden ving alleen dat
-// eerste geval, dus na 246 zou de write blijven falen. account_id gaat ook in
-// de rij mee, anders vindt de nieuwe sleutel nooit een bestaande rij.
+// bij een select op een kolom die er nog niet is, PGRST204 als die kolom in de
+// lading van een insert of upsert staat, en 42P10 als er bij de opgegeven
+// kolommen geen unieke index te vinden is. Alle drie horen erbij: zonder
+// PGRST204 staat de sync stil op een database zonder 245, zonder 42P10 na 246.
+// account_id gaat ook in de rij mee, anders vindt de nieuwe sleutel nooit een
+// bestaande rij.
 // Dezelfde ladder staat in src/trigger/mail-idle.ts en in de andere
 // api-mailbestanden.
 function isOnbekendeSleutel(fout: { code?: string; message?: string } | null): boolean {
   if (!fout) return false
-  return fout.code === '42703' || fout.code === '42P10'
-    || /column .* does not exist|no unique or exclusion constraint/i.test(fout.message || '')
+  return fout.code === '42703' || fout.code === '42P10' || fout.code === 'PGRST204'
+    || /column .* does not exist|could not find the .* column|no unique or exclusion constraint/i.test(fout.message || '')
 }
 
 type SyncStateUitkomst = { error: { message: string; code?: string } | null }

@@ -253,8 +253,8 @@ function leesFoutTeller(laatsteFout: string | null | undefined): number {
  * opgegeven kolommen te vinden is.
  */
 function isOnbekendeSleutel(error: { code?: string; message: string }): boolean {
-  return error.code === '42703' || error.code === '42P10'
-    || /column .* does not exist|no unique or exclusion constraint/i.test(error.message)
+  return error.code === '42703' || error.code === '42P10' || error.code === 'PGRST204'
+    || /column .* does not exist|could not find the .* column|no unique or exclusion constraint/i.test(error.message)
 }
 
 /**
