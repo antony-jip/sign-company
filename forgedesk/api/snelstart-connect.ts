@@ -140,6 +140,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const user_id = await verifyUser(req)
 
+    const { data: aanvrager } = await supabaseAdmin
+      .from('profiles')
+      .select('rol')
+      .eq('id', user_id)
+      .maybeSingle()
+    if (aanvrager?.rol !== 'admin') {
+      return res.status(403).json({ error: 'Alleen admins kunnen integraties koppelen' })
+    }
+
     if (!process.env.SNELSTART_SUBSCRIPTION_KEY) {
       return res.status(500).json({ error: 'SnelStart subscription key is niet geconfigureerd op de server (SNELSTART_SUBSCRIPTION_KEY).' })
     }

@@ -138,6 +138,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const user_id = await verifyUser(req)
+
+    const { data: aanvrager } = await supabaseAdmin
+      .from('profiles')
+      .select('rol')
+      .eq('id', user_id)
+      .maybeSingle()
+    if (aanvrager?.rol !== 'admin') {
+      return res.status(403).json({ error: 'Alleen admins kunnen integraties koppelen' })
+    }
     const { api_token } = req.body as { api_token?: string }
 
     let token = (api_token ?? '').trim()

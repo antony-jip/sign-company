@@ -67,12 +67,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('organisatie_id')
+      .select('organisatie_id, rol')
       .eq('id', userId)
       .maybeSingle()
 
     if (!profile?.organisatie_id) {
       return res.status(403).json({ error: 'Geen organisatie gevonden' })
+    }
+    if (profile.rol !== 'admin') {
+      return res.status(403).json({ error: 'Alleen admins kunnen de inkoopfactuur-inbox instellen' })
     }
 
     const { data: existing } = await supabase
