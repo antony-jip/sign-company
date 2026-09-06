@@ -22,7 +22,8 @@ CREATE INDEX IF NOT EXISTS idx_tijdregistraties_org_status_datum
 CREATE INDEX IF NOT EXISTS idx_tijdregistraties_medewerker_datum
   ON tijdregistraties (medewerker_id, datum);
 
--- Goedkeuren is een beheerdersstap. De RLS op tijdregistraties is org-breed,
+-- Goedkeuren is een beheerdersstap (alleen actief als de organisatie de
+-- schakelaar uren_goedkeuren aan heeft). De RLS op tijdregistraties is org-breed,
 -- dus zonder guard kan iedere gebruiker zijn eigen uren op 'goedgekeurd'
 -- zetten of een goedgekeurde of gefactureerde regel nog aanpassen. Deze
 -- trigger laat dat alleen toe voor admins (profiles.rol) en voor service_role
@@ -38,8 +39,17 @@ AS $$
 DECLARE
   aanvrager uuid := auth.uid();
   is_admin boolean;
+  goedkeuren_aan boolean;
+  org uuid := COALESCE(NEW.organisatie_id, OLD.organisatie_id);
 BEGIN
   IF aanvrager IS NULL THEN
+    RETURN COALESCE(NEW, OLD);
+  END IF;
+  -- De guard hoort bij de schakelaar uren_goedkeuren. Staat die uit, dan is
+  -- 'goedgekeurd' alleen de standaardwaarde en blijft alles zoals het was.
+  SELECT COALESCE((functies->>'uren_goedkeuren')::boolean, false) INTO goedkeuren_aan
+  FROM app_settings WHERE organisatie_id = org ORDER BY updated_at DESC LIMIT 1;
+  IF NOT COALESCE(goedkeuren_aan, false) THEN
     RETURN COALESCE(NEW, OLD);
   END IF;
   SELECT rol = 'admin' INTO is_admin FROM profiles WHERE id = aanvrager;
