@@ -221,6 +221,10 @@ export function documentVoorAntwoord(bron: BronMail, allen: boolean, body: Email
     references: messageId ? [messageId] : undefined,
     threadId: bron.thread_id || undefined,
     bronEmailId: bron.id,
+    // Antwoorden gaat terug uit het postvak waar de mail binnenkwam. Zonder dit
+    // vertrekt een antwoord op mail aan studio@ vanaf het standaardpostvak, en
+    // dat ziet de ontvanger als een ander adres dan waar hij naar schreef.
+    accountId: ('account_id' in bron ? bron.account_id : null) || undefined,
   })
 }
 
@@ -237,6 +241,7 @@ export function documentVoorDoorsturen(bron: BronMail, body: EmailBody | null): 
     references: messageId ? [messageId] : undefined,
     threadId: bron.thread_id || undefined,
     bronEmailId: bron.id,
+    accountId: ('account_id' in bron ? bron.account_id : null) || undefined,
   })
 }
 

@@ -28,6 +28,11 @@ interface Props {
   labels?: boolean
   /** "Alle postvakken" als eerste keuze. Uit in de composer: je verstuurt uit één postvak. */
   metAlle?: boolean
+  /**
+   * Toon het mailadres in plaats van de naam. In de composer is dat wat telt:
+   * de ontvanger ziet het adres, niet hoe jij je postvak genoemd hebt.
+   */
+  adresEerst?: boolean
   className?: string
 }
 
@@ -36,7 +41,7 @@ interface Props {
  * "Alle postvakken" staat vooraan, daaronder elk postvak met een bolletje in
  * de kleur die de afzender-avatars ook gebruiken.
  */
-export function PostvakKiezer({ postvakken, actief, onKies, labels = true, metAlle = true, className }: Props) {
+export function PostvakKiezer({ postvakken, actief, onKies, labels = true, metAlle = true, adresEerst = false, className }: Props) {
   const [open, zetOpen] = useState(false)
   const wortel = useRef<HTMLDivElement>(null)
 
@@ -52,7 +57,7 @@ export function PostvakKiezer({ postvakken, actief, onKies, labels = true, metAl
   if (postvakken.length <= 1) return null
 
   const huidig = actief === 'alle' ? null : postvakken.find((p) => p.id === actief) ?? null
-  const titel = huidig ? huidig.naam : 'Alle postvakken'
+  const titel = huidig ? ((adresEerst && huidig.adres) || huidig.naam) : 'Alle postvakken'
 
   return (
     <div ref={wortel} className={cn('relative', className)}>
@@ -100,8 +105,10 @@ export function PostvakKiezer({ postvakken, actief, onKies, labels = true, metAl
           {postvakken.map((p) => (
             <Rij
               key={p.id}
-              label={p.naam}
-              onder={p.naam !== p.adres ? p.adres : undefined}
+              label={(adresEerst && p.adres) || p.naam}
+              onder={adresEerst
+                ? (p.naam !== p.adres ? p.naam : undefined)
+                : (p.naam !== p.adres ? p.adres : undefined)}
               gedeeld={p.soort === 'gedeeld'}
               gekozen={actief === p.id}
               onKies={() => { onKies(p.id); zetOpen(false) }}
