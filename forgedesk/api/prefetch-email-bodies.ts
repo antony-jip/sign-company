@@ -152,18 +152,24 @@ function splitsCitaat(html: string): { eigen: string; geciteerd: string | null }
  * eerst. PostgREST kent geen NOT EXISTS, dus in pagina's van 100 en per
  * pagina tegen email_bodies afstrepen; hoogstens vijf pagina's.
  */
-async function zoekKandidaten(user_id: string, mapValue: string, gewenst: number): Promise<{ rijen: Rij[]; meer: boolean }> {
+async function zoekKandidaten(user_id: string, mapValue: string, gewenst: number, accountId?: string | null): Promise<{ rijen: Rij[]; meer: boolean }> {
   const rijen: Rij[] = []
   const PAGINA = 100
   for (let pagina = 0; pagina < 5 && rijen.length <= gewenst; pagina++) {
-    const { data: blok, error } = await supabaseAdmin
-      .from('emails')
-      .select('id, uid')
-      .eq('user_id', user_id)
-      .eq('map', mapValue)
-      .not('uid', 'is', null)
-      .order('datum', { ascending: false })
-      .range(pagina * PAGINA, pagina * PAGINA + PAGINA - 1)
+    // Per postvak: de IMAP-verbinding hieronder gaat naar één mailbox, en
+    // uid 1234 bestaat in allebei. Zonder dit filter wint er stil één en wordt
+    // de body van de ene mailbox op de rij van de andere geschreven.
+    const { data: blok, error } = await leesMetAccount(accountId, (metAccount) => {
+      const basis = supabaseAdmin
+        .from('emails')
+        .select('id, uid')
+        .eq('user_id', user_id)
+        .eq('map', mapValue)
+        .not('uid', 'is', null)
+      return (metAccount ? basis.eq('account_id', accountId as string) : basis)
+        .order('datum', { ascending: false })
+        .range(pagina * PAGINA, pagina * PAGINA + PAGINA - 1)
+    })
     if (error) throw new Error(error.message)
     if (!blok?.length) break
 
@@ -449,6 +455,21 @@ interface CredentialRij {
 const CREDENTIAL_KOLOMMEN_VOOR_244 = 'id, gmail_address, encrypted_app_password, smtp_host, smtp_port, imap_host, imap_port'
 const CREDENTIAL_KOLOMMEN = `${CREDENTIAL_KOLOMMEN_VOOR_244}, auth_type, oauth_refresh_token_enc, oauth_access_token_enc, oauth_token_verloopt_op`
 
+/**
+ * Een select met `account_id` erbij zodra we het postvak kennen, met terugval
+ * op dezelfde vraag zonder dat filter voor een database van vóór migratie 245.
+ */
+async function leesMetAccount<T extends { error: { code?: string; message?: string } | null }>(
+  accountId: string | null | undefined,
+  bouw: (metAccount: boolean) => PromiseLike<T>,
+): Promise<T> {
+  if (accountId) {
+    const metAccount = await bouw(true)
+    if (!isKolomFout(metAccount.error)) return metAccount
+  }
+  return await bouw(false)
+}
+
 function isKolomFout(fout: { code?: string; message?: string } | null): boolean {
   if (!fout) return false
   if (fout.code === '42703' || fout.code === 'PGRST204') return true
@@ -672,7 +693,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const batchGrootte = Math.min(Math.max(Number(limit) || 25, 1), MAX_BATCH)
 
     // Nieuwste eerst: dat is wat de gebruiker zo gaat openen.
-    const { rijen, meer: meerBeschikbaar } = await zoekKandidaten(user_id, mapValue, batchGrootte)
+    const { rijen, meer: meerBeschikbaar } = await zoekKandidaten(user_id, mapValue, batchGrootte, creds.account_id)
 
     if (rijen.length === 0) {
       return res.status(200).json({ verwerkt: 0, mislukt: 0, resterend: false })

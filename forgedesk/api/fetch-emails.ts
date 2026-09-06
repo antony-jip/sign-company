@@ -692,6 +692,19 @@ async function upsertEmailsBatch(batch: Array<Record<string, unknown>>): Promise
   }
   return laatste
 }
+/**
+ * Losse insert met dezelfde terugval: de rij draagt `account_id`, en zonder
+ * migratie 245 faalt de hele insert dan op PGRST204. Deze tak bestaat juist
+ * voor het geval de batch-upsert al gefaald heeft, dus hier stilvallen betekent
+ * mail kwijt.
+ */
+async function insertEmailMetTerugval(rij: Record<string, unknown>): Promise<{ error: { message: string; code?: string } | null }> {
+  const eerste = await supabaseAdmin.from('emails').insert(rij)
+  if (!eerste.error || !('account_id' in rij) || !isOnbekendeSleutel(eerste.error)) return eerste as { error: { message: string; code?: string } | null }
+  const zonder = { ...rij }
+  delete zonder.account_id
+  return await supabaseAdmin.from('emails').insert(zonder) as { error: { message: string; code?: string } | null }
+}
 // ── GEDEELD-MET-API EINDE: upsert-ladder ──────────────────────────────────
 
 async function meldToegangIngetrokken(userId: string, accountId?: string | null): Promise<void> {
@@ -1525,9 +1538,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               if (!updateErr) synced++
             } else {
               // Insert new
-              const { error: insertErr } = await supabaseAdmin
-                .from('emails')
-                .insert(email)
+              const { error: insertErr } = await insertEmailMetTerugval(email)
               if (!insertErr) synced++
               else errors.push(`insert ${email.message_id}: ${insertErr.message}`)
             }
@@ -1547,9 +1558,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             })
 
             if (!existing) {
-              const { error: insertErr } = await supabaseAdmin
-                .from('emails')
-                .insert(email)
+              const { error: insertErr } = await insertEmailMetTerugval(email)
               if (!insertErr) synced++
             } else {
               synced++ // Already exists
@@ -1597,14 +1606,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (vlagPerUid.size > 0) {
       try {
         const uids = [...vlagPerUid.keys()]
-        const { data: bestaande } = await supabaseAdmin
-          .from('emails')
-          .select('id, uid, gelezen, pinned')
-          .eq('user_id', user_id)
-          .eq('imap_folder', imapFolder)
-          .gte('uid', Math.min(...uids))
-          .lte('uid', Math.max(...uids))
-          .limit(1000)
+        // Ook per postvak: beide mailboxen hebben imap_folder 'INBOX' met
+        // overlappende uid's, dus zonder dit filter zet de sync van postvak 2
+        // de gelezen-vlag van uid 1234 op de mail van postvak 1.
+        const { data: bestaande } = await leesMetAccount(accountIdVoorTik, (metAccount) => {
+          const basis = supabaseAdmin
+            .from('emails')
+            .select('id, uid, gelezen, pinned')
+            .eq('user_id', user_id)
+            .eq('imap_folder', imapFolder)
+            .gte('uid', Math.min(...uids))
+            .lte('uid', Math.max(...uids))
+          return (metAccount ? basis.eq('account_id', accountIdVoorTik as string) : basis).limit(1000)
+        })
         const lezen: string[] = []
         const ongelezen: string[] = []
         const pinnen: string[] = []

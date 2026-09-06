@@ -377,6 +377,21 @@ interface CredentialRij {
 const CREDENTIAL_KOLOMMEN_VOOR_244 = 'id, gmail_address, encrypted_app_password, smtp_host, smtp_port, imap_host, imap_port'
 const CREDENTIAL_KOLOMMEN = `${CREDENTIAL_KOLOMMEN_VOOR_244}, auth_type, oauth_refresh_token_enc, oauth_access_token_enc, oauth_token_verloopt_op`
 
+/**
+ * Een select met `account_id` erbij zodra we het postvak kennen, met terugval
+ * op dezelfde vraag zonder dat filter voor een database van vóór migratie 245.
+ */
+async function leesMetAccount<T extends { error: { code?: string; message?: string } | null }>(
+  accountId: string | null | undefined,
+  bouw: (metAccount: boolean) => PromiseLike<T>,
+): Promise<T> {
+  if (accountId) {
+    const metAccount = await bouw(true)
+    if (!isKolomFout(metAccount.error)) return metAccount
+  }
+  return await bouw(false)
+}
+
 function isKolomFout(fout: { code?: string; message?: string } | null): boolean {
   if (!fout) return false
   if (fout.code === '42703' || fout.code === 'PGRST204') return true
@@ -840,14 +855,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Step 1: Check Supabase cache first
     {
 
-      const { data: cached } = await supabaseAdmin
-        .from('emails')
-        .select('id, van, aan, onderwerp, datum, gelezen, body_text, attachment_meta, message_id')
-        .eq('user_id', user_id)
-        .eq('uid', Number(uid))
-        .eq('map', mapValue)
-        .limit(1)
-        .maybeSingle()
+      // Ook op postvak: uid 1234 bestaat in élke mailbox. Zonder dit filter
+      // krijgt de gebruiker de mail van het verkeerde postvak te zien, en bij
+      // een treffer in allebei valt de cache stil weg op PGRST116.
+      const { data: cached } = await leesMetAccount(creds?.account_id, (metAccount) => {
+        const basis = supabaseAdmin
+          .from('emails')
+          .select('id, van, aan, onderwerp, datum, gelezen, body_text, attachment_meta, message_id')
+          .eq('user_id', user_id)
+          .eq('uid', Number(uid))
+          .eq('map', mapValue)
+        return (metAccount ? basis.eq('account_id', creds?.account_id as string) : basis).limit(1).maybeSingle()
+      })
 
       // Een rij in email_bodies betekent: volledig geparsed (ook als de mail
       // geen HTML-deel had, dan is body_html leeg). Alleen op emails.body_text
@@ -993,14 +1012,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // Fallback: als upsert geen id terug gaf (bijv. message_id NULL),
         // doe een gerichte SELECT zodat we alsnog kunnen cachen.
         if (!email_uuid) {
-          const { data: refetched } = await supabaseAdmin
-            .from('emails')
-            .select('id')
-            .eq('user_id', user_id)
-            .eq('uid', Number(uid))
-            .eq('map', mapValue)
-            .limit(1)
-            .maybeSingle()
+          const { data: refetched } = await leesMetAccount(creds?.account_id, (metAccount) => {
+            const basis = supabaseAdmin
+              .from('emails')
+              .select('id')
+              .eq('user_id', user_id)
+              .eq('uid', Number(uid))
+              .eq('map', mapValue)
+            return (metAccount ? basis.eq('account_id', creds?.account_id as string) : basis).limit(1).maybeSingle()
+          })
           email_uuid = refetched?.id || null
         }
         // Silently ignore cache write failures — user still gets the email
