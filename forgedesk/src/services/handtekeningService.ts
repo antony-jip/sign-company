@@ -214,11 +214,14 @@ export async function zetStandaard(id: string): Promise<void> {
 }
 
 /**
- * Bestaat de tabel uit migratie 248? Zo niet, dan blijft de oude kaart met die
- * ene handtekening staan en verandert er voor de gebruiker niets. Het antwoord
- * wordt onthouden: het verandert alleen door een migratie.
+ * Bestaat de tabel uit migratie 248? Drie antwoorden: `true` ja, `false` nee, en
+ * `null` als het even niet te zeggen was. Dat laatste is geen formaliteit: op
+ * een `false` verschijnt de oude handtekening-editor en mag "toepassen op alle
+ * teamleden" weer, en dat hoort niet te gebeuren op grond van een netwerkfout.
+ * Alleen een echt ja of nee wordt onthouden; het verandert toch alleen door een
+ * migratie.
  */
-export async function handtekeningenBeschikbaar(): Promise<boolean> {
+export async function handtekeningenBeschikbaar(): Promise<boolean | null> {
   if (tabelBestaat !== null) return tabelBestaat
   if (!isSupabaseConfigured() || !supabase) return false
   const { error } = await supabase.from('email_handtekeningen').select('id').limit(1)
@@ -236,5 +239,8 @@ export async function handtekeningenBeschikbaar(): Promise<boolean> {
     tabelBestaat = false
     return false
   }
-  return false
+  // Onbepaald: een hikje, een verlopen token, een 5xx. Niet onthouden en ook
+  // niet als "nee" doorgeven. `false` zou hier de oude editor tonen en
+  // "toepassen op alle teamleden" weer openzetten terwijl het beheer live is.
+  return null
 }

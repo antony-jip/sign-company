@@ -797,12 +797,12 @@ export function EmailTab() {
       // meesturen die deze knop ook echt beheert.
       await updateAppSettings(user.id, {
         afzender_naam: afzenderNaam,
-        ...(meerHandtekeningen ? {} : {
+        ...(meerHandtekeningen === false ? {
           email_handtekening: emailHandtekening,
           handtekening_afbeelding: handtekeningAfbeelding,
           handtekening_afbeelding_grootte: afbeeldingGrootte,
           handtekening_afbeelding_link: afbeeldingLink.trim(),
-        }),
+        } : {}),
       })
       await Promise.all([refreshProfile(), refreshSettings()])
       toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
