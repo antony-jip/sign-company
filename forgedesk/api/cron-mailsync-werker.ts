@@ -373,6 +373,7 @@ function messageIdVoorRij(
 // hierboven: dat staat byte voor byte ook in api/fetch-emails.ts, en daar
 // hebben deze helpers niets te zoeken.
 
+// ── GEDEELD-POSTVAK BEGIN ──────────────────────────────────
 interface PostvakTaak {
   user_id: string
   /** Rij-id van user_email_settings. Ontbreekt zolang migratie 245 niet draait. */
@@ -463,6 +464,7 @@ function eenTaakPerPostvak<T extends PostvakTaak>(taken: readonly T[]): T[] {
   }
   return uniek
 }
+// ── GEDEELD-POSTVAK EINDE ──────────────────────────────────
 
 function isKolomFout(fout: { code?: string; message?: string } | null): boolean {
   if (!fout) return false

@@ -11,6 +11,9 @@
 //
 // De vlagresolutie is een kopie van `bepaalStand` uit `src/lib/featureFlags.ts`
 // en moet daar gelijk aan blijven; de test bewaakt ook dat.
+//
+// Onderaan staat een tweede markerpaar, GEDEELD-POSTVAK. Dat blok staat in twee
+// bestanden en niet in drie: `api/fetch-emails.ts` heeft die helpers niet nodig.
 
 // ── GEDEELD-MET-API BEGIN ──────────────────────────────────────────────
 // Letterlijke kopie in api/cron-mailsync-werker.ts en api/fetch-emails.ts.
@@ -320,6 +323,7 @@ function messageIdVoorRij(
 // hebben daar niets te zoeken. De kopie hiervan staat alleen in
 // `api/cron-mailsync-werker.ts`, onder dezelfde kop.
 
+// ── GEDEELD-POSTVAK BEGIN ──────────────────────────────────
 interface PostvakTaak {
   user_id: string
   /** Rij-id van user_email_settings. Ontbreekt zolang migratie 245 niet draait. */
@@ -410,6 +414,7 @@ function eenTaakPerPostvak<T extends PostvakTaak>(taken: readonly T[]): T[] {
   }
   return uniek
 }
+// ── GEDEELD-POSTVAK EINDE ──────────────────────────────────
 
 export type { FlagStand, FeatureFlagRij, TaakStatus, FoutSoort, Aanleiding, TaakUitkomst, CasUitvoer }
 export type { PostvakTaak, TeMakenTaak }
