@@ -61,6 +61,7 @@ import { useAppSettings } from "@/contexts/AppSettingsContext";
 import { getProjectUrenBudget, type ProjectUrenBudget } from "@/services/projectUrenService";
 import { urenVeldenUitInstellingen } from "@/utils/offerteUren";
 import { kostprijsVoor, uurtariefVoorkeuze } from "@/utils/kostprijs";
+import { standaardUrenStatus } from "@/services/tijdregistratieService";
 import { getCached, fetchQuery } from "@/lib/queryCache";
 import type { Tijdregistratie, Project, Klant, Medewerker } from "@/types";
 import { round2 } from "@/utils/budgetUtils";
@@ -414,7 +415,12 @@ export function TijdregistratieLayout() {
       gefactureerd: false,
     };
     // Kostprijs alleen bij een nieuwe regel vastleggen: een momentopname wijzig je niet achteraf.
-    if (!editingId) entry.kostprijs_uur = kostprijsVoor(eigenMedewerker, settings);
+    if (!editingId) {
+      entry.kostprijs_uur = kostprijsVoor(eigenMedewerker, settings);
+      entry.medewerker_id = eigenMedewerker?.id;
+      entry.medewerker_naam = eigenMedewerker?.naam;
+      entry.status = standaardUrenStatus(settings.functies);
+    }
 
     try {
       if (editingId) {

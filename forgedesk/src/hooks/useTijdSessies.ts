@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import type { TijdSessie, Medewerker } from '@/types'
 import { kostprijsVoor } from '@/utils/kostprijs'
+import { standaardUrenStatus } from '@/services/tijdregistratieService'
 
 const POLL_MS = 30_000
 
@@ -44,6 +45,7 @@ export function useTijdSessies({ projectId, projectNaam, medewerker }: Opties) {
 
   const uurtarief = medewerker?.uurtarief || settings.standaard_uurtarief || 0
   const kostprijsUur = kostprijsVoor(medewerker, settings)
+  const urenStatus = standaardUrenStatus(settings.functies)
 
   const herlaad = useCallback(async () => {
     try {
@@ -119,25 +121,26 @@ export function useTijdSessies({ projectId, projectNaam, medewerker }: Opties) {
         urenveld: doel?.urenveld ?? null,
         uurtarief,
         kostprijs_uur: kostprijsUur,
+        status: urenStatus,
       })
       await herlaad()
       return vorige
     } finally {
       if (gemountRef.current) setBezig(false)
     }
-  }, [user?.id, projectId, projectNaam, medewerker?.id, medewerker?.naam, uurtarief, kostprijsUur, bezig, herlaad])
+  }, [user?.id, projectId, projectNaam, medewerker?.id, medewerker?.naam, uurtarief, kostprijsUur, urenStatus, bezig, herlaad])
 
   const uitklokken = useCallback(async (): Promise<StopResultaat | null> => {
     if (!eigenSessie || bezig) return null
     setBezig(true)
     try {
-      const resultaat = await stopTijdSessie(eigenSessie, uurtarief, kostprijsUur)
+      const resultaat = await stopTijdSessie(eigenSessie, uurtarief, kostprijsUur, urenStatus)
       await herlaad()
       return resultaat
     } finally {
       if (gemountRef.current) setBezig(false)
     }
-  }, [eigenSessie, uurtarief, kostprijsUur, bezig, herlaad])
+  }, [eigenSessie, uurtarief, kostprijsUur, urenStatus, bezig, herlaad])
 
   return {
     projectSessies,

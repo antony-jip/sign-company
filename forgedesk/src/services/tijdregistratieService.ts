@@ -4,6 +4,16 @@ import {
   withUserId, getOrgId, sanitizeDates, fetchAllPages,
 } from './supabaseHelpers'
 import type { Tijdregistratie } from '@/types'
+import { functieAan, type FunctieInstellingen } from '@/lib/functies'
+
+/**
+ * Status voor een nieuwe urenregel. Met 'uren_goedkeuren' aan begint elke regel
+ * als concept en gaat hij via de weekstaat naar definitief en goedgekeurd;
+ * uit betekent dat elk uur meteen telt, dus goedgekeurd.
+ */
+export function standaardUrenStatus(functies: FunctieInstellingen | null | undefined): NonNullable<Tijdregistratie['status']> {
+  return functieAan(functies, 'uren_goedkeuren') ? 'concept' : 'goedgekeurd'
+}
 
 export async function getTijdregistraties(limit = 50000): Promise<Tijdregistratie[]> {
   const sb = supabase

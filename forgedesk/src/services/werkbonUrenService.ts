@@ -1,4 +1,4 @@
-import { createTijdregistraties } from './tijdregistratieService'
+import { createTijdregistraties, standaardUrenStatus } from './tijdregistratieService'
 import { claimWerkbonUren, updateWerkbon } from './werkbonService'
 import { getMontageAfspraak } from './planningService'
 import { getProjectUrenBudget, type ProjectUrenBudget } from './projectUrenService'
@@ -102,6 +102,7 @@ export async function boekWerkbonUren(input: BoekWerkbonUrenInput): Promise<Tijd
     kostprijs_uur: kostprijsVoor(medewerker, settings),
     facturabel: true,
     gefactureerd: false,
+    status: standaardUrenStatus(settings.functies),
   }))
 
   const geclaimd = await claimWerkbonUren(werkbon.id)

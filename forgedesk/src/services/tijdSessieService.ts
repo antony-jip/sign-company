@@ -32,6 +32,8 @@ export interface StartInvoer {
   urenveld?: string | null
   /** Kostprijs per uur als momentopname op de urenregel; leeg = onbekend. */
   kostprijs_uur?: number | null
+  /** Status van de urenregel bij uitklokken; zie standaardUrenStatus. */
+  status?: Tijdregistratie['status']
 }
 
 export interface StopResultaat {
@@ -92,7 +94,7 @@ export async function getEigenTijdSessie(userId: string): Promise<TijdSessie | n
  * boeken faalt; nu blijft bij een storing de teller zichtbaar doorlopen, en dat
  * ziet de gebruiker meteen.
  */
-export async function stopTijdSessie(sessie: TijdSessie, uurtarief: number, kostprijsUur?: number | null): Promise<StopResultaat> {
+export async function stopTijdSessie(sessie: TijdSessie, uurtarief: number, kostprijsUur?: number | null, status?: Tijdregistratie['status']): Promise<StopResultaat> {
   const nuMs = Date.now()
   const verlopen = isVerlopen(sessie, nuMs)
   const duurMinuten = verlopen ? 0 : Math.round(sessieSeconden(sessie, nuMs) / 60)
@@ -118,6 +120,7 @@ export async function stopTijdSessie(sessie: TijdSessie, uurtarief: number, kost
     kostprijs_uur: kostprijsUur ?? null,
     facturabel: true,
     gefactureerd: false,
+    status: status ?? 'goedgekeurd',
   } as Omit<Tijdregistratie, 'id' | 'created_at' | 'updated_at'>)
 
   await verwijderTijdSessie(sessie.id)
@@ -143,7 +146,7 @@ export async function startTijdSessie(
     if (lopend.project_id === invoer.project_id) {
       return { sessie: lopend, vorige: null }
     }
-    vorige = await stopTijdSessie(lopend, invoer.uurtarief, invoer.kostprijs_uur)
+    vorige = await stopTijdSessie(lopend, invoer.uurtarief, invoer.kostprijs_uur, invoer.status)
   }
 
   const nieuw: TijdSessie = {
