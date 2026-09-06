@@ -126,11 +126,30 @@ function decryptPassword(encrypted: string): string {
 }
 
 async function getEmailCredentials(userId: string): Promise<EmailCredentials> {
-  const { data, error } = await supabaseAdmin
+  // Geen .single(): met een tweede postvak zijn dat twee rijen en dan zou de
+  // aanvraagherkenning na elke sync uitvallen. Het standaardpostvak eerst, en
+  // is dat er niet, dan de oudste rij; deze module leest alleen de inbox.
+  const KOLOMMEN = 'gmail_address, encrypted_app_password, imap_host, imap_port'
+  const haal = (kolommen: string) => supabaseAdmin
     .from('user_email_settings')
-    .select('gmail_address, encrypted_app_password, imap_host, imap_port')
+    .select(kolommen)
     .eq('user_id', userId)
-    .single()
+    .order('created_at', { ascending: true })
+  // is_standaard komt uit migratie 245; zonder die kolom faalt de hele select,
+  // dus dan gewoon de oudste rij.
+  let uitkomst = await haal(`${KOLOMMEN}, is_standaard`)
+  if (uitkomst.error && (uitkomst.error.code === '42703' || uitkomst.error.code === 'PGRST204'
+    || /column .* does not exist/i.test(uitkomst.error.message || ''))) {
+    uitkomst = await haal(KOLOMMEN)
+  }
+  const { data: rijen, error } = uitkomst
+  const lijst = (rijen || []) as unknown as Array<Record<string, unknown>>
+  const data = (lijst.find((r) => r.is_standaard) ?? lijst[0]) as {
+    gmail_address?: string | null
+    encrypted_app_password?: string | null
+    imap_host?: string | null
+    imap_port?: number | null
+  } | undefined
 
   if (error || !data?.gmail_address || !data?.encrypted_app_password) {
     throw new Error('Geen email instellingen gevonden')
