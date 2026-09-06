@@ -5,7 +5,8 @@
 --    goedkeuren (schakelaar uren_goedkeuren uit) niets merken. Staat de
 --    schakelaar aan, dan schrijft de app 'concept' en gaat alleen
 --    'goedgekeurd' naar de factuur.
--- 2. Contracturen per medewerker per weekdag. medewerker_id is TEXT, net als
+-- 2. Guard: alleen admins keuren goed of wijzigen goedgekeurde/gefactureerde uren.
+-- 3. Contracturen per medewerker per weekdag. medewerker_id is TEXT, net als
 --    planning_afwezigheid: het kan een medewerkers.id zijn of 'profile-<uuid>'
 --    voor een teamlid zonder medewerker-record.
 
@@ -20,6 +21,62 @@ CREATE INDEX IF NOT EXISTS idx_tijdregistraties_org_status_datum
   ON tijdregistraties (organisatie_id, status, datum);
 CREATE INDEX IF NOT EXISTS idx_tijdregistraties_medewerker_datum
   ON tijdregistraties (medewerker_id, datum);
+
+-- Goedkeuren is een beheerdersstap. De RLS op tijdregistraties is org-breed,
+-- dus zonder guard kan iedere gebruiker zijn eigen uren op 'goedgekeurd'
+-- zetten of een goedgekeurde of gefactureerde regel nog aanpassen. Deze
+-- trigger laat dat alleen toe voor admins (profiles.rol) en voor service_role
+-- (auth.uid() IS NULL). Wijzigen van velden die niets met uren te maken
+-- hebben (updated_at, factuur_id, gefactureerd) blijft toegestaan, anders
+-- kan factureren goedgekeurde regels niet meer afvinken.
+CREATE OR REPLACE FUNCTION tijdregistraties_status_beschermen()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  aanvrager uuid := auth.uid();
+  is_admin boolean;
+BEGIN
+  IF aanvrager IS NULL THEN
+    RETURN COALESCE(NEW, OLD);
+  END IF;
+  SELECT rol = 'admin' INTO is_admin FROM profiles WHERE id = aanvrager;
+  is_admin := COALESCE(is_admin, false);
+
+  IF TG_OP = 'DELETE' THEN
+    IF NOT is_admin AND (OLD.status = 'goedgekeurd' OR OLD.gefactureerd = true) THEN
+      RAISE EXCEPTION 'Goedgekeurde of gefactureerde uren kan alleen een beheerder verwijderen';
+    END IF;
+    RETURN OLD;
+  END IF;
+
+  IF NOT is_admin THEN
+    IF NEW.status = 'goedgekeurd' AND OLD.status IS DISTINCT FROM 'goedgekeurd' THEN
+      RAISE EXCEPTION 'Alleen een beheerder kan uren goedkeuren';
+    END IF;
+    IF (OLD.status = 'goedgekeurd' OR OLD.gefactureerd = true) AND (
+      NEW.duur_minuten IS DISTINCT FROM OLD.duur_minuten
+      OR NEW.datum IS DISTINCT FROM OLD.datum
+      OR NEW.project_id IS DISTINCT FROM OLD.project_id
+      OR NEW.urenveld IS DISTINCT FROM OLD.urenveld
+      OR NEW.uurtarief IS DISTINCT FROM OLD.uurtarief
+      OR NEW.facturabel IS DISTINCT FROM OLD.facturabel
+      OR NEW.medewerker_id IS DISTINCT FROM OLD.medewerker_id
+      OR (NEW.status IS DISTINCT FROM OLD.status AND OLD.status = 'goedgekeurd')
+    ) THEN
+      RAISE EXCEPTION 'Goedgekeurde of gefactureerde uren kan alleen een beheerder wijzigen';
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_tijdregistraties_status_beschermen ON tijdregistraties;
+CREATE TRIGGER trg_tijdregistraties_status_beschermen
+  BEFORE UPDATE OR DELETE ON tijdregistraties
+  FOR EACH ROW EXECUTE FUNCTION tijdregistraties_status_beschermen();
 
 CREATE TABLE IF NOT EXISTS medewerker_contracten (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -39,6 +96,8 @@ CREATE TABLE IF NOT EXISTS medewerker_contracten (
   CHECK (geldig_tot IS NULL OR geldig_tot >= geldig_van)
 );
 CREATE INDEX IF NOT EXISTS idx_medewerker_contracten_org_mw
+  ON medewerker_contracten (organisatie_id, medewerker_id, geldig_van);
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_medewerker_contracten_ingang
   ON medewerker_contracten (organisatie_id, medewerker_id, geldig_van);
 ALTER TABLE medewerker_contracten ENABLE ROW LEVEL SECURITY;
 DO $$ BEGIN
