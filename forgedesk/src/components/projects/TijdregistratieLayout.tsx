@@ -64,7 +64,8 @@ import { kostprijsVoor, uurtariefVoorkeuze } from "@/utils/kostprijs";
 import { standaardUrenStatus } from "@/services/tijdregistratieService";
 import { getMedewerkerContracten } from "@/services/planningService";
 import { useFunctie } from "@/hooks/useFunctie";
-import { Weekstaat } from "./Weekstaat";
+import { Weekstaat, vandaagIso } from "./Weekstaat";
+import { contractOpDatum, contractUrenPerWeek } from "@/utils/contracturen";
 import { UrenKeuren } from "./UrenKeuren";
 import { isAdminUser } from "@/utils/authHelpers";
 import { useSearchParams } from "react-router-dom";
@@ -353,6 +354,9 @@ export function TijdregistratieLayout() {
   const urenDezeWeek = registraties
     .filter((r) => isCurrentWeek(r.datum))
     .reduce((sum, r) => sum + r.duur_minuten, 0) / 60;
+
+  // Norm uit het geldende contract van de ingelogde medewerker; zonder contract de oude 40.
+  const weekNorm = (eigenMedewerker ? contractUrenPerWeek(contractOpDatum(contracten, eigenMedewerker.id, vandaagIso())) : 0) || 40;
 
   const urenDezeMaand = registraties
     .filter((r) => isCurrentMonth(r.datum))
@@ -808,12 +812,12 @@ export function TijdregistratieLayout() {
           <CardContent>
             <div className="text-2xl font-bold">{urenDezeWeek.toFixed(1)}</div>
             <p className="text-xs text-muted-foreground">
-              van 40 uur ({((urenDezeWeek / 40) * 100).toFixed(0)}%)
+              van {weekNorm.toLocaleString("nl-NL", { maximumFractionDigits: 1 })} uur ({((urenDezeWeek / weekNorm) * 100).toFixed(0)}%)
             </p>
             <div className="mt-2 h-2 w-full rounded-full bg-muted overflow-hidden">
               <div
                 className="h-full rounded-full bg-blue-500 transition-all"
-                style={{ width: `${Math.min((urenDezeWeek / 40) * 100, 100)}%` }}
+                style={{ width: `${Math.min((urenDezeWeek / weekNorm) * 100, 100)}%` }}
               />
             </div>
           </CardContent>
