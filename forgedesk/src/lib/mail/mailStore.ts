@@ -1,0 +1,699 @@
+import type { EmailLijstItem, MailMap, SyncStatus, ThreadInfo } from './types'
+import { MAIL_MAPPEN } from './types'
+import {
+  getEmailsPage, searchEmailsFTS, getMapTellers, getThreadInfos, getThreadItems, getSyncStatus,
+  updateEmail, deleteEmail,
+  type EmailPageCursor,
+} from '@/services/emailService'
+import { imapActie, type ImapActie } from './imapActie'
+import { leesMapLijst, schrijfMapLijst, maakEigenaarSleutel } from '@/lib/mailCache'
+import { supabase } from '@/services/supabaseClient'
+import { getOrgId } from '@/services/supabaseHelpers'
+
+export type LijstSleutel = MailMap | 'zoek'
+
+export interface LijstStand {
+  ids: string[]
+  cursor: EmailPageCursor | null
+  laden: boolean
+  klaar: boolean
+  geladen: boolean
+  fout?: string
+}
+
+export interface MailState {
+  versie: number
+  items: ReadonlyMap<string, EmailLijstItem>
+  lijsten: ReadonlyMap<LijstSleutel, LijstStand>
+  threads: ReadonlyMap<string, ThreadInfo>
+  threadLeden: ReadonlyMap<string, { ids: string[]; laden: boolean }>
+  tellers: Record<MailMap, number>
+  sync: SyncStatus
+}
+
+export type Undo = { ongedaan: () => void; klaarOver: number }
+
+export const PAGINA_GROOTTE = 100
+export const ZOEK_GROOTTE = 50
+export const UNDO_MS = 5000
+const CACHE_GROOTTE = 100
+const CACHE_DEBOUNCE_MS = 500
+
+const ARCHIEF_PATCH = { map: 'archief', labels: ['archief'] }
+const PRULLENBAK_PATCH = { map: 'prullenbak', labels: ['prullenbak'] }
+const MAP_LABELS = new Set(['inbox', 'archief', 'prullenbak'])
+
+function legeTellers(): Record<MailMap, number> {
+  return Object.fromEntries(MAIL_MAPPEN.map((m) => [m, 0])) as Record<MailMap, number>
+}
+
+function legeStand(): LijstStand {
+  return { ids: [], cursor: null, laden: false, klaar: false, geladen: false }
+}
+
+/** Nieuwste eerst, en bij gelijke datum de hoogste id: dezelfde volgorde als de keyset-query. */
+export function vergelijkNieuwsteEerst(a: EmailLijstItem, b: EmailLijstItem): number {
+  const d = (b.datum || '').localeCompare(a.datum || '')
+  return d !== 0 ? d : b.id.localeCompare(a.id)
+}
+
+/**
+ * In welke lijsten een mail thuishoort. Spiegelt pasMapFilterToe in
+ * emailService: een gesnoozde mail zit in Gesnoozed en niet in Inbox, de
+ * Sales-vlaggen staan los van de map.
+ */
+export function mappenVoor(item: EmailLijstItem): MailMap[] {
+  const uit: MailMap[] = []
+  if (item.snoozed_until) uit.push('gesnoozed')
+  else if (item.map === 'gepland') uit.push('ingepland')
+  else if ((MAIL_MAPPEN as string[]).includes(item.map)) uit.push(item.map as MailMap)
+  if (item.wacht_op_reactie) uit.push(item.beantwoord ? 'beantwoord' : 'opvolgen')
+  return uit
+}
+
+type Luisteraar = () => void
+type Wachtend = { timer: ReturnType<typeof setTimeout>; flush: () => void }
+
+class MailStore {
+  private items = new Map<string, EmailLijstItem>()
+  private lijsten = new Map<LijstSleutel, LijstStand>()
+  private threads = new Map<string, ThreadInfo>()
+  private threadLeden = new Map<string, { ids: string[]; laden: boolean }>()
+  private tellers = legeTellers()
+  private sync: SyncStatus = { status: 'ok' }
+  private versie = 0
+  private snapshot: MailState | null = null
+  private luisteraars = new Set<Luisteraar>()
+  private eigenaar: string | null = null
+  private eigenaarBelofte: Promise<string> | null = null
+  private cacheTimers = new Map<MailMap, ReturnType<typeof setTimeout>>()
+  private wachtend = new Map<string, Wachtend>()
+  private zoekQuery = ''
+
+  constructor() {
+    if (typeof window !== 'undefined') {
+      window.addEventListener('pagehide', () => this.flushAlles())
+    }
+  }
+
+  // ── useSyncExternalStore ──
+
+  subscribe = (cb: Luisteraar): (() => void) => {
+    this.luisteraars.add(cb)
+    return () => { this.luisteraars.delete(cb) }
+  }
+
+  getVersie = (): number => this.versie
+
+  getSnapshot = (): MailState => {
+    if (this.snapshot && this.snapshot.versie === this.versie) return this.snapshot
+    this.snapshot = {
+      versie: this.versie,
+      items: this.items,
+      lijsten: this.lijsten,
+      threads: this.threads,
+      threadLeden: this.threadLeden,
+      tellers: this.tellers,
+      sync: this.sync,
+    }
+    return this.snapshot
+  }
+
+  private meld(): void {
+    this.versie += 1
+    for (const cb of this.luisteraars) cb()
+  }
+
+  // ── Eigenaar en reset ──
+
+  /** Wie de mailbox is; wisselt de eigenaar, dan gaat alles leeg. */
+  stelEigenaarIn(userId: string | null | undefined, organisatieId: string | null | undefined): void {
+    const sleutel = maakEigenaarSleutel(userId, organisatieId)
+    if (sleutel === this.eigenaar) return
+    this.eigenaar = sleutel
+    this.eigenaarBelofte = Promise.resolve(sleutel)
+    this.reset()
+  }
+
+  reset(): void {
+    this.flushAlles()
+    this.items = new Map()
+    this.lijsten = new Map()
+    this.threads = new Map()
+    this.threadLeden = new Map()
+    this.tellers = legeTellers()
+    this.sync = { status: 'ok' }
+    this.zoekQuery = ''
+    for (const t of this.cacheTimers.values()) clearTimeout(t)
+    this.cacheTimers.clear()
+    this.meld()
+  }
+
+  /** user-id + organisatie-id, de sleutel waaronder IndexedDB rijen van deze mailbox bewaart. */
+  eigenaarSleutel(): Promise<string> {
+    if (this.eigenaarBelofte) return this.eigenaarBelofte
+    this.eigenaarBelofte = (async () => {
+      let userId: string | undefined
+      try {
+        const sessie = supabase ? (await supabase.auth.getSession()).data.session : null
+        userId = sessie?.user?.id
+      } catch { /* zonder sessie geen cache */ }
+      const orgId = userId ? await getOrgId().catch(() => undefined) : undefined
+      const sleutel = maakEigenaarSleutel(userId, orgId)
+      this.eigenaar = sleutel
+      return sleutel
+    })()
+    return this.eigenaarBelofte
+  }
+
+  // ── Lezen ──
+
+  item(id: string): EmailLijstItem | undefined {
+    return this.items.get(id)
+  }
+
+  lijstStand(sleutel: LijstSleutel): LijstStand {
+    return this.lijsten.get(sleutel) ?? legeStand()
+  }
+
+  lijstItems(sleutel: LijstSleutel): EmailLijstItem[] {
+    const stand = this.lijsten.get(sleutel)
+    if (!stand) return []
+    const uit: EmailLijstItem[] = []
+    for (const id of stand.ids) {
+      const item = this.items.get(id)
+      if (item) uit.push(item)
+    }
+    return uit
+  }
+
+  threadItems(threadId: string): EmailLijstItem[] {
+    const leden = this.threadLeden.get(threadId)
+    const ids = leden ? leden.ids : [...this.items.values()].filter((i) => i.thread_id === threadId).map((i) => i.id)
+    return ids
+      .map((id) => this.items.get(id))
+      .filter((i): i is EmailLijstItem => !!i)
+      .sort((a, b) => -vergelijkNieuwsteEerst(a, b))
+  }
+
+  threadInfo(threadId: string): ThreadInfo | undefined {
+    return this.threads.get(threadId)
+  }
+
+  // ── Lijsten laden ──
+
+  private stand(sleutel: LijstSleutel): LijstStand {
+    let s = this.lijsten.get(sleutel)
+    if (!s) {
+      s = legeStand()
+      this.lijsten.set(sleutel, s)
+    }
+    return s
+  }
+
+  private zetStand(sleutel: LijstSleutel, deel: Partial<LijstStand>): void {
+    this.lijsten.set(sleutel, { ...this.stand(sleutel), ...deel })
+  }
+
+  private neemOp(item: EmailLijstItem): EmailLijstItem {
+    const bestaand = this.items.get(item.id)
+    const samengevoegd = bestaand ? { ...bestaand, ...item } : item
+    this.items.set(item.id, samengevoegd)
+    return samengevoegd
+  }
+
+  async laadMap(map: MailMap, opties?: { vers?: boolean }): Promise<void> {
+    const stand = this.stand(map)
+    if (stand.laden) return
+    if (stand.geladen && !opties?.vers) return
+    this.zetStand(map, { laden: true, fout: undefined })
+    this.meld()
+
+    if (!stand.geladen) await this.laadUitCache(map)
+
+    try {
+      const pagina = await getEmailsPage(map, null, PAGINA_GROOTTE) as unknown as EmailLijstItem[]
+      const nieuw = pagina.map((i) => this.neemOp(i))
+      const nieuweIds = nieuw.map((i) => i.id)
+      const bekend = new Set(nieuweIds)
+      const oudste = nieuw.length ? nieuw[nieuw.length - 1] : null
+      const huidig = this.stand(map)
+      // Wat we al hadden en ouder is dan deze pagina blijft staan: dat is
+      // gepagineerd werk. Wat nieuwer is en niet meer terugkomt is weg.
+      const behouden = oudste
+        ? huidig.ids.filter((id) => {
+            if (bekend.has(id)) return false
+            const item = this.items.get(id)
+            return !!item && vergelijkNieuwsteEerst(item, oudste) > 0
+          })
+        : []
+      const ids = [...nieuweIds, ...behouden]
+      const laatste = ids.length ? this.items.get(ids[ids.length - 1]) : undefined
+      const volledig = pagina.length < PAGINA_GROOTTE
+      this.zetStand(map, {
+        ids,
+        cursor: laatste ? { datum: laatste.datum, id: laatste.id } : null,
+        klaar: behouden.length > 0 ? huidig.klaar : volledig,
+        geladen: true,
+        laden: false,
+      })
+      this.meld()
+      void this.vulThreadInfo(nieuw)
+      this.planCache(map)
+    } catch (e) {
+      this.zetStand(map, { laden: false, geladen: true, fout: e instanceof Error ? e.message : 'Laden mislukt' })
+      this.meld()
+    }
+  }
+
+  async laadMeer(map: MailMap): Promise<void> {
+    const stand = this.stand(map)
+    if (stand.laden || stand.klaar || !stand.geladen) return
+    this.zetStand(map, { laden: true })
+    this.meld()
+    try {
+      const pagina = await getEmailsPage(map, stand.cursor, PAGINA_GROOTTE) as unknown as EmailLijstItem[]
+      const huidig = this.stand(map)
+      const bekend = new Set(huidig.ids)
+      const toegevoegd: EmailLijstItem[] = []
+      for (const rij of pagina) {
+        const item = this.neemOp(rij)
+        if (bekend.has(item.id)) continue
+        bekend.add(item.id)
+        toegevoegd.push(item)
+      }
+      const ids = [...huidig.ids, ...toegevoegd.map((i) => i.id)]
+      const laatste = pagina.length ? pagina[pagina.length - 1] : null
+      this.zetStand(map, {
+        ids,
+        cursor: laatste ? { datum: laatste.datum, id: laatste.id } : huidig.cursor,
+        klaar: pagina.length < PAGINA_GROOTTE,
+        laden: false,
+      })
+      this.meld()
+      void this.vulThreadInfo(toegevoegd)
+    } catch (e) {
+      this.zetStand(map, { laden: false, fout: e instanceof Error ? e.message : 'Laden mislukt' })
+      this.meld()
+    }
+  }
+
+  /** Verse eerste pagina plus tellers; voor de ververs-knop en na een reconnect. */
+  async ververs(map: MailMap): Promise<void> {
+    await Promise.all([this.laadMap(map, { vers: true }), this.laadTellers()])
+  }
+
+  async zoek(query: string, cursor?: string): Promise<void> {
+    const schoon = query.trim()
+    const offset = cursor ? Number(cursor) || 0 : 0
+    if (!schoon) {
+      this.zoekQuery = ''
+      this.lijsten.set('zoek', { ...legeStand(), geladen: true, klaar: true })
+      this.meld()
+      return
+    }
+    this.zoekQuery = schoon
+    const vorige = offset > 0 ? this.stand('zoek').ids : []
+    this.zetStand('zoek', { laden: true, ids: vorige, geladen: true })
+    this.meld()
+    try {
+      const rijen = await searchEmailsFTS(schoon, ZOEK_GROOTTE, offset) as unknown as EmailLijstItem[]
+      if (this.zoekQuery !== schoon) return
+      const bekend = new Set(vorige)
+      const ids = [...vorige]
+      for (const rij of rijen) {
+        const item = this.neemOp(rij)
+        if (!bekend.has(item.id)) { bekend.add(item.id); ids.push(item.id) }
+      }
+      this.zetStand('zoek', {
+        ids,
+        laden: false,
+        klaar: rijen.length < ZOEK_GROOTTE,
+        cursor: { datum: String(offset + rijen.length), id: '' },
+      })
+      this.meld()
+    } catch (e) {
+      this.zetStand('zoek', { laden: false, fout: e instanceof Error ? e.message : 'Zoeken mislukt' })
+      this.meld()
+    }
+  }
+
+  huidigeZoekQuery(): string {
+    return this.zoekQuery
+  }
+
+  /** Offset voor de volgende zoekpagina, als string zoals zoek() hem verwacht. */
+  zoekCursor(): string | undefined {
+    const stand = this.lijsten.get('zoek')
+    if (!stand || stand.klaar || !stand.cursor) return undefined
+    return stand.cursor.datum
+  }
+
+  async laadThread(threadId: string): Promise<void> {
+    const huidig = this.threadLeden.get(threadId)
+    if (huidig?.laden) return
+    this.threadLeden.set(threadId, { ids: huidig?.ids ?? [], laden: true })
+    this.meld()
+    try {
+      const [leden, infos] = await Promise.all([getThreadItems(threadId), getThreadInfos([threadId])])
+      for (const info of infos) this.threads.set(info.threadId, info)
+      const ids = leden.map((rij) => this.neemOp(rij).id)
+      this.threadLeden.set(threadId, { ids, laden: false })
+      this.pasThreadTellersToe(leden.map((l) => l.id))
+      this.meld()
+    } catch {
+      this.threadLeden.set(threadId, { ids: huidig?.ids ?? [], laden: false })
+      this.meld()
+    }
+  }
+
+  async laadTellers(): Promise<void> {
+    const t = await getMapTellers().catch(() => null)
+    if (!t) return
+    this.tellers = {
+      ...this.tellers,
+      inbox: t.inboxOngelezen,
+      concepten: t.concepten,
+      ingepland: t.gepland,
+      gesnoozed: t.gesnoozed,
+      opvolgen: t.opvolgen,
+    }
+    this.meld()
+  }
+
+  async laadSyncStatus(): Promise<void> {
+    const s = await getSyncStatus().catch(() => null)
+    if (!s) return
+    this.sync = s
+    this.meld()
+  }
+
+  private async vulThreadInfo(items: EmailLijstItem[]): Promise<void> {
+    const threadIds = items.map((i) => i.thread_id).filter((t): t is string => !!t)
+    if (threadIds.length === 0) return
+    const infos = await getThreadInfos(threadIds).catch(() => [])
+    if (infos.length === 0) return
+    for (const info of infos) this.threads.set(info.threadId, info)
+    this.pasThreadTellersToe(items.map((i) => i.id))
+    this.meld()
+  }
+
+  private pasThreadTellersToe(ids: string[]): void {
+    for (const id of ids) {
+      const item = this.items.get(id)
+      if (!item?.thread_id) continue
+      const info = this.threads.get(item.thread_id)
+      if (!info) continue
+      if (item.threadAantal === info.aantal && item.threadOngelezen === info.ongelezen) continue
+      this.items.set(id, { ...item, threadAantal: info.aantal, threadOngelezen: info.ongelezen })
+    }
+  }
+
+  // ── Persistentie ──
+
+  private async laadUitCache(map: MailMap): Promise<void> {
+    const eigenaar = await this.eigenaarSleutel()
+    const bewaard = await leesMapLijst<EmailLijstItem[]>(map, eigenaar).catch(() => null)
+    if (!bewaard || bewaard.length === 0) return
+    if (this.stand(map).geladen) return
+    const ids = bewaard.map((i) => this.neemOp(i).id)
+    const laatste = bewaard[bewaard.length - 1]
+    this.zetStand(map, { ids, cursor: { datum: laatste.datum, id: laatste.id }, geladen: true, klaar: false })
+    this.meld()
+  }
+
+  private planCache(map: MailMap): void {
+    const bestaand = this.cacheTimers.get(map)
+    if (bestaand) clearTimeout(bestaand)
+    this.cacheTimers.set(map, setTimeout(() => {
+      this.cacheTimers.delete(map)
+      void this.schrijfCache(map)
+    }, CACHE_DEBOUNCE_MS))
+  }
+
+  private async schrijfCache(map: MailMap): Promise<void> {
+    const stand = this.lijsten.get(map)
+    if (!stand?.geladen) return
+    const eigenaar = await this.eigenaarSleutel()
+    await schrijfMapLijst(map, eigenaar, this.lijstItems(map).slice(0, CACHE_GROOTTE)).catch(() => {})
+  }
+
+  private planCacheVoor(mappen: Iterable<MailMap>): void {
+    for (const map of mappen) if (this.lijsten.get(map)?.geladen) this.planCache(map)
+  }
+
+  // ── Lokale mutaties (optimistisch en realtime) ──
+
+  private voegInLijst(map: MailMap, item: EmailLijstItem): void {
+    const stand = this.lijsten.get(map)
+    if (!stand?.geladen) return
+    if (stand.ids.includes(item.id)) return
+    // Ouder dan wat we geladen hebben en de lijst is nog niet uit: dan komt
+    // hij vanzelf met de volgende pagina, niet nu tussen de geladen mail.
+    if (!stand.klaar && stand.cursor && vergelijkNieuwsteEerst(item, { datum: stand.cursor.datum, id: stand.cursor.id } as EmailLijstItem) > 0) return
+    const ids = [...stand.ids]
+    let plek = ids.length
+    for (let i = 0; i < ids.length; i++) {
+      const ander = this.items.get(ids[i])
+      if (ander && vergelijkNieuwsteEerst(item, ander) < 0) { plek = i; break }
+    }
+    ids.splice(plek, 0, item.id)
+    this.lijsten.set(map, { ...stand, ids })
+  }
+
+  private haalUitLijst(map: LijstSleutel, id: string): void {
+    const stand = this.lijsten.get(map)
+    if (!stand || !stand.ids.includes(id)) return
+    this.lijsten.set(map, { ...stand, ids: stand.ids.filter((x) => x !== id) })
+  }
+
+  /** Zet een item neer en verplaatst hem tussen de maplijsten waar hij (niet meer) in hoort. */
+  private plaats(item: EmailLijstItem, vorige?: EmailLijstItem): Set<MailMap> {
+    const was = new Set(vorige ? mappenVoor(vorige) : [])
+    const wordt = new Set(mappenVoor(item))
+    const geraakt = new Set<MailMap>()
+    for (const map of was) if (!wordt.has(map)) { this.haalUitLijst(map, item.id); geraakt.add(map) }
+    for (const map of wordt) if (!was.has(map)) { this.voegInLijst(map, item); geraakt.add(map) }
+    return geraakt
+  }
+
+  patch(id: string, deel: Partial<EmailLijstItem>): void {
+    const vorige = this.items.get(id)
+    if (!vorige) return
+    const nieuw = { ...vorige, ...deel }
+    this.items.set(id, nieuw)
+    const geraakt = this.plaats(nieuw, vorige)
+    if (vorige.gelezen !== nieuw.gelezen) this.verschuifThreadOngelezen(nieuw, nieuw.gelezen ? -1 : 1)
+    this.planCacheVoor(geraakt.size ? geraakt : mappenVoor(nieuw))
+    this.meld()
+  }
+
+  /** Voor realtime-INSERT en lokaal aangemaakte rijen (concept). */
+  voegToe(item: EmailLijstItem): void {
+    const vorige = this.items.get(item.id)
+    if (vorige) { this.patch(item.id, item); return }
+    const opgenomen = this.neemOp(item)
+    const geraakt = this.plaats(opgenomen)
+    if (opgenomen.thread_id) {
+      const info = this.threads.get(opgenomen.thread_id)
+      if (info) {
+        this.threads.set(opgenomen.thread_id, {
+          ...info,
+          aantal: info.aantal + 1,
+          ongelezen: info.ongelezen + (opgenomen.gelezen ? 0 : 1),
+          laatsteDatum: opgenomen.datum > info.laatsteDatum ? opgenomen.datum : info.laatsteDatum,
+        })
+        this.pasThreadTellersToe(this.threadLedenIds(opgenomen.thread_id))
+      }
+      const leden = this.threadLeden.get(opgenomen.thread_id)
+      if (leden && !leden.ids.includes(opgenomen.id)) this.threadLeden.set(opgenomen.thread_id, { ...leden, ids: [...leden.ids, opgenomen.id] })
+    }
+    this.planCacheVoor(geraakt)
+    this.meld()
+  }
+
+  verwijderLokaal(id: string): void {
+    const item = this.items.get(id)
+    if (!item) return
+    this.items.delete(id)
+    for (const sleutel of this.lijsten.keys()) this.haalUitLijst(sleutel, id)
+    if (item.thread_id) {
+      const leden = this.threadLeden.get(item.thread_id)
+      if (leden) this.threadLeden.set(item.thread_id, { ...leden, ids: leden.ids.filter((x) => x !== id) })
+      const info = this.threads.get(item.thread_id)
+      if (info) {
+        this.threads.set(item.thread_id, {
+          ...info,
+          aantal: Math.max(0, info.aantal - 1),
+          ongelezen: Math.max(0, info.ongelezen - (item.gelezen ? 0 : 1)),
+        })
+        this.pasThreadTellersToe(this.threadLedenIds(item.thread_id))
+      }
+    }
+    this.planCacheVoor(mappenVoor(item))
+    this.meld()
+  }
+
+  private threadLedenIds(threadId: string): string[] {
+    const leden = this.threadLeden.get(threadId)
+    if (leden) return leden.ids
+    return [...this.items.values()].filter((i) => i.thread_id === threadId).map((i) => i.id)
+  }
+
+  private verschuifThreadOngelezen(item: EmailLijstItem, delta: number): void {
+    if (!item.thread_id) return
+    const info = this.threads.get(item.thread_id)
+    if (!info) return
+    this.threads.set(item.thread_id, { ...info, ongelezen: Math.max(0, info.ongelezen + delta) })
+    this.pasThreadTellersToe(this.threadLedenIds(item.thread_id))
+  }
+
+  // ── Acties richting server ──
+
+  private schrijfWeg(ids: string[], deel: Record<string, unknown>): Promise<void> {
+    return Promise.all(ids.map((id) => updateEmail(id, deel).catch(() => {}))).then(() => {})
+  }
+
+  private imap(actie: ImapActie, ids: string[]): void {
+    void imapActie(actie, ids).catch(() => {})
+  }
+
+  async zetGelezen(ids: string[], gelezen: boolean): Promise<void> {
+    const echt = ids.filter((id) => this.items.get(id) && this.items.get(id)!.gelezen !== gelezen)
+    if (echt.length === 0) return
+    for (const id of echt) this.patch(id, { gelezen })
+    if (gelezen) this.tellers = { ...this.tellers, inbox: Math.max(0, this.tellers.inbox - echt.filter((id) => this.items.get(id)?.map === 'inbox').length) }
+    else this.tellers = { ...this.tellers, inbox: this.tellers.inbox + echt.filter((id) => this.items.get(id)?.map === 'inbox').length }
+    this.meld()
+    await this.schrijfWeg(echt, { gelezen })
+    this.imap(gelezen ? 'seen' : 'unseen', echt)
+  }
+
+  async pin(ids: string[], aan: boolean): Promise<void> {
+    for (const id of ids) this.patch(id, { pinned: aan })
+    await this.schrijfWeg(ids, { pinned: aan })
+    this.imap(aan ? 'flagged' : 'unflagged', ids)
+  }
+
+  async snooze(ids: string[], tot: string | null): Promise<void> {
+    for (const id of ids) this.patch(id, { snoozed_until: tot })
+    await this.schrijfWeg(ids, { snoozed_until: tot })
+  }
+
+  async label(ids: string[], label: string, aan: boolean): Promise<void> {
+    const perId = new Map<string, string[]>()
+    for (const id of ids) {
+      const item = this.items.get(id)
+      if (!item) continue
+      const huidig = item.labels || []
+      const volgende = aan
+        ? (huidig.includes(label) ? huidig : [...huidig, label])
+        : huidig.filter((l) => l !== label)
+      perId.set(id, volgende)
+      this.patch(id, { labels: volgende })
+    }
+    await Promise.all([...perId].map(([id, labels]) => updateEmail(id, { labels }).catch(() => {})))
+  }
+
+  /** Terug naar Inbox vanuit archief of prullenbak. Zonder buffer: dit is zelf al de ongedaan-maak-actie. */
+  async herstel(ids: string[]): Promise<void> {
+    const patches = new Map<string, { map: string; labels: string[] }>()
+    for (const id of ids) {
+      const item = this.items.get(id)
+      if (!item) continue
+      const labels = (item.labels || []).filter((l) => !MAP_LABELS.has(l))
+      patches.set(id, { map: 'inbox', labels })
+      this.patch(id, { map: 'inbox', labels })
+    }
+    await Promise.all([...patches].map(([id, deel]) => updateEmail(id, deel).catch(() => {})))
+  }
+
+  archiveer(ids: string[]): Undo {
+    return this.metUndo(ids, ARCHIEF_PATCH, (echt) => {
+      void this.schrijfWeg(echt, ARCHIEF_PATCH)
+      this.imap('archive', echt)
+    })
+  }
+
+  verwijder(ids: string[]): Undo {
+    const inPrullenbak = ids.filter((id) => this.items.get(id)?.map === 'prullenbak')
+    const naarPrullenbak = ids.filter((id) => this.items.get(id) && this.items.get(id)!.map !== 'prullenbak')
+    const undos: Undo[] = []
+    if (naarPrullenbak.length) {
+      undos.push(this.metUndo(naarPrullenbak, PRULLENBAK_PATCH, (echt) => {
+        void this.schrijfWeg(echt, PRULLENBAK_PATCH)
+        this.imap('trash', echt)
+      }))
+    }
+    if (inPrullenbak.length) {
+      const bewaard = inPrullenbak.map((id) => this.items.get(id)!)
+      for (const id of inPrullenbak) this.verwijderLokaal(id)
+      undos.push(this.buffer(inPrullenbak, () => {
+        // Eerst IMAP: purge wil de rij nog kunnen lezen om de map te controleren.
+        void imapActie('purge', inPrullenbak).catch(() => {}).finally(() => {
+          for (const id of inPrullenbak) void deleteEmail(id).catch(() => {})
+        })
+      }, () => {
+        for (const item of bewaard) this.voegToe(item)
+      }))
+    }
+    if (undos.length === 1) return undos[0]
+    const klaarOver = Math.max(0, ...undos.map((u) => u.klaarOver))
+    return { ongedaan: () => undos.forEach((u) => u.ongedaan()), klaarOver }
+  }
+
+  private metUndo(ids: string[], deel: { map: string; labels: string[] }, flush: (ids: string[]) => void): Undo {
+    const snapshots = new Map<string, { map: string; labels: string[] }>()
+    for (const id of ids) {
+      const item = this.items.get(id)
+      if (!item) continue
+      snapshots.set(id, { map: item.map, labels: item.labels || [] })
+      this.patch(id, deel)
+    }
+    const echt = [...snapshots.keys()]
+    return this.buffer(echt, () => flush(echt), () => {
+      for (const [id, snap] of snapshots) this.patch(id, snap)
+    })
+  }
+
+  /**
+   * Vijf seconden wachten voor de server iets hoort, zodat ongedaan maken
+   * niets kost. Een tweede actie op dezelfde mail spoelt de eerste eerst
+   * door, anders zou de late flush de nieuwe toestand overschrijven.
+   */
+  private buffer(ids: string[], flush: () => void, herstel: () => void): Undo {
+    for (const id of ids) {
+      const eerder = this.wachtend.get(id)
+      if (eerder) { clearTimeout(eerder.timer); this.wachtend.delete(id); eerder.flush() }
+    }
+    let afgehandeld = false
+    const doe = () => {
+      if (afgehandeld) return
+      afgehandeld = true
+      for (const id of ids) this.wachtend.delete(id)
+      flush()
+    }
+    const timer = setTimeout(doe, UNDO_MS)
+    const rij: Wachtend = { timer, flush: doe }
+    for (const id of ids) this.wachtend.set(id, rij)
+    return {
+      klaarOver: Date.now() + UNDO_MS,
+      ongedaan: () => {
+        if (afgehandeld) return
+        afgehandeld = true
+        clearTimeout(timer)
+        for (const id of ids) this.wachtend.delete(id)
+        herstel()
+      },
+    }
+  }
+
+  /** Alle wachtende acties nu doorschrijven (bij verlaten van de pagina of de module). */
+  flushAlles(): void {
+    const uniek = new Set(this.wachtend.values())
+    this.wachtend.clear()
+    for (const rij of uniek) { clearTimeout(rij.timer); rij.flush() }
+  }
+}
+
+export const mailStore = new MailStore()

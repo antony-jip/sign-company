@@ -5,6 +5,7 @@ import {
 } from './supabaseHelpers'
 import type { PostgrestFilterBuilder } from '@supabase/postgrest-js'
 import type { Email, InternEmailNotitie } from '@/types'
+import type { EmailBody, EmailLijstItem, MailMap, SyncStatus, ThreadInfo } from '@/lib/mail/types'
 import { parseZoekQuery, bouwTsQuery } from '@/utils/emailZoek'
 
 // ============ HISTORIE-BACKFILL ============
@@ -97,28 +98,62 @@ export async function getEmails(limit = 200): Promise<Email[]> {
  * de client geladen heeft (met duizenden mails in de DB telt de client
  * anders alleen zijn eigen venster).
  */
-export async function getMapTellers(): Promise<{ inboxOngelezen: number; concepten: number; gepland: number; gesnoozed: number } | null> {
+export async function getMapTellers(): Promise<{ inboxOngelezen: number; concepten: number; gepland: number; gesnoozed: number; opvolgen: number } | null> {
   if (!isSupabaseConfigured() || !supabase) return null
   const uid = await eigenUserId()
   if (!uid) return null
-  const [inboxQ, conceptenQ, geplandQ, gesnoozedQ] = await Promise.all([
-    supabase.from('emails').select('id', { count: 'exact', head: true }).eq('user_id', uid).eq('map', 'inbox').eq('gelezen', false),
+  const [inboxQ, conceptenQ, geplandQ, gesnoozedQ, opvolgenQ] = await Promise.all([
+    supabase.from('emails').select('id', { count: 'exact', head: true }).eq('user_id', uid).eq('map', 'inbox').eq('gelezen', false).is('snoozed_until', null),
     supabase.from('emails').select('id', { count: 'exact', head: true }).eq('user_id', uid).eq('map', 'concepten'),
     supabase.from('emails').select('id', { count: 'exact', head: true }).eq('user_id', uid).eq('map', 'gepland'),
     supabase.from('emails').select('id', { count: 'exact', head: true }).eq('user_id', uid).not('snoozed_until', 'is', null),
+    supabase.from('emails').select('id', { count: 'exact', head: true }).eq('user_id', uid).eq('wacht_op_reactie', true).eq('beantwoord', false),
   ])
-  if (inboxQ.error || conceptenQ.error || geplandQ.error || gesnoozedQ.error) return null
+  if (inboxQ.error || conceptenQ.error || geplandQ.error || gesnoozedQ.error || opvolgenQ.error) return null
   return {
     inboxOngelezen: inboxQ.count ?? 0,
     concepten: conceptenQ.count ?? 0,
     gepland: geplandQ.count ?? 0,
     gesnoozed: gesnoozedQ.count ?? 0,
+    opvolgen: opvolgenQ.count ?? 0,
   }
 }
 
 export interface EmailPageCursor {
   datum: string
   id: string
+}
+
+type LijstBouwer = PostgrestFilterBuilder<any, any, any, any>
+
+function metCursor(q: LijstBouwer, cursor: EmailPageCursor | null): LijstBouwer {
+  if (!cursor) return q
+  return q.or(`datum.lt."${cursor.datum}",and(datum.eq."${cursor.datum}",id.lt."${cursor.id}")`)
+}
+
+/**
+ * Wat een map betekent, server-side. Dit was de filterlogica van
+ * filteredEmails in EmailLayout: een gesnoozde mail blijft in map inbox
+ * staan maar hoort in Gesnoozed, niet in Inbox. Opvolgen en Beantwoord zijn
+ * vlaggen op verzonden mail (Sales Inbox); Ingepland is de oude map 'gepland'.
+ * Leads is geen maillijst maar een paneel, dus die geeft niets terug.
+ */
+function pasMapFilterToe(q: LijstBouwer, map: string): LijstBouwer | null {
+  switch (map as MailMap) {
+    case 'gesnoozed': return q.not('snoozed_until', 'is', null)
+    case 'opvolgen': return q.eq('wacht_op_reactie', true).eq('beantwoord', false)
+    case 'beantwoord': return q.eq('wacht_op_reactie', true).eq('beantwoord', true)
+    case 'ingepland': return q.eq('map', 'gepland')
+    case 'leads': return null
+    default: return q.eq('map', map).is('snoozed_until', null)
+  }
+}
+
+/** Mappen waarvan het filter op kolommen staat die de lijst-view niet kent. */
+const MAPPEN_VIA_TABEL = new Set<string>(['opvolgen', 'beantwoord'])
+
+function alsLijstItem(e: Record<string, unknown>): Email {
+  return { ...e, inhoud: '', body_html: null } as unknown as Email
 }
 
 /**
@@ -128,26 +163,114 @@ export interface EmailPageCursor {
  */
 export async function getEmailsPage(map: string, cursor: EmailPageCursor | null, limit = 100): Promise<Email[]> {
   if (!isSupabaseConfigured() || !supabase) return []
+  const client = supabase
   const uid = await eigenUserId()
   if (!uid) return []
-  let q = supabase
-    .from('emails_list_view')
-    .select(LIST_VIEW_COLUMNS)
-    .eq('user_id', uid)
-    .eq('map', map)
+
+  if (MAPPEN_VIA_TABEL.has(map)) {
+    // Eerst de smalle id-query op de tabel (daar staan de vlaggen), dan de
+    // lijstkolommen uit de view, in de volgorde van de eerste stap.
+    const idsQ = pasMapFilterToe(
+      client.from('emails').select('id, wacht_op_reactie, beantwoord').eq('user_id', uid) as unknown as LijstBouwer,
+      map,
+    )
+    if (!idsQ) return []
+    const { data: treffers, error } = await metCursor(idsQ, cursor)
+      .order('datum', { ascending: false })
+      .order('id', { ascending: false })
+      .limit(limit)
+    if (error) throw error
+    const vlaggen = new Map(((treffers || []) as Array<{ id: string; wacht_op_reactie: boolean; beantwoord: boolean }>).map((r, i) => [r.id, { i, r }]))
+    if (vlaggen.size === 0) return []
+    const { data: rijen, error: rijenErr } = await client
+      .from('emails_list_view')
+      .select(LIST_VIEW_COLUMNS)
+      .in('id', [...vlaggen.keys()])
+    if (rijenErr) throw rijenErr
+    return ((rijen || []) as Array<Record<string, unknown>>)
+      .sort((a, b) => (vlaggen.get(a.id as string)?.i ?? 0) - (vlaggen.get(b.id as string)?.i ?? 0))
+      .map((e) => {
+        const v = vlaggen.get(e.id as string)?.r
+        return alsLijstItem({ ...e, wacht_op_reactie: v?.wacht_op_reactie, beantwoord: v?.beantwoord })
+      })
+  }
+
+  const basis = pasMapFilterToe(
+    client.from('emails_list_view').select(LIST_VIEW_COLUMNS).eq('user_id', uid) as unknown as LijstBouwer,
+    map,
+  )
+  if (!basis) return []
+  const { data, error } = await metCursor(basis, cursor)
     .order('datum', { ascending: false })
     .order('id', { ascending: false })
     .limit(limit)
-  if (cursor) {
-    q = q.or(`datum.lt."${cursor.datum}",and(datum.eq."${cursor.datum}",id.lt."${cursor.id}")`)
-  }
-  const { data, error } = await q
   if (error) throw error
-  return (data || []).map(e => ({
-    ...e,
-    inhoud: '',
-    body_html: null,
+  return ((data || []) as Array<Record<string, unknown>>).map(alsLijstItem)
+}
+
+/** Alle berichten van één gesprek als lijst-items, oudste eerst. Concepten en prullenbak blijven eruit, net als in email_threads_view. */
+export async function getThreadItems(threadId: string): Promise<EmailLijstItem[]> {
+  if (!threadId || !isSupabaseConfigured() || !supabase) return []
+  const uid = await eigenUserId()
+  if (!uid) return []
+  const { data, error } = await supabase
+    .from('emails_list_view')
+    .select(LIST_VIEW_COLUMNS)
+    .eq('user_id', uid)
+    .eq('thread_id', threadId)
+    .not('map', 'in', '("prullenbak","concepten")')
+    .order('datum', { ascending: true })
+    .order('id', { ascending: true })
+  if (error) throw error
+  return (data || []) as unknown as EmailLijstItem[]
+}
+
+/** Thread-tellers van de server (email_threads_view) voor een reeks threads. */
+export async function getThreadInfos(threadIds: string[]): Promise<ThreadInfo[]> {
+  const uniek = [...new Set(threadIds.filter(Boolean))]
+  if (uniek.length === 0 || !isSupabaseConfigured() || !supabase) return []
+  const client = supabase
+  const uid = await eigenUserId()
+  if (!uid) return []
+  const blokken: string[][] = []
+  for (let i = 0; i < uniek.length; i += 100) blokken.push(uniek.slice(i, i + 100))
+  const resultaten = await Promise.all(blokken.map(async (blok) => {
+    const { data, error } = await client
+      .from('email_threads_view')
+      .select('thread_id, laatste_datum, aantal, ongelezen, laatste_email_id, deelnemers')
+      .eq('user_id', uid)
+      .in('thread_id', blok)
+    if (error) return []
+    return (data || []) as Array<{ thread_id: string; laatste_datum: string; aantal: number; ongelezen: number; laatste_email_id: string; deelnemers: string[] | null }>
   }))
+  return resultaten.flat().map((r) => ({
+    threadId: r.thread_id,
+    laatsteDatum: r.laatste_datum,
+    aantal: r.aantal,
+    ongelezen: r.ongelezen,
+    laatsteEmailId: r.laatste_email_id,
+    deelnemers: r.deelnemers || [],
+  }))
+}
+
+/** Gezondheid van de eigen mailbox, uit email_sync_state (rij inbox). */
+export async function getSyncStatus(): Promise<SyncStatus> {
+  const standaard: SyncStatus = { status: 'ok' }
+  if (!isSupabaseConfigured() || !supabase) return standaard
+  const uid = await eigenUserId()
+  if (!uid) return standaard
+  const { data, error } = await supabase
+    .from('email_sync_state')
+    .select('status, laatste_fout, laatste_succes_op')
+    .eq('user_id', uid)
+    .eq('folder', 'inbox')
+    .maybeSingle()
+  if (error || !data) return standaard
+  return {
+    status: (data.status as SyncStatus['status']) || 'ok',
+    laatsteFout: data.laatste_fout || undefined,
+    laatsteSucces: data.laatste_succes_op || undefined,
+  }
 }
 
 /** PostgREST or-syntax gebruikt komma's en haakjes als structuur. */
@@ -249,17 +372,51 @@ export async function getEmail(id: string): Promise<Email | null> {
   return emails.find((e) => e.id === id) || null
 }
 
+type BodyRij = { email_id: string; body_html: string | null; body_text: string | null; quoted_html: string | null }
+
+/**
+ * Leest bodies uit email_bodies (migratie 244). emails.body_html is sinds die
+ * migratie leeg; wie daar nog leest krijgt altijd NULL en valt onnodig terug
+ * op IMAP. Alleen rijen die bestaan komen terug: geen rij betekent "nog nooit
+ * geparsed", en dat hoort via prefetch of read-email te lopen.
+ */
+export async function getEmailBodiesUitTabel(ids: string[]): Promise<EmailBody[]> {
+  if (!ids.length || !isSupabaseConfigured() || !supabase) return []
+  const client = supabase
+  const blokken: string[][] = []
+  for (let i = 0; i < ids.length; i += 100) blokken.push(ids.slice(i, i + 100))
+  const resultaten = await Promise.all(blokken.map(async (blok) => {
+    const { data, error } = await client
+      .from('email_bodies')
+      .select('email_id, body_html, body_text, quoted_html')
+      .in('email_id', blok)
+    if (error) return []
+    return (data || []) as BodyRij[]
+  }))
+  return resultaten.flat().map((r) => ({
+    emailId: r.email_id,
+    html: r.body_html,
+    tekst: r.body_text,
+    quotedHtml: r.quoted_html,
+  }))
+}
+
 /** Fetch only the body columns for a single email (fast, lightweight) */
 export async function getEmailBody(id: string): Promise<{ body_html: string | null; body_text: string | null; inhoud: string; attachment_meta?: unknown[] | null } | null> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
-      .from('emails')
-      .select('body_html, body_text, inhoud, attachment_meta')
-      .eq('id', id)
-      .maybeSingle()
-    if (error) throw error
-    return data
+    const [bodyQ, metaQ] = await Promise.all([
+      supabase.from('email_bodies').select('body_html, body_text').eq('email_id', id).maybeSingle(),
+      supabase.from('emails').select('body_text, inhoud, attachment_meta').eq('id', id).maybeSingle(),
+    ])
+    if (metaQ.error) throw metaQ.error
+    if (!metaQ.data) return null
+    return {
+      body_html: bodyQ.data?.body_html ?? null,
+      body_text: bodyQ.data?.body_text ?? metaQ.data.body_text ?? null,
+      inhoud: metaQ.data.inhoud || '',
+      attachment_meta: metaQ.data.attachment_meta,
+    }
   }
   const emails = getLocalData<Email>('emails')
   const found = emails.find((e) => e.id === id)
@@ -286,13 +443,18 @@ export async function getEmailBodies(
 
   const resultaten = await Promise.all(
     blokken.map(async (blok) => {
-      const { data, error } = await client
-        .from('emails')
-        .select('id, body_html, body_text, attachment_meta')
-        .in('id', blok)
-        .not('body_html', 'is', null)
-      if (error) return []
-      return data || []
+      const [bodiesQ, metaQ] = await Promise.all([
+        client.from('email_bodies').select('email_id, body_html, body_text').in('email_id', blok).not('body_html', 'is', null),
+        client.from('emails').select('id, attachment_meta').in('id', blok),
+      ])
+      if (bodiesQ.error) return []
+      const meta = new Map(((metaQ.data || []) as Array<{ id: string; attachment_meta: unknown[] | null }>).map((r) => [r.id, r.attachment_meta]))
+      return ((bodiesQ.data || []) as Array<{ email_id: string; body_html: string | null; body_text: string | null }>).map((r) => ({
+        id: r.email_id,
+        body_html: r.body_html,
+        body_text: r.body_text,
+        attachment_meta: meta.get(r.email_id) ?? null,
+      }))
     })
   )
   return resultaten.flat()
