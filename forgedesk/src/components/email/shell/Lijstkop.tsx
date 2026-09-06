@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import type { MailMap } from '@/lib/mail/types'
 import { FILTERS, SPLIT_TABS, TEAM_FILTERS, mapLabel, type LijstFilter, type SplitTab } from './mapConfig'
 import { ToewijsMenu } from './ToewijsMenu'
+import { LabelMenu } from './LabelMenu'
 import type { Dichtheid } from './voorkeuren'
 import { formatRelativeSync } from '../emailHelpers'
 
@@ -37,6 +38,7 @@ interface Props {
   /** Gedeeld postvak: filters "Van mij" en "Niet toegewezen", plus toewijzen in bulk. */
   gedeeld?: boolean
   onBulkToewijzen?: (sleutel: string | null) => void
+  onBulkLabel?: (label: string, aan: boolean) => void
 }
 
 /** Titel, teller, Nieuw bericht, filters of bulk-acties, dichtheid en verversen. Desktop. */
@@ -115,6 +117,7 @@ export function Lijstkop(p: Props) {
               <Button variant="ghost" size="sm" className="h-8 text-[12px] text-foreground/70 hover:text-foreground rounded-lg" onClick={p.onBulkOngelezen}>
                 Ongelezen
               </Button>
+              {p.onBulkLabel && <LabelMenu huidig={[]} onWissel={p.onBulkLabel} className="ml-0.5" />}
               {p.gedeeld && p.onBulkToewijzen && (
                 <ToewijsMenu waarde={null} onKies={p.onBulkToewijzen} className="ml-0.5" />
               )}

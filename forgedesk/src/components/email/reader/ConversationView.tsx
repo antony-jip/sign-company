@@ -25,6 +25,7 @@ import { bepaalOpenBerichten, deelnemersLabel, deelnemersVan, sorteerOudNaarNieu
 import { chipsVoor, SOORT_LABEL, type KoppelingChip } from './koppelingen'
 import { NotitieBlok } from './NotitieBlok'
 import { ToewijsMenu } from '@/components/email/shell/ToewijsMenu'
+import { LabelMenu } from '@/components/email/shell/LabelMenu'
 
 /**
  * Contract met de shell (docs/mail-ombouw/CONTRACT.md, golf 2 reader):
@@ -283,6 +284,12 @@ export function ConversationView({ emailId, onSluiten, onAntwoord, onVolgende, o
             </p>
           </div>
           <div className="flex flex-shrink-0 items-center gap-0.5">
+            <LabelMenu
+              huidig={mail.labels || []}
+              onWissel={(label, aan) => { void mailStore.label([mail.id], label, aan) }}
+              compact={compact}
+              className="mr-1"
+            />
             {gedeeld && (
               <ToewijsMenu
                 waarde={mail.toegewezen_aan}

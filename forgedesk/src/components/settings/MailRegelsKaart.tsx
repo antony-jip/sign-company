@@ -17,14 +17,12 @@ import {
   regelsBeschikbaar, heeftVoorwaarde, VOORWAARDE_LABELS,
   type MailRegel, type RegelActies, type RegelVoorwaarden,
 } from '@/services/mailRegelService'
+import {
+  getLabels, maakLabel, wijzigLabel, verwijderLabel, labelsBeschikbaar,
+  LABEL_KLEUREN, type MailLabel,
+} from '@/services/mailLabelService'
+import { VASTE_LABELS } from '@/components/email/shell/LabelMenu'
 import type { Project } from '@/types'
-
-const VASTE_LABELS = ['offerte', 'klant', 'project', 'leverancier']
-
-interface Props {
-  /** Eigen labels uit email_labels; leeg zolang de tabel er niet is. */
-  labels?: { naam: string }[]
-}
 
 function samenvatting(regel: MailRegel): string {
   const v = regel.voorwaarden
@@ -56,7 +54,8 @@ function legeRegel(volgorde: number): Omit<MailRegel, 'id'> {
  * LOGBOEK.md): met een gedeeld postvak of meerdere apparaten hoort dit op de
  * server thuis, en dat staat op de lijst.
  */
-export function MailRegelsKaart({ labels = [] }: Props) {
+export function MailRegelsKaart() {
+  const [labels, zetLabels] = useState<MailLabel[]>([])
   const [regels, zetRegels] = useState<MailRegel[]>([])
   const [laden, zetLaden] = useState(true)
   const [open, zetOpen] = useState<string | null>(null)
@@ -70,6 +69,7 @@ export function MailRegelsKaart({ labels = [] }: Props) {
       .then(zetRegels)
       .catch((e) => logger.warn('Regels laden mislukt:', e))
       .finally(() => zetLaden(false))
+    getLabels().then(zetLabels).catch((e) => logger.warn('Labels laden mislukt:', e))
   }, [])
 
   const bewaar = useCallback(async (id: string, deel: Partial<Omit<MailRegel, 'id'>>) => {
@@ -134,9 +134,9 @@ export function MailRegelsKaart({ labels = [] }: Props) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Regels</CardTitle>
+        <CardTitle>Regels en labels</CardTitle>
         <CardDescription>
-          Wat er automatisch met binnenkomende mail gebeurt. De bovenste regel die past, wint.
+          Wat er automatisch met binnenkomende mail gebeurt, en welke labels je kunt geven. De bovenste regel die past, wint.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -221,6 +221,10 @@ export function MailRegelsKaart({ labels = [] }: Props) {
         <p className="text-[11px] text-muted-foreground">
           Regels draaien terwijl doen. openstaat. Mail die binnenkomt als je niets openhebt wordt verwerkt zodra je de inbox weer opent.
         </p>
+
+        <Separator />
+
+        <LabelBeheer labels={labels} onWijzig={zetLabels} />
       </CardContent>
     </Card>
   )
@@ -350,6 +354,114 @@ function RegelEditor({ regel, labels, onWijzig }: {
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+function LabelBeheer({ labels, onWijzig }: { labels: MailLabel[]; onWijzig: (labels: MailLabel[]) => void }) {
+  const [naam, zetNaam] = useState('')
+  const [kleur, zetKleur] = useState<string>(LABEL_KLEUREN[0])
+  const beschikbaar = labelsBeschikbaar()
+
+  const voegToe = async () => {
+    try {
+      const nieuw = await maakLabel(naam, kleur, labels.length)
+      onWijzig([...labels, nieuw])
+      zetNaam('')
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Label aanmaken mislukt')
+    }
+  }
+
+  const kleurWissel = async (id: string, nieuweKleur: string) => {
+    onWijzig(labels.map((l) => (l.id === id ? { ...l, kleur: nieuweKleur } : l)))
+    try { await wijzigLabel(id, { kleur: nieuweKleur }) } catch { toast.error('Kleur opslaan mislukt') }
+  }
+
+  const wis = async (id: string) => {
+    const vorige = labels
+    onWijzig(labels.filter((l) => l.id !== id))
+    try { await verwijderLabel(id) } catch { onWijzig(vorige); toast.error('Label verwijderen mislukt') }
+  }
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <p className="text-[13.5px] font-semibold text-foreground">Eigen labels</p>
+        <p className="text-[12px] text-muted-foreground">
+          Naast de vaste labels {VASTE_LABELS.join(', ')}. Ze staan in het labelmenu en als filter onder de mappen.
+        </p>
+      </div>
+
+      {!beschikbaar ? (
+        <p className="rounded-lg bg-[#F5F2E8] px-3 py-2 text-[12px] text-[#8A7A4A] dark:bg-[#8A7A4A]/10">
+          Eigen labels staan nog niet aan in de database. De vier vaste labels werken gewoon.
+        </p>
+      ) : (
+        <>
+          {labels.length > 0 && (
+            <ul className="space-y-1.5">
+              {labels.map((l) => (
+                <li key={l.id} className="flex items-center gap-2.5">
+                  <span className="inline-block h-3 w-3 flex-shrink-0 rounded-full" style={{ backgroundColor: l.kleur }} aria-hidden />
+                  <span className="min-w-0 flex-1 truncate text-[13px] text-foreground/85">{l.naam}</span>
+                  <div className="flex items-center gap-1">
+                    {LABEL_KLEUREN.map((k) => (
+                      <button
+                        key={k}
+                        type="button"
+                        onClick={() => void kleurWissel(l.id, k)}
+                        aria-label={`Kleur ${k}`}
+                        className={cn('h-4 w-4 rounded-full transition-transform hover:scale-110', l.kleur === k && 'ring-2 ring-offset-1 ring-petrol')}
+                        style={{ backgroundColor: k }}
+                      />
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void wis(l.id)}
+                    title="Label verwijderen"
+                    className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-[#C0451A]"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Input
+              value={naam}
+              onChange={(e) => zetNaam(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void voegToe() } }}
+              placeholder="Naam van het label"
+              className="h-9 w-[200px]"
+            />
+            <div className="flex items-center gap-1">
+              {LABEL_KLEUREN.map((k) => (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => zetKleur(k)}
+                  aria-label={`Kleur ${k}`}
+                  className={cn('h-5 w-5 rounded-full transition-transform hover:scale-110', kleur === k && 'ring-2 ring-offset-1 ring-petrol')}
+                  style={{ backgroundColor: k }}
+                />
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => void voegToe()}
+              disabled={!naam.trim()}
+              className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-flame transition-opacity hover:opacity-80 disabled:opacity-40"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Label toevoegen
+            </button>
+          </div>
+        </>
+      )}
     </div>
   )
 }

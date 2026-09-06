@@ -1,10 +1,11 @@
 import { memo, useCallback, useMemo, useRef, useState } from 'react'
 import { Pin, Paperclip, Archive, Trash2, MailOpen, Mail, Building2, FolderKanban, FileText } from 'lucide-react'
 import type { EmailLijstItem } from '@/lib/mail/types'
-import { extractSenderName, cleanEmailPreview, formatShortDate, getAvatarStyle, labelColors } from './emailHelpers'
+import { extractSenderName, cleanEmailPreview, formatShortDate, getAvatarStyle } from './emailHelpers'
 import type { Dichtheid, SwipeLinks } from './shell/voorkeuren'
 import type { KoppelingChipInfo } from './shell/koppelingChips'
 import { ToewijsAvatar } from './shell/ToewijsMenu'
+import { LabelStip, useLabels } from './shell/LabelMenu'
 import type { ToewijsDoel } from './shell/toewijzing'
 import { cn } from '@/lib/utils'
 import { hapticLight, hapticMedium } from '@/utils/haptic'
@@ -55,6 +56,11 @@ export const EmailListItem = memo(function EmailListItem({
   const avatar = getAvatarStyle(afzender)
   const preview = useMemo(() => cleanEmailPreview(item.body_text || '').slice(0, 160), [item.body_text])
   const threadAantal = item.threadAantal ?? 0
+  const { keuzes } = useLabels()
+  const zichtbareLabels = useMemo(
+    () => (item.labels || []).map((naam) => keuzes.find((k) => k.naam === naam)).filter((k): k is NonNullable<typeof k> => !!k).slice(0, 3),
+    [item.labels, keuzes],
+  )
   const bijlagen = item.bijlagen > 0 || !!item.has_attachments
 
   const onderdrukKlik = useRef(false)
@@ -205,8 +211,8 @@ export const EmailListItem = memo(function EmailListItem({
           </div>
 
           <div className="flex items-center gap-1.5 min-w-0">
-            {item.labels?.filter((l) => labelColors[l]).slice(0, 3).map((l) => (
-              <span key={l} className={cn('inline-block w-[6px] h-[6px] rounded-full flex-shrink-0', labelColors[l])} title={l} />
+            {zichtbareLabels.map((l) => (
+              <LabelStip key={l.naam} kleur={l.kleur} formaat={6} />
             ))}
             <span className={cn('truncate leading-snug tracking-[-0.005em]', compact ? 'text-[13px]' : 'text-[14px]', ongelezen ? 'font-bold text-foreground' : 'font-medium text-foreground/70 dark:text-muted-foreground')}>
               {item.onderwerp || '(geen onderwerp)'}

@@ -83,6 +83,7 @@ export function EmailLayout() {
   const [aangevinkt, zetAangevinkt] = useState<Set<string>>(new Set())
   const [focusIndex, zetFocusIndex] = useState(-1)
   const [filter, zetFilter] = useState<LijstFilter>('alle')
+  const [labelFilter, zetLabelFilter] = useState<string | null>(null)
   const [splitTab, zetSplitTab] = useState<SplitTab>('aanvragen')
   const [zoektekst, zetZoektekst] = useState('')
   const [chips, zetChips] = useState<ZoekChip[]>([])
@@ -151,11 +152,12 @@ export function EmailLayout() {
   const bron = zoekt ? zoekLijst : mapLijst
   const zichtbaar = useMemo(() => {
     let items = bron.items.filter((i) => voldoetAanFilter(i, filter, eigenSleutels))
+    if (labelFilter) items = items.filter((i) => (i.labels || []).includes(labelFilter))
     if (splitAan && map === 'inbox' && !zoekt) {
       items = items.filter((i) => classificeer(i, adresIndexen.klanten, adresIndexen.leveranciers, chipVoor(i)) === splitTab)
     }
     return sorteerVoorLijst(items)
-  }, [bron.items, filter, eigenSleutels, splitAan, map, zoekt, splitTab, adresIndexen])
+  }, [bron.items, filter, labelFilter, eigenSleutels, splitAan, map, zoekt, splitTab, adresIndexen])
 
   const filterTellers = useMemo(() => {
     const basis = bron.items
@@ -189,6 +191,7 @@ export function EmailLayout() {
     zetAangevinkt(new Set())
     zetFocusIndex(-1)
     zetFilter('alle')
+    zetLabelFilter(null)
     zetLadeOpen(false)
   }, [])
 
@@ -321,7 +324,7 @@ export function EmailLayout() {
     nieuw: () => nieuwBericht(),
     snooze: () => zetSnoozeOpen(true),
     pin: () => wisselPin(),
-    label: () => toast('Labels kies je in het menu van de mail'),
+    label: () => { const el = document.querySelector<HTMLButtonElement>('[title="Labels (l)"]'); if (el) el.click(); else toast('Open een mail om een label te kiezen') },
     ongelezen: () => wisselGelezen(),
     zoeken: () => { const el = document.querySelector<HTMLInputElement>('[data-mail-zoek]'); el?.focus() },
     kaart: () => zetKaartOpen(true),
@@ -398,7 +401,7 @@ export function EmailLayout() {
       legeStaat={<LegeStaat tekst={legeTekst} onSprong={zetMap} mailboxGekoppeld={mailboxGekoppeld} onKoppelen={() => navigate('/instellingen?tab=email')} />}
       bovenin={bovenin}
       toonToewijzing={gedeeld}
-      scrollSleutel={`${map}:${filter}:${splitTab}:${zoekt ? 'zoek' : ''}`}
+      scrollSleutel={`${map}:${filter}:${labelFilter ?? ''}:${splitTab}:${zoekt ? 'zoek' : ''}`}
       pullToRefresh={{ actief: !isDesktop, onRefresh: async () => { await mailStore.ververs(map) } }}
     />
   )
@@ -493,6 +496,8 @@ export function EmailLayout() {
         postvakken={postvakken.postvakken}
         actiefPostvak={postvakken.actief}
         onPostvak={postvakken.kies}
+        labelFilter={labelFilter}
+        onLabelFilter={(l) => { zetLabelFilter(l); zetGeselecteerd(null) }}
       />
 
       {focusModus ? (
@@ -551,6 +556,7 @@ export function EmailLayout() {
               splitTellers={splitTellers}
               gedeeld={gedeeld}
               onBulkToewijzen={(sleutel) => { void mailStore.wijsToe([...aangevinkt], sleutel); zetAangevinkt(new Set()) }}
+              onBulkLabel={(label, aan) => { void mailStore.label([...aangevinkt], label, aan) }}
             />
             {lijst}
           </div>

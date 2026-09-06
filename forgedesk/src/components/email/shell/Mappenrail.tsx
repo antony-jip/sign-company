@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils'
 import type { MailMap, Postvak, PostvakKeuze } from '@/lib/mail/types'
 import { MAP_VOLGORDE } from './mapConfig'
 import { PostvakKiezer } from './PostvakKiezer'
+import { LabelStip, useLabels } from './LabelMenu'
 
 interface PostvakProps {
   postvakken: Postvak[]
@@ -11,7 +12,13 @@ interface PostvakProps {
   onPostvak: (keuze: PostvakKeuze) => void
 }
 
-interface RailProps extends PostvakProps {
+interface LabelProps {
+  /** Welk label de lijst nu filtert, of null. */
+  labelFilter: string | null
+  onLabelFilter: (label: string | null) => void
+}
+
+interface RailProps extends PostvakProps, LabelProps {
   actieveMap: MailMap
   tellers: Partial<Record<MailMap, number>>
   onKies: (map: MailMap) => void
@@ -29,7 +36,8 @@ function tellerVoor(map: MailMap, tellers: Partial<Record<MailMap, number>>): nu
   return tellers[map] ?? 0
 }
 
-export function Mappenrail({ actieveMap, tellers, onKies, onNieuw, labels, onLabels, focusModus, onFocusModus, onInstellingen, postvakken, actiefPostvak, onPostvak }: RailProps) {
+export function Mappenrail({ actieveMap, tellers, onKies, onNieuw, labels, onLabels, focusModus, onFocusModus, onInstellingen, postvakken, actiefPostvak, onPostvak, labelFilter, onLabelFilter }: RailProps) {
+  const { keuzes: labelKeuzes } = useLabels()
   return (
     <div
       className={cn(
@@ -94,6 +102,34 @@ export function Mappenrail({ actieveMap, tellers, onKies, onNieuw, labels, onLab
             </button>
           )
         })}
+
+        {labelKeuzes.length > 0 && (
+          <div className="mt-3 pt-2 border-t border-petrol/[0.08]">
+            {labels && <p className="px-2.5 pb-1 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground/70">Labels</p>}
+            {labelKeuzes.map((k) => {
+              const actief = labelFilter === k.naam
+              return (
+                <button
+                  key={k.naam}
+                  type="button"
+                  onClick={() => onLabelFilter(actief ? null : k.naam)}
+                  title={labels ? undefined : k.naam}
+                  aria-pressed={actief}
+                  className={cn(
+                    'tap-press w-full flex items-center rounded-[10px] transition-colors duration-150',
+                    labels ? 'h-[30px] gap-2.5 px-2.5' : 'h-9 justify-center',
+                    actief
+                      ? 'bg-petrol/[0.10] text-petrol dark:bg-[#2A7A86]/[0.22] dark:text-[#7FB5BF] font-semibold'
+                      : 'text-[#3A3A36] dark:text-foreground/75 hover:bg-black/[0.04] dark:hover:bg-white/[0.05]',
+                  )}
+                >
+                  <LabelStip kleur={k.kleur} formaat={9} />
+                  {labels && <span className="flex-1 text-left text-[12.5px] truncate">{k.naam}</span>}
+                </button>
+              )
+            })}
+          </div>
+        )}
       </nav>
 
       <div className={cn('border-t border-petrol/[0.08] py-2 space-y-px', labels ? 'px-2' : 'px-2')}>
