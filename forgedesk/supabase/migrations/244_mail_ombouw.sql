@@ -14,6 +14,13 @@
 -- Deze migratie is licht: alleen structuur, geen data. Het overzetten van de
 -- bestaande mailteksten gebeurt daarna met 244b, in blokken.
 
+-- Wacht nooit lang op een slot. De mailsync raakt `emails` elke minuut, en een
+-- ALTER TABLE die op zijn beurt wacht, blokkeert ondertussen élke lezer van die
+-- tabel: de hele mailmodule staat dan stil. Liever meteen falen en het opnieuw
+-- proberen dan minuten wachten.
+SET lock_timeout = '4s';
+SET statement_timeout = '120s';
+
 BEGIN;
 
 -- 1. Bodies apart
