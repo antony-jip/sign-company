@@ -413,6 +413,7 @@ export function EmailLayout() {
     <Composer
       document={composer.document}
       variant={composer.variant}
+      losstaand={composer.variant === 'inline' && !geselecteerdId}
       onVerzonden={naVerzenden}
       onSluiten={sluitComposer}
       onHeropen={(doc) => zetComposer({ document: doc, variant: isDesktop ? 'inline' : 'volledig' })}
@@ -584,7 +585,7 @@ export function EmailLayout() {
 
           <div className="relative flex-1 flex flex-col min-w-[420px]">
             {!geselecteerdId && composer?.variant === 'inline' ? (
-              <div className="flex-1 min-h-0 overflow-y-auto">{composerNode}</div>
+              <div className="flex flex-1 min-h-0 flex-col">{composerNode}</div>
             ) : geselecteerdId ? (
               <>
                 {leesvenster}

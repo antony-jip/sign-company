@@ -33,6 +33,8 @@ import { bouwVerzending, verstuurPayload, verzendMetBedenktijd } from './verzend
 export type ComposerVariant = 'inline' | 'paneel' | 'volledig'
 
 export interface ComposerProps {
+  /** Inline zonder thread eronder: vult de hoogte van zijn kolom. */
+  losstaand?: boolean
   document: ComposerDocument
   /** inline onder een thread, paneel rechts (560 px), volledig op mobiel. */
   variant: ComposerVariant
@@ -111,7 +113,7 @@ function IngeplandToast({ label, onBewerk }: { label: string; onBewerk?: () => v
   )
 }
 
-export function Composer({ document: initieel, variant, onVerzonden, onSluiten, onHeropen }: ComposerProps) {
+export function Composer({ document: initieel, variant, onVerzonden, onSluiten, onHeropen, losstaand }: ComposerProps) {
   const navigate = useNavigate()
   const isMobiel = useMediaQuery('(max-width: 767px)')
   const venster = useVisueleViewport(variant === 'volledig')
@@ -385,7 +387,9 @@ export function Composer({ document: initieel, variant, onVerzonden, onSluiten, 
 
   const wortelCls = cn(
     'relative flex flex-col min-w-0 [&:focus-visible]:shadow-none',
-    variant === 'inline' && 'bg-card',
+    // Inline onder een thread groeit mee met de inhoud; als los venster in
+    // het leesvenster vult hij de hoogte, met de verzendbalk onderaan.
+    variant === 'inline' && (losstaand ? 'flex-1 min-h-0 bg-card' : 'bg-card'),
     variant === 'paneel' && 'fixed top-0 right-0 z-[10000] h-full w-[560px] max-w-[calc(100vw-2rem)] bg-background border-l border-border shadow-[-12px_0_32px_rgba(13,52,60,0.10)]',
     variant === 'volledig' && 'fixed inset-x-0 z-[60] bg-card',
   )
@@ -418,7 +422,7 @@ export function Composer({ document: initieel, variant, onVerzonden, onSluiten, 
 
       {/* Kop */}
       {variant === 'inline' && (
-        <div className="flex items-center justify-between gap-3 px-1 pb-1.5">
+        <div className={cn('flex items-center justify-between gap-3 pb-1.5', losstaand ? 'px-4 pt-3' : 'px-1')}>
           <div className="min-w-0 flex items-baseline gap-2">
             <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-petrol/70 font-semibold whitespace-nowrap">{kopLabel}</span>
             {doc.aan[0] && <span className="text-[12px] text-muted-foreground truncate">aan {ontvangerLabel(doc.aan[0])}{doc.aan.length > 1 ? ` +${doc.aan.length - 1}` : ''}</span>}
@@ -458,8 +462,8 @@ export function Composer({ document: initieel, variant, onVerzonden, onSluiten, 
       )}
 
       {/* Inhoud · overflow-x dicht: een brede handtekening trok anders het paneel scheef */}
-      <div className={cn('min-w-0', variant !== 'inline' && 'flex-1 min-h-0 overflow-y-auto overflow-x-hidden')}>
-        <div className={cn('min-w-0 max-w-full', variant === 'inline' ? 'px-1' : 'px-4 md:px-5')}>
+      <div className={cn('min-w-0', (variant !== 'inline' || losstaand) && 'flex-1 min-h-0 overflow-y-auto overflow-x-hidden')}>
+        <div className={cn('min-w-0 max-w-full', variant === 'inline' ? (losstaand ? 'px-4' : 'px-1') : 'px-4 md:px-5')}>
           {postvakken.meerdere && (
             <div className={veldRijCls}>
               <span className={veldLabelCls}>Van</span>
@@ -652,7 +656,7 @@ export function Composer({ document: initieel, variant, onVerzonden, onSluiten, 
             initieelHtml={initieelEigen}
             onChange={(html) => dispatch({ type: 'eigenHtml', html })}
             placeholder={isAntwoord ? 'Schrijf je antwoord...' : 'Schrijf je bericht...'}
-            minHoogteClass={variant === 'inline' ? 'min-h-[160px]' : 'min-h-[240px]'}
+            minHoogteClass={losstaand ? 'min-h-[280px]' : variant === 'inline' ? 'min-h-[160px]' : 'min-h-[240px]'}
             className="py-2"
           />
           <AIContentEditableToolbar editorRef={editorRef} onContentChange={() => dispatch({ type: 'eigenHtml', html: editorRef.current?.innerHTML || '' })} />
@@ -681,7 +685,7 @@ export function Composer({ document: initieel, variant, onVerzonden, onSluiten, 
       </div>
 
       {/* Voet */}
-      <div className={cn('flex items-center justify-between gap-2 py-2 border-t border-border/60 flex-shrink-0', variant === 'inline' ? 'px-1' : 'px-3 md:px-4')}>
+      <div className={cn('flex items-center justify-between gap-2 py-2 border-t border-border/60 flex-shrink-0', variant === 'inline' ? (losstaand ? 'px-4' : 'px-1') : 'px-3 md:px-4')}>
         <Werkbalk
           ref={linkKnopRef}
           editorRef={editorRef}
