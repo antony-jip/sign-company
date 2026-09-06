@@ -73,6 +73,8 @@ export interface ComposerBijlage {
   bron: 'upload' | 'storage' | 'origineel'
   pad?: string
   emailId?: string
+  /** Het bestand achter deze bijlage is weg; de composer toont hem als niet meer beschikbaar. */
+  ontbreekt?: boolean
 }
 
 export interface ComposerDocument {

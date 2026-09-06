@@ -71,7 +71,7 @@ export function BijlagenLijst({ bijlagen, bestanden, onVerwijder }: BijlagenLijs
       <div className="flex flex-wrap gap-2">
         {bijlagen.map((b, i) => {
           const file = files[i]
-          const ontbreekt = b.bron === 'upload' && !file
+          const ontbreekt = b.ontbreekt || (b.bron === 'upload' && !file)
           const preview = file ? previews.get(file) : undefined
           return (
             <div
@@ -94,6 +94,7 @@ export function BijlagenLijst({ bijlagen, bestanden, onVerwijder }: BijlagenLijs
                 <span className="text-muted-foreground text-[11px] leading-tight mt-0.5 font-mono tabular-nums flex items-center gap-1">
                   {formatBytes(b.grootte)}
                   {b.bron === 'origineel' && <Forward className="h-3 w-3 text-petrol" />}
+                  {ontbreekt && <span className="text-[#C0451A] font-sans">· niet meer beschikbaar</span>}
                   {file && viaLink.has(file) && <span className="text-petrol font-sans">· via link</span>}
                 </span>
               </div>

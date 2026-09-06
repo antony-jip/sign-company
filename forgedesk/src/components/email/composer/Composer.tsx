@@ -166,6 +166,7 @@ export function Composer({ document: initieel, variant, onVerzonden, onSluiten, 
   const { opgeslagenOm, flush, conceptId } = useAutosave(doc, {
     onId: (id) => patch({ id }),
     gepauzeerdRef,
+    bestandenRef,
   })
 
   const handtekeningHtml = useMemo(() => {

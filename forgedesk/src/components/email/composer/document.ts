@@ -240,13 +240,25 @@ export function documentVoorDoorsturen(bron: BronMail, body: EmailBody | null): 
   })
 }
 
+/**
+ * Een bijlage met bron 'upload' bestaat alleen als File in het geheugen van de
+ * composer die hem toevoegde. Staat er toch een in een bewaard concept (de
+ * upload naar Storage mislukte, of het concept is van vóór die route), dan is
+ * het bestand weg. Markeer hem, zodat de composer hem als niet meer
+ * beschikbaar toont in plaats van pas bij het verzenden te struikelen.
+ */
+function metOntbrekendeBijlagen(doc: ComposerDocument): ComposerDocument {
+  if (!doc.bijlagen.some((b) => b.bron === 'upload')) return doc
+  return { ...doc, bijlagen: doc.bijlagen.map((b) => (b.bron === 'upload' ? { ...b, ontbreekt: true } : b)) }
+}
+
 /** Uit de Concepten-map: de rij in `emails` met `concept` JSONB, of het document zelf. */
 export function documentUitConcept(concept: ComposerDocument | { id: string; concept: ComposerDocument | null }): ComposerDocument {
   if ('concept' in concept && !('modus' in concept)) {
     const rij = concept as { id: string; concept: ComposerDocument | null }
-    return documentVoorNieuw({ ...(rij.concept || {}), id: rij.id })
+    return metOntbrekendeBijlagen(documentVoorNieuw({ ...(rij.concept || {}), id: rij.id }))
   }
-  return documentVoorNieuw(concept as ComposerDocument)
+  return metOntbrekendeBijlagen(documentVoorNieuw(concept as ComposerDocument))
 }
 
 /** Alleen tags weghalen zodat "niets getypt" als leeg telt. */

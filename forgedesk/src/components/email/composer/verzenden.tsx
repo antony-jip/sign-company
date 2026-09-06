@@ -93,11 +93,14 @@ export async function bouwVerzending(doc: ComposerDocument, ctx: VerzendContext)
   const uploads: File[] = []
   const attachments: VerzendBijlage[] = []
   for (const b of doc.bijlagen) {
+    // Fail-closed: liever een zichtbare fout dan een mail die zonder de
+    // beloofde bijlage bij de klant aankomt. De composer toont zo'n bijlage
+    // als niet meer beschikbaar, dus dit treft alleen wie hem laat staan.
+    const kwijt = new Error(`Bijlage "${b.naam}" is niet meer beschikbaar. Haal hem uit het bericht of voeg hem opnieuw toe.`)
+    if (b.ontbreekt) throw kwijt
     if (b.bron === 'upload') {
       const file = ctx.bestanden.get(bestandSleutel(b.naam, b.grootte))
-      // Fail-closed: liever een zichtbare fout dan een mail die zonder de
-      // beloofde bijlage bij de klant aankomt.
-      if (!file) throw new Error(`Bijlage "${b.naam}" is niet meer beschikbaar; voeg hem opnieuw toe`)
+      if (!file) throw kwijt
       uploads.push(file)
     } else if (b.bron === 'storage' && b.pad) {
       attachments.push({ filename: b.naam, storagePath: b.pad, size: b.grootte, cleanupAfter: false })
