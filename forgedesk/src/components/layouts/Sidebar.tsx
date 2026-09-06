@@ -273,7 +273,9 @@ export function Sidebar() {
               {active && <span className="doen-sidebar-flame-accent z-10" />}
 
               {item.path === '/email' && mailOngelezen > 0 && (
-                <span className="absolute top-1 right-2 z-10 min-w-[16px] h-[16px] px-1 rounded-full bg-petrol text-white text-[9px] font-mono font-semibold tabular-nums inline-flex items-center justify-center pointer-events-none ring-2 ring-background">
+                /* Klein en binnen de tegel: een badge die eroverheen steekt
+                   maakt de rail rommelig, zeker bij "99+". */
+                <span className="pointer-events-none absolute right-1.5 top-1.5 z-10 inline-flex h-[15px] min-w-[15px] items-center justify-center rounded-full bg-flame px-[3px] font-mono text-[8.5px] font-bold leading-none tabular-nums text-white ring-[1.5px] ring-background">
                   {mailBadge}
                 </span>
               )}

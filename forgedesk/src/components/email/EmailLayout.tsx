@@ -42,6 +42,7 @@ import {
 } from './shell/mapConfig'
 import { useEigenSleutels } from './shell/toewijzing'
 import { VOORKEUR, useBoolVoorkeur, useVoorkeur, type Dichtheid, type SwipeLinks } from './shell/voorkeuren'
+import { GREEP_CLS, GREEP_LIJN_CLS, useSleepBreedte } from './shell/useSleepBreedte'
 import { chipsNaarQuery, heeftZoekopdracht, voegChipToe, type ZoekChip } from './shell/zoekChips'
 import { readerActies } from './reader'
 import { Composer, documentUitConcept, documentVoorAntwoord, documentVoorDoorsturen, documentVoorNieuw } from './composer'
@@ -76,6 +77,9 @@ export function EmailLayout() {
   const [dichtheid, zetDichtheid] = useVoorkeur<Dichtheid>(VOORKEUR.dichtheid, 'comfortabel', ['comfortabel', 'compact'])
   const [swipeLinks] = useVoorkeur<SwipeLinks>(VOORKEUR.swipeLinks, 'archiveren', ['archiveren', 'verwijderen'])
   const [railLabels, zetRailLabels] = useBoolVoorkeur(VOORKEUR.railLabels, true)
+  // De kolommen zijn versleepbaar; dubbelklikken op de greep zet hem terug.
+  const lijstSleep = useSleepBreedte(VOORKEUR.lijstBreedte, 470, { min: 260, max: 720 })
+  const kaartSleep = useSleepBreedte(VOORKEUR.kaartBreedte, 340, { min: 260, max: 520 }, 'links')
   const [klantkaartAan, zetKlantkaartAan] = useBoolVoorkeur(VOORKEUR.klantkaart, false)
   const [focusModus, zetFocusModus] = useBoolVoorkeur(VOORKEUR.focusModus, false)
 
@@ -542,11 +546,10 @@ export function EmailLayout() {
               als een muur tekst. */}
           <div
             className={cn(
-              'flex max-w-[46%] flex-shrink-0 flex-col border-r border-border/70 transition-[width] duration-200',
-              // Staat de klantkaart open, dan levert de lijst ruimte in; anders
-              // houdt de mail zelf te weinig breedte over.
-              klantkaartAan && geselecteerd ? 'w-[330px]' : 'w-[470px]',
+              'relative flex flex-shrink-0 flex-col border-r border-border/70',
+              !lijstSleep.sleept && 'transition-[width] duration-200',
             )}
+            style={{ width: klantkaartAan && geselecteerd ? Math.min(lijstSleep.breedte, 360) : lijstSleep.breedte }}
           >
             <div className="px-3 pt-3 pb-2 border-b border-border/60 flex-shrink-0">
               <Zoekbalk
@@ -591,6 +594,16 @@ export function EmailLayout() {
               onBulkLabel={(label, aan) => { void mailStore.label([...aangevinkt], label, aan) }}
             />
             {lijst}
+            <div
+              {...lijstSleep.greepProps}
+              className={cn(GREEP_CLS, '-right-[3px]')}
+              role="separator"
+              aria-orientation="vertical"
+              aria-label="Breedte van de lijst"
+              title="Sleep om de lijst breder of smaller te maken. Dubbelklik zet hem terug."
+            >
+              <span className={GREEP_LIJN_CLS} />
+            </div>
           </div>
 
           <div className="relative flex-1 flex flex-col min-w-[420px]">
@@ -600,11 +613,27 @@ export function EmailLayout() {
               <>
                 {/* De kaart schuift over het leesvenster; de mail houdt zijn
                     eigen ruimte zodat de titel er niet onder verdwijnt. */}
-                <div className={cn('flex flex-1 min-h-0 flex-col', klantkaartAan && geselecteerd && 'lg:pr-[340px]')}>
+                <div
+                  className={cn('flex flex-1 min-h-0 flex-col', klantkaartAan && geselecteerd && 'lg:pr-[var(--kaart-breedte)]')}
+                  style={{ ['--kaart-breedte' as string]: `${kaartSleep.breedte}px` }}
+                >
                   {leesvenster}
                 </div>
                 {klantkaartAan && geselecteerd && (
                   <Klantkaart
+                    breedte={kaartSleep.breedte}
+                    greep={(
+                      <div
+                        {...kaartSleep.greepProps}
+                        className={cn(GREEP_CLS, '-left-[3px]')}
+                        role="separator"
+                        aria-orientation="vertical"
+                        aria-label="Breedte van de klantkaart"
+                        title="Sleep om de klantkaart breder of smaller te maken. Dubbelklik zet hem terug."
+                      >
+                        <span className={GREEP_LIJN_CLS} />
+                      </div>
+                    )}
                     mail={geselecteerd}
                     open
                     onSluiten={() => zetKlantkaartAan(false)}

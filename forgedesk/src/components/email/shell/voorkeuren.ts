@@ -11,6 +11,9 @@ export const VOORKEUR = {
   swipeLinks: 'doen_mail_swipe_links',
   klantkaart: 'doen_mail_klantkaart',
   paneelBreedte: 'doen_mail_paneel_breedte',
+  lijstBreedte: 'doen_mail_lijst_breedte',
+  kaartBreedte: 'doen_mail_kaart_breedte',
+  railIngeklapt: 'doen_mail_rail_ingeklapt',
   focusModus: 'doen_email_focus_modus',
 } as const
 

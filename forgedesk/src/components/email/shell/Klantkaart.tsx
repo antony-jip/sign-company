@@ -19,6 +19,10 @@ import { vergeetKoppelingChips } from './koppelingChips'
 import { KlantToevoegenDialog } from './KlantToevoegenDialog'
 
 interface Props {
+  /** Gesleepte breedte in pixels. */
+  breedte?: number
+  /** De sleepgreep aan de linkerrand, geleverd door de shell. */
+  greep?: React.ReactNode
   mail: EmailLijstItem | null
   open: boolean
   onSluiten: () => void
@@ -58,7 +62,7 @@ function Kop({ tekst, actie }: { tekst: string; actie?: React.ReactNode }) {
  * en wat is er eerder gemaild. Elke regel is een sprong; projectregels
  * nemen een gesleepte mail aan en koppelen hem aan dat project.
  */
-export function Klantkaart({ mail, open, onSluiten, onZoekKlant, onSelectMail, eigenAdres }: Props) {
+export function Klantkaart({ mail, open, onSluiten, onZoekKlant, onSelectMail, eigenAdres, breedte, greep }: Props) {
   const { navigateWithTab } = useNavigateWithTab()
   const afzenderEmail = mail ? extractSenderEmail(mail.van).toLowerCase() : ''
   const afzenderNaam = mail ? extractSenderName(mail.van) : ''
@@ -152,12 +156,14 @@ export function Klantkaart({ mail, open, onSluiten, onZoekKlant, onSelectMail, e
   return (
     <aside
       className={cn(
-        'absolute inset-y-0 right-0 z-30 hidden w-[340px] max-w-[85vw] flex-col border-l border-border bg-card lg:flex',
+        'absolute inset-y-0 right-0 z-30 hidden max-w-[85vw] flex-col border-l border-border bg-card lg:flex',
         'shadow-[-14px_0_36px_rgba(13,52,60,0.10)] overflow-hidden',
         'motion-safe:animate-in motion-safe:slide-in-from-right-4 motion-safe:duration-200',
       )}
       aria-label="Klantkaart"
+      style={{ width: breedte ?? 340 }}
     >
+      {greep}
       <div className="flex items-center justify-between px-4 h-[52px] border-b border-border/70">
         <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Klantkaart</p>
         <button type="button" onClick={onSluiten} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" aria-label="Klantkaart sluiten" title="Klantkaart sluiten">

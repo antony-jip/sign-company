@@ -96,9 +96,11 @@ export function Mappenrail({ actieveMap, tellers, onKies, onNieuw, labels, onLab
                   {teller}
                 </span>
               ) : (
+                /* Ingeklapt past er geen getal naast het icoon; een kleine
+                   badge in de hoek houdt de kolom rustig. */
                 <span className={cn(
-                  'absolute top-0.5 right-0.5 font-mono text-[10px] font-semibold tabular-nums min-w-[16px] h-[16px] px-1 rounded-full inline-flex items-center justify-center leading-none ring-2 ring-[#F3F6F6] dark:ring-[hsl(190_38%_6%)]',
-                  m.id === 'inbox' ? 'bg-flame text-white' : 'bg-black/[0.08] dark:bg-white/[0.12] text-foreground/80',
+                  'pointer-events-none absolute right-1 top-1 inline-flex h-[14px] min-w-[14px] items-center justify-center rounded-full px-[3px] font-mono text-[8.5px] font-bold leading-none tabular-nums ring-[1.5px] ring-[#F3F6F6] dark:ring-[hsl(190_38%_6%)]',
+                  m.id === 'inbox' ? 'bg-flame text-white' : 'bg-black/[0.10] text-foreground/70 dark:bg-white/[0.14]',
                 )}>{teller > 99 ? '99+' : teller}</span>
               ))}
             </button>
