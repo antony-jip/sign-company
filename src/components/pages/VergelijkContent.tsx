@@ -6,10 +6,9 @@ import {
   PER_SEAT_OPSTART_MIN, PER_SEAT_OPSTART_MAX,
 } from '@/data/pricing'
 import {
-  groepen, verderIn, PAKKETTEN, PEILDATUM, BRONNEN,
+  groepen, PAKKETTEN, PEILDATUM, BRONNEN,
   GRIPP_VANAF, GRIPP_VANAF_GEBRUIKERS, GRIPP_EXTRA_MIN, GRIPP_EXTRA_MAX,
-  type Cel,
-} from '@/data/vergelijk'
+  type Cel, } from '@/data/vergelijk'
 
 /* Geen 'use client': er valt hier niets te klikken behalve links, dus de hele
    pagina komt als HTML uit de server en de SSR-check (DESIGN.md, Motion)
@@ -27,7 +26,6 @@ export default function VergelijkContent() {
     <>
       <Kop />
       <Tabel />
-      <Eerlijk />
       <Kosten />
       <Afsluiter />
     </>
@@ -152,42 +150,6 @@ function CelWaarde({ cel }: { cel: Cel }) {
    Eerlijk · waar zij verder zijn. Kort, want dit maakt de tabel
    erboven geloofwaardig; het is geen tweede tabel.
    ───────────────────────────────────────────────────────────────── */
-function Eerlijk() {
-  return (
-    <section className="bg-bg">
-      <div className="container-site py-14 md:py-28">
-        <div className="flex flex-wrap items-end justify-between gap-x-10 gap-y-3 mb-10 md:mb-14">
-          <h2
-            className="font-heading font-bold text-petrol leading-[1.0]"
-            style={{ fontSize: 'clamp(30px, 4vw, 52px)', letterSpacing: '-0.03em' }}
-          >
-            Eerlijk: waar zij verder zijn<span className="text-flame">.</span>
-          </h2>
-          <p className="text-[15px] md:text-[16px] text-muted max-w-xs leading-[1.55]">
-            Beide pakketten bestaan langer. Dat zie je hier.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-10">
-          {verderIn.map((p) => (
-            <div key={p.pakket} className="border-t border-petrol/10 pt-6">
-              <h3 className="font-heading text-[21px] md:text-[24px] font-bold text-ink leading-none mb-4">
-                {p.pakket}
-              </h3>
-              <ul>
-                {p.punten.map((punt) => (
-                  <li key={punt} className="py-3 border-b border-petrol/10 text-[15px] md:text-[16px] text-ink leading-[1.5]">
-                    {punt}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
 
 /* ─────────────────────────────────────────────────────────────────
    Wat het kost · drie stille kaarten en een bronregel. De doen.-prijs
