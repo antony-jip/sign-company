@@ -337,15 +337,36 @@ async function meldToegangIngetrokken(userId: string): Promise<void> {
  * enige rij.
  */
 async function getEmailCredentials(userId: string, accountId?: string | null): Promise<EmailCredentials> {
-  const kolommen = 'gmail_address, encrypted_app_password, smtp_host, smtp_port, imap_host, imap_port, auth_type, oauth_refresh_token_enc, oauth_access_token_enc, oauth_token_verloopt_op'
+  // ── GEDEELD-MET-API: credentials zonder 244 ─────────────────────────────
+  // auth_type en de drie oauth-kolommen komen uit migratie 244. Zolang die niet
+  // gedraaid is antwoordt PostgREST met 42703 of PGRST204 en faalt de HELE
+  // select, waarna verzenden meldt dat er geen mailbox gekoppeld is. Daarom
+  // eerst de volledige select, en bij een kolomfout opnieuw met de kolommen van
+  // vóór 244. Zie dezelfde helper in fetch-emails, read-email,
+  // prefetch-email-bodies, email-imap-action en email-settings.
+  const KOLOMMEN_VOOR_244 = 'gmail_address, encrypted_app_password, smtp_host, smtp_port, imap_host, imap_port'
+  const KOLOMMEN = `${KOLOMMEN_VOOR_244}, auth_type, oauth_refresh_token_enc, oauth_access_token_enc, oauth_token_verloopt_op`
+  const isKolomFout = (fout: { code?: string; message?: string } | null): boolean => {
+    if (!fout) return false
+    if (fout.code === '42703' || fout.code === 'PGRST204') return true
+    return /column .* does not exist|could not find the .* column/i.test(fout.message || '')
+  }
   type Rij = Record<string, unknown>
 
   async function haalRij(keuze: 'account' | 'standaard' | 'enige') {
-    let vraag = supabaseAdmin.from('user_email_settings').select(kolommen).eq('user_id', userId)
-    if (keuze === 'account') vraag = vraag.eq('id', accountId as string)
-    if (keuze === 'standaard') vraag = vraag.eq('is_standaard', true)
-    const { data, error } = await vraag.maybeSingle()
-    return { rij: (data as Rij | null) ?? null, fout: error }
+    const bouw = (kolommen: string) => {
+      let vraag = supabaseAdmin.from('user_email_settings').select(kolommen).eq('user_id', userId)
+      if (keuze === 'account') vraag = vraag.eq('id', accountId as string)
+      if (keuze === 'standaard') vraag = vraag.eq('is_standaard', true)
+      return vraag.maybeSingle()
+    }
+    const volledig = await bouw(KOLOMMEN)
+    if (!isKolomFout(volledig.error)) {
+      return { rij: (volledig.data as Rij | null) ?? null, fout: volledig.error }
+    }
+    const oud = await bouw(KOLOMMEN_VOOR_244)
+    const rij = (oud.data as Rij | null) ?? null
+    return { rij: rij ? { ...rij, auth_type: 'wachtwoord', oauth_refresh_token_enc: null, oauth_access_token_enc: null, oauth_token_verloopt_op: null } : null, fout: oud.error }
   }
 
   let data: Rij | null = null

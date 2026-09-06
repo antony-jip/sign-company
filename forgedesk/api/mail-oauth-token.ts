@@ -288,6 +288,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     .select('user_id, gmail_address, auth_type, imap_host, imap_port, oauth_refresh_token_enc, oauth_access_token_enc, oauth_token_verloopt_op')
     .eq('user_id', userId)
     .maybeSingle()
+  // Zonder migratie 244 bestaan de oauth-kolommen niet en faalt de select. Dat
+  // is geen kapotte mailbox maar een omgeving die nog niet klaar is voor OAuth;
+  // zeg dat, in plaats van "geen instellingen gevonden".
+  if (error && /42703|PGRST204|column .* does not exist|could not find the .* column/i.test(`${error.code} ${error.message}`)) {
+    return res.status(503).json({ error: 'Koppelen met Google of Microsoft is nog niet beschikbaar in deze omgeving', reden: 'niet_geconfigureerd' })
+  }
   if (error || !data) return res.status(404).json({ error: 'Geen email instellingen gevonden' })
   if (!isOauthKoppeling(data.auth_type as string)) {
     return res.status(400).json({ error: 'Deze mailbox gebruikt geen OAuth' })

@@ -3,7 +3,8 @@ import { MAIL_MAPPEN } from './types'
 import { getPostvakken } from '@/services/postvakService'
 import { wijsToe as wijsToeInDb } from '@/services/teamInboxService'
 import {
-  eersteRegelVoor, getRegels, leesGezien, regelsBeschikbaar, schrijfGezien,
+  eersteRegelVoor, getRegels, isGezien, laatLos, markeerGezien, neemInBehandeling,
+  regelsBeschikbaar, vergeetGezien, zorgVoorGezien,
   type MailRegel,
 } from '@/services/mailRegelService'
 import { koppel as koppelAan } from '@/services/koppelingService'
@@ -236,23 +237,40 @@ class MailStore {
    * inbox en bij elke realtime-INSERT; `doen_mail_regels_gezien` houdt bij wat
    * al langs is geweest, want de database heeft daar geen kolom voor.
    */
+  /**
+   * Twee instappunten (het laden van de inbox en een realtime-INSERT) kunnen
+   * elkaar overlappen. Markeren gebeurt daarom synchroon vóór de eerste await,
+   * en de ids van deze ronde worden geclaimd zodat de andere lus ze overslaat;
+   * anders draait een regel twee keer en archiveert hij op IMAP dubbel.
+   */
   async pasRegelsToe(items: EmailLijstItem[]): Promise<number> {
     if (!regelsBeschikbaar() || items.length === 0) return 0
+    await zorgVoorGezien()
     const regels = await this.laadRegels()
     if (regels.length === 0) return 0
-    const gezien = leesGezien()
-    const account = this.actiefAccountId()
-    let toegepast = 0
+
+    const kandidaten: EmailLijstItem[] = []
     for (const item of items) {
-      if (gezien.has(item.id)) continue
-      gezien.add(item.id)
-      if (item.map !== 'inbox') continue
-      const regel = eersteRegelVoor(regels, item, account)
-      if (!regel) continue
-      toegepast += 1
-      await this.voerRegelUit(regel, item)
+      if (isGezien(item.id)) continue
+      kandidaten.push(item)
     }
-    schrijfGezien(gezien)
+    const geclaimd = new Set(neemInBehandeling(kandidaten.map((i) => i.id)))
+    if (geclaimd.size === 0) return 0
+    markeerGezien(geclaimd)
+
+    let toegepast = 0
+    try {
+      for (const item of kandidaten) {
+        if (!geclaimd.has(item.id)) continue
+        if (item.map !== 'inbox') continue
+        const regel = eersteRegelVoor(regels, item, null)
+        if (!regel) continue
+        toegepast += 1
+        await this.voerRegelUit(regel, item)
+      }
+    } finally {
+      laatLos(geclaimd)
+    }
     return toegepast
   }
 
@@ -281,9 +299,8 @@ class MailStore {
     const pagina = await getEmailsPage('inbox', null, aantal, this.actiefAccountId()) as unknown as EmailLijstItem[]
     for (const rij of pagina) this.neemOp(rij)
     // Zonder de gezien-lijst: dit is een uitdrukkelijke opdracht van de gebruiker.
-    const gezien = leesGezien()
-    for (const rij of pagina) gezien.delete(rij.id)
-    schrijfGezien(gezien)
+    await zorgVoorGezien()
+    vergeetGezien(pagina.map((rij) => rij.id))
     return this.pasRegelsToe(pagina)
   }
 

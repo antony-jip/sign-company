@@ -280,12 +280,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Bij een OAuth-koppeling bepaalt de provider het adres en de hosts; de
       // velden uit het formulier mogen die niet overschrijven. Opslaan is dan
       // alleen het herstelpad ("Opnieuw verbinden").
-      const { error } = await supabaseAdmin
-        .from('user_email_settings')
-        .update(heeftOauth
-          ? { updated_at: basisVelden.updated_at, ...(gevraagdAuthType ? { auth_type: gevraagdAuthType } : {}) }
-          : { ...basisVelden, ...(gevraagdAuthType ? { auth_type: gevraagdAuthType } : {}) })
-        .eq('user_id', userId)
+      const velden = heeftOauth
+        ? { updated_at: basisVelden.updated_at, ...(gevraagdAuthType ? { auth_type: gevraagdAuthType } : {}) }
+        : { ...basisVelden, ...(gevraagdAuthType ? { auth_type: gevraagdAuthType } : {}) }
+      // auth_type komt uit migratie 244. Zolang die niet gedraaid is zou het
+      // opslaan van een gewoon app-wachtwoord hier hard falen; dan schrijven we
+      // de rest en laten we auth_type weg (wachtwoord is toch de standaard).
+      let { error } = await supabaseAdmin.from('user_email_settings').update(velden).eq('user_id', userId)
+      if (error && isKolomFout(error)) {
+        const { auth_type: _weg, ...zonderAuthType } = velden as Record<string, unknown>
+        const tweede = await supabaseAdmin.from('user_email_settings').update(zonderAuthType).eq('user_id', userId)
+        error = tweede.error
+      }
       if (error) {
         console.error('Supabase update fout:', JSON.stringify(error))
         return res.status(500).json({ error: `Kon email instellingen niet opslaan: ${error.message || error.code || JSON.stringify(error)}` })
