@@ -328,16 +328,18 @@ function isToegangGeweigerd(fout: unknown): boolean {
 // Migratie 245 zet (account_id, folder) naast (user_id, folder); migratie 246
 // laat de oude sleutel vallen. Zolang beide werelden kunnen bestaan proberen we
 // de nieuwe sleutel eerst en vallen we terug op de oude. PostgREST geeft 42703
-// als de kolom er nog niet is en 42P10 als er bij de opgegeven kolommen geen
-// unieke index te vinden is; de terugval in deze bestanden ving alleen dat
-// eerste geval, dus na 246 zou de write blijven falen. account_id gaat ook in
-// de rij mee, anders vindt de nieuwe sleutel nooit een bestaande rij.
+// bij een select op een kolom die er nog niet is, PGRST204 als die kolom in de
+// lading van een insert of upsert staat, en 42P10 als er bij de opgegeven
+// kolommen geen unieke index te vinden is. Alle drie horen erbij: zonder
+// PGRST204 staat de sync stil op een database zonder 245, zonder 42P10 na 246.
+// account_id gaat ook in de rij mee, anders vindt de nieuwe sleutel nooit een
+// bestaande rij.
 // Dezelfde ladder staat in src/trigger/mail-idle.ts en in de andere
 // api-mailbestanden.
 function isOnbekendeSleutel(fout: { code?: string; message?: string } | null): boolean {
   if (!fout) return false
-  return fout.code === '42703' || fout.code === '42P10'
-    || /column .* does not exist|no unique or exclusion constraint/i.test(fout.message || '')
+  return fout.code === '42703' || fout.code === '42P10' || fout.code === 'PGRST204'
+    || /column .* does not exist|could not find the .* column|no unique or exclusion constraint/i.test(fout.message || '')
 }
 
 type SyncStateUitkomst = { error: { message: string; code?: string } | null }
@@ -1003,40 +1005,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .maybeSingle()
       const mailOrgId = (orgProfiel?.organisatie_id as string | null) ?? null
 
-      const { data: inserted, error: insertErr } = await supabaseAdmin
-        .from('emails')
-        .insert({
-          user_id,
-          organisatie_id: mailOrgId,
-          // Uit welk postvak deze mail vertrok. Zonder dit is verzonden mail uit
-          // een gedeeld postvak onzichtbaar voor het team, want de policy uit
-          // migratie 245 eist een account_id.
-          ...(creds?.account_id ? { account_id: creds.account_id } : {}),
-          message_id: sentMessageId,
-          in_reply_to: in_reply_to || null,
-          thread_id: effectiveThreadId,
-          map: 'verzonden',
-          uid: verzondenUid,
-          imap_folder: verzondenMap || 'SENT',
-          from_address: gmail_address,
-          from_name: fromName || '',
-          van: fromAddress,
-          aan: to,
-          onderwerp: subject,
-          body_html: html || null,
-          body_text: body || subject,
-          inhoud: html || body || '',
-          datum: new Date().toISOString(),
-          gelezen: true,
-          bijlagen: attachments?.length || 0,
-          has_attachments: (attachments?.length || 0) > 0,
-          gmail_id: verzondenUid ? String(verzondenUid) : '',
-          cached_at: new Date().toISOString(),
-          wacht_op_reactie,
-          beantwoord: false,
-        })
-        .select('id')
-        .single()
+      // Via de terugval-ladder: zonder migratie 245 kent emails geen account_id
+      // en zou deze insert in zijn geheel falen, waarna een mail die al de deur
+      // uit is niet in Verzonden belandt.
+      const verzondenRij = {
+        user_id,
+        organisatie_id: mailOrgId,
+        // Uit welk postvak deze mail vertrok. Zonder dit is verzonden mail uit
+        // een gedeeld postvak onzichtbaar voor het team, want de policy uit
+        // migratie 245 eist een account_id.
+        ...(creds?.account_id ? { account_id: creds.account_id } : {}),
+        message_id: sentMessageId,
+        in_reply_to: in_reply_to || null,
+        thread_id: effectiveThreadId,
+        map: 'verzonden',
+        uid: verzondenUid,
+        imap_folder: verzondenMap || 'SENT',
+        from_address: gmail_address,
+        from_name: fromName || '',
+        van: fromAddress,
+        aan: to,
+        onderwerp: subject,
+        body_html: html || null,
+        body_text: body || subject,
+        inhoud: html || body || '',
+        datum: new Date().toISOString(),
+        gelezen: true,
+        bijlagen: attachments?.length || 0,
+        has_attachments: (attachments?.length || 0) > 0,
+        gmail_id: verzondenUid ? String(verzondenUid) : '',
+        cached_at: new Date().toISOString(),
+        wacht_op_reactie,
+        beantwoord: false,
+      }
+      const { data: inserted, error: insertErr } = await insertMetAccountTerugval('emails', verzondenRij)
       if (insertErr) throw insertErr
 
       // ─── Sales Inbox v1: vervangen-niet-stapelen ───
