@@ -12,7 +12,10 @@ import { useAuth } from '@/contexts/AuthContext'
 import { EmailActionsPopover, useAfzenderStatus } from '@/components/email/EmailActionsPopover'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
+import { useFunctie } from '@/hooks/useFunctie'
+import { extractSenderEmail } from '@/components/email/emailHelpers'
 import { Bericht, type AntwoordModus } from './Bericht'
+import { BodyFrame } from './BodyFrame'
 import { bepaalOpenBerichten, deelnemersLabel, deelnemersVan, sorteerOudNaarNieuw } from './thread'
 import { chipsVoor, SOORT_LABEL, type KoppelingChip } from './koppelingen'
 
@@ -194,6 +197,17 @@ export function ConversationView({ emailId, onSluiten, onAntwoord, onVolgende, o
   const [klantSignal, zetKlantSignal] = useState(0)
   const [koppelOpen, zetKoppelOpen] = useState(false)
   const [geselecteerdeBody, zetGeselecteerdeBody] = useState<EmailBody | null>(null)
+  const blokkeerAfbeeldingen = useFunctie('mail_afbeeldingen_blokkeren')
+  const [citaatOpen, zetCitaatOpen] = useState<Set<string>>(() => new Set())
+  const [afbeeldingenGeladen, zetAfbeeldingenGeladen] = useState<Set<string>>(() => new Set())
+  const zetInSet = useCallback((zet: React.Dispatch<React.SetStateAction<Set<string>>>, id: string, aan: boolean) => {
+    zet((huidig) => {
+      if (huidig.has(id) === aan) return huidig
+      const volgende = new Set(huidig)
+      if (aan) volgende.add(id); else volgende.delete(id)
+      return volgende
+    })
+  }, [])
 
   const handleKoppel = useCallback(async (soort: KoppelingSoort, doelId: string) => {
     if (!mailUitStore) return
@@ -296,13 +310,21 @@ export function ConversationView({ emailId, onSluiten, onAntwoord, onVolgende, o
               onToggle={() => toggle(bericht.id)}
               onAntwoord={(modus, body) => onAntwoord(modus, bericht, body)}
               inhoud={(body, laden, fout, opnieuw) => (
-                <BerichtInhoud
-                  body={body}
-                  laden={laden}
-                  fout={fout}
-                  opnieuw={opnieuw}
-                  onBody={bericht.id === emailId ? zetGeselecteerdeBody : undefined}
-                />
+                <BerichtInhoud body={body} onBody={bericht.id === emailId ? zetGeselecteerdeBody : undefined}>
+                  <BodyFrame
+                    body={body}
+                    laden={laden}
+                    fout={fout}
+                    opnieuw={opnieuw}
+                    afzender={extractSenderEmail(bericht.van)}
+                    blokkeren={blokkeerAfbeeldingen}
+                    afbeeldingenGeladen={afbeeldingenGeladen.has(bericht.id)}
+                    onAfbeeldingenLaden={() => zetInSet(zetAfbeeldingenGeladen, bericht.id, true)}
+                    toonCitaat={citaatOpen.has(bericht.id)}
+                    onToonCitaat={(aan) => zetInSet(zetCitaatOpen, bericht.id, aan)}
+                    compact={compact}
+                  />
+                </BerichtInhoud>
               )}
             />
           ))}
@@ -327,16 +349,8 @@ export function ConversationView({ emailId, onSluiten, onAntwoord, onVolgende, o
   )
 }
 
-/** Tijdelijke tekstweergave; punt 2 vervangt dit door BodyFrame. */
-function BerichtInhoud({ body, laden, fout, opnieuw, onBody }: { body: EmailBody | null; laden: boolean; fout?: string; opnieuw: () => void; onBody?: (body: EmailBody | null) => void }) {
+/** Geeft de body van het geselecteerde bericht door aan de kop (afzenderbanner, popover). */
+function BerichtInhoud({ body, onBody, children }: { body: EmailBody | null; onBody?: (body: EmailBody | null) => void; children: ReactNode }) {
   useEffect(() => { onBody?.(body) }, [body, onBody])
-  if (fout && !body) {
-    return (
-      <p className="text-[13px] text-muted-foreground">
-        Kon de mail niet ophalen · <button type="button" onClick={opnieuw} className="font-semibold text-petrol hover:underline">Opnieuw</button>
-      </p>
-    )
-  }
-  if (!body) return laden ? null : <p className="text-[13px] text-muted-foreground">Geen inhoud.</p>
-  return <div className="whitespace-pre-wrap text-[14px] leading-[1.55] text-foreground">{body.tekst || body.html?.replace(/<[^>]*>/g, ' ') || ''}</div>
+  return <>{children}</>
 }
