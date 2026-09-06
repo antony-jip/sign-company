@@ -5,7 +5,7 @@ import type { EmailLijstItem, MailMap } from './types'
 /** Dezelfde kolommen als emails_list_view; de rest van de rij (concept, fts, tracking) blijft buiten de store. */
 const LIJST_KOLOMMEN: Array<keyof EmailLijstItem> = [
   'id', 'gmail_id', 'uid', 'message_id', 'van', 'aan', 'to_addresses', 'cc_addresses', 'onderwerp', 'datum',
-  'gelezen', 'starred', 'labels', 'bijlagen', 'map', 'from_name', 'from_address', 'imap_folder', 'pinned',
+  'gelezen', 'starred', 'labels', 'bijlagen', 'map', 'from_name', 'from_address', 'imap_folder', 'account_id', 'pinned',
   'snoozed_until', 'thread_id', 'attachment_meta', 'has_attachments', 'body_text', 'created_at',
   'is_aanvraag', 'aanvraag_zekerheid', 'aanvraag_samenvatting', 'aanvraag_verborgen',
   'wacht_op_reactie', 'beantwoord', 'toegewezen_aan', 'toegewezen_op',

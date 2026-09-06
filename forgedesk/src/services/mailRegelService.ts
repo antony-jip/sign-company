@@ -173,11 +173,20 @@ export function heeftVoorwaarde(regel: MailRegel): boolean {
   return !!(v.afzenderBevat?.trim() || v.onderwerpBevat?.trim() || v.domeinIs?.trim() || v.aanBevat?.trim() || v.heeftBijlage)
 }
 
-/** De eerste passende, actieve regel. Volgorde telt: bovenaan wint. */
-export function eersteRegelVoor(regels: MailRegel[], item: EmailLijstItem, accountId: string | null): MailRegel | null {
+/**
+ * De eerste passende, actieve regel. Volgorde telt: bovenaan wint.
+ *
+ * Een regel met een postvak vergelijkt met het postvak waar de mail binnenkwam
+ * (`item.account_id`), niet met wat er in de UI geselecteerd staat. Dat laatste
+ * viel bij "Alle postvakken" helemaal weg, zodat een regel voor postvak A ook
+ * de mail van postvak B raakte. `account_id` komt uit migratie 245: zolang dat
+ * veld ontbreekt is het postvak onbekend en slaan we de regel over, want gokken
+ * betekent hier archiveren in het verkeerde postvak.
+ */
+export function eersteRegelVoor(regels: MailRegel[], item: EmailLijstItem, _uiPostvak?: string | null): MailRegel | null {
   for (const regel of regels) {
     if (!regel.actief || !heeftVoorwaarde(regel)) continue
-    if (regel.accountId && accountId && regel.accountId !== accountId) continue
+    if (regel.accountId && regel.accountId !== item.account_id) continue
     if (regelPast(regel, item)) return regel
   }
   return null

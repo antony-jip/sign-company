@@ -205,7 +205,10 @@ export async function getEmailsPage(map: string, cursor: EmailPageCursor | null,
   // lijstkolommen uit de view.
   const viaTabel = MAPPEN_VIA_TABEL.has(map) || (!!accountId && accountKolomBekend !== false)
   if (viaTabel) {
-    const extra = accountId ? 'id, wacht_op_reactie, beantwoord, toegewezen_aan, toegewezen_op' : 'id, wacht_op_reactie, beantwoord'
+    // account_id gaat mee zodra er toch al op postvak gefilterd wordt: de
+    // regels moeten weten in welk postvak een mail binnenkwam. Zonder 245
+    // bestaat de kolom niet, en dan komt deze tak hier niet eens langs.
+    const extra = accountId ? 'id, account_id, wacht_op_reactie, beantwoord, toegewezen_aan, toegewezen_op' : 'id, wacht_op_reactie, beantwoord'
     const idsQ = pasMapFilterToe(
       metAccount(client.from('emails').select(extra).eq('user_id', uid) as unknown as LijstBouwer, accountId),
       map,
@@ -223,7 +226,7 @@ export async function getEmailsPage(map: string, cursor: EmailPageCursor | null,
       throw error
     }
     if (accountId) accountKolomBekend = true
-    type Vlaggen = { id: string; wacht_op_reactie?: boolean; beantwoord?: boolean; toegewezen_aan?: string | null; toegewezen_op?: string | null }
+    type Vlaggen = { id: string; account_id?: string | null; wacht_op_reactie?: boolean; beantwoord?: boolean; toegewezen_aan?: string | null; toegewezen_op?: string | null }
     const vlaggen = new Map(((treffers || []) as unknown as Vlaggen[]).map((r, i) => [r.id, { i, r }]))
     if (vlaggen.size === 0) return []
     const { data: rijen, error: rijenErr } = await client
@@ -237,6 +240,7 @@ export async function getEmailsPage(map: string, cursor: EmailPageCursor | null,
         const v = vlaggen.get(e.id as string)?.r
         return alsLijstItem({
           ...e,
+          ...(v && 'account_id' in v ? { account_id: v.account_id ?? null } : {}),
           wacht_op_reactie: v?.wacht_op_reactie,
           beantwoord: v?.beantwoord,
           toegewezen_aan: v?.toegewezen_aan ?? null,

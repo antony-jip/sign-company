@@ -29,6 +29,8 @@ export interface EmailLijstItem {
   from_name?: string | null
   from_address?: string | null
   imap_folder?: string | null
+  /** Het postvak waar de mail binnenkwam (migratie 245). Ontbreekt zolang die niet gedraaid is, en dan is het postvak onbekend. */
+  account_id?: string | null
   pinned?: boolean | null
   snoozed_until?: string | null
   thread_id?: string | null
