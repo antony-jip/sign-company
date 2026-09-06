@@ -186,10 +186,12 @@ export function TeamLayout() {
   // ---- state ---------------------------------------------------------------
   const [searchParams] = useSearchParams();
   const tabUitUrl = searchParams.get('tab');
-  const [activeTab, setActiveTab] = useState<TeamTab>(isTeamTab(tabUitUrl) ? tabUitUrl : 'overzicht');
+  // ?tab=bezetting telt alleen als de schakelaar aan staat; anders overzicht.
+  const gevraagdeTab: TeamTab | null = isTeamTab(tabUitUrl) && (tabUitUrl !== 'bezetting' || bezettingAan) ? tabUitUrl : null;
+  const [activeTab, setActiveTab] = useState<TeamTab>(gevraagdeTab ?? 'overzicht');
   useEffect(() => {
-    if (isTeamTab(tabUitUrl)) setActiveTab(tabUitUrl);
-  }, [tabUitUrl]);
+    if (gevraagdeTab) setActiveTab(gevraagdeTab);
+  }, [gevraagdeTab]);
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>([]);
   const [verlofLijst, setVerlofLijst] = useState<Verlof[]>([]);
   const [loading, setLoading] = useState(true);
