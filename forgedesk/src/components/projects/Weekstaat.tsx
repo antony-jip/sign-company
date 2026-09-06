@@ -1,13 +1,15 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ChevronLeft, ChevronRight, Lock, Plus } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Lock, Plus, Send } from 'lucide-react'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
 import { cn } from '@/lib/utils'
-import { createTijdregistratie, updateTijdregistratie, deleteTijdregistratie, standaardUrenStatus } from '@/services/tijdregistratieService'
+import { createTijdregistratie, updateTijdregistratie, deleteTijdregistratie, standaardUrenStatus, zetUrenStatus } from '@/services/tijdregistratieService'
+import { stuurUrenWeekMelding } from '@/services/urenWeekService'
+import { StatusBadge } from '@/components/shared/StatusBadge'
 import { getProjectUrenBudget, type ProjectUrenBudget } from '@/services/projectUrenService'
 import { kostprijsVoor, uurtariefVoorkeuze } from '@/utils/kostprijs'
 import { contractOpDatum, contractUrenOpDag, datumPlusDagen, maandagVan } from '@/utils/contracturen'
@@ -81,13 +83,11 @@ interface WeekstaatProps {
   onWeekOffsetChange: (offset: number) => void
   goedkeurenAan: boolean
   onGewijzigd: () => Promise<void> | void
-  /** Knop en chip voor indienen; alleen met uren_goedkeuren aan. */
-  kop?: ReactNode
 }
 
 export function Weekstaat({
   registraties, projecten, urenVelden, eigenMedewerker, userId, contracten, settings,
-  weekOffset, onWeekOffsetChange, goedkeurenAan, onGewijzigd, kop,
+  weekOffset, onWeekOffsetChange, goedkeurenAan, onGewijzigd,
 }: WeekstaatProps) {
   const maandag = maandagMetOffset(weekOffset)
   const dagen = useMemo(() => Array.from({ length: 7 }, (_, i) => datumPlusDagen(maandag, i)), [maandag])
@@ -216,6 +216,46 @@ export function Weekstaat({
     }
   }
 
+  const weekRegels = eigen.filter((r) => r.datum >= maandag && r.datum <= zondag)
+  const conceptRegels = weekRegels.filter((r) => (r.status ?? 'goedgekeurd') === 'concept')
+  const weekStatus: 'concept' | 'definitief' | 'goedgekeurd' | null = weekRegels.length === 0
+    ? null
+    : conceptRegels.length > 0 ? 'concept'
+    : weekRegels.some((r) => r.status === 'definitief') ? 'definitief'
+    : 'goedgekeurd'
+  const [indienenBezig, setIndienenBezig] = useState(false)
+
+  async function dienWeekIn() {
+    if (conceptRegels.length === 0 || indienenBezig) return
+    setIndienenBezig(true)
+    const minuten = conceptRegels.reduce((s, r) => s + (r.duur_minuten || 0), 0)
+    try {
+      await zetUrenStatus(conceptRegels.map((r) => r.id), { status: 'definitief', definitief_op: new Date().toISOString() })
+      await onGewijzigd()
+      toast.success(<>Week {weekNummer(maandag)} ingediend<span className="text-flame">.</span></>)
+      await stuurUrenWeekMelding({ actie: 'ingediend', weekStart: maandag, uren: minuten / 60 })
+    } catch (err) {
+      logger.error('Week indienen mislukt:', err)
+      toast.error('Week indienen mislukt')
+    } finally {
+      setIndienenBezig(false)
+    }
+  }
+
+  const statusKop = goedkeurenAan && (
+    <div className="flex items-center gap-2">
+      {weekStatus === 'concept' && <StatusBadge status="concept" label="Concept" />}
+      {weekStatus === 'definitief' && <StatusBadge status="verzonden" label="Ingediend" />}
+      {weekStatus === 'goedgekeurd' && <StatusBadge status="goedgekeurd" label="Goedgekeurd" />}
+      {conceptRegels.length > 0 && (
+        <Button size="sm" className="h-11 md:h-9 bg-flame hover:bg-flame/90 text-white" onClick={dienWeekIn} disabled={indienenBezig}>
+          <Send className="mr-2 h-4 w-4" />
+          {indienenBezig ? 'Indienen…' : 'Week indienen'}
+        </Button>
+      )}
+    </div>
+  )
+
   const [nieuwProjectId, setNieuwProjectId] = useState('')
   const [nieuwVeld, setNieuwVeld] = useState('')
 
@@ -317,8 +357,8 @@ export function Weekstaat({
             <CardTitle className="text-lg">Weekstaat · week {weekNummer(maandag)}</CardTitle>
             <span className="text-sm text-muted-foreground">{datumKort(maandag)} t/m {datumKort(zondag)}</span>
           </div>
-          <div className="flex items-center gap-2">
-            {kop}
+          <div className="flex flex-wrap items-center gap-2">
+            {statusKop}
             <Button variant="outline" size="icon" className="h-11 w-11 md:h-9 md:w-9" aria-label="Vorige week" onClick={() => onWeekOffsetChange(weekOffset - 1)}>
               <ChevronLeft className="h-4 w-4" />
             </Button>

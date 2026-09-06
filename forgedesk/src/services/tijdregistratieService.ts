@@ -93,3 +93,19 @@ export async function getTijdregistratiesByMedewerker(medewerkerId: string): Pro
   }
   return getLocalData<Tijdregistratie>('tijdregistraties').filter((t) => t.medewerker_id === medewerkerId)
 }
+
+/** Zet meerdere regels in één keer op een andere status (week indienen, goedkeuren, terugsturen). */
+export async function zetUrenStatus(
+  ids: string[],
+  updates: Pick<Tijdregistratie, 'status'> & Partial<Pick<Tijdregistratie, 'definitief_op' | 'goedgekeurd_door_id' | 'goedgekeurd_op'>>,
+): Promise<void> {
+  if (ids.length === 0) return
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('tijdregistraties').update({ ...updates, updated_at: now() }).in('id', ids)
+    if (error) throw error
+    return
+  }
+  const items = getLocalData<Tijdregistratie>('tijdregistraties')
+  const doel = new Set(ids)
+  setLocalData('tijdregistraties', items.map((t) => (doel.has(t.id) ? { ...t, ...updates, updated_at: now() } : t)))
+}
