@@ -23,6 +23,7 @@ import {
   ListPlus,
   LayoutList,
   Columns3,
+  Mail,
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -69,6 +70,7 @@ import { useOptimisticState } from '@/hooks/useOptimistic'
 import { useFunctie } from '@/hooks/useFunctie'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { ProjectKanban } from './ProjectKanban'
+import { ProjectMailDialog } from './ProjectMailDialog'
 
 const statusOpties = [
   { value: 'alle', label: 'Alle' },
@@ -542,6 +544,8 @@ export function ProjectsList() {
   // Inline bedrag-edit vanuit de lijst: snel een ex-btw prijs neerzetten. Bij een
   // project zonder offerte maakt dit een concept-offerte (1 regel, +21% btw); bij
   // één offerte werkt het de prijs bij. Meerdere/regels → naar de offerte-editor.
+  // Mail naar de klant vanuit de lijst of het kanban, zonder het project te openen.
+  const [mailProject, setMailProject] = useState<Project | null>(null)
   const [editingBedragId, setEditingBedragId] = useState<string | null>(null)
   const [bedragInput, setBedragInput] = useState('')
   const [savingBedrag, setSavingBedrag] = useState(false)
@@ -1403,6 +1407,9 @@ export function ProjectsList() {
               onStatusChange={handleStatusChange}
               onOpen={(p) => navigateWithTab({ path: `/projecten/${p.id}`, label: p.naam || 'Project', id: `/projecten/${p.id}` })}
               mobiel={isMobiel}
+              bedrag={(p) => getProjectBedrag(p.id)}
+              onDelete={handleDeleteProject}
+              onMail={setMailProject}
             />
           ) : (
             <>
@@ -1893,6 +1900,15 @@ export function ProjectsList() {
                                   <DropdownMenuItem
                                     onClick={(e) => {
                                       e.stopPropagation()
+                                      setMailProject(project)
+                                    }}
+                                  >
+                                    <Mail className="w-3.5 h-3.5 mr-2" />
+                                    Mail naar klant
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation()
                                       handleStatusChange(project.id, 'afgerond')
                                     }}
                                   >
@@ -2131,9 +2147,10 @@ export function ProjectsList() {
                   )
                 })}
               </div>
-            </div>
+    </div>
           </form>
       </ResponsiveDialog>
+      <ProjectMailDialog project={mailProject} open={!!mailProject} onOpenChange={(o) => { if (!o) setMailProject(null) }} />
     </div>
   )
 }

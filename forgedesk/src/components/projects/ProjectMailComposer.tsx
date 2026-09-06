@@ -378,6 +378,12 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
   const [scheduleAt, setScheduleAt] = useState('')
   const scheduleRef = useRef<HTMLDivElement>(null)
 
+  // Klantgegevens kunnen ná het openen binnenkomen (paneel vanuit de lijst):
+  // vul Aan dan alsnog, maar overschrijf nooit wat de gebruiker al typte.
+  useEffect(() => {
+    if (open && defaultEmail) setToEmails((prev) => (prev.length === 0 ? [defaultEmail] : prev))
+  }, [open, defaultEmail])
+
   const wasOpenRef = useRef(false)
   useEffect(() => {
     if (open && !wasOpenRef.current) {
