@@ -84,7 +84,12 @@ export function mappenVoor(item: EmailLijstItem): MailMap[] {
 }
 
 type Luisteraar = () => void
-type Wachtend = { timer: ReturnType<typeof setTimeout>; flush: () => void }
+type Wachtend = {
+  timer: ReturnType<typeof setTimeout>
+  flush: () => void
+  /** Laat deze ids vallen: niet wegschrijven, niet herstellen. */
+  annuleer: (ids: string[]) => void
+}
 
 class MailStore {
   private items = new Map<string, EmailLijstItem>()
@@ -258,6 +263,9 @@ class MailStore {
       await koppelAan('project', acties.projectId, item.thread_id ? { threadId: item.thread_id } : { emailId: item.id }).catch(() => {})
     }
     if (acties.archiveren) {
+      // Een wachtende buffer op deze mail (net verwijderd, net hersteld) zou
+      // onze archivering zo weer overschrijven.
+      this.annuleerWachtend([item.id])
       this.patch(item.id, ARCHIEF_PATCH)
       await this.schrijfWeg([item.id], ARCHIEF_PATCH)
       this.imap('archive', [item.id])
@@ -757,6 +765,10 @@ class MailStore {
 
   /** Terug naar Inbox vanuit archief of prullenbak. Zonder buffer: dit is zelf al de ongedaan-maak-actie. */
   async herstel(ids: string[]): Promise<void> {
+    // Herstellen binnen de undo-buffer: eerst de wachtende archiveer- of
+    // verwijderactie laten vallen, anders schrijft die vijf seconden later
+    // alsnog het tegenovergestelde weg.
+    this.annuleerWachtend(ids)
     const patches = new Map<string, { map: string; labels: string[] }>()
     for (const id of ids) {
       const item = this.items.get(id)
@@ -789,13 +801,13 @@ class MailStore {
     if (inPrullenbak.length) {
       const bewaard = inPrullenbak.map((id) => this.items.get(id)!)
       for (const id of inPrullenbak) this.verwijderLokaal(id)
-      undos.push(this.buffer(inPrullenbak, () => {
+      undos.push(this.buffer(inPrullenbak, (nog) => {
         // Eerst IMAP: purge wil de rij nog kunnen lezen om de map te controleren.
-        void imapActie('purge', inPrullenbak).catch(() => {}).finally(() => {
-          for (const id of inPrullenbak) void deleteEmail(id).catch(() => {})
+        void imapActie('purge', nog).catch(() => {}).finally(() => {
+          for (const id of nog) void deleteEmail(id).catch(() => {})
         })
-      }, () => {
-        for (const item of bewaard) this.voegToe(item)
+      }, (nog) => {
+        for (const item of bewaard) if (nog.includes(item.id)) this.voegToe(item)
       }))
     }
     if (undos.length === 1) return undos[0]
@@ -812,8 +824,11 @@ class MailStore {
       this.patch(id, deel)
     }
     const echt = [...snapshots.keys()]
-    return this.buffer(echt, () => flush(echt), () => {
-      for (const [id, snap] of snapshots) this.patch(id, snap)
+    return this.buffer(echt, (nog) => flush(nog), (nog) => {
+      for (const id of nog) {
+        const snap = snapshots.get(id)
+        if (snap) this.patch(id, snap)
+      }
     })
   }
 
@@ -821,21 +836,31 @@ class MailStore {
    * Vijf seconden wachten voor de server iets hoort, zodat ongedaan maken
    * niets kost. Een tweede actie op dezelfde mail spoelt de eerste eerst
    * door, anders zou de late flush de nieuwe toestand overschrijven.
+   * Flush en herstel krijgen alleen de ids die nog wachten: annuleerWachtend
+   * kan er tussentijds een paar uit hebben gehaald.
    */
-  private buffer(ids: string[], flush: () => void, herstel: () => void): Undo {
+  private buffer(ids: string[], flush: (ids: string[]) => void, herstel: (ids: string[]) => void): Undo {
     for (const id of ids) {
       const eerder = this.wachtend.get(id)
       if (eerder) { clearTimeout(eerder.timer); this.wachtend.delete(id); eerder.flush() }
     }
+    const actief = new Set(ids)
     let afgehandeld = false
     const doe = () => {
       if (afgehandeld) return
       afgehandeld = true
-      for (const id of ids) this.wachtend.delete(id)
-      flush()
+      clearTimeout(timer)
+      const nog = [...actief]
+      for (const id of nog) this.wachtend.delete(id)
+      if (nog.length) flush(nog)
+    }
+    const annuleer = (teAnnuleren: string[]) => {
+      if (afgehandeld) return
+      for (const id of teAnnuleren) if (actief.delete(id)) this.wachtend.delete(id)
+      if (actief.size === 0) { afgehandeld = true; clearTimeout(timer) }
     }
     const timer = setTimeout(doe, UNDO_MS)
-    const rij: Wachtend = { timer, flush: doe }
+    const rij: Wachtend = { timer, flush: doe, annuleer }
     for (const id of ids) this.wachtend.set(id, rij)
     return {
       klaarOver: Date.now() + UNDO_MS,
@@ -843,10 +868,29 @@ class MailStore {
         if (afgehandeld) return
         afgehandeld = true
         clearTimeout(timer)
-        for (const id of ids) this.wachtend.delete(id)
-        herstel()
+        const nog = [...actief]
+        for (const id of nog) this.wachtend.delete(id)
+        if (nog.length) herstel(nog)
       },
     }
+  }
+
+  /**
+   * Laat een wachtende actie voor deze mails vallen zonder hem weg te
+   * schrijven. Nodig zodra iets het tegenovergestelde doet: zonder dit schrijft
+   * de buffer van het archiveren vijf seconden later alsnog 'archief' weg,
+   * over een herstel naar de inbox heen.
+   */
+  annuleerWachtend(ids: string[]): void {
+    const perRij = new Map<Wachtend, string[]>()
+    for (const id of ids) {
+      const rij = this.wachtend.get(id)
+      if (!rij) continue
+      const lijst = perRij.get(rij)
+      if (lijst) lijst.push(id)
+      else perRij.set(rij, [id])
+    }
+    for (const [rij, lijst] of perRij) rij.annuleer(lijst)
   }
 
   /** Alle wachtende acties nu doorschrijven (bij verlaten van de pagina of de module). */
