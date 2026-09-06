@@ -13,10 +13,13 @@ import { EmailActionsPopover, useAfzenderStatus } from '@/components/email/Email
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
 import { useFunctie } from '@/hooks/useFunctie'
-import { extractSenderEmail } from '@/components/email/emailHelpers'
+import { extractSenderEmail, extractSenderName } from '@/components/email/emailHelpers'
 import { Bericht, type AntwoordModus } from './Bericht'
 import { BodyFrame } from './BodyFrame'
 import { Bijlagen } from './BijlagenRij'
+import { DaanBlok } from './DaanBlok'
+import { AanvraagKaart } from '@/components/email/AanvraagKaart'
+import { EmailReaderAIToolbar } from '@/components/email/EmailReaderAIToolbar'
 import { bepaalOpenBerichten, deelnemersLabel, deelnemersVan, sorteerOudNaarNieuw } from './thread'
 import { chipsVoor, SOORT_LABEL, type KoppelingChip } from './koppelingen'
 
@@ -185,6 +188,7 @@ export function ConversationView({ emailId, onSluiten, onAntwoord, onVolgende, o
 
   // Naar het geselecteerde bericht scrollen zodra het in de lijst staat.
   const berichtRefs = useRef(new Map<string, HTMLDivElement>())
+  const scrollRef = useRef<HTMLDivElement>(null)
   const gescrolldNaar = useRef<string | null>(null)
   useEffect(() => {
     if (gescrolldNaar.current === emailId) return
@@ -296,9 +300,20 @@ export function ConversationView({ emailId, onSluiten, onAntwoord, onVolgende, o
         <div className="mt-2.5 empty:hidden">
           <AfzenderBanner email={alsEmail(mail, geselecteerdeBody)} onOpenKlant={() => zetKlantSignal((n) => n + 1)} />
         </div>
+
+        <div className="mt-2.5">
+          <DaanBlok
+            berichten={berichten}
+            geselecteerd={mail}
+            body={geselecteerdeBody}
+            onConcept={(voorstel) => onAntwoord('antwoord', mail, geselecteerdeBody, voorstel)}
+            compact={compact}
+          />
+        </div>
       </header>
 
-      <div className={cn('min-h-0 flex-1 overflow-y-auto', compact ? 'px-3 py-3' : 'px-6 py-4')}>
+      <EmailReaderAIToolbar containerRef={scrollRef} />
+      <div ref={scrollRef} className={cn('min-h-0 flex-1 overflow-y-auto', compact ? 'px-3 py-3' : 'px-6 py-4')}>
         <div className="space-y-2.5">
           {berichten.map((bericht) => (
             <Bericht
@@ -311,6 +326,9 @@ export function ConversationView({ emailId, onSluiten, onAntwoord, onVolgende, o
               onToggle={() => toggle(bericht.id)}
               onAntwoord={(modus, body) => onAntwoord(modus, bericht, body)}
               bijlagen={<Bijlagen bericht={bericht} compact={compact} />}
+              onder={bericht.id === emailId && bericht.is_aanvraag && !bericht.aanvraag_verborgen
+                ? (body) => <AanvraagKaart email={alsEmail(bericht, body)} senderName={extractSenderName(bericht.van)} />
+                : undefined}
               inhoud={(body, laden, fout, opnieuw) => (
                 <BerichtInhoud body={body} onBody={bericht.id === emailId ? zetGeselecteerdeBody : undefined}>
                   <BodyFrame
