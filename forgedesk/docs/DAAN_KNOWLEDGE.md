@@ -660,41 +660,88 @@ moment en jij bevestigt.
 **Waar in de app:** route `/email` (menu-item "Email"); een nieuw bericht maak
 je op `/email/compose`.
 
-**Wat het doet:** Een volwaardige e-mailclient die werkt met je eigen
-mailaccount (via IMAP/SMTP). Je leest en beantwoordt mail in doen., met
-klantinformatie ernaast, en Daan helpt je bij het schrijven en herschrijven.
-Daarnaast is er de **Sales Inbox** met een tabblad **"Opvolgen"** voor mail
-waar je nog een reactie op verwacht.
+**Wat het doet:** Een volwaardig mailprogramma op je eigen mailbox (sinds
+september 2026 "op Outlook-niveau"). Je leest en beantwoordt mail in doen.,
+met de klantkaart ernaast, en Daan helpt bij schrijven en herschrijven.
+Kennisbank-artikelen: `/kennisbank?artikel=mail-outlook-niveau` (hoe het
+werkt) en `/kennisbank?artikel=mail-koppelen` (mailbox koppelen).
 
-**Belangrijkste acties:**
-- E-mail lezen, beantwoorden en nieuwe berichten schrijven.
-- Een bericht markeren om op te volgen (komt in het tabblad "Opvolgen").
-- E-mail laten herschrijven door Daan (bijvoorbeeld korter, formeler of
-  vertaald).
-- Een bericht inplannen om later te versturen.
-- Sjablonen gebruiken voor terugkerende e-mails.
+**Hoe het werkt, per onderdeel (zo leg je het uit):**
+- *Conversatie:* lijst links, het hele gesprek rechts, nieuwste onderaan. Het
+  geciteerde deel van een bericht zit ingeklapt achter "···".
+- *Toetsen:* werken zodra je niet in een tekstveld staat. j/k volgende/vorige,
+  o of Enter openen, e archiveren, # verwijderen, r antwoorden, a allen,
+  f doorsturen, c nieuw, z snooze, p pinnen, l label, u ongelezen, / zoeken,
+  g dan i inbox, g dan s verzonden, ? de kaart, Esc sluiten (concept blijft),
+  Cmd+Enter verzenden, Cmd+K commandopalet.
+- *Bedenktijd:* na Verzenden blijft de mail een paar seconden staan met
+  "Ongedaan maken" (standaard 8 s, instelbaar). Later verzenden zit onder het
+  pijltje naast Verzenden: over een uur, vanavond 18:00, morgen 09:00, maandag
+  09:00 of eigen moment; tot dan bewerkbaar.
+- *Concepten:* elke twee seconden bewaard, op elk apparaat beschikbaar in de
+  map Concepten. Sluiten vraagt niets.
+- *Snooze:* met z zet je een mail weg tot een moment; hij komt dan ongelezen
+  terug in de inbox, met een melding als push voor nieuwe mail aan staat.
+- *Opvolgen:* bij verzenden aanzetten als je antwoord verwacht; komt de reactie
+  binnen dan verdwijnt hij uit Opvolgen. Koppeling gaat op afzender, niet
+  waterdicht.
+- *Klantkaart en koppelen:* rechts van het gesprek: open offertes, lopende
+  projecten, laatste factuur. Een mail naar een project slepen koppelt hem;
+  koppelen kan ook aan klant, offerte, factuur, aanvraag, taak of lead. Aan een
+  project gekoppelde mail is zichtbaar voor het team in het projectdossier.
+- *Zoeken:* zoekveld met chips (van, aan, onderwerp, met bijlage, periode,
+  klant), te combineren.
+- *Afbeeldingen:* externe plaatjes laden pas na een klik, zodat afzenders niet
+  zien wanneer je leest (schakelaar, standaard aan).
+- *Verzonden-map:* wat je via doen. verstuurt komt ook in de Verzonden-map van
+  je eigen mailbox (schakelaar, standaard aan). Gelezen, gearchiveerd,
+  verwijderd en gepind gaan twee kanten op tussen doen. en je mailbox.
+- *Gezondheid:* Instellingen > E-mail > Verbinding toont een kaart: groen
+  "Gesynchroniseerd, laatst x min geleden", oranje met de fout als het hapert,
+  rood "uitgezet" als de server te vaak weigerde. Knop "Opnieuw verbinden"
+  slaat de instellingen opnieuw op en zet de synchronisatie weer aan.
+- *Koppelen van Gmail en Microsoft:* Instellingen > E-mail opent op
+  Verbinding met drie kaarten. Google: 2-stapsverificatie aan, app-wachtwoord
+  maken op myaccount.google.com/apppasswords, plakken, opslaan, Test
+  verbinding. Microsoft 365 / Outlook.com: Microsoft staat wachtwoord-login
+  niet meer toe; de knop "Aanmelden met Microsoft" (en "Aanmelden met Google")
+  staat klaar met "Binnenkort" tot de koppeling actief is. Overig: IMAP- en
+  SMTP-server van de hostingpartij invullen. Meldingen bij nieuwe mail staan
+  onder Instellingen > Account > Meldingen.
+- *Mobiel:* swipe links archiveert (of verwijdert, voorkeur), swipe rechts
+  markeert gelezen; ronde knop rechtsonder start een nieuwe mail.
 
-**De Sales Inbox / Opvolgen:** Markeer een verstuurde mail als "Opvolgen" als je
-een antwoord verwacht. Komt er een reactie binnen, dan probeert doen. die
-automatisch te koppelen en verdwijnt de mail uit je opvolglijst. Deze koppeling
-gebeurt op afzender en is niet waterdicht, dus controleer af en toe zelf.
+**De vier schakelaars** (Instellingen > doen. > Functies, groep Mail, alleen
+beheerder): *Bedenktijd na verzenden* (mail_undo_verzenden, met het getal
+Seconden bedenktijd, standaard 8), *Externe afbeeldingen pas na klik*
+(mail_afbeeldingen_blokkeren, standaard aan), *Verzonden mail ook in je
+mailbox* (mail_verzonden_naar_server, standaard aan), *Inbox gesplitst door
+Daan* (mail_split_inbox, standaard uit: Aanvragen, Klanten, Leveranciers,
+Overig als tabs). Drie voorkeuren per persoon: dichtheid (comfortabel of
+compact), labels op de mappenrail, en wat swipe naar links doet.
 
 **Veelvoorkomende vragen:**
-- *Werkt doen. met mijn eigen e-mailadres?* Ja, je koppelt je eigen
-  mailaccount; het instellen daarvan doe je in de instellingen.
-- *Wat doet het tabblad "Opvolgen"?* Daar staan de verstuurde mails waar je nog
-  een reactie op wacht.
+- *Werkt doen. met mijn eigen e-mailadres?* Ja, iedere gebruiker koppelt zijn
+  eigen mailbox onder Instellingen > E-mail.
+- *Mijn mail komt niet meer binnen.* Kijk op de gezondheidskaart onder
+  Instellingen > E-mail > Verbinding; staat hij oranje of rood, klik "Opnieuw
+  verbinden". Na een wachtwoordwissel: nieuw app-wachtwoord plakken en opslaan.
+- *Kan ik een verzonden mail terughalen?* Binnen de bedenktijd wel, met
+  "Ongedaan maken" in de melding onderaan.
+- *Ziet mijn collega mijn mail?* Alleen mail die aan een project is gekoppeld,
+  in dat projectdossier. De rest blijft van jou.
 - *Kan Daan mijn e-mail herschrijven?* Ja, selecteer de tekst en kies een
   herschrijfactie, zoals korter of formeler.
-- *Kan ik een e-mail later laten versturen?* Ja, je kunt een bericht inplannen.
 - *Kan ik vaste sjablonen gebruiken?* Ja, sjablonen beheer je in de
-  instellingen.
+  instellingen en kies je in de composer.
 
 **Tips:**
+- Inbox leegwerken zonder muis: j, o, e. Lezen, archiveren, volgende.
 - Markeer cold-acquisitie-mails als "Opvolgen" zodat je geen reactie mist.
-- Laat Daan een eerste versie schrijven en pas die zelf aan; dat scheelt tijd.
+- Sleep de aanvraag meteen naar het project, dan vindt de monteur hem terug.
 
-**Gerelateerde modules:** Klanten, Daan, Instellingen (e-mail), Klantportaal.
+**Gerelateerde modules:** Klanten, Projecten, Daan, Instellingen (e-mail),
+Functies-schakelaars, Klantportaal.
 
 ---
 
@@ -1260,6 +1307,16 @@ Team en meldingen
   categorie in-app en push aan of uit, per persoon.
 - *Collega noemen met @* (noemen): typ @ in een notitie op project of klant; de
   collega krijgt een melding met link.
+
+Mail
+- *Bedenktijd na verzenden* (mail_undo_verzenden, getal mail_undo_seconden,
+  standaard 8): "Ongedaan maken" na Verzenden, daarna pas echt versturen.
+- *Externe afbeeldingen pas na klik* (mail_afbeeldingen_blokkeren, standaard
+  aan): plaatjes in nieuwsbrieven laden op verzoek.
+- *Verzonden mail ook in je mailbox* (mail_verzonden_naar_server, standaard
+  aan): kopie in de Verzonden-map van de eigen mailserver.
+- *Inbox gesplitst door Daan* (mail_split_inbox, standaard uit): tabs
+  Aanvragen, Klanten, Leveranciers, Overig.
 
 **Veelvoorkomende vragen:**
 - *Ik zie een functie niet die in de kennisbank staat.* Vraag een beheerder de
