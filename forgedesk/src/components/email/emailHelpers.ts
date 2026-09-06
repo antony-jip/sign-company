@@ -597,3 +597,28 @@ export function ontvangerLabel(adressen: string): string {
   if (lijst.length > 1) return `${lijst.length} ontvangers`
   return extractSenderName(lijst[0])
 }
+
+/**
+ * Bedrijfsnaam gokken uit de afzendernaam ("Jan | Bouwbedrijf X") of anders
+ * uit het domein, met de vrije providers eruit. Kwam uit EmailCRMSidebar.
+ */
+export function extractCompanyName(senderName: string, email: string): string {
+  // Try "Name | Company" or "Name - Company" format. Het scheidingsteken moet
+  // door witruimte voorafgegaan worden: anders breekt de gok op het streepje
+  // binnen een woord ("Kunis, John (KWV-NL, NLAN)" gaf "NL, NLAN)").
+  const pipeMatch = senderName.match(/\s[|–—-]\s*(.+)$/)
+  if (pipeMatch) return pipeMatch[1].trim()
+
+  // Try email domain (skip generic providers)
+  const genericDomains = ['gmail.com', 'hotmail.com', 'outlook.com', 'yahoo.com', 'live.nl', 'ziggo.nl', 'kpnmail.nl', 'xs4all.nl', 'planet.nl', 'hetnet.nl', 'home.nl', 'upcmail.nl', 'casema.nl', 'quicknet.nl', 'tele2.nl', 'solcon.nl']
+  const domainMatch = email.match(/@([^>]+)/)
+  if (domainMatch) {
+    const domain = domainMatch[1].toLowerCase()
+    if (!genericDomains.includes(domain)) {
+      // Capitalize domain name without TLD
+      const name = domain.split('.')[0]
+      return name.charAt(0).toUpperCase() + name.slice(1)
+    }
+  }
+  return ''
+}

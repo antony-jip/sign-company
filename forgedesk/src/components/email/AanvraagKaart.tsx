@@ -9,7 +9,7 @@ import { koppelEmailAanProject, getProjectVoorThread } from '@/services/emailPro
 import { verbergAanvraag } from '@/services/emailService'
 import { extractSenderEmail, zoekKlantVoorAfzender, bepaalAanvraagContact, bodyAlsTekst, haalHandtekeningUitBody, GENERIEKE_MAILDOMEINEN } from './emailHelpers'
 import type { HandtekeningGegevens } from './emailHelpers'
-import { extractCompanyName } from './EmailCRMSidebar'
+import { extractCompanyName } from './emailHelpers'
 import { useAuth } from '@/contexts/AuthContext'
 import { logger } from '@/utils/logger'
 

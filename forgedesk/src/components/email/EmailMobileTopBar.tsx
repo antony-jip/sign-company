@@ -2,13 +2,13 @@ import { Menu, Search, Sparkles, RefreshCw } from 'lucide-react'
 import { NotificatieCenter } from '@/components/notifications/NotificatieCenter'
 import { cn } from '@/lib/utils'
 import { formatRelativeSync } from './emailHelpers'
-import type { EmailFolder } from './emailTypes'
+import type { MailMap } from '@/lib/mail/types'
 
 interface EmailMobileTopBarProps {
   onOpenDrawer: () => void
   searchInput: string
   onSearchChange: (value: string) => void
-  selectedFolder: EmailFolder
+  selectedFolder: MailMap
   selectedFolderLabel: string
   todayUnreadCount: number
   userInitial: string

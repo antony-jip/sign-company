@@ -18,6 +18,7 @@ import { Bericht, type AntwoordModus } from './Bericht'
 import { BodyFrame } from './BodyFrame'
 import { Bijlagen } from './BijlagenRij'
 import { DaanBlok } from './DaanBlok'
+import { KoppelPopover } from './KoppelPopover'
 import { AanvraagKaart } from '@/components/email/AanvraagKaart'
 import { EmailReaderAIToolbar } from '@/components/email/EmailReaderAIToolbar'
 import { bepaalOpenBerichten, deelnemersLabel, deelnemersVan, sorteerOudNaarNieuw } from './thread'
@@ -289,13 +290,18 @@ export function ConversationView({ emailId, onSluiten, onAntwoord, onVolgende, o
           </div>
         </div>
 
-        {(chips.length > 0) && (
-          <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-            {chips.map((chip) => (
-              <Chip key={chip.koppeling.id} chip={chip} onOpen={() => openChip(chip)} onOntkoppel={() => handleOntkoppel(chip)} />
-            ))}
-          </div>
-        )}
+        <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+          {chips.map((chip) => (
+            <Chip key={chip.koppeling.id} chip={chip} onOpen={() => openChip(chip)} onOntkoppel={() => handleOntkoppel(chip)} />
+          ))}
+          <KoppelPopover
+            open={koppelOpen}
+            onOpenChange={zetKoppelOpen}
+            onKoppel={handleKoppel}
+            gekoppeld={chips.map((c) => ({ soort: c.soort, doelId: c.koppeling.doel_id }))}
+            compact={compact}
+          />
+        </div>
 
         <div className="mt-2.5 empty:hidden">
           <AfzenderBanner email={alsEmail(mail, geselecteerdeBody)} onOpenKlant={() => zetKlantSignal((n) => n + 1)} />
