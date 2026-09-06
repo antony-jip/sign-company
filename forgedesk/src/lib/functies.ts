@@ -4,7 +4,7 @@
 // 234); dit bestand is de enige plek die weet welke sleutels bestaan en wat
 // de standaard is. Geen imports, zodat het overal te gebruiken is.
 
-export type FunctieGroep = 'offertes' | 'klanten' | 'projecten' | 'planning' | 'facturen' | 'team'
+export type FunctieGroep = 'offertes' | 'klanten' | 'projecten' | 'planning' | 'facturen' | 'team' | 'mail'
 
 export interface FunctieDefinitie {
   sleutel: string
@@ -27,6 +27,7 @@ export const FUNCTIE_GROEPEN: { id: FunctieGroep; label: string }[] = [
   { id: 'planning', label: 'Planning' },
   { id: 'facturen', label: 'Facturen en inkoop' },
   { id: 'team', label: 'Team en meldingen' },
+  { id: 'mail', label: 'Mail' },
 ]
 
 export const FUNCTIES: FunctieDefinitie[] = [
@@ -61,6 +62,11 @@ export const FUNCTIES: FunctieDefinitie[] = [
   { sleutel: 'conceptfacturen_maandelijks', groep: 'facturen', label: 'Concepten op de eerste werkdag melden', uitleg: 'Op de eerste werkdag van de maand krijgen beheerders een melding met hoeveel conceptfacturen er klaarstaan. Versturen blijft een bewuste klik.', standaard: false, artikel: 'factuur-opvolging-stepper' },
   { sleutel: 'rapport_ouderdom', groep: 'facturen', label: 'Ouderdom per klant', uitleg: 'Openstaand in 0-30, 31-60, 61-90 en 91+ dagen, per klant uitklapbaar.', standaard: true, artikel: 'factuur-opvolging-stepper' },
   { sleutel: 'inkoop_leverancier_defaults', groep: 'facturen', label: 'Leverancier onthouden', uitleg: 'Betaaltermijn en grootboek van een inkoopfactuur bewaren als standaard voor die leverancier.', standaard: true, artikel: 'inkoop-leverancier' },
+  // Mail
+  { sleutel: 'mail_undo_verzenden', groep: 'mail', label: 'Bedenktijd na verzenden', uitleg: 'Na Verzenden blijft de mail een paar seconden staan met "Ongedaan maken". Verkeerde prijs of vergeten bijlage: terughalen in plaats van een tweede mail.', standaard: true, getal: { sleutel: 'mail_undo_seconden', label: 'Seconden bedenktijd', standaard: 8, eenheid: 's' }, artikel: 'mail-outlook-niveau' },
+  { sleutel: 'mail_afbeeldingen_blokkeren', groep: 'mail', label: 'Externe afbeeldingen pas na klik', uitleg: 'Nieuwsbrieven en cold outreach laden hun plaatjes pas als je erom vraagt. Zo zien afzenders niet wanneer je een mail opent.', standaard: true, artikel: 'mail-outlook-niveau' },
+  { sleutel: 'mail_verzonden_naar_server', groep: 'mail', label: 'Verzonden mail ook in je mailbox', uitleg: 'Wat je vanuit doen. verstuurt, komt ook in de Verzonden-map van je mailserver. Dus ook op je telefoon en in Outlook.', standaard: true, artikel: 'mail-outlook-niveau' },
+  { sleutel: 'mail_split_inbox', groep: 'mail', label: 'Inbox gesplitst door Daan', uitleg: 'Aanvragen, klanten met een open offerte, leveranciers en overig als aparte tabs. Daan sorteert op wat er commercieel speelt, niet op afzender.', standaard: false, artikel: 'mail-outlook-niveau' },
   // Team
   { sleutel: 'meldingen_voorkeuren', groep: 'team', label: 'Meldingsvoorkeuren per persoon', uitleg: 'Ieder kiest zelf welke meldingen in de app en als push komen.', standaard: true, artikel: 'meldingen-noemen' },
   { sleutel: 'noemen', groep: 'team', label: 'Collega noemen met @', uitleg: 'Typ @ in een notitie en de collega krijgt een melding.', standaard: true, artikel: 'meldingen-noemen' },
