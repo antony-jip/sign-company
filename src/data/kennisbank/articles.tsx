@@ -1576,6 +1576,84 @@ export const articles: Article[] = [
       },
     ],
   },
+  {
+    slug: 'functies-aan-en-uit',
+    title: 'Functies aan en uit: wat je niet gebruikt zie je niet',
+    category: 'Instellingen',
+    excerpt: 'Handigheden staan per organisatie aan of uit. Zet aan wat bij jullie manier van werken past, de rest blijft uit beeld.',
+    updatedAt: '2026-09-06',
+    readingTime: 2,
+    sections: [
+      {
+        id: 'waar-staan-de-schakelaars',
+        title: 'Waar staan de schakelaars?',
+        content: (
+          <>
+            <P>
+              Onder <B>Instellingen → doen. → Functies</B> staat een lijst schakelaars. Alles wat uit staat, zie je
+              nergens terug: geen extra knop, geen extra veld, geen extra tab. Zet aan wat past bij hoe jullie
+              werken en laat de rest met rust. De schakelaars gelden voor je hele organisatie, dus iedereen in het
+              team ziet dezelfde app.
+            </P>
+          </>
+        ),
+      },
+      {
+        id: 'wat-kun-je-aanzetten',
+        title: 'Wat kun je aan- of uitzetten?',
+        content: (
+          <>
+            <UL>
+              <LI>
+                <B>Offertes</B>: na het akkoord in één scherm kiezen (naar project, direct factureren of afgewezen
+                met reden), markeren als verzonden, een gele notitie per regel die de klant nooit ziet, condities
+                Standaard of Spoed, staffelprijzen, handtekening bij online akkoord en een verplichte
+                collega-check boven een bedrag dat jij kiest.
+              </LI>
+              <LI>
+                <B>Klanten</B>: referentie of PO-nummer verplicht, een vaste notitie die als waarschuwing meekomt op
+                offerte, project, werkbon, bestelbon en inkoopfactuur, tags, verzendvoorkeur en btw verlegd. Een
+                prospect wordt vanzelf klant bij het eerste akkoord.
+              </LI>
+              <LI>
+                <B>Projecten</B>: sjablonen voor de klus die je vaker doet, kolommen per fase met het bedrag erbij,
+                en de geschiedenis van elk record.
+              </LI>
+              <LI>
+                <B>Planning</B>: opgeslagen weergaven, herhaald inplannen en een herinnering als er na de montage
+                nog geen uren staan.
+              </LI>
+              <LI>
+                <B>Samenwerken</B>: meldingsvoorkeuren per persoon en een collega noemen met @.
+              </LI>
+              <LI>
+                <B>Facturen</B>: opvolgstappen bovenin de factuur, de tab Vanavond de deur uit, vergrendeld na de
+                Exact-sync, een deelfactuur met de aanbetaling verrekend, conceptfacturen samenvoegen, ouderdom
+                per klant, leverancier onthouden op inkoopfacturen en op de eerste werkdag een seintje welke
+                concepten er nog liggen.
+              </LI>
+            </UL>
+          </>
+        ),
+      },
+      {
+        id: 'van-gripp-of-james-pro',
+        title: 'Kom je van Gripp of James Pro?',
+        content: (
+          <>
+            <P>
+              Dan herken je veel van deze handigheden, alleen hoef je ze hier niet allemaal tegelijk te dragen. Zet
+              aan wat je daar echt gebruikte en begin klein. Wat er verder anders is, staat op{' '}
+              <a href="/vergelijk" style={{ color: '#1A535C', textDecoration: 'underline' }}>
+                de vergelijkingspagina
+              </a>
+              .
+            </P>
+          </>
+        ),
+      },
+    ],
+  },
 ]
 
 /* ═══════════════════════════════════════════════════════════ */

@@ -62,7 +62,7 @@ const details: ModuleDetail[] = [
         foto: { src: '/images/fotos/p-projecten-status.webp', alt: 'Twee monteurs kijken bij de open busdeur samen op een tablet, klus klaar' },
         crop: { view: 'detail', scale: 0.9, x: 248, y: 199 },
         description:
-          'Verstuurd, akkoord, ingepland, gefactureerd. Elke stap staat in de timeline, niemand hoeft meer te vragen hoe het ervoor staat.',
+          'Verstuurd, akkoord, ingepland, gefactureerd: per fase een kolom, met het bedrag dat erin zit. Elke stap staat in de timeline, niemand hoeft meer te vragen hoe het ervoor staat.',
       },
     ],
   },
@@ -72,7 +72,7 @@ const details: ModuleDetail[] = [
     heading: 'Offerte? Zo gedaan',
     sub: 'Eigen templates, eigen producten, eigen calculatie. Verstuur per mail of laat goedkeuren via het portaal.',
     overview:
-      'Bouw één keer je producten en templates, daarna calculeer je in minuten. Inkoopprijs plus marge is verkoopprijs. Versturen als PDF of goedkeuren via het portaal.',
+      'Bouw één keer je producten en templates, daarna calculeer je in minuten. Inkoopprijs plus marge is verkoopprijs. Versturen als PDF of laten tekenen in het portaal. Akkoord? In hetzelfde scherm door naar project of direct factureren.',
     pillars: [
       {
         title: 'Inkoop, marge, verkoopprijs',
@@ -141,7 +141,7 @@ const details: ModuleDetail[] = [
         foto: { src: '/images/fotos/p-planning-week.webp', alt: 'Drie monteurs bij de werkplaatsdeur in de ochtend, een wijst op een tablet' },
         crop: { view: 'planning', scale: 0.6, x: 470, y: 110 },
         description:
-          'Weekweergave per monteur of per ploeg. Slepen is plannen, verplaatsen is net zo makkelijk. Geen gedeelde Google Calendar meer.',
+          'Weekweergave per monteur of per ploeg, bewaard zoals jij hem elke ochtend opent. Slepen is plannen, en een klus die elke maand terugkomt plan je in één keer. Geen gedeelde Google Calendar meer.',
       },
       {
         title: 'Ingepland is klaar voor de monteur',
@@ -203,7 +203,7 @@ const details: ModuleDetail[] = [
         foto: { src: '/images/fotos/p-facturen-eenklik.webp', alt: 'Ondernemer klapt aan het eind van de dag de laptop dicht, werkplaats achter glas' },
         crop: { view: 'factuur', scale: 0.95, x: 248, y: 615 },
         description:
-          'Factuur direct uit de offerte, Mollie-betaallink erbij (iDEAL of creditcard). Niet betaald? doen. stuurt zelf de herinnering.',
+          'Factuur direct uit de offerte, helemaal of een deel met de aanbetaling verrekend, Mollie-betaallink erbij (iDEAL of creditcard). Niet betaald? De volgende stap staat bovenin de factuur en doen. stuurt zelf de herinnering.',
       },
       {
         title: 'Daan leest je inkoopfacturen uit',
