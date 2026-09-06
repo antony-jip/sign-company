@@ -157,6 +157,9 @@ export function Composer({ document: initieel, variant, onVerzonden, onSluiten, 
   const sleepDiepte = useRef(0)
   const [hintMail, setHintMail] = useState<{ id: string; datum: string } | null>(null)
   const [bezig, setBezig] = useState(false)
+  // De knop leunt op een render die er nog niet is bij een dubbelklik, en
+  // Cmd+Enter komt helemaal niet langs `disabled`.
+  const verzendtRef = useRef(false)
 
   const patch = useCallback((deel: Partial<ComposerDocument>) => dispatch({ type: 'patch', deel }), [])
 
@@ -299,8 +302,10 @@ export function Composer({ document: initieel, variant, onVerzonden, onSluiten, 
   }
 
   const verzend = useCallback((verzendOp?: string, label?: string) => {
+    if (verzendtRef.current) return
     const d: ComposerDocument = { ...docRef.current, verzendOp }
     if (!valideer(d)) return
+    verzendtRef.current = true
     setBezig(true)
     gepauzeerdRef.current = true
     const id = d.id ?? conceptId()
