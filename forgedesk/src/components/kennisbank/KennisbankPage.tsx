@@ -19,6 +19,7 @@ interface KbArticle {
   titel: string
   subtitel: string
   inhoud: string[]  // paragraphs
+  tabel?: { kop: string[]; rijen: string[][] }  // na de tekst, vóór de tips
   tips?: string[]
   link?: string     // navigate to this route
 }
@@ -235,7 +236,7 @@ const ARTICLES: KbArticle[] = [
     id: 'taken',
     category: 'uitvoering',
     icon: CheckCircle,
-    iconcolor: 'hsl(var(--muted-foreground))',
+    iconColor: '#5A5A55',
     titel: 'Takenbeheer',
     subtitel: 'Wat moet er nog gebeuren?',
     inhoud: [
@@ -258,6 +259,81 @@ const ARTICLES: KbArticle[] = [
       'Email templates voor offertes en facturen worden automatisch gegenereerd met je bedrijfskleuren en logo.',
     ],
     link: '/email',
+  },
+  {
+    id: 'mail-outlook-niveau',
+    category: 'communicatie',
+    icon: Mail,
+    iconColor: '#6A5A8A',
+    titel: 'Mail in doen.: zo werkt het',
+    subtitel: 'Lezen, antwoorden en koppelen zonder je mailbox te verlaten',
+    inhoud: [
+      '**Split view en conversatie.** Links je lijst, rechts het gesprek. Een klant die vier keer heen en weer mailt over dezelfde gevel zie je als één conversatie, nieuwste onderaan. Het geciteerde deel van elk bericht zit ingeklapt achter "···", zodat je alleen leest wat nieuw is.',
+      '**Toetsenbord.** Alles gaat zonder muis. De toetsen werken zodra je niet in een tekstveld staat; druk op **?** voor de kaart in de app. De volledige lijst staat in de tabel hieronder.',
+      '**Verzenden met bedenktijd.** Na Verzenden blijft de mail een paar seconden staan met "Ongedaan maken". Verkeerde prijs, vergeten bijlage, verkeerde klant: terughalen in plaats van een tweede mail. **Later verzenden** zit onder het pijltje naast Verzenden: over een uur, vanavond 18:00, morgen 09:00, maandag 09:00 of een eigen moment. Tot dat moment kun je hem nog bewerken.',
+      '**Concepten op elk apparaat.** Elke twee seconden wordt je concept bewaard. Begin op de zaak, maak af op je telefoon bij de klant. Sluiten hoeft niet bevestigd te worden: je concept staat in de map Concepten.',
+      '**Snooze.** Mail die je pas donderdag nodig hebt zet je weg met **z**. Hij komt op dat moment ongelezen terug bovenaan je inbox, met een melding als je die aan hebt staan.',
+      '**Opvolgen.** Zet bij het verzenden "Opvolgen" aan als je een antwoord verwacht. Komt de reactie binnen, dan verdwijnt de mail uit Opvolgen. Blijft het stil, dan staat hij daar tot je zelf belt.',
+      '**Klantkaart en koppelen.** Rechts naast het gesprek zie je wie het is: open offertes, lopende projecten, laatste factuur. Sleep een mail naar een project in de zijkolom en hij hangt eraan, voor het hele team zichtbaar in het projectdossier. Koppelen kan ook aan een klant, offerte, factuur, aanvraag, taak of lead.',
+      '**Zoeken met chips.** Typ in het zoekveld en kies een chip: van, aan, onderwerp, met bijlage, periode, klant. Combineer ze. "van: gemeente, met bijlage, laatste maand" vindt de vergunningstekening zonder scrollen.',
+      '**Afbeeldingen blokkeren.** Externe plaatjes in nieuwsbrieven en cold outreach laden pas als je erom vraagt. Zo ziet een afzender niet wanneer je een mail opent. Mail van bekende klanten laadt gewoon.',
+      '**Wat er in je mailbox gebeurt.** Wat je via doen. verstuurt komt ook in de Verzonden-map van je eigen mailbox, dus ook op je telefoon en in Outlook. Lezen, archiveren, verwijderen en pinnen gaan twee kanten op: doe je het in doen., dan ziet je mailbox het, en andersom.',
+      '**Mailbox-gezondheid.** Onder Instellingen, E-mail, Verbinding staat een kaart: groen met "laatst 2 min geleden" als alles loopt, oranje met de fout als het hapert, rood als de server te vaak weigerde. Eén knop "Opnieuw verbinden" zet de synchronisatie weer aan.',
+      '**Mobiel.** Swipe naar links archiveert (of verwijdert, dat kies je zelf), naar rechts markeert als gelezen. De ronde knop rechtsonder start een nieuwe mail. De composer neemt het hele scherm, je handtekening schaalt mee.',
+      '**Wat stel je in.** Vier schakelaars onder Instellingen, doen., Functies, groep Mail: **Bedenktijd na verzenden** (met het aantal seconden), **Externe afbeeldingen pas na klik**, **Verzonden mail ook in je mailbox** en **Inbox gesplitst door Daan** (Aanvragen, Klanten, Leveranciers, Overig). Drie voorkeuren per persoon, in het menu van de maillijst: **dichtheid** (comfortabel of compact), **labels op de mappenrail** aan of uit, en wat **swipe naar links** doet (archiveren of verwijderen).',
+    ],
+    tabel: {
+      kop: ['Toets', 'Doet'],
+      rijen: [
+        ['j / k', 'Volgende / vorige mail'],
+        ['o of Enter', 'Openen'],
+        ['e', 'Archiveren (springt naar de volgende)'],
+        ['#', 'Verwijderen'],
+        ['r', 'Antwoorden'],
+        ['a', 'Allen antwoorden'],
+        ['f', 'Doorsturen'],
+        ['c', 'Nieuwe mail'],
+        ['z', 'Snooze-menu'],
+        ['p', 'Pinnen'],
+        ['l', 'Label'],
+        ['u', 'Markeren als ongelezen'],
+        ['/', 'Zoeken'],
+        ['g dan i', 'Naar inbox'],
+        ['g dan s', 'Naar verzonden'],
+        ['?', 'Toetsenkaart'],
+        ['Esc', 'Sluit lezer of composer (concept blijft)'],
+        ['Cmd+Enter', 'Verzenden'],
+        ['Cmd+K', 'Commandopalet'],
+      ],
+    },
+    tips: [
+      'Werk je inbox leeg met j, o, e: lezen, archiveren, volgende. Zonder muis.',
+      'Sleep de offerte-aanvraag meteen naar het project, dan vindt je monteur hem terug',
+      'Zet Bedenktijd op 15 seconden als je vaak vanaf de telefoon verstuurt',
+    ],
+    link: '/email',
+  },
+  {
+    id: 'mail-koppelen',
+    category: 'communicatie',
+    icon: Mail,
+    iconColor: '#6A5A8A',
+    titel: 'Mailbox koppelen: Gmail, Microsoft, overig',
+    subtitel: 'Vijf minuten, daarna komt je mail vanzelf binnen',
+    inhoud: [
+      'Ga naar **Instellingen, E-mail**. Het scherm opent op Verbinding met drie kaarten: Google, Microsoft 365 / Outlook.com en Overig. Iedere gebruiker koppelt zijn eigen mailbox; je collega ziet alleen de mail die aan een project hangt.',
+      '**Google (Gmail en Workspace).** 1. Zet 2-stapsverificatie aan op je Google-account. 2. Maak een app-wachtwoord op myaccount.google.com/apppasswords. 3. Plak de 16 tekens bij Wachtwoord, sla op en klik Test verbinding. De knop "Aanmelden met Google" staat klaar voor koppelen in twee klikken; zodra hij actief is, hoef je geen app-wachtwoord meer te maken.',
+      '**Microsoft 365 en Outlook.com.** Microsoft staat wachtwoord-login voor mailprogramma\'s niet meer toe. Zodra de knop "Aanmelden met Microsoft" actief is, koppel je in twee klikken. Heeft je beheerder SMTP AUTH en IMAP nog aanstaan, dan werkt een app-wachtwoord soms nog; probeer het met Test verbinding.',
+      '**Overig (eigen hosting).** Vraag je hostingpartij om de IMAP-server (ontvangen, meestal poort 993) en de SMTP-server (verzenden, meestal poort 587). Vul ze in bij de kaart Overig, samen met je adres en wachtwoord.',
+      '**Test verbinding** controleert IMAP en SMTP los van elkaar en zegt precies welke van de twee weigert. Daarna zie je bovenaan de gezondheidskaart: groen zodra de eerste synchronisatie klaar is.',
+      '**SPF.** Mail je vanaf een eigen domein via Google, zet dan include:_spf.google.com in het SPF-record van je domein. Anders belandt je offerte bij de klant in de spam.',
+      '**Meldingen** bij nieuwe mail regel je onder Instellingen, Account, Meldingen. Die staan los van de koppeling.',
+    ],
+    tips: [
+      'Loopt de synchronisatie vast na een wachtwoordwissel: nieuw app-wachtwoord plakken, opslaan, klaar',
+      'Verwijderen onder de kaart haalt de koppeling en het wachtwoord weg, je mail in doen. blijft staan',
+    ],
+    link: '/instellingen?tab=email&sub=verbinding',
   },
   {
     id: 'visualizer',
@@ -564,7 +640,8 @@ export function KennisbankPage() {
       list = list.filter(a =>
         a.titel.toLowerCase().includes(q) ||
         a.subtitel.toLowerCase().includes(q) ||
-        a.inhoud.some(p => p.toLowerCase().includes(q))
+        a.inhoud.some(p => p.toLowerCase().includes(q)) ||
+        (a.tabel?.rijen ?? []).some(r => r.some(cel => cel.toLowerCase().includes(q)))
       )
     }
     return list
@@ -602,6 +679,29 @@ export function KennisbankPage() {
             <p key={i} className="text-[15px] leading-[1.8] animate-stagger-item" style={{ color: '#3A3A3A', animationDelay: `${i * 60}ms` }}>{renderBold(p)}</p>
           ))}
         </div>
+
+        {activeArticle.tabel && (
+          <div className="mt-8 overflow-x-auto rounded-xl border animate-stagger-item" style={{ borderColor: 'hsl(var(--border))', animationDelay: `${activeArticle.inhoud.length * 60 + 60}ms` }}>
+            <table className="w-full text-[14px]">
+              <thead>
+                <tr style={{ backgroundColor: 'hsl(var(--muted))' }}>
+                  {activeArticle.tabel.kop.map((k) => (
+                    <th key={k} className="text-left px-4 py-2 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'hsl(var(--muted-foreground))' }}>{k}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {activeArticle.tabel.rijen.map((rij, i) => (
+                  <tr key={i} className="border-t" style={{ borderColor: 'hsl(var(--border))' }}>
+                    {rij.map((cel, j) => (
+                      <td key={j} className={cn('px-4 py-2 align-top', j === 0 ? 'font-mono font-semibold whitespace-nowrap text-petrol' : 'text-foreground/80')}>{cel}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         {activeArticle.tips && activeArticle.tips.length > 0 && (
           <div className="mt-10 rounded-2xl p-6 animate-stagger-item" style={{ backgroundColor: '#1A535C', animationDelay: `${activeArticle.inhoud.length * 60 + 100}ms` }}>
