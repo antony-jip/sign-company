@@ -142,7 +142,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // database (migratie 004 is nooit gedraaid) en niets schreef hem ooit.
         // De select faalde daardoor volledig, waarna deze GET een 401 gaf en de
         // instellingenpagina terugviel op localStorage.
-        .select('gmail_address, encrypted_app_password, smtp_host, smtp_port, imap_host, imap_port')
+        .select('gmail_address, encrypted_app_password, smtp_host, smtp_port, imap_host, imap_port, auth_type, oauth_refresh_token_enc')
         .eq('user_id', userId)
         .single()
 
@@ -153,6 +153,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({
         gmail_address: data.gmail_address,
         has_password: !!data.encrypted_app_password,
+        // De tokens zelf verlaten de server nooit, net zomin als het
+        // wachtwoord; de UI hoeft alleen te weten dát er een koppeling is.
+        auth_type: data.auth_type || 'wachtwoord',
+        has_oauth: !!data.oauth_refresh_token_enc,
         smtp_host: data.smtp_host || 'smtp.gmail.com',
         smtp_port: data.smtp_port || 587,
         imap_host: data.imap_host || 'imap.gmail.com',
@@ -183,11 +187,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const userId = await verifyUser(req)
-    const { gmail_address, app_password, smtp_host, smtp_port, imap_host, imap_port } = req.body
+    const { gmail_address, app_password, smtp_host, smtp_port, imap_host, imap_port, auth_type } = req.body
 
     if (!gmail_address) {
       return res.status(400).json({ error: 'Email adres is verplicht' })
     }
+
+    const gevraagdAuthType = auth_type === 'google' || auth_type === 'microsoft' || auth_type === 'wachtwoord'
+      ? (auth_type as string)
+      : null
 
     // Sentinel 'UNCHANGED' (of leeg) = gebruiker wijzigt het wachtwoord niet;
     // behoud de bestaande versleutelde waarde. Zo hoeft het wachtwoord nooit
@@ -205,18 +213,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (!wijzigtWachtwoord) {
-      // Geen nieuw wachtwoord: vereist dat er al één is opgeslagen.
+      // Geen nieuw wachtwoord: vereist dat er al één is opgeslagen, of een
+      // OAuth-koppeling die het wachtwoord vervangt.
       const { data: bestaand } = await supabaseAdmin
         .from('user_email_settings')
-        .select('encrypted_app_password')
+        .select('encrypted_app_password, auth_type, oauth_refresh_token_enc')
         .eq('user_id', userId)
         .maybeSingle()
-      if (!bestaand?.encrypted_app_password) {
+      const heeftOauth = (bestaand?.auth_type === 'google' || bestaand?.auth_type === 'microsoft')
+        && !!bestaand?.oauth_refresh_token_enc
+      if (!bestaand?.encrypted_app_password && !heeftOauth) {
         return res.status(400).json({ error: 'App wachtwoord is verplicht' })
       }
+      // auth_type is geen keuze in een formulier maar een gevolg van wat er
+      // opgeslagen staat. Google of Microsoft vragen zonder koppeling zou een
+      // rij opleveren die bij het eerste ophalen "Toegang ingetrokken" geeft.
+      if (gevraagdAuthType && gevraagdAuthType !== 'wachtwoord' && !heeftOauth) {
+        return res.status(400).json({ error: 'Koppel eerst met Google of Microsoft.' })
+      }
+      if (gevraagdAuthType === 'wachtwoord' && !bestaand?.encrypted_app_password) {
+        return res.status(400).json({ error: 'App wachtwoord is verplicht' })
+      }
+      // Bij een OAuth-koppeling bepaalt de provider het adres en de hosts; de
+      // velden uit het formulier mogen die niet overschrijven. Opslaan is dan
+      // alleen het herstelpad ("Opnieuw verbinden").
       const { error } = await supabaseAdmin
         .from('user_email_settings')
-        .update(basisVelden)
+        .update(heeftOauth
+          ? { updated_at: basisVelden.updated_at, ...(gevraagdAuthType ? { auth_type: gevraagdAuthType } : {}) }
+          : { ...basisVelden, ...(gevraagdAuthType ? { auth_type: gevraagdAuthType } : {}) })
         .eq('user_id', userId)
       if (error) {
         console.error('Supabase update fout:', JSON.stringify(error))
@@ -245,6 +270,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .upsert({
         ...basisVelden,
         encrypted_app_password: encryptedPassword,
+        // Een app-wachtwoord opslaan is het einde van een OAuth-koppeling,
+        // welk auth_type het formulier ook meestuurt: laat je de tokens staan,
+        // dan kan een leespad stilletjes op de oude koppeling terugvallen.
+        auth_type: 'wachtwoord',
+        oauth_refresh_token_enc: null,
+        oauth_access_token_enc: null,
+        oauth_token_verloopt_op: null,
       }, { onConflict: 'user_id' })
 
     if (error) {

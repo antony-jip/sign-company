@@ -222,6 +222,8 @@ export async function testEmailConnection(
     smtp_port?: number
     imap_host?: string
     imap_port?: number
+    /** google of microsoft test de opgeslagen koppeling; adres en wachtwoord doen dan niet mee. */
+    auth_type?: MailAuthType
   }
 ): Promise<{ imap_ok: boolean; smtp_ok: boolean; error?: string }> {
   const token = await getAuthToken()
@@ -234,6 +236,7 @@ export async function testEmailConnection(
     body: JSON.stringify({
       gmail_address,
       app_password,
+      auth_type: options?.auth_type,
       smtp_host: options?.smtp_host || 'smtp.gmail.com',
       smtp_port: options?.smtp_port || 587,
       imap_host: options?.imap_host || 'imap.gmail.com',
@@ -500,7 +503,13 @@ export interface EmailSettingsData {
   imap_port: number
   // Server geeft het wachtwoord niet meer terug; enkel of er één is opgeslagen.
   has_password?: boolean
+  /** 'wachtwoord' = app-wachtwoord, 'google'/'microsoft' = OAuth-koppeling. */
+  auth_type?: MailAuthType
+  /** Of er een refresh-token ligt. De tokens zelf verlaten de server nooit. */
+  has_oauth?: boolean
 }
+
+export type MailAuthType = 'wachtwoord' | 'google' | 'microsoft'
 
 export async function loadEmailSettingsFromDb(): Promise<EmailSettingsData | null> {
   try {
@@ -524,6 +533,8 @@ export async function loadEmailSettingsFromDb(): Promise<EmailSettingsData | nul
       gmail_address: data.gmail_address,
       app_password: '',
       has_password: !!data.has_password,
+      auth_type: (data.auth_type as MailAuthType) || 'wachtwoord',
+      has_oauth: !!data.has_oauth,
       smtp_host: data.smtp_host || 'smtp.gmail.com',
       smtp_port: data.smtp_port || 587,
       imap_host: data.imap_host || 'imap.gmail.com',
@@ -549,6 +560,7 @@ export async function saveEmailSettingsToDb(settings: EmailSettingsData): Promis
       // Leeg wachtwoord = ongewijzigd: stuur sentinel zodat de server de
       // bestaande versleutelde waarde behoudt in plaats van hem te wissen.
       app_password: settings.app_password || 'UNCHANGED',
+      auth_type: settings.auth_type,
       smtp_host: settings.smtp_host || 'smtp.gmail.com',
       smtp_port: settings.smtp_port || 587,
       imap_host: settings.imap_host || 'imap.gmail.com',
@@ -571,6 +583,37 @@ export async function deleteEmailSettingsFromDb(): Promise<void> {
       'Authorization': `Bearer ${token}`,
     },
   })
+}
+
+/**
+ * Stap 1 van koppelen met Google of Microsoft. Geeft de autorisatie-URL terug;
+ * de aanroeper doet daarna zelf `window.location.assign(url)`.
+ *
+ * Een gewone link zou hier niet werken: de server ondertekent de `state` met
+ * de ingelogde gebruiker erin en heeft daarvoor de sessie in de
+ * Authorization-header nodig. `nietGeconfigureerd` betekent dat de
+ * client-id op de server ontbreekt; dan hoort de knop uit te staan.
+ */
+export async function startMailKoppeling(
+  provider: 'google' | 'microsoft'
+): Promise<{ url?: string; nietGeconfigureerd?: boolean; error?: string }> {
+  try {
+    const token = await getAuthToken()
+    const response = await fetch('/api/mail-oauth-start', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ provider }),
+    })
+    if (response.status === 503) return { nietGeconfigureerd: true }
+    const data: { url?: string; error?: string } = await response.json().catch(() => ({}))
+    if (!response.ok || !data.url) return { error: data.error || `Koppelen mislukt: ${response.status}` }
+    return { url: data.url }
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'Koppelen mislukt' }
+  }
 }
 
 // Wis de gecachte emails van de huidige user. Nodig wanneer een gebruiker
