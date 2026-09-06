@@ -102,6 +102,16 @@ export const groepen: Groep[] = [
         gripp: nee('BCC-adres naar een tijdlijn'),
         james: nee('alleen uitgaand'),
       },
+      { label: 'Mail met conversatie en toetsenbord', doen: ja, gripp: nee(), james: nee() },
+      {
+        label: 'Mail koppelen aan klant, project en offerte',
+        doen: ja,
+        gripp: deels('via BCC, alleen op de tijdlijn'),
+        james: nee(),
+      },
+      { label: 'Bedenktijd na verzenden', doen: ja, gripp: nee(), james: nee() },
+      { label: 'Externe afbeeldingen blokkeren', doen: ja, gripp: nee(), james: nee() },
+      { label: 'Mailbox-gezondheid zichtbaar', doen: ja, gripp: nee(), james: nee() },
       {
         label: 'Drukproef goedkeuren in het klantportaal',
         doen: ja,

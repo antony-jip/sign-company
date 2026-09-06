@@ -283,31 +283,31 @@ const details: ModuleDetail[] = [
   {
     slug: 'email',
     name: 'Email',
-    heading: 'Jouw mailbox, slim gekoppeld',
-    sub: 'Je eigen zakelijke mailbox, gekoppeld via IMAP/SMTP. Mails hangen automatisch aan de juiste klant en het juiste project.',
+    heading: 'Je mailbox, aan de klus gehangen',
+    sub: 'Je eigen zakelijke mailbox in doen.: lezen per gesprek, werken met het toetsenbord, bedenktijd na verzenden. Elke mail hangt aan klant, project of offerte.',
     overview:
-      'Koppel je eigen mailbox via IMAP/SMTP. Mails hangen automatisch aan de juiste klant en het juiste project, en Daan vat lange mails samen.',
+      'Koppel je eigen mailbox (Gmail, Microsoft of eigen hosting). Je leest per gesprek, werkt met j, k en e door je inbox en haalt een verkeerde prijs binnen acht seconden terug. De aanvraag hangt aan het project, zodat je monteur de tekening terugvindt zonder te bellen.',
     pillars: [
       {
-        title: 'Je eigen mailbox',
+        title: 'Lezen als een gesprek',
         foto: { src: '/images/fotos/p-email-mailbox.webp', alt: 'Ondernemer aan het bureau met één scherm en een mok, rustige ochtend' },
         crop: { view: 'email', scale: 0.7, x: 286, y: 111 },
         description:
-          'Koppel je zakelijke adres via IMAP/SMTP. Je inbox blijft van jou, alleen mail die bij een klant of project hoort is zichtbaar voor het team.',
+          'Een klant die drie keer mailt over dezelfde gevel zie je als één gesprek, geciteerde tekst ingeklapt. Externe plaatjes laden pas als jij het wilt. Je mailbox loopt mee: verzonden in Verzonden, gelezen twee kanten op. Je inbox blijft van jou.',
       },
       {
-        title: 'Automatisch gekoppeld',
+        title: 'Aan klant en project gehangen',
         foto: { src: '/images/fotos/p-email-gekoppeld.webp', alt: 'Monteur geeft een pakbon aan de ondernemer in de werkplaats' },
         crop: { view: 'detail', scale: 1.0, x: 248, y: 199 },
         description:
-          'Inkomende en verzonden mails hangen vanzelf aan de juiste klant en het juiste project. Het hele dossier op één plek.',
+          'Naast de mail staat de klantkaart: open offertes, lopend project, laatste factuur. Sleep de aanvraag naar het project en het team ziet hem in het dossier. Snooze tot donderdag, opvolgen tot de klant antwoordt.',
       },
       {
-        title: 'Daan leest mee',
+        title: 'Daan leest mee, jij houdt de hand aan de knop',
         foto: { src: '/images/fotos/p-email-daan.webp', alt: 'Ondernemer leest zijn telefoon bij de roldeur met koffie' },
         crop: { view: 'email', scale: 0.9, x: 700, y: 110 },
         description:
-          'Lange mail binnen? Daan vat hem samen en zet een antwoord klaar in jouw toon. Jij hoeft alleen te versturen.',
+          'Lange mail binnen? Daan vat hem samen en zet een antwoord klaar in jouw toon. Verkeerde prijs verstuurd? Acht seconden bedenktijd, één klik terug. Loopt de koppeling vast, dan zie je dat op de gezondheidskaart in plaats van drie dagen later.',
       },
     ],
   },
