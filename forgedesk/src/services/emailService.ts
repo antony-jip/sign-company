@@ -315,7 +315,11 @@ export async function getSyncStatus(): Promise<SyncStatus> {
     .eq('user_id', uid)
     .eq('folder', 'inbox')
     .maybeSingle()
-  if (error || !data) return standaard
+  // Een fout hier is geen "alles goed": zonder migratie 244 bestaan deze
+  // kolommen niet, en terugvallen op ok liet de banner zwijgen terwijl de sync
+  // stilstond. Geen rij is wél normaal: die mailbox heeft nog nooit gesynct.
+  if (error) return { status: 'onbekend', laatsteFout: 'Gezondheid niet op te halen' }
+  if (!data) return standaard
   return {
     status: (data.status as SyncStatus['status']) || 'ok',
     laatsteFout: data.laatste_fout || undefined,

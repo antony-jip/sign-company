@@ -14,10 +14,13 @@ function korteTijd(iso?: string): string {
 /**
  * Bovenaan de lijst zodra de sync hapert: "Mailbox niet gesynchroniseerd
  * sinds di 14:02 · Wachtwoord geweigerd · Opnieuw verbinden". Uitgezet is rood.
+ * `onbekend` betekent dat de gezondheid niet op te halen was; die toont de
+ * banner ook, want zwijgen leest als "alles goed".
  */
 export function GezondheidBanner({ sync, onVerbinden }: { sync: SyncStatus; onVerbinden: () => void }) {
   if (sync.status === 'ok') return null
   const uit = sync.status === 'uitgezet'
+  const onbekend = sync.status === 'onbekend'
   const sinds = korteTijd(sync.laatsteSucces)
   const Icoon = uit ? PowerOff : AlertTriangle
   return (
@@ -30,7 +33,7 @@ export function GezondheidBanner({ sync, onVerbinden }: { sync: SyncStatus; onVe
     >
       <Icoon className="h-3.5 w-3.5 flex-shrink-0" />
       <span className="flex-1 min-w-0 truncate">
-        {uit ? 'Mailbox uitgezet' : 'Mailbox niet gesynchroniseerd'}
+        {uit ? 'Mailbox uitgezet' : onbekend ? 'Status onbekend' : 'Mailbox niet gesynchroniseerd'}
         {sinds ? ` sinds ${sinds}` : ''}
         {sync.laatsteFout ? ` · ${sync.laatsteFout}` : ''}
       </span>

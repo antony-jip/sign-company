@@ -115,7 +115,8 @@ export interface ThreadInfo {
 }
 
 export interface SyncStatus {
-  status: 'ok' | 'fout' | 'uitgezet'
+  /** `onbekend`: de gezondheid is niet op te halen. Zwijgen zou "alles goed" suggereren. */
+  status: 'ok' | 'fout' | 'uitgezet' | 'onbekend'
   laatsteFout?: string
   laatsteSucces?: string
 }
