@@ -108,6 +108,41 @@ CREATE POLICY "Org leest gedeelde postvakken" ON user_email_settings
   FOR SELECT TO authenticated
   USING (soort = 'gedeeld' AND organisatie_id = auth_organisatie_id());
 
+-- Een postvak op 'gedeeld' zetten opent je hele mailbox voor de organisatie.
+-- De policy uit 037 is FOR ALL op user_id en zou elk lid dat laten doen; de
+-- schrijfrechten worden daarom hier versmald, in de vorm van migratie 208.
+DROP POLICY IF EXISTS "Users see own data" ON user_email_settings;
+DROP POLICY IF EXISTS "Eigenaar leest eigen postvak" ON user_email_settings;
+CREATE POLICY "Eigenaar leest eigen postvak" ON user_email_settings
+  FOR SELECT TO authenticated USING (user_id = auth.uid());
+
+DROP POLICY IF EXISTS "Eigenaar maakt persoonlijk postvak" ON user_email_settings;
+CREATE POLICY "Eigenaar maakt persoonlijk postvak" ON user_email_settings
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    user_id = auth.uid()
+    AND (
+      soort = 'persoonlijk'
+      OR (SELECT rol FROM profiles WHERE id = auth.uid()) = 'admin'
+    )
+  );
+
+DROP POLICY IF EXISTS "Eigenaar wijzigt eigen postvak" ON user_email_settings;
+CREATE POLICY "Eigenaar wijzigt eigen postvak" ON user_email_settings
+  FOR UPDATE TO authenticated
+  USING (user_id = auth.uid())
+  WITH CHECK (
+    user_id = auth.uid()
+    AND (
+      soort = 'persoonlijk'
+      OR (SELECT rol FROM profiles WHERE id = auth.uid()) = 'admin'
+    )
+  );
+
+DROP POLICY IF EXISTS "Eigenaar verwijdert eigen postvak" ON user_email_settings;
+CREATE POLICY "Eigenaar verwijdert eigen postvak" ON user_email_settings
+  FOR DELETE TO authenticated USING (user_id = auth.uid());
+
 ALTER TABLE emails ADD COLUMN IF NOT EXISTS toegewezen_op TIMESTAMPTZ;
 CREATE INDEX IF NOT EXISTS idx_emails_toegewezen ON emails (toegewezen_aan) WHERE toegewezen_aan IS NOT NULL;
 
