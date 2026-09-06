@@ -82,6 +82,9 @@ export async function kopieerProject(
     ...overrides,
   })
 
+  // Sjabloon-taken hebben geen eigenaar: wie de taak krijgt, bepaal je pas bij
+  // het echte project. is_sjabloon houdt ze uit de takenlijst (migratie 240).
+  const wordtSjabloon = overrides.is_template === true
   const taken: Taak[] = []
   for (const taak of bronTaken) {
     taken.push(await createTaak({
@@ -91,7 +94,8 @@ export async function kopieerProject(
       beschrijving: taak.beschrijving,
       status: 'todo',
       prioriteit: taak.prioriteit,
-      toegewezen_aan: taak.toegewezen_aan,
+      toegewezen_aan: wordtSjabloon ? '' : taak.toegewezen_aan,
+      is_sjabloon: wordtSjabloon,
       deadline: undefined,
       geschatte_tijd: taak.geschatte_tijd,
       bestede_tijd: 0,
@@ -383,6 +387,8 @@ export async function deleteProjectMetKoppelingen(
 
 // ============ TAKEN ============
 
+// Sjabloon-taken (migratie 240) blijven buiten de lijst; getTakenByProject
+// toont ze wel, want daar kijk je naar het sjabloon zelf.
 export async function getTaken(limit = 50000): Promise<Taak[]> {
   const sb = supabase
   if (isSupabaseConfigured() && sb) {
@@ -390,11 +396,12 @@ export async function getTaken(limit = 50000): Promise<Taak[]> {
       sb
         .from('taken')
         .select('*')
+        .or('is_sjabloon.is.null,is_sjabloon.eq.false')
         .order('created_at', { ascending: false })
         .order('id', { ascending: true })
         .range(van, tot), limit)
   }
-  return getLocalData<Taak>('taken')
+  return getLocalData<Taak>('taken').filter((t) => !t.is_sjabloon)
 }
 
 export async function getTakenByProject(projectId: string): Promise<Taak[]> {
