@@ -53,10 +53,15 @@ CREATE INDEX IF NOT EXISTS idx_email_handtekeningen_account ON email_handtekenin
 CREATE UNIQUE INDEX IF NOT EXISTS uq_email_handtekening_standaard
   ON email_handtekeningen (user_id) WHERE is_standaard;
 
--- Hoogstens één handtekening per postvak, anders is "welke hoort bij dit
--- postvak" geen vraag met één antwoord.
+-- Hoogstens één handtekening per postvak PER GEBRUIKER. Niet globaal: een
+-- gedeeld postvak is één rij die iedereen in de organisatie ziet, dus een index
+-- op alleen account_id zou betekenen dat de eerste collega die er een
+-- handtekening aan hangt hem voor alle anderen bezet houdt. Die zien elkaars
+-- rijen niet (RLS), dus ze zouden een dubbele-sleutelfout krijgen zonder enige
+-- manier om te begrijpen waarom.
+DROP INDEX IF EXISTS uq_email_handtekening_per_postvak;
 CREATE UNIQUE INDEX IF NOT EXISTS uq_email_handtekening_per_postvak
-  ON email_handtekeningen (account_id) WHERE account_id IS NOT NULL;
+  ON email_handtekeningen (user_id, account_id) WHERE account_id IS NOT NULL;
 
 ALTER TABLE email_handtekeningen ENABLE ROW LEVEL SECURITY;
 
@@ -85,7 +90,10 @@ SELECT
   COALESCE(p.email_handtekening, ''),
   NULLIF(TRIM(p.handtekening_afbeelding), ''),
   NULLIF(TRIM(p.handtekening_afbeelding_link), ''),
-  NULLIF(p.handtekening_afbeelding_grootte, 0),
+  -- 64 is de oude standaard uit migratie 091 en betekent "nooit ingesteld".
+  -- Als breedte zou dat onleesbaar klein zijn; NULL laat handtekeningBreedte()
+  -- zijn eigen standaard kiezen.
+  NULLIF(NULLIF(p.handtekening_afbeelding_grootte, 0), 64),
   true,
   0
 FROM profiles p

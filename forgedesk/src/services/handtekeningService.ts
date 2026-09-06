@@ -29,11 +29,16 @@ export interface ProfielHandtekening {
   afbeeldingBreedte: number | null
 }
 
-/** Ontbreekt de tabel (248 niet gedraaid) of mag deze gebruiker er niet bij. */
+/**
+ * Ontbreekt de tabel (248 niet gedraaid) of mag deze gebruiker er niet bij?
+ * PGRST205 is de code die Supabase geeft als de tabel niet in de schema-cache
+ * zit, en dat is juist het geval vlak na een migratie.
+ */
 function isTabelOntbreekt(fout: { code?: string; message?: string } | null): boolean {
   if (!fout) return false
-  return fout.code === '42P01' || fout.code === '42703' || fout.code === 'PGRST204' || fout.code === '42501'
-    || /relation .* does not exist|column .* does not exist|could not find the .* column/i.test(fout.message || '')
+  return fout.code === '42P01' || fout.code === 'PGRST205' || fout.code === '42703'
+    || fout.code === 'PGRST204' || fout.code === '42501'
+    || /relation .* does not exist|could not find the table|column .* does not exist|could not find the .* column/i.test(fout.message || '')
 }
 
 let tabelBestaat: boolean | null = null
@@ -79,6 +84,8 @@ export async function getHandtekeningen(): Promise<Handtekening[]> {
     .order('volgorde', { ascending: true })
     .order('created_at', { ascending: true })
   if (error) {
+    // Alleen bij een echt ontbrekende tabel onthouden; zie
+    // handtekeningenBeschikbaar voor waarom een hikje dat niet mag.
     if (isTabelOntbreekt(error)) tabelBestaat = false
     return []
   }
@@ -98,6 +105,41 @@ export function kiesHandtekening(lijst: Handtekening[], accountId?: string | nul
     if (vanPostvak) return vanPostvak
   }
   return lijst.find((h) => h.isStandaard) ?? lijst[0]
+}
+
+/**
+ * De standaardhandtekening spiegelen naar het profiel.
+ *
+ * Waarom dat moet: alleen de mailmodule leest `email_handtekeningen`. De
+ * offertemail, de factuurmail, de aanmaning, de projectmail en het
+ * goedkeuringsverzoek lezen allemaal `profiles.email_handtekening` via
+ * useAppSettings. Zonder deze spiegeling bewerk je na migratie 248 iets dat de
+ * helft van je uitgaande post niet ziet, en is er geen scherm meer waar je dat
+ * kunt opmerken.
+ *
+ * Wat je als standaard aanwijst, is dus wat al je andere mail ondertekent.
+ * Mislukt het spiegelen, dan is dat geen reden om het opslaan te laten falen.
+ */
+async function spiegelNaarProfiel(h: Handtekening | null): Promise<void> {
+  if (!h || !supabase) return
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user?.id) return
+  const { error } = await supabase
+    .from('profiles')
+    .update({
+      email_handtekening: h.inhoud || '',
+      handtekening_afbeelding: h.afbeeldingUrl || '',
+      handtekening_afbeelding_link: h.afbeeldingLink || '',
+      ...(h.afbeeldingBreedte ? { handtekening_afbeelding_grootte: h.afbeeldingBreedte } : {}),
+    })
+    .eq('id', user.id)
+  if (error) console.warn('[handtekening] spiegelen naar profiel mislukt:', error.message)
+}
+
+/** De standaardhandtekening van deze gebruiker, of null. */
+async function huidigeStandaard(): Promise<Handtekening | null> {
+  const lijst = await getHandtekeningen().catch(() => [] as Handtekening[])
+  return lijst.find((h) => h.isStandaard) ?? lijst[0] ?? null
 }
 
 export async function bewaarHandtekening(h: Partial<Handtekening> & { naam: string }): Promise<Handtekening | null> {
@@ -121,7 +163,9 @@ export async function bewaarHandtekening(h: Partial<Handtekening> & { naam: stri
     ? await supabase.from('email_handtekeningen').update(velden).eq('id', h.id).select().single()
     : await supabase.from('email_handtekeningen').insert(velden).select().single()
   if (uitkomst.error) throw new Error(uitkomst.error.message)
-  return alsHandtekening(uitkomst.data as Rij)
+  const bewaard = alsHandtekening(uitkomst.data as Rij)
+  if (bewaard.isStandaard) await spiegelNaarProfiel(bewaard)
+  return bewaard
 }
 
 export async function verwijderHandtekening(id: string): Promise<void> {
@@ -146,7 +190,15 @@ export async function zetStandaard(id: string): Promise<void> {
     .neq('id', id)
   if (uit.error) throw new Error(uit.error.message)
   const aan = await supabase.from('email_handtekeningen').update({ is_standaard: true }).eq('id', id)
-  if (aan.error) throw new Error(aan.error.message)
+  if (aan.error) {
+    // De andere staan nu al uit. Zet er meteen weer één aan, anders heeft de
+    // gebruiker geen standaard meer en weet hij dat niet: de melding zegt
+    // alleen dat het mislukte.
+    const terug = await huidigeStandaard()
+    if (terug) await supabase.from('email_handtekeningen').update({ is_standaard: true }).eq('id', terug.id)
+    throw new Error(aan.error.message)
+  }
+  await spiegelNaarProfiel(await huidigeStandaard())
 }
 
 /**
@@ -158,10 +210,19 @@ export async function handtekeningenBeschikbaar(): Promise<boolean> {
   if (tabelBestaat !== null) return tabelBestaat
   if (!isSupabaseConfigured() || !supabase) return false
   const { error } = await supabase.from('email_handtekeningen').select('id').limit(1)
-  if (error && isTabelOntbreekt(error)) {
+  if (!error) {
+    tabelBestaat = true
+    return true
+  }
+  // Alleen een ontbrekende tabel is een blijvend antwoord. Een netwerkhikje,
+  // een verlopen token of een 5xx zegt niets over de migratie, en zou hier
+  // vroeger het antwoord voor de rest van de sessie op 'nee' zetten: dan
+  // bewerkte je je handtekening in de nieuwe tabel en verstuurde de app stil
+  // de oude uit je profiel. Bij twijfel niets onthouden en het later opnieuw
+  // vragen.
+  if (isTabelOntbreekt(error)) {
     tabelBestaat = false
     return false
   }
-  tabelBestaat = !error
-  return tabelBestaat
+  return false
 }

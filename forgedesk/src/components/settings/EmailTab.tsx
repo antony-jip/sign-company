@@ -843,6 +843,14 @@ export function EmailTab() {
   }
 
   const handleApplyToAll = async () => {
+    // Met meerdere handtekeningen (migratie 248) schrijft dit de handtekening
+    // van elk teamlid over, óók de standaard die hij zelf heeft ingesteld en
+    // waarmee zijn offertes en facturen ondertekenen. Dat is niet wat "toepassen
+    // op iedereen" belooft, dus dan liever helemaal niet.
+    if (meerHandtekeningen) {
+      toast.error('Iedereen beheert nu zijn eigen handtekeningen. Vraag je collega om er een over te nemen.')
+      return
+    }
     if (!emailHandtekening && !handtekeningAfbeelding) {
       toast.error('Stel eerst je eigen handtekening in')
       return
