@@ -708,8 +708,15 @@ async function vulWachtrijAanInternal(vlagRijen: FeatureFlagRij[]): Promise<numb
   const postvakken = await haalPostvakken()
   if (postvakken.length === 0) return 0
 
-  const actief = await actieveUserIds()
-  const kandidaten = postvakken.filter((p) => actief.has(p.user_id))
+  // Een gedeeld postvak (migratie 245) is niet van één mens en mag dus niet aan
+  // de login-frequentie hangen van degene die hem toevallig koppelde: dan valt
+  // de team-inbox stil zodra die persoon een week op vakantie is. Bestaat de
+  // kolom `soort` nog niet, dan is elk postvak 'persoonlijk' en geldt de filter
+  // onveranderd voor iedereen.
+  const gedeeld = postvakken.filter((p) => p.soort === 'gedeeld')
+  const persoonlijk = postvakken.filter((p) => p.soort !== 'gedeeld')
+  const actief = persoonlijk.length > 0 ? await actieveUserIds() : new Set<string>()
+  const kandidaten = [...persoonlijk.filter((p) => actief.has(p.user_id)), ...gedeeld]
   if (kandidaten.length === 0) return 0
 
   const orgs = await organisatiePerGebruiker([...new Set(kandidaten.map((p) => p.user_id))])

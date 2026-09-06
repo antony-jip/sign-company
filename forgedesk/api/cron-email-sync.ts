@@ -75,6 +75,8 @@ interface Postvak {
   id: string | null
   user_id: string
   is_standaard: boolean
+  /** 'persoonlijk' of 'gedeeld' (migratie 245). Zonder die kolom persoonlijk. */
+  soort: string
 }
 
 function isKolomFout(fout: { code?: string; message?: string } | null): boolean {
@@ -96,7 +98,7 @@ function isKolomFout(fout: { code?: string; message?: string } | null): boolean 
  * gebruiker precies het oude gedrag.
  */
 async function haalPostvakken(): Promise<Postvak[]> {
-  for (const kolommen of ['id, user_id, is_standaard', 'id, user_id', 'user_id']) {
+  for (const kolommen of ['id, user_id, is_standaard, soort', 'id, user_id', 'user_id']) {
     const { data, error } = await supabaseAdmin
       .from('user_email_settings')
       .select(kolommen)
@@ -119,6 +121,7 @@ async function haalPostvakken(): Promise<Postvak[]> {
         id,
         user_id: userId,
         is_standaard: rij.is_standaard === undefined || rij.is_standaard === null || rij.is_standaard === true,
+        soort: (rij.soort as string) || 'persoonlijk',
       })
     }
     return postvakken
@@ -271,8 +274,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const postvakken = await haalPostvakken()
     if (!postvakken.length) return res.status(200).json({ gesynct: 0, overgeslagen: 0 })
 
-    const actief = await actieveUserIds()
-    const kandidaten = postvakken.filter((p) => actief.has(p.user_id))
+    // Een gedeeld postvak (migratie 245) is niet van één mens en mag dus niet
+    // aan de login-frequentie hangen van degene die hem toevallig koppelde:
+    // dan valt de team-inbox stil zodra die persoon een week op vakantie is.
+    // Bestaat de kolom `soort` nog niet, dan is elk postvak 'persoonlijk' en
+    // geldt de filter onveranderd voor iedereen.
+    const gedeeld = postvakken.filter((p) => p.soort === 'gedeeld')
+    const persoonlijk = postvakken.filter((p) => p.soort !== 'gedeeld')
+    const actief = persoonlijk.length > 0 ? await actieveUserIds() : new Set<string>()
+    const kandidaten = [...persoonlijk.filter((p) => actief.has(p.user_id)), ...gedeeld]
 
     // Langst niet gesynct eerst. Wie nog geen sync-state heeft (nieuw postvak)
     // komt vooraan, want die heeft de ronde het hardst nodig. Bij gelijkspel
