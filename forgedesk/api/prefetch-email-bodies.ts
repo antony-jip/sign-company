@@ -568,6 +568,19 @@ async function resolveImapFolder(client: ImapFlow, folder: string): Promise<stri
 
 // Serverless heeft een harde limiet; we stoppen ruim daarvoor en melden hoeveel
 // er nog open staat, zodat de client desgewenst nog een ronde vraagt.
+/**
+ * Uit welk postvak dit verzoek komt (user_email_settings.id, migratie 245).
+ * Ontbreekt hij, dan kiest de credential-lezer het standaardpostvak, dus oude
+ * clients blijven werken.
+ */
+function leesAccountId(req: VercelRequest): string | null {
+  const uitBody = (req.body as Record<string, unknown> | undefined)?.account_id
+  if (typeof uitBody === 'string' && uitBody) return uitBody
+  const uitQuery = req.query?.account_id
+  if (typeof uitQuery === 'string' && uitQuery) return uitQuery
+  return null
+}
+
 export const config = { maxDuration: 60 }
 const TIJDSBUDGET_MS = 45_000
 const MAX_BATCH = 40
@@ -614,7 +627,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { folder = 'INBOX', limit = 25 } = req.body || {}
     const user_id = await verifyUser(req)
     if (!(await enforceRateLimit(user_id, res))) return
-    const creds = await getEmailCredentials(user_id)
+    const creds = await getEmailCredentials(user_id, leesAccountId(req))
 
     const mapValue = String(folder).toUpperCase() === 'INBOX' ? 'inbox' : String(folder).toLowerCase()
     const batchGrootte = Math.min(Math.max(Number(limit) || 25, 1), MAX_BATCH)

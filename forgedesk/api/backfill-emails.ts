@@ -185,6 +185,19 @@ function cutoffVoorTarget(target: string): Date | null {
 
 const BATCH_SIZE = 300
 
+/**
+ * Uit welk postvak dit verzoek komt (user_email_settings.id, migratie 245).
+ * Ontbreekt hij, dan kiest de credential-lezer het standaardpostvak, dus oude
+ * clients blijven werken.
+ */
+function leesAccountId(req: VercelRequest): string | null {
+  const uitBody = (req.body as Record<string, unknown> | undefined)?.account_id
+  if (typeof uitBody === 'string' && uitBody) return uitBody
+  const uitQuery = req.query?.account_id
+  if (typeof uitQuery === 'string' && uitQuery) return uitQuery
+  return null
+}
+
 export const config = { maxDuration: 60 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -240,7 +253,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ done: true, synced: 0 })
     }
 
-    const creds = await getEmailCredentials(user_id)
+    const creds = await getEmailCredentials(user_id, leesAccountId(req))
     client = new ImapFlow({
       host: creds.imap_host,
       port: creds.imap_port,

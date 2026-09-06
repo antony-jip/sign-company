@@ -252,6 +252,8 @@ export async function testEmailConnection(
     imap_port?: number
     /** google of microsoft test de opgeslagen koppeling; adres en wachtwoord doen dan niet mee. */
     auth_type?: MailAuthType
+    /** Welk postvak getest wordt (user_email_settings.id, migratie 245); leeg = het standaardpostvak. */
+    account_id?: string
   }
 ): Promise<{ imap_ok: boolean; smtp_ok: boolean; error?: string }> {
   const token = await getAuthToken()
@@ -265,6 +267,7 @@ export async function testEmailConnection(
       gmail_address,
       app_password,
       auth_type: options?.auth_type,
+      account_id: options?.account_id,
       smtp_host: options?.smtp_host || 'smtp.gmail.com',
       smtp_port: options?.smtp_port || 587,
       imap_host: options?.imap_host || 'imap.gmail.com',
@@ -308,7 +311,8 @@ export async function fetchEmailsFromIMAP(
   limit?: number,
   offset?: number,
   userId?: string,
-  snel?: boolean
+  snel?: boolean,
+  accountId?: string
 ): Promise<{ emails: IMAPEmailSummary[]; total: number; synced?: number; incremental?: boolean; remaining?: number; errors?: string[] }> {
   const token = await getAuthToken()
 
@@ -323,6 +327,7 @@ export async function fetchEmailsFromIMAP(
       limit: limit || 50,
       offset: offset || 0,
       snel: snel === true,
+      account_id: accountId,
     }),
   })
 
@@ -370,7 +375,8 @@ export async function classificeerAanvragen(emailId?: string): Promise<{ beoorde
  */
 export async function prefetchEmailBodies(
   folder = 'INBOX',
-  limit = 25
+  limit = 25,
+  accountId?: string
 ): Promise<{ verwerkt: number; mislukt: number; resterend: boolean } | null> {
   try {
     const token = await getAuthToken()
@@ -380,7 +386,7 @@ export async function prefetchEmailBodies(
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
       },
-      body: JSON.stringify({ folder, limit }),
+      body: JSON.stringify({ folder, limit, account_id: accountId }),
     })
     if (!response.ok) return null
     return await response.json()
@@ -391,7 +397,8 @@ export async function prefetchEmailBodies(
 
 /** Eén backfill-batch oudere mail (zie api/backfill-emails). */
 export async function backfillEmailsFromIMAP(
-  folder?: string
+  folder?: string,
+  accountId?: string
 ): Promise<{ done: boolean; pending?: boolean; synced?: number; oudsteDatum?: string | null }> {
   const token = await getAuthToken()
   const response = await fetch('/api/backfill-emails', {
@@ -400,7 +407,7 @@ export async function backfillEmailsFromIMAP(
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`,
     },
-    body: JSON.stringify({ folder: folder || 'inbox' }),
+    body: JSON.stringify({ folder: folder || 'inbox', account_id: accountId }),
   })
   if (!response.ok) {
     const error: { error?: string } = await response.json().catch(() => ({}))
@@ -411,7 +418,8 @@ export async function backfillEmailsFromIMAP(
 
 export async function readEmailFromIMAP(
   uid: number,
-  folder?: string
+  folder?: string,
+  accountId?: string
 ): Promise<IMAPEmailDetail> {
   const token = await getAuthToken()
 
@@ -424,6 +432,7 @@ export async function readEmailFromIMAP(
     body: JSON.stringify({
       uid,
       folder: folder || 'INBOX',
+      account_id: accountId,
     }),
   })
 
@@ -440,7 +449,7 @@ export async function readEmailFromIMAP(
  * raakt de vlaggen niet meer aan (dat pad draait ook op prefetch en hover),
  * dus alleen een echte klik komt hier langs.
  */
-export async function markeerEmailGelezenOpServer(uid: number, folder?: string): Promise<void> {
+export async function markeerEmailGelezenOpServer(uid: number, folder?: string, accountId?: string): Promise<void> {
   const token = await getAuthToken()
 
   const response = await fetch('/api/read-email', {
@@ -453,6 +462,7 @@ export async function markeerEmailGelezenOpServer(uid: number, folder?: string):
       uid,
       folder: folder || 'INBOX',
       markSeenOnly: true,
+      account_id: accountId,
     }),
   })
 
@@ -669,12 +679,13 @@ export interface ImapActieResultaat {
 export async function emailImapActie(
   action: 'trash' | 'purge' | 'archive',
   emailIds: string[],
+  accountId?: string,
 ): Promise<ImapActieResultaat> {
   const token = await getAuthToken()
   const response = await fetch('/api/email-imap-action', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-    body: JSON.stringify({ action, emailIds }),
+    body: JSON.stringify({ action, emailIds, account_id: accountId }),
   })
   if (!response.ok) {
     const error: { error?: string } = await response.json().catch(() => ({}))

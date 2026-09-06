@@ -820,6 +820,19 @@ async function resolveImapFolder(client: ImapFlow, folder: string): Promise<stri
   return folder
 }
 
+/**
+ * Uit welk postvak dit verzoek komt (user_email_settings.id, migratie 245).
+ * Ontbreekt hij, dan kiest de credential-lezer het standaardpostvak, dus oude
+ * clients blijven werken.
+ */
+function leesAccountId(req: VercelRequest): string | null {
+  const uitBody = (req.body as Record<string, unknown> | undefined)?.account_id
+  if (typeof uitBody === 'string' && uitBody) return uitBody
+  const uitQuery = req.query?.account_id
+  if (typeof uitQuery === 'string' && uitQuery) return uitQuery
+  return null
+}
+
 export const config = { maxDuration: 60 }
 
 /**
@@ -986,7 +999,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let oauthCreds: EmailCredentials | null = null
     let creds: EmailCredentials | null = null
     try {
-      creds = await getEmailCredentials(user_id)
+      creds = await getEmailCredentials(user_id, leesAccountId(req))
     } catch {
       creds = null
     }

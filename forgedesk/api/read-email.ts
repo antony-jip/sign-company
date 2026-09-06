@@ -663,6 +663,19 @@ async function readCachedSignedUrls(user_id: string, email_uuid: string): Promis
   return signedMap
 }
 
+/**
+ * Uit welk postvak dit verzoek komt (user_email_settings.id, migratie 245).
+ * Ontbreekt hij, dan kiest de credential-lezer het standaardpostvak, dus oude
+ * clients blijven werken.
+ */
+function leesAccountId(req: VercelRequest): string | null {
+  const uitBody = (req.body as Record<string, unknown> | undefined)?.account_id
+  if (typeof uitBody === 'string' && uitBody) return uitBody
+  const uitQuery = req.query?.account_id
+  if (typeof uitQuery === 'string' && uitQuery) return uitQuery
+  return null
+}
+
 export const config = { maxDuration: 30 }
 
 // ── Rate limiting (inline; Vercel bundelt geen lokale imports in api/) ──
@@ -712,7 +725,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let access_token: string | undefined
     let creds: EmailCredentials | null = null
     try {
-      creds = await getEmailCredentials(user_id)
+      creds = await getEmailCredentials(user_id, leesAccountId(req))
     } catch {
       creds = null
     }
