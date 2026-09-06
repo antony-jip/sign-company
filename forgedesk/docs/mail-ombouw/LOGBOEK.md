@@ -172,3 +172,12 @@ Op Trigger.dev (dashboard, environment prod) voor de IDLE-werker:
 - **`fetch-emails` per postvak.** Nu één ronde per gebruiker; er moet er één per rij in `user_email_settings` komen, met `email_sync_state` op `(account_id, folder)` in plaats van `(user_id, folder)`, en `account_id` op elke nieuwe `emails`-rij. Zonder dat blijft een tweede postvak leeg, hoe goed de kiezer ook werkt.
 - **`ingeplande_berichten.account_id`** (staat in 245) invullen bij het inplannen en meesturen bij het alsnog verzenden.
 - **Gedeeld postvak zonder eigenaar.** Mail van een gedeeld postvak krijgt nu `user_id` van wie het koppelde; de lijstquery's filtreren op de eigen `user_id`, dus zonder een besluit hierover ziet alleen de koppelaar de mail. Ofwel de query's laten `user_id` los bij een gedeeld postvak, ofwel de sync schrijft rijen per lid. Dit is een regie-besluit, geen code-detail.
+
+## Reviewfixes migraties (regie)
+
+- Review vond dat de twee gedeeld-postvak-policies in 245 dood waren én alle SELECTs op `emails` konden blokkeren: een subquery op `user_email_settings` binnen een policy krijgt de RLS uit 037 én het kolom-SELECT uit 160 tegen. Vervangen door `is_gedeeld_postvak_van_mijn_org(uuid)` als SECURITY DEFINER STABLE, met EXECUTE alleen voor authenticated.
+- 245 geeft de nieuwe kolommen van `user_email_settings` zelf hun SELECT-grant terug (160 trok het tabelbrede recht in en nieuwe kolommen erven niets). `encrypted_app_password`, `oauth_refresh_token_enc` en `oauth_access_token_enc` staan expliciet buiten die lijst: migratie 160 ongewijzigd opnieuw draaien zou de OAuth-tokens juist aan de browser geven.
+- `user_email_settings` krijgt een leespolicy voor gedeelde postvakken van de eigen organisatie; zonder die policy zag een collega het postvak niet staan en was de hele functie dood.
+- `email_notities`: twee leespolicies naast elkaar (eigen notities, en notities op een gedeeld postvak) in plaats van één met een EXISTS erin. De RLS-invariantentest vangt die vorm af, met migratie 195 als precedent. Plus een UPDATE-policy, want een notitie was niet te bewerken.
+- `email_threads_view` groepeert nu ook op `account_id`: anders smelten twee postvakken van dezelfde gebruiker samen en ziet een collega de threads van een gedeeld postvak nooit.
+- 244 en 245 raken beide elke rij in `emails` (24k). Draai ze in een rustig moment en zet zo nodig `statement_timeout` hoger.

@@ -51,46 +51,61 @@ ALTER TABLE mailsync_taken ADD COLUMN IF NOT EXISTS account_id UUID;
 
 -- 2. Gedeeld postvak: leden van de organisatie lezen en bewerken de mail van
 --    een postvak met soort 'gedeeld'. Persoonlijke postvakken blijven user-only.
+--
+--    De check staat bewust in een SECURITY DEFINER-functie. Een subquery op
+--    user_email_settings binnen een policy krijgt namelijk twee keer nul terug:
+--    de RLS van die tabel (037: user_id = auth.uid()) sluit het postvak van een
+--    collega uit, en het kolom-SELECT dat migratie 160 per kolom uitdeelt geldt
+--    niet voor de kolommen die deze migratie toevoegt. Zonder de functie zijn de
+--    policies niet alleen dood, maar kan een SELECT op emails afketsen op
+--    "permission denied" voor iedereen.
+CREATE OR REPLACE FUNCTION is_gedeeld_postvak_van_mijn_org(p_account UUID)
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM user_email_settings s
+    WHERE s.id = p_account
+      AND s.soort = 'gedeeld'
+      AND s.organisatie_id = auth_organisatie_id()
+  )
+$$;
+REVOKE ALL ON FUNCTION is_gedeeld_postvak_van_mijn_org(UUID) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION is_gedeeld_postvak_van_mijn_org(UUID) TO authenticated;
+
 DROP POLICY IF EXISTS "Team leest gedeeld postvak" ON emails;
 CREATE POLICY "Team leest gedeeld postvak" ON emails
   FOR SELECT TO authenticated
-  USING (
-    account_id IS NOT NULL AND EXISTS (
-      SELECT 1 FROM user_email_settings s
-      WHERE s.id = emails.account_id AND s.soort = 'gedeeld'
-        AND s.organisatie_id = auth_organisatie_id()
-    )
-  );
+  USING (account_id IS NOT NULL AND is_gedeeld_postvak_van_mijn_org(account_id));
+
 DROP POLICY IF EXISTS "Team wijzigt gedeeld postvak" ON emails;
 CREATE POLICY "Team wijzigt gedeeld postvak" ON emails
   FOR UPDATE TO authenticated
-  USING (
-    account_id IS NOT NULL AND EXISTS (
-      SELECT 1 FROM user_email_settings s
-      WHERE s.id = emails.account_id AND s.soort = 'gedeeld'
-        AND s.organisatie_id = auth_organisatie_id()
-    )
-  )
-  WITH CHECK (
-    account_id IS NOT NULL AND EXISTS (
-      SELECT 1 FROM user_email_settings s
-      WHERE s.id = emails.account_id AND s.soort = 'gedeeld'
-        AND s.organisatie_id = auth_organisatie_id()
-    )
-  );
+  USING (account_id IS NOT NULL AND is_gedeeld_postvak_van_mijn_org(account_id))
+  WITH CHECK (account_id IS NOT NULL AND is_gedeeld_postvak_van_mijn_org(account_id));
+
 DROP POLICY IF EXISTS "Team leest bodies gedeeld postvak" ON email_bodies;
 CREATE POLICY "Team leest bodies gedeeld postvak" ON email_bodies
   FOR SELECT TO authenticated
   USING (
     EXISTS (
-      SELECT 1 FROM emails e JOIN user_email_settings s ON s.id = e.account_id
-      WHERE e.id = email_bodies.email_id AND s.soort = 'gedeeld'
-        AND s.organisatie_id = auth_organisatie_id()
+      SELECT 1 FROM emails e
+      WHERE e.id = email_bodies.email_id
+        AND e.account_id IS NOT NULL
+        AND is_gedeeld_postvak_van_mijn_org(e.account_id)
     )
   );
--- Leden zien welke gedeelde postvakken er zijn (niet de wachtwoorden: SELECT op
--- de tabel is sinds 160 ingetrokken; dit gaat via de api-laag met deze policy
--- als documentatie van de bedoeling).
+
+-- Leden moeten het gedeelde postvak ook kunnen zien staan; de RLS uit 037 laat
+-- alleen het eigen postvak door.
+DROP POLICY IF EXISTS "Org leest gedeelde postvakken" ON user_email_settings;
+CREATE POLICY "Org leest gedeelde postvakken" ON user_email_settings
+  FOR SELECT TO authenticated
+  USING (soort = 'gedeeld' AND organisatie_id = auth_organisatie_id());
+
 ALTER TABLE emails ADD COLUMN IF NOT EXISTS toegewezen_op TIMESTAMPTZ;
 CREATE INDEX IF NOT EXISTS idx_emails_toegewezen ON emails (toegewezen_aan) WHERE toegewezen_aan IS NOT NULL;
 
@@ -107,9 +122,33 @@ CREATE TABLE IF NOT EXISTS email_notities (
 CREATE INDEX IF NOT EXISTS idx_email_notities_thread ON email_notities (organisatie_id, thread_id);
 CREATE INDEX IF NOT EXISTS idx_email_notities_email ON email_notities (email_id);
 ALTER TABLE email_notities ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Org leest notities" ON email_notities;
-CREATE POLICY "Org leest notities" ON email_notities
-  FOR SELECT TO authenticated USING (organisatie_id = auth_organisatie_id());
+-- Twee leespolicies naast elkaar (RLS telt ze op): je eigen notities zie je
+-- altijd, en op een gedeeld postvak ziet het hele team ze. Bewust niet één
+-- policy met een EXISTS erin: dan hangt ook je eigen notitie aan een koppeling,
+-- precies de fout die migratie 195 met `emails` maakte.
+DROP POLICY IF EXISTS "Eigen notities lezen" ON email_notities;
+CREATE POLICY "Eigen notities lezen" ON email_notities
+  FOR SELECT TO authenticated
+  USING (organisatie_id = auth_organisatie_id() AND user_id = auth.uid());
+
+DROP POLICY IF EXISTS "Notities op gedeeld postvak lezen" ON email_notities;
+CREATE POLICY "Notities op gedeeld postvak lezen" ON email_notities
+  FOR SELECT TO authenticated
+  USING (
+    organisatie_id = auth_organisatie_id()
+    AND EXISTS (
+      SELECT 1 FROM emails e
+      WHERE (e.id = email_notities.email_id OR e.thread_id = email_notities.thread_id)
+        AND e.account_id IS NOT NULL
+        AND is_gedeeld_postvak_van_mijn_org(e.account_id)
+    )
+  );
+
+DROP POLICY IF EXISTS "Eigenaar wijzigt notitie" ON email_notities;
+CREATE POLICY "Eigenaar wijzigt notitie" ON email_notities
+  FOR UPDATE TO authenticated
+  USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+
 DROP POLICY IF EXISTS "Org schrijft notities" ON email_notities;
 CREATE POLICY "Org schrijft notities" ON email_notities
   FOR INSERT TO authenticated WITH CHECK (organisatie_id = auth_organisatie_id() AND user_id = auth.uid());
@@ -162,6 +201,47 @@ ALTER TABLE ingeplande_berichten
   CHECK (status IN ('wachtend', 'verwerken', 'verzenden', 'verzonden', 'geannuleerd', 'mislukt'));
 ALTER TABLE ingeplande_berichten ADD COLUMN IF NOT EXISTS email_id UUID REFERENCES emails(id) ON DELETE SET NULL;
 ALTER TABLE ingeplande_berichten ADD COLUMN IF NOT EXISTS account_id UUID REFERENCES user_email_settings(id) ON DELETE SET NULL;
+
+-- Migratie 160 trok het tabelbrede SELECT op user_email_settings in en deelde
+-- het per kolom uit. Kolommen die daarna zijn toegevoegd erven die grant niet,
+-- dus die geven we hier expliciet. Het app-wachtwoord en de OAuth-tokens
+-- blijven bewust buiten de lijst: die horen alleen in de api-laag thuis.
+DO $$
+DECLARE
+  kolommen text;
+BEGIN
+  SELECT string_agg(quote_ident(column_name), ', ' ORDER BY ordinal_position)
+    INTO kolommen
+    FROM information_schema.columns
+   WHERE table_schema = 'public'
+     AND table_name = 'user_email_settings'
+     AND column_name NOT IN (
+       'encrypted_app_password',
+       'oauth_refresh_token_enc',
+       'oauth_access_token_enc'
+     );
+  IF kolommen IS NOT NULL THEN
+    EXECUTE format('GRANT SELECT (%s) ON public.user_email_settings TO authenticated', kolommen);
+  END IF;
+END $$;
+
+-- Threads per postvak: zonder account_id smelten twee postvakken van dezelfde
+-- gebruiker samen en ziet een collega de threads van een gedeeld postvak nooit.
+CREATE OR REPLACE VIEW email_threads_view
+WITH (security_invoker = on) AS
+SELECT
+  user_id,
+  account_id,
+  thread_id,
+  MAX(datum) AS laatste_datum,
+  COUNT(*)::int AS aantal,
+  COUNT(*) FILTER (WHERE NOT COALESCE(gelezen, false))::int AS ongelezen,
+  (ARRAY_AGG(id ORDER BY datum DESC))[1] AS laatste_email_id,
+  ARRAY_REMOVE(ARRAY_AGG(DISTINCT van), NULL) AS deelnemers
+FROM emails
+WHERE thread_id IS NOT NULL AND map NOT IN ('prullenbak', 'concepten')
+GROUP BY user_id, account_id, thread_id;
+GRANT SELECT ON email_threads_view TO authenticated;
 
 COMMIT;
 
