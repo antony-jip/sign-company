@@ -518,7 +518,14 @@ export async function getEmailBodiesUitTabel(ids: string[]): Promise<EmailBody[]
       return await bodiesUitEmailsRijen(blok)
     }
     if (error) return []
-    return (data || []) as BodyRij[]
+    const rijen = (data || []) as BodyRij[]
+    // Mail van vóór migratie 244 staat nog in emails.body_html: de tabel
+    // bestaat dan wel maar heeft geen rij. Zonder deze aanvulling zou zo'n
+    // mail leeg lijken tot hij opnieuw via IMAP is opgehaald.
+    const gevonden = new Set(rijen.map((r) => r.email_id))
+    const rest = blok.filter((id) => !gevonden.has(id))
+    if (rest.length) rijen.push(...(await bodiesUitEmailsRijen(rest)))
+    return rijen
   }))
   return resultaten.flat().map((r) => ({
     emailId: r.email_id,
@@ -542,7 +549,9 @@ export async function getEmailBody(id: string): Promise<{ body_html: string | nu
     if (!metaQ.data) return null
     let bodyHtml = bodyQ.data?.body_html ?? null
     let bodyTekst = bodyQ.data?.body_text ?? null
-    if (bodiesTabelOntbreekt() || tabelOntbreekt(bodyQ.error)) {
+    // Geen rij betekent: mail van vóór migratie 244, die staat nog in
+    // emails.body_html. Ook dan terugvallen, anders lijkt de mail leeg.
+    if (bodiesTabelOntbreekt() || tabelOntbreekt(bodyQ.error) || (!bodyQ.error && !bodyQ.data)) {
       // Alleen markeren bij een echte tabelfout: markeren op de latch zelf
       // verlengde hem bij elk gebruik, waardoor hij nooit verliep.
       if (tabelOntbreekt(bodyQ.error)) markeerBodiesTabelOntbreekt()
@@ -594,6 +603,12 @@ export async function getEmailBodies(
         rijen = (await bodiesUitEmailsRijen(blok)).filter((r) => r.body_html)
       } else if (bodiesQ.error) {
         return []
+      } else {
+        // Aanvullen wat nog in emails.body_html staat: mail van vóór 244 heeft
+        // geen rij in email_bodies.
+        const gevonden = new Set(rijen.map((r) => r.email_id))
+        const rest = blok.filter((id) => !gevonden.has(id))
+        if (rest.length) rijen = rijen.concat((await bodiesUitEmailsRijen(rest)).filter((r) => r.body_html))
       }
       const meta = new Map(((metaQ.data || []) as Array<{ id: string; attachment_meta: unknown[] | null }>).map((r) => [r.id, r.attachment_meta]))
       return rijen.map((r) => ({
