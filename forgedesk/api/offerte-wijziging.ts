@@ -158,7 +158,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (emailSettings?.gmail_address) {
         // Met .js-extensie: de Vercel-runtime draait ESM en vindt de module
         // zonder extensie niet (ERR_MODULE_NOT_FOUND op /var/task/...).
-        const { sendDoenNotification } = await import('./resend-notify.js')
+        const { sendDoenNotification } = await import('./_resend-notify.js')
         await sendDoenNotification({
           to: emailSettings.gmail_address,
           subject: `Wijziging aangevraagd voor offerte ${offerte.nummer} — ${offerte.klant_naam || 'Klant'}`,

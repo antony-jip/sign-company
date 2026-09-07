@@ -1,6 +1,6 @@
 /**
  * Email template builder for Trigger.dev tasks.
- * Mirrors api/emailTemplate.ts but available server-side in tasks.
+ * Mirrors api/_emailTemplate.ts but available server-side in tasks.
  * White-label: no "doen." branding visible to clients.
  */
 

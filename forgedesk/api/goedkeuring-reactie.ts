@@ -190,7 +190,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         // Met .js-extensie (ESM-runtime) en mét await: zonder await bevriest
         // Vercel de lambda na de response en sterft de Resend-request.
-        const { sendDoenNotification } = await import('./resend-notify.js')
+        const { sendDoenNotification } = await import('./_resend-notify.js')
         await sendDoenNotification({
           to: userEmail,
           subject: onderwerp,

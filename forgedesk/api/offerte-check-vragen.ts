@@ -185,7 +185,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (mailAdres) {
         // Met .js-extensie: de Vercel-runtime draait ESM en vindt de module
         // zonder extensie niet (ERR_MODULE_NOT_FOUND op /var/task/...).
-        const { sendDoenNotification } = await import('./resend-notify.js')
+        const { sendDoenNotification } = await import('./_resend-notify.js')
         // Awaiten is verplicht: zonder await bevriest Vercel de lambda direct
         // na de response en sterft de Resend-request voordat hij vertrokken is.
         await sendDoenNotification({
