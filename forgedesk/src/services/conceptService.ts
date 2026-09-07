@@ -1,6 +1,7 @@
 import { supabase, isSupabaseConfigured } from './supabaseClient'
 import { getOrgId } from './supabaseHelpers'
 import type { ComposerDocument, Ontvanger } from '@/lib/mail/types'
+import { getEmailBody } from './emailService'
 
 /**
  * Concepten zijn rijen in `emails` met map 'concepten' en het hele
@@ -94,16 +95,104 @@ export async function getConcepten(): Promise<ComposerDocument[]> {
     .filter((d): d is ComposerDocument => !!d)
 }
 
+/**
+ * Een concept dat niet in doen. is geschreven.
+ *
+ * De map Concepten bevat ook de concepten die van de mailserver komen: begonnen
+ * in Outlook, op de telefoon, of hier vóór de ombouw. Die hebben geen
+ * `concept`-JSON, alleen de gewone kolommen. Zonder deze omweg gaven ze
+ * "Concept kon niet worden geopend" en kon je er niets meer mee.
+ */
+function uitMailrij(rij: {
+  id: string
+  aan?: string | null
+  onderwerp?: string | null
+  body_html?: string | null
+  body_text?: string | null
+  thread_id?: string | null
+  account_id?: string | null
+}): ComposerDocument {
+  const ontvangers: Ontvanger[] = (rij.aan || '')
+    .split(/[,;]/)
+    .map((deel) => deel.trim())
+    .filter(Boolean)
+    .map((deel) => {
+      const haakjes = deel.match(/^(.*?)\s*<([^>]+)>$/)
+      const email = (haakjes ? haakjes[2] : deel).trim()
+      const naam = haakjes ? haakjes[1].trim().replace(/^"|"$/g, '') : ''
+      return { email, naam: naam || undefined, bron: 'vrij' as const }
+    })
+    .filter((o) => !!o.email)
+
+  const html = rij.body_html?.trim()
+    || (rij.body_text ? rij.body_text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br />') : '')
+
+  return {
+    modus: 'nieuw',
+    id: rij.id,
+    aan: ontvangers,
+    cc: [],
+    bcc: [],
+    onderwerp: rij.onderwerp || '',
+    html,
+    // Uit: de handtekening staat al in de tekst die van de server komt, anders
+    // krijg je hem twee keer onder je bericht.
+    handtekening: false,
+    bijlagen: [],
+    opvolgen: false,
+    koppelingen: [],
+    threadId: rij.thread_id || undefined,
+    accountId: rij.account_id || undefined,
+  }
+}
+
+/** 42703 zonder migratie 245, PGRST204 via de schema-cache. */
+function isKolomFout(fout: { code?: string; message?: string } | null): boolean {
+  if (!fout) return false
+  return fout.code === '42703' || fout.code === 'PGRST204'
+    || /column .* does not exist|could not find the .* column/i.test(fout.message || '')
+}
+
 export async function getConcept(id: string): Promise<ComposerDocument | null> {
   if (!id || !isSupabaseConfigured() || !supabase) return null
-  const { data, error } = await supabase
+  const client = supabase
+  const KOLOMMEN = 'id, concept, aan, onderwerp, body_html, body_text, thread_id'
+  const haal = (kolommen: string) => client
     .from('emails')
-    .select('id, concept')
+    .select(kolommen)
     .eq('id', id)
     .eq('map', 'concepten')
     .maybeSingle()
+  // account_id komt uit migratie 245; zonder die kolom faalt anders de hele
+  // select en lijkt het concept te ontbreken.
+  let uitkomst = await haal(`${KOLOMMEN}, account_id`)
+  if (isKolomFout(uitkomst.error)) uitkomst = await haal(KOLOMMEN)
+  const { data, error } = uitkomst
   if (error) throw error
-  return data ? alsDocument(data as { id: string; concept: ComposerDocument | null }) : null
+  if (!data) return null
+  const rij = data as unknown as {
+    id: string
+    concept: ComposerDocument | null
+    aan?: string | null
+    onderwerp?: string | null
+    body_html?: string | null
+    body_text?: string | null
+    thread_id?: string | null
+    account_id?: string | null
+  }
+  const eigen = alsDocument(rij)
+  if (eigen) return eigen
+
+  // Van de server: de inhoud staat sinds migratie 244 in email_bodies en niet
+  // meer in emails.body_html, dus zonder deze stap opent het concept leeg.
+  if (!rij.body_html?.trim() && !rij.body_text?.trim()) {
+    const body = await getEmailBody(id).catch(() => null)
+    if (body) {
+      rij.body_html = body.body_html
+      rij.body_text = body.body_text || body.inhoud || null
+    }
+  }
+  return uitMailrij(rij)
 }
 
 export async function verwijderConcept(id: string): Promise<void> {
