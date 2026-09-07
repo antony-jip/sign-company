@@ -48,6 +48,11 @@ export function ProjectMailDialog({ project, open, onOpenChange }: ProjectMailDi
   useEffect(() => {
     if (!open || !project?.klant_id) { setKlant(null); return }
     let afgebroken = false
+    // Meteen leegmaken bij een ander project. Bleef de vorige klant staan, dan
+    // was `klantGeladen` hieronder al waar en bouwde de composer zich op met
+    // het e-mailadres van de vorige klant. Dat vult hij daarna niet meer aan,
+    // want hij overschrijft nooit wat er al staat.
+    setKlant(null)
     getKlant(project.klant_id)
       .then((k) => { if (!afgebroken) setKlant(k) })
       .catch((err) => { logger.error('Klant voor mail laden mislukt:', err); if (!afgebroken) setKlant(null) })
@@ -66,7 +71,10 @@ export function ProjectMailDialog({ project, open, onOpenChange }: ProjectMailDi
     ? klant?.contactpersonen?.find((c) => c.id === project.contactpersoon_id) || null
     : null
 
-  const klantGeladen = !project.klant_id || klant !== null
+  // Niet alleen "er is een klant geladen", maar "de geladen klant hoort bij dit
+  // project". Zonder die tweede eis kan een antwoord bij de verkeerde klant
+  // terechtkomen, en dat merk je pas nadat de mail weg is.
+  const klantGeladen = !project.klant_id || (klant !== null && klant.id === project.klant_id)
   const composer = !klantGeladen ? (
     <p className="text-[13px] text-muted-foreground p-4">Klant laden…</p>
   ) : (

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildPortalEmailHtml as bouwApiMail } from '../../api/emailTemplate'
+import { buildPortalEmailHtml as bouwApiMail } from '../../api/_emailTemplate'
 import { buildPortalEmailHtml as bouwAppMail } from '@/utils/emailTemplate'
 
 /**

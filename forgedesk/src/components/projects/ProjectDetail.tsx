@@ -1887,6 +1887,9 @@ export function ProjectDetail() {
       {mailComposerOpen && (
         <div className="px-4 md:px-8 pt-4 md:pt-6">
           <ProjectMailComposer
+            // Per project een eigen exemplaar: state uit het vorige project
+            // (met name de ontvanger) mag nooit blijven staan.
+            key={project.id}
             ref={mailComposerRef}
             project={project}
             klant={klant}
