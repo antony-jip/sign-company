@@ -1,6 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createTransport } from 'nodemailer'
-import MailComposer from 'nodemailer/lib/mail-composer'
 import { ImapFlow } from 'imapflow'
 import crypto from 'crypto'
 import { createClient } from '@supabase/supabase-js'
@@ -702,6 +701,26 @@ async function insertMetAccountTerugval(tabel: string, rij: Record<string, unkno
 }
 // ── GEDEELD-MET-API EINDE: insert met account-terugval ────────────────────
 
+/**
+ * De rauwe MIME-boodschap voor de IMAP-APPEND naar Verzonden.
+ *
+ * Hier stond `new MailComposer(...)` uit 'nodemailer/lib/mail-composer'. Dat is
+ * een greep in de binnenkant van het pakket, buiten de openbare API om, en
+ * precies de twee bestanden met die import waren de twee functies die op Vercel
+ * niet meer wilden laden: elk verzoek eindigde in FUNCTION_INVOCATION_FAILED,
+ * nog voor de eerste regel van de handler. De gewone API doet hetzelfde werk:
+ * een transport in stream-modus verstuurt niets en geeft de opgebouwde
+ * boodschap terug.
+ */
+async function bouwRuweMail(opties: Record<string, unknown>): Promise<Buffer> {
+  const bouwer = createTransport({ streamTransport: true, buffer: true })
+  const info = await bouwer.sendMail(opties as Parameters<typeof bouwer.sendMail>[0])
+  const boodschap = (info as { message?: unknown }).message
+  if (Buffer.isBuffer(boodschap)) return boodschap
+  if (typeof boodschap === 'string') return Buffer.from(boodschap)
+  throw new Error('MIME-boodschap kon niet worden opgebouwd')
+}
+
 export const config = { maxDuration: 30 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -1012,7 +1031,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (await verzondenNaarServerAan(user_id)) {
       try {
         if (sentMessageId) mailOptions.messageId = sentMessageId
-        const raw = await new MailComposer(mailOptions).compile().build()
+        const raw = await bouwRuweMail(mailOptions as unknown as Record<string, unknown>)
         const bewaard = await bewaarInVerzonden({ raw, gmail_address, app_password, access_token, imap_host, imap_port })
         verzondenUid = bewaard.uid
         verzondenMap = bewaard.imapFolder
