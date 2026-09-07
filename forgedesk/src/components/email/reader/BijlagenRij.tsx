@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Download, FolderPlus, Loader2, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -189,6 +190,8 @@ export function Bijlagen({ bericht, compact }: BijlagenProps) {
     return () => window.removeEventListener('keydown', onKey)
   }, [preview, sluitPreview])
 
+  const previewIsPdf = !!preview && isPdf(preview.filename, preview.contentType)
+
   if (lijst.length === 0) return null
   void versie
 
@@ -290,10 +293,22 @@ export function Bijlagen({ bericht, compact }: BijlagenProps) {
         })}
       </div>
 
-      {preview && (
+      {/* Portal naar body: het leesvenster is een eigen stapelcontext
+          (`relative z-0`) met een kop op `z-20`, dus een overlay die hier
+          blijft hangen wordt door de mailkop overtekend en houdt zich aan de
+          breedte van het paneel. Buiten die context dekt hij het scherm. */}
+      {preview && createPortal(
         <div className="fixed inset-0 z-[10001] flex items-center justify-center bg-black/60 p-6" onClick={sluitPreview}>
-          <div className="relative flex max-h-[92vh] max-w-[92vw] flex-col overflow-hidden rounded-2xl bg-card" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between gap-4 border-b border-border px-5 py-3">
+          <div
+            className={cn(
+              'relative flex flex-col overflow-hidden rounded-2xl bg-card shadow-[0_25px_50px_-12px_rgba(0,0,0,0.35)]',
+              // Een PDF vult de hele plaat; een afbeelding krimpt mee met wat
+              // hij is, zodat een klein plaatje niet in een lege bak zweeft.
+              previewIsPdf ? 'h-full w-full max-w-[1100px]' : 'max-h-full max-w-full',
+            )}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex flex-shrink-0 items-center justify-between gap-4 border-b border-border px-5 py-3">
               <p className="min-w-0 truncate text-[14px] font-medium text-foreground/80">{preview.filename}</p>
               <div className="flex flex-shrink-0 items-center gap-1">
                 <button type="button" onClick={() => bewaarViaBrowser(preview)} className="rounded-lg p-2 transition-colors hover:bg-petrol/[0.06]" title="Downloaden" aria-label="Downloaden">
@@ -304,11 +319,13 @@ export function Bijlagen({ bericht, compact }: BijlagenProps) {
                 </button>
               </div>
             </div>
-            <div className="flex min-h-[320px] min-w-[320px] flex-1 items-center justify-center overflow-auto bg-background">
+            {/* min-h-0 is wat de iframe binnen de kaart houdt: zonder die regel
+                rekt een flex-kind op tot zijn inhoud en duwt hij de kop weg. */}
+            <div className="flex min-h-0 min-w-[320px] flex-1 items-center justify-center overflow-auto bg-background">
               {preview.contentType.startsWith('image/') ? (
-                <img src={preview.url} alt={preview.filename} className="max-h-[82vh] max-w-full object-contain" />
-              ) : isPdf(preview.filename, preview.contentType) ? (
-                <iframe src={preview.url} title={preview.filename} className="h-[82vh] w-[82vw] border-0 bg-white" />
+                <img src={preview.url} alt={preview.filename} className="max-h-[calc(100vh-9.5rem)] max-w-[calc(100vw-4rem)] object-contain" />
+              ) : previewIsPdf ? (
+                <iframe src={preview.url} title={preview.filename} className="h-full w-full border-0 bg-white" />
               ) : (
                 <div className="p-10 text-center">
                   <p className="mb-4 text-[14px] text-foreground/70">Geen preview beschikbaar voor dit bestandstype.</p>
@@ -320,7 +337,8 @@ export function Bijlagen({ bericht, compact }: BijlagenProps) {
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
       <BijlageProjectDialog
