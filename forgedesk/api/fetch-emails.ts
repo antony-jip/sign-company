@@ -939,7 +939,11 @@ async function resolveImapFolder(client: ImapFlow, folder: string): Promise<stri
     try {
       const status = await client.status(mapped, { messages: true })
       if (status) return mapped
-    } catch {
+    } catch (statusFout) {
+      // Een NO op een niet-bestaande mailbox is normaal; een dode socket niet.
+      // Zonder deze check slikken beide catch-blokken de echte oorzaak op en
+      // strandt de call pas op mailboxOpen met 'Connection not available'.
+      if (!client.usable) throw statusFout
       // mailbox bestaat niet, ga door naar dynamische fallback
     }
   }
@@ -963,6 +967,7 @@ async function resolveImapFolder(client: ImapFlow, folder: string): Promise<stri
       }
     }
   } catch (err) {
+    if (!client.usable) throw err
     console.error('[fetch-emails] folder list lookup failed:', err)
   }
 
@@ -1179,8 +1184,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       auth: accessToken ? { user: gmail_address, accessToken } : { user: gmail_address, pass: app_password },
       logger: false,
       emitLogs: false,
-      greetingTimeout: 5000,
-      socketTimeout: 15000,
+      // Gelijk aan de andere IMAP-endpoints. Deze route doet het meeste werk
+      // per verbinding (tot 600 berichten), dus juist hier was 5s/15s te kort:
+      // een trage STATUS of LIST op een grote Verzonden-map tikte de
+      // socketTimeout aan en de verbinding was weg voor mailboxOpen().
+      greetingTimeout: 10000,
+      socketTimeout: 30000,
     })
 
     client = maakClient(oauthCreds ? await haalToegangstoken(oauthCreds) : undefined)
@@ -1204,10 +1213,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(401).json({ synced: 0, total: 0, error: 'Toegang ingetrokken, koppel opnieuw' })
       }
     }
+    // Een IMAP-socket kan tussen connect() en de eerste mapopdracht al weg
+    // zijn: providers kappen verbindingen bij te veel gelijktijdige sessies
+    // per account, en wij openen er meerdere (sync, prefetch, acties). Dat
+    // kwam eerder naar boven als een kale 'Connection not available' op
+    // mailboxOpen(). Eén keer opnieuw verbinden scheelt een verloren
+    // cron-ronde; blijft het mis, dan gooien we alsnog door.
+    const verbindOpnieuw = async () => {
+      try { await client!.logout() } catch { /* socket is al weg */ }
+      client = maakClient(oauthCreds ? await haalToegangstoken(oauthCreds) : undefined)
+      await client.connect()
+    }
+
     // Dynamische folder lookup — werkt voor Gmail-NL/EN, Outlook, FastMail, etc.
-    const imapFolder = await resolveImapFolder(client, folder)
-    console.log('[fetch-emails] folder resolved', { input: folder, imap: imapFolder })
-    const mailbox = await client.mailboxOpen(imapFolder)
+    const openMap = async () => {
+      const pad = await resolveImapFolder(client!, folder)
+      console.log('[fetch-emails] folder resolved', { input: folder, imap: pad })
+      return { pad, box: await client!.mailboxOpen(pad) }
+    }
+    let geopend: Awaited<ReturnType<typeof openMap>>
+    try {
+      geopend = await openMap()
+    } catch (openFout) {
+      // usable === false betekent: de socket is dood, niet dat de server nee
+      // zei. Alleen dan is opnieuw proberen zinvol.
+      if (client.usable) throw openFout
+      console.warn('[fetch-emails] verbinding weg voor mailboxOpen, opnieuw verbinden', { folder })
+      await verbindOpnieuw()
+      geopend = await openMap()
+    }
+    const imapFolder = geopend.pad
+    const mailbox = geopend.box
     const total = mailbox.exists
 
     if (total === 0) {
