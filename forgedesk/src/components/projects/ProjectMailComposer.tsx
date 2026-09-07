@@ -14,13 +14,14 @@ import { getOffertesByProject, getOfferteItems } from '@/services/offerteService
 import { getFacturenByProject, getFactuurItems } from '@/services/factuurService'
 import { getWerkbonnenByProject, getWerkbonItems, getWerkbonFotos } from '@/services/werkbonService'
 import { getSigningVisualisatiesByProject } from '@/services/visualizerService'
+import { getProjectFotos } from '@/services/supabaseService'
 import { generateOffertePDF, generateOpdrachtbevestigingPDF, generateFactuurPDF } from '@/services/pdfService'
 import { generateWerkbonInstructiePDF } from '@/services/werkbonPdfService'
 import { getEmailsVoorProject, koppelEmailAanProject, type ProjectMail } from '@/services/emailProjectService'
 import { getEmailTemplates, type EmailTemplate } from '@/services/emailService'
 import { uploadEmailAttachment, deleteFile } from '@/services/storageService'
 import { isSupabaseConfigured } from '@/services/supabaseClient'
-import type { Project, Klant, Contactpersoon, Document, Offerte, Factuur, Werkbon, OfferteItem, SigningVisualisatie } from '@/types'
+import type { Project, Klant, Contactpersoon, Document, Offerte, Factuur, Werkbon, OfferteItem, SigningVisualisatie, ProjectFoto } from '@/types'
 import { useOntvangerZoeker, OntvangerLijst, type Ontvanger } from '@/components/shared/OntvangerVeld'
 import { getAvatarStyle } from '@/components/email/emailHelpers'
 import { bouwHandtekeningHtml, handtekeningBreedte } from '@/utils/handtekening'
@@ -42,7 +43,7 @@ interface ProjectMailComposerProps {
   variant?: 'kaart' | 'paneel'
 }
 
-type BijlageBron = 'upload' | 'bestand' | 'offerte' | 'factuur' | 'werkbon' | 'visualisatie'
+type BijlageBron = 'upload' | 'bestand' | 'offerte' | 'factuur' | 'werkbon' | 'visualisatie' | 'foto'
 
 interface Bijlage {
   id: string
@@ -220,6 +221,7 @@ function bronAccent(bron: BijlageBron): { bg: string; border: string } {
     case 'factuur': return { bg: 'rgba(26,83,92,0.08)', border: 'rgba(26,83,92,0.25)' }
     case 'werkbon': return { bg: 'rgba(154,90,72,0.08)', border: 'rgba(154,90,72,0.25)' }
     case 'visualisatie': return { bg: 'rgba(241,80,37,0.08)', border: 'rgba(241,80,37,0.25)' }
+    case 'foto': return { bg: 'rgba(63,125,107,0.08)', border: 'rgba(63,125,107,0.25)' }
     case 'bestand': return { bg: '#F0EEEA', border: '#E4E1DB' }
     default: return { bg: 'hsl(var(--background))', border: 'hsl(var(--border))' }
   }
@@ -231,6 +233,7 @@ function bijlageIcon(bron: BijlageBron, mimeType: string) {
     case 'factuur': return <CreditCard className="h-3.5 w-3.5" style={{ color: '#1A535C' }} />
     case 'werkbon': return <Wrench className="h-3.5 w-3.5" style={{ color: '#9A5A48' }} />
     case 'visualisatie': return <ImageIcon className="h-3.5 w-3.5" style={{ color: '#F15025' }} />
+    case 'foto': return <ImageIcon className="h-3.5 w-3.5" style={{ color: '#3F7D6B' }} />
     default: return getFileIcon(mimeType)
   }
 }
@@ -382,6 +385,7 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
   const [projectFacturen, setProjectFacturen] = useState<Factuur[]>([])
   const [projectWerkbonnen, setProjectWerkbonnen] = useState<Werkbon[]>([])
   const [projectVisualisaties, setProjectVisualisaties] = useState<SigningVisualisatie[]>([])
+  const [projectFotos, setProjectFotos] = useState<ProjectFoto[]>([])
   const [bezigItemId, setBezigItemId] = useState<string | null>(null)
   const pickerRef = useRef<HTMLDivElement>(null)
 
@@ -595,18 +599,20 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
     if (pickerLoaded || pickerLoading) return
     setPickerLoading(true)
     try {
-      const [docs, offs, facs, wbs, viss] = await Promise.all([
+      const [docs, offs, facs, wbs, viss, fotos] = await Promise.all([
         getDocumentenByProject(project.id).catch(() => [] as Document[]),
         getOffertesByProject(project.id).catch(() => [] as Offerte[]),
         getFacturenByProject(project.id).catch(() => [] as Factuur[]),
         getWerkbonnenByProject(project.id).catch(() => [] as Werkbon[]),
         getSigningVisualisatiesByProject(project.id).catch(() => [] as SigningVisualisatie[]),
+        getProjectFotos(project.id).catch(() => [] as ProjectFoto[]),
       ])
       setProjectDocs(docs)
       setProjectOffertes(offs)
       setProjectFacturen(facs)
       setProjectWerkbonnen(wbs)
       setProjectVisualisaties(viss)
+      setProjectFotos(fotos)
       setPickerLoaded(true)
     } finally {
       setPickerLoading(false)
@@ -802,7 +808,34 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
     }
   }
 
-  const cats = [
+  async function toggleFoto(f: ProjectFoto) {
+    if (isToegevoegd(f.id)) { verwijderBron(f.id); return }
+    setBezigItemId(f.id)
+    try {
+      const { base64, mimeType } = await comprimeerAfbeeldingNaarBase64(f.url)
+      const ext = mimeType === 'image/png' ? 'png' : 'jpg'
+      const basis = (f.omschrijving || 'situatiefoto').replace(/[^\w\d-]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
+      setBijlagen((prev) => [
+        ...prev,
+        { id: crypto.randomUUID(), filename: `${basis || 'situatiefoto'}.${ext}`, size: base64Size(base64), mimeType, base64, bron: 'foto', bronId: f.id },
+      ])
+    } catch (err) {
+      logger.error('Situatiefoto als bijlage toevoegen mislukt:', err)
+      toast.error('Kon de foto niet toevoegen')
+    } finally {
+      setBezigItemId(null)
+    }
+  }
+
+  type KiesItem = {
+    id: string
+    label: string
+    icon: React.ReactNode
+    onToggle: () => void
+    /** Miniatuur in de lijst. Alleen bij foto's: daar zegt de naam niets. */
+    voorbeeld?: string
+  }
+  const cats: Array<{ key: string; label: string; color: string; count: number; tabIcon: React.ReactNode; items: KiesItem[] }> = [
     {
       key: 'bestanden', label: 'Bestanden', color: 'hsl(var(--muted-foreground))', count: projectDocs.length,
       tabIcon: <FileText className="h-3.5 w-3.5" />,
@@ -836,6 +869,20 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
         label: v.aangepaste_prompt?.trim() || v.prompt_gebruikt?.slice(0, 40) || `Visualisatie ${new Date(v.created_at).toLocaleDateString('nl-NL')}`,
         icon: <ImageIcon className="h-3.5 w-3.5" style={{ color: '#F15025' }} />,
         onToggle: () => toggleVisualisatie(v),
+      })),
+    },
+    {
+      // Situatiefoto's krijgen hun eigen miniatuur in plaats van een icoon: bij
+      // foto's zegt de naam meestal niets en zie je pas aan het beeld welke je
+      // bedoelt.
+      key: 'fotos', label: 'Situatiefoto\u2019s', color: '#3F7D6B', count: projectFotos.length,
+      tabIcon: <ImageIcon className="h-3.5 w-3.5" />,
+      items: projectFotos.map((f) => ({
+        id: f.id,
+        label: f.omschrijving?.trim() || `Foto ${new Date(f.created_at).toLocaleDateString('nl-NL')}`,
+        icon: <ImageIcon className="h-3.5 w-3.5" style={{ color: '#3F7D6B' }} />,
+        voorbeeld: f.url,
+        onToggle: () => toggleFoto(f),
       })),
     },
   ].filter((c) => c.count > 0)
@@ -1466,7 +1513,16 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
                               added ? "bg-petrol/[0.05]" : "hover:bg-petrol/[0.05]",
                             )}
                           >
-                            <span className="h-7 w-7 rounded-md border border-border bg-white flex items-center justify-center flex-shrink-0">{it.icon}</span>
+                            {it.voorbeeld ? (
+                              <img
+                                src={it.voorbeeld}
+                                alt=""
+                                loading="lazy"
+                                className="h-10 w-10 rounded-md border border-border object-cover flex-shrink-0 bg-muted"
+                              />
+                            ) : (
+                              <span className="h-7 w-7 rounded-md border border-border bg-white flex items-center justify-center flex-shrink-0">{it.icon}</span>
+                            )}
                             <span className="flex-1 min-w-0 text-[12px] text-foreground truncate">{it.label}</span>
                             {busy ? (
                               <Loader2 className="h-4 w-4 animate-spin text-petrol flex-shrink-0" />
