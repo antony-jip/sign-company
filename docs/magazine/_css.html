@@ -46,7 +46,8 @@
   /* 20 mm vanaf de aflooprand = 17 mm vanaf de snijlijn. Ruim binnen elke
      drukkersmarge, ook als het snijden een millimeter verloopt. */
   .pad{ position:relative; z-index:2; height:100%; padding:19mm 20mm 16mm; display:flex; flex-direction:column; }
-  .pad.wide{ padding:20mm 16mm; }
+  .page:nth-of-type(odd)  .pad{ padding-left:25mm; padding-right:18mm; }
+  .page:nth-of-type(even) .pad{ padding-left:18mm; padding-right:25mm; }
 
   .glow{
     position:absolute; inset:0; z-index:0; pointer-events:none;
@@ -62,13 +63,14 @@
   .dark .kicker{ color:var(--on-dark-soft); }
   .flame .kicker{ color:rgba(255,255,255,0.72); }
 
-  h2.kop{ font-size:30pt; line-height:1.0; margin-top:5mm; max-width:150mm; }
-  h2.kop.groot{ font-size:38pt; }
-  .lead{ font-size:12pt; line-height:1.5; color:var(--muted); max-width:120mm; margin-top:5mm; }
+  h2.kop{ font-size:29pt; line-height:1.0; margin-top:5mm; max-width:140mm; }
+  h2.kop.groot{ font-size:37pt; }
+  .lead{ font-size:11.5pt; line-height:1.5; color:var(--muted); max-width:104mm; margin-top:5mm; }
   .dark .lead{ color:var(--on-dark); }
 
-  p{ max-width:none; }
-  p.smal{ max-width:118mm; }
+  p{ max-width:104mm; }
+  p.breed{ max-width:132mm; }
+  p.vol{ max-width:none; }
   p + p{ margin-top:3.5mm; }
   .dark p{ color:var(--on-dark); }
 
@@ -177,11 +179,14 @@
 
   /* Appscherm bij een stap in het middenkatern. Echte schermen met
      demodata uit de posters van de modulefilmpjes. */
-  .scherm{ margin-top:5mm; height:60mm; border:1px solid var(--hair); border-radius:1.8mm;
+  .scherm{ margin-top:4.5mm; height:49mm; border:1px solid var(--hair); border-radius:1.8mm;
            overflow:hidden; box-shadow:0 0.4mm 1.6mm rgba(19,62,69,0.10); }
   /* Vaste hoogte met een snede vanaf de bovenkant: twee schermen per pagina
      passen anders niet, en het interessante deel van een appscherm zit boven. */
   .scherm img{ display:block; width:100%; height:100%; object-fit:cover; object-position:top center; }
+  /* Niet elk scherm heeft zijn onderwerp bovenin. Studio toont het resultaat
+     halverwege, de factuurmodal zit in het midden. */
+  .scherm.midden img{ object-position:center 42%; }
 
   .streep{ width:14mm; height:1.4mm; background:var(--flame); border-radius:1mm; }
 </style>
