@@ -16,7 +16,7 @@ import {
   updateFactuur,
   type NieuweFactuurRegel,
 } from '@/services/factuurService'
-import { getMeetellendeVarianten } from '@/utils/offerteTotalen'
+import { getMeetellendeVarianten, nettoStuksprijs } from '@/utils/offerteTotalen'
 import { schrijfFactuurPrefill, voerPrefillTevensUit, type FactuurPrefill, type PrefillTevens } from '@/components/invoices/factuurPrefill'
 import { formatCurrency, cn } from '@/lib/utils'
 import { round2 } from '@/utils/budgetUtils'
@@ -42,11 +42,24 @@ interface Props {
 
 // Eén meetellende prijsoptie: aantal en prijs komen van die optie. Meerdere
 // opties: de post blijft heel, het aantal is dan niet los te kiezen.
-function regelVorm(oi: OfferteItem): { aantal: number; eenheidsprijs: number; vast: boolean } {
+//
+// De korting hoort hier bij de vorm en niet bij het item: staat er een
+// prijsoptie onder, dan zit de korting op die optie en is oi.korting_percentage
+// doorgaans 0. Dit venster rekende met die 0 en liet daardoor een te hoog
+// bedrag zien; de factuur zelf klopte wel, want naarFactuurRegels() geeft de
+// variant-korting gewoon door.
+export function regelVorm(oi: OfferteItem): { aantal: number; eenheidsprijs: number; korting_percentage: number; vast: boolean } {
   const meetellend = getMeetellendeVarianten(oi.prijs_varianten, oi.actieve_variant_id)
-  if (meetellend.length === 1) return { aantal: meetellend[0].aantal, eenheidsprijs: meetellend[0].eenheidsprijs, vast: false }
-  if (meetellend.length > 1) return { aantal: 1, eenheidsprijs: round2(meetellend.reduce((s, v) => s + v.aantal * v.eenheidsprijs, 0)), vast: true }
-  return { aantal: oi.aantal, eenheidsprijs: oi.eenheidsprijs, vast: false }
+  if (meetellend.length === 1) {
+    return { aantal: meetellend[0].aantal, eenheidsprijs: meetellend[0].eenheidsprijs, korting_percentage: meetellend[0].korting_percentage || 0, vast: false }
+  }
+  if (meetellend.length > 1) {
+    // Alle opties samen in één post: elk stuk telt netto mee, dus de korting is
+    // hier al verwerkt en mag er niet nog een keer af.
+    const netto = round2(meetellend.reduce((s, v) => s + round2(v.aantal * v.eenheidsprijs * (1 - (v.korting_percentage || 0) / 100)), 0))
+    return { aantal: 1, eenheidsprijs: netto, korting_percentage: 0, vast: true }
+  }
+  return { aantal: oi.aantal, eenheidsprijs: oi.eenheidsprijs, korting_percentage: oi.korting_percentage || 0, vast: false }
 }
 
 function btwVanVoorschot(v: Voorschot): number {
@@ -133,7 +146,7 @@ export function WatFacturerenDialog({ open, onOpenChange, offerte, project, proj
   const regelsTotaal = round2(gekozen.reduce((s, oi) => {
     const vorm = regelVorm(oi)
     const bruto = round2(keuze[oi.id].aantal * vorm.eenheidsprijs)
-    return s + round2(bruto - round2(bruto * ((oi.korting_percentage || 0) / 100)))
+    return s + round2(bruto - round2(bruto * (vorm.korting_percentage / 100)))
   }, 0))
   const voorschotTotaal = round2(voorschotten.reduce((s, v) => s + (v.subtotaal || 0), 0))
   const heeftOngekoppeld = Object.keys(gefactureerd).length === 0 && !!offerte.geconverteerd_naar_factuur_id
@@ -274,7 +287,7 @@ export function WatFacturerenDialog({ open, onOpenChange, offerte, project, proj
                       <span className="min-w-0">
                         <span className="block truncate text-sm font-medium">{oi.beschrijving || 'Regel zonder omschrijving'}</span>
                         <span className="block text-[11px] text-muted-foreground">
-                          {formatCurrency(vorm.eenheidsprijs)} per stuk
+                          {formatCurrency(nettoStuksprijs(vorm))} per stuk
                           {al > 0 ? ` · ${nog > 0 ? `nog ${nog} van ${vorm.aantal}` : 'al gefactureerd'}` : ` · ${vorm.aantal} op de offerte`}
                         </span>
                       </span>

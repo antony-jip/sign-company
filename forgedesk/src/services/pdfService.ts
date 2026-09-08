@@ -1718,7 +1718,9 @@ export function generateFactuurPDF(
       { content: (index + 1).toString(), rowSpan: hasDetails ? 2 : 1, styles: { ...cellOverride } },
       { content: item.beschrijving, styles: { fontStyle: 'bold' as const, ...cellOverride } },
       { content: item.aantal.toString(), rowSpan: hasDetails ? 2 : 1, styles: { ...cellOverride } },
-      { content: formatCurrency(item.eenheidsprijs), rowSpan: hasDetails ? 2 : 1, styles: { ...cellOverride } },
+      // Net als op de offerte: de stuksprijs staat hier ná korting, zodat
+      // aantal x prijs op het regeltotaal uitkomt.
+      { content: formatCurrency(nettoStuksprijs(item)), rowSpan: hasDetails ? 2 : 1, styles: { ...cellOverride } },
       { content: formatCurrency(item.totaal), rowSpan: hasDetails ? 2 : 1, styles: { ...cellOverride } },
     ]
     if (!hasDetails) return [rij1]
