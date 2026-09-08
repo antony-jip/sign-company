@@ -62,7 +62,7 @@ function alsEmail(item: EmailLijstItem, body: EmailBody | null): Email {
   return { ...item, inhoud: body?.html || body?.tekst || '' } as unknown as Email
 }
 
-function KopKnop({ label, onClick, disabled, children }: { label: string; onClick?: () => void; disabled?: boolean; children: ReactNode }) {
+function KopKnop({ label, onClick, disabled, nadruk, groot, children }: { label: string; onClick?: () => void; disabled?: boolean; nadruk?: boolean; groot?: boolean; children: ReactNode }) {
   return (
     <button
       type="button"
@@ -70,7 +70,16 @@ function KopKnop({ label, onClick, disabled, children }: { label: string; onClic
       disabled={disabled || !onClick}
       title={label}
       aria-label={label}
-      className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-petrol/[0.06] hover:text-petrol disabled:opacity-30 disabled:hover:bg-transparent"
+      className={cn(
+        'flex flex-shrink-0 items-center justify-center rounded-lg transition-colors disabled:opacity-30 disabled:hover:bg-transparent',
+        groot ? 'h-9 w-9' : 'h-8 w-8',
+        // Sluiten is op mobiel de weg terug naar de lijst. Als los grijs
+        // icoontje zonder vlak vond niemand hem; met een eigen vlakje leest
+        // hij als knop en is het raakvlak groot genoeg voor een duim.
+        nadruk
+          ? 'bg-muted text-foreground/75 hover:bg-petrol/10 hover:text-petrol dark:bg-white/[0.07] dark:hover:bg-white/[0.12]'
+          : 'text-muted-foreground hover:bg-petrol/[0.06] hover:text-petrol',
+      )}
     >
       {children}
     </button>
@@ -309,7 +318,11 @@ export function ConversationView({ emailId, onSluiten, onAntwoord, onVolgende, o
                 <KopKnop label="Volgende mail" onClick={onVolgende}><ChevronDown className="h-4 w-4" /></KopKnop>
               </>
             )}
-            <KopKnop label="Sluiten" onClick={onSluiten}><X className="h-4 w-4" /></KopKnop>
+            <div className="ml-1">
+              <KopKnop label="Sluiten" onClick={onSluiten} nadruk groot={compact}>
+                <X className={compact ? "h-[19px] w-[19px]" : "h-4 w-4"} strokeWidth={2.25} />
+              </KopKnop>
+            </div>
           </div>
         </div>
 
