@@ -91,7 +91,7 @@ export function KlantToevoegenDialog({ open, onSluiten, afzenderNaam, afzenderEm
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onSluiten() }}>
-      <DialogContent className="max-w-[440px] rounded-2xl p-8">
+      <DialogContent className="max-w-[440px] rounded-2xl p-5 sm:p-8">
         <DialogHeader>
           <DialogTitle className="font-heading text-[18px] font-bold tracking-[-0.01em]">Toevoegen als klant<span className="text-flame">.</span></DialogTitle>
         </DialogHeader>
@@ -100,12 +100,12 @@ export function KlantToevoegenDialog({ open, onSluiten, afzenderNaam, afzenderEm
         )}
         <div className="space-y-2.5 mt-2">
           <input value={form.bedrijfsnaam} onChange={zet('bedrijfsnaam')} placeholder="Bedrijfsnaam" className={veldCls} autoFocus />
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
             <input value={form.contactpersoon} onChange={zet('contactpersoon')} placeholder="Contactpersoon" className={veldCls} />
             <input value={form.functie} onChange={zet('functie')} placeholder="Functie" className={veldCls} />
           </div>
           <input value={form.email} onChange={zet('email')} placeholder="E-mail" className={veldCls} />
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
             <input value={form.telefoon} onChange={zet('telefoon')} placeholder="Telefoon" className={veldCls} />
             <input value={form.mobiel} onChange={zet('mobiel')} placeholder="Mobiel" className={veldCls} />
           </div>
@@ -114,7 +114,7 @@ export function KlantToevoegenDialog({ open, onSluiten, afzenderNaam, afzenderEm
             <input value={form.postcode} onChange={zet('postcode')} placeholder="Postcode" className={veldCls} />
             <input value={form.stad} onChange={zet('stad')} placeholder="Plaats" className={veldCls} />
           </div>
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
             <input value={form.website} onChange={zet('website')} placeholder="Website" className={veldCls} />
             <input value={form.kvk} onChange={zet('kvk')} placeholder="KvK" className={veldCls} />
           </div>
