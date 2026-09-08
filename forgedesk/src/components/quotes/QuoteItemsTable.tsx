@@ -1152,8 +1152,13 @@ export function QuoteItemsTable({
                 </div>
               )}
 
+              {/* Op smal breekt de rij hier bewust af: naam boven, bedrag en
+                  knoppen eronder. Zonder die breuk wikkelde hij op willekeurige
+                  plekken in drieën en bleef er van de naam niets over. */}
+              <span aria-hidden className="basis-full md:hidden" />
+
               <span className={cn(
-                "text-base font-bold font-mono flex-shrink-0 min-w-[90px] text-right tabular-nums",
+                "text-base font-bold font-mono flex-1 md:flex-none flex-shrink-0 min-w-[90px] text-right tabular-nums",
                 item.is_optioneel ? "text-muted-foreground" : "text-foreground"
               )}>
                 {formatCurrency(lineTotaal)}

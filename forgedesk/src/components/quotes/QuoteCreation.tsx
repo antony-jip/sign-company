@@ -76,7 +76,7 @@ import { berekenRegelInkoop } from '@/utils/calculatieBerekening'
 import { round2 } from '@/utils/budgetUtils'
 import { berekenOfferteUren } from '@/utils/offerteUren'
 import { berekenMarkupPercentage } from '@/utils/margeBerekening'
-import { berekenOfferteTotalen, getMeetellendeVarianten } from '@/utils/offerteTotalen'
+import { berekenOfferteTotalen, berekenKortingBedrag, getMeetellendeVarianten } from '@/utils/offerteTotalen'
 import { generateOffertePDF, generateOpdrachtbevestigingPDF } from '@/services/pdfService'
 import { WerkbonAanmaakDialog } from '@/components/werkbonnen/WerkbonAanmaakDialog'
 const PdfPreviewDialog = React.lazy(() => import('@/components/shared/PdfPreviewDialog').then(m => ({ default: m.PdfPreviewDialog })))
@@ -625,6 +625,12 @@ export function QuoteCreation() {
     verplichtePrijsItems.flatMap(getPrijsDataRegels),
     { afrondingskorting, urenCorrectieBedrag },
   )
+
+  // Op een telefoon staat de zijbalk met de opbouw onder alle items, en daar
+  // kijk je tijdens het calculeren nooit naar. De onderbalk draagt daarom het
+  // totaal, en klapt op verzoek de opbouw uit.
+  const [totalenOpen, zetTotalenOpen] = useState(false)
+  const kortingBedrag = berekenKortingBedrag(verplichtePrijsItems)
 
   // Effectieve uren = basis + correctie
   const effectieveUrenPerVeld = useMemo(() => {
@@ -3035,34 +3041,71 @@ export function QuoteCreation() {
         />
       )}
 
-      {/* Vaste onderbalk op mobiel: totaal ex btw en dezelfde acties als de zijbalk.
-          Blijft vrij van de Daan-knop plus de safe-area. */}
-      <div
-        className="md:hidden fixed inset-x-0 z-30 bg-card/95 backdrop-blur-xl border-t border-border px-4 py-3 flex items-center gap-2 bottom-[calc(3.5rem+env(safe-area-inset-bottom))]"
-        style={{ boxShadow: '0 -4px 16px rgba(0,0,0,0.04)' }}
-      >
-        <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Totaal ex btw</p>
-          <p className="text-[16px] font-bold font-mono tabular-nums text-foreground truncate">{formatCurrency(effectieveTotalen.subtotaal)}</p>
+      {/* Vaste onderbalk op mobiel: totaal ex btw, uitklapbaar naar de opbouw,
+          en dezelfde acties als de zijbalk. Blijft vrij van de Daan-knop plus
+          de safe-area. */}
+      <div className="md:hidden fixed inset-x-0 z-30 bottom-[calc(3.5rem+env(safe-area-inset-bottom))]">
+        {totalenOpen && (
+          <div className="border-t border-border bg-card/95 px-4 py-3 backdrop-blur-xl">
+            <dl className="space-y-1.5 text-[13px]">
+              <div className="flex items-baseline justify-between gap-4">
+                <dt className="text-muted-foreground">Subtotaal</dt>
+                <dd className="font-mono tabular-nums text-foreground">{formatCurrency(effectieveTotalen.subtotaal)}</dd>
+              </div>
+              {kortingBedrag > 0 && (
+                <div className="flex items-baseline justify-between gap-4">
+                  <dt className="text-muted-foreground">Korting</dt>
+                  <dd className="font-mono tabular-nums text-foreground">&minus; {formatCurrency(kortingBedrag)}</dd>
+                </div>
+              )}
+              <div className="flex items-baseline justify-between gap-4">
+                <dt className="text-muted-foreground">Btw</dt>
+                <dd className="font-mono tabular-nums text-foreground">{formatCurrency(effectieveTotalen.btw_bedrag)}</dd>
+              </div>
+              <div className="flex items-baseline justify-between gap-4 border-t border-border pt-1.5">
+                <dt className="font-semibold text-foreground">Totaal incl btw</dt>
+                <dd className="font-mono font-semibold tabular-nums text-foreground">{formatCurrency(effectieveTotalen.totaal)}</dd>
+              </div>
+            </dl>
+          </div>
+        )}
+        <div
+          className="flex items-center gap-2 border-t border-border bg-card/95 px-4 py-3 backdrop-blur-xl"
+          style={{ boxShadow: '0 -4px 16px rgba(0,0,0,0.04)' }}
+        >
+          <button
+            type="button"
+            onClick={() => zetTotalenOpen((v) => !v)}
+            aria-expanded={totalenOpen}
+            className="tap-press flex min-w-0 flex-1 items-center gap-1.5 rounded-lg py-1 text-left"
+          >
+            <span className="min-w-0">
+              <span className="block text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Totaal ex btw</span>
+              <span className="block truncate font-mono text-[16px] font-bold tabular-nums text-foreground">{formatCurrency(effectieveTotalen.subtotaal)}</span>
+            </span>
+            {totalenOpen
+              ? <ChevronDown className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+              : <ChevronUp className="h-4 w-4 flex-shrink-0 text-muted-foreground" />}
+          </button>
+          <button
+            type="button"
+            onClick={() => saveOfferte('concept')}
+            disabled={isSaving}
+            className="tap-press h-11 px-3 inline-flex items-center gap-1.5 text-[14px] font-semibold rounded-lg bg-petrol text-white hover:bg-[#0F3D44] transition-colors disabled:opacity-50 flex-shrink-0"
+          >
+            <Save className="h-4 w-4" />
+            {isSaving ? 'Opslaan...' : 'Opslaan'}
+          </button>
+          <button
+            type="button"
+            onClick={handleVerstuurOfferte}
+            disabled={isSaving}
+            className="tap-press h-11 px-3 inline-flex items-center gap-1.5 text-[14px] font-semibold rounded-lg bg-flame text-white hover:bg-[#E04520] shadow-[0_2px_8px_rgba(241,80,37,0.25)] transition-colors disabled:opacity-50 flex-shrink-0"
+          >
+            <Send className="h-4 w-4" />
+            Verstuur
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={() => saveOfferte('concept')}
-          disabled={isSaving}
-          className="tap-press h-11 px-4 inline-flex items-center gap-1.5 text-[14px] font-semibold rounded-lg bg-petrol text-white hover:bg-[#0F3D44] transition-colors disabled:opacity-50 flex-shrink-0"
-        >
-          <Save className="h-4 w-4" />
-          {isSaving ? 'Opslaan...' : 'Opslaan'}
-        </button>
-        <button
-          type="button"
-          onClick={handleVerstuurOfferte}
-          disabled={isSaving}
-          className="tap-press h-11 px-4 inline-flex items-center gap-1.5 text-[14px] font-semibold rounded-lg bg-flame text-white hover:bg-[#E04520] shadow-[0_2px_8px_rgba(241,80,37,0.25)] transition-colors disabled:opacity-50 flex-shrink-0"
-        >
-          <Send className="h-4 w-4" />
-          Verstuur
-        </button>
       </div>
     </div>
   )

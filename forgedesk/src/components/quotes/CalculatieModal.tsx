@@ -499,13 +499,13 @@ export function CalculatieModal({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader className="pb-1">
-          <DialogTitle className="flex items-center gap-2.5 text-2xl font-bold text-foreground">
-            <Calculator className="h-6 w-6 text-petrol" />
+      <DialogContent className="flex flex-col overflow-hidden h-[100dvh] max-h-[100dvh] w-screen max-w-none rounded-none border-0 p-4 sm:h-auto sm:max-h-[90vh] sm:w-[calc(100%-2rem)] sm:max-w-5xl sm:rounded-modal sm:border sm:p-6">
+        <DialogHeader className="flex-shrink-0 pb-1">
+          <DialogTitle className="flex items-center gap-2.5 text-lg sm:text-2xl font-bold text-foreground">
+            <Calculator className="h-5 w-5 sm:h-6 sm:w-6 text-petrol" />
             Calculatie maken
           </DialogTitle>
-          <DialogDescription className="text-foreground/70 text-sm">
+          <DialogDescription className="hidden sm:block text-foreground/70 text-sm">
             Bouw hier de prijs op uit losse onderdelen. Vul inkoop- en verkoopprijzen in,
             de marge wordt automatisch berekend.
           </DialogDescription>
@@ -1018,7 +1018,7 @@ export function CalculatieModal({
         </div>
 
         {/* ======== FOOTER KNOPPEN ======== */}
-        <DialogFooter className="gap-3">
+        <DialogFooter className="flex-shrink-0 gap-3 pt-1">
           <Button variant="outline" onClick={onClose}>
             Annuleren
           </Button>
