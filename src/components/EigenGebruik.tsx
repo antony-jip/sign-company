@@ -64,13 +64,17 @@ export function EigenGebruikBewijs() {
                 alt="Antony en Jos Bootsma bij de open zijdeur van de bestelbus voor de werkplaats van Sign Company"
                 fill
                 sizes="(max-width: 1024px) 100vw, 420px"
-                className="object-cover grayscale contrast-[1.06]"
+                className="object-cover saturate-[0.6] contrast-[1.04] brightness-[1.02]"
               />
-              {/* isolate op de wrapper hierboven is nodig: zonder eigen
-                  stapelcontext blendt deze laag niet met de foto maar met de
-                  pagina, en wordt het vlak één blok petrol. */}
-              <span aria-hidden className="absolute inset-0 bg-petrol-deep mix-blend-lighten" />
-              <span aria-hidden className="absolute inset-0 bg-[#EDF3F3] mix-blend-darken" />
+              {/* Geen duotoon meer: dat maakte er grijswaarden van en dan zie
+                  je twee mensen in zwart-wit in plaats van twee mensen. Nu
+                  blijft de foto in kleur, half ontzadigd, met een petrol-waas
+                  eroverheen. `color` verschuift de kleurtoon en laat de
+                  helderheid staan, `multiply` zet de schaduwen naar petrol.
+                  isolate op de wrapper is nodig: zonder eigen stapelcontext
+                  blenden deze lagen met de pagina in plaats van met de foto. */}
+              <span aria-hidden className="absolute inset-0 bg-petrol/[0.28] mix-blend-color" />
+              <span aria-hidden className="absolute inset-0 bg-petrol-deep/[0.10] mix-blend-multiply" />
             </div>
             <figcaption className="mt-3 text-[13px] text-muted">
               Antony en Jos Bootsma · Sign Company, sinds 1983

@@ -50,6 +50,11 @@ export const modules: Module[] = [
 // kwam. Tel het voortaan, dan verjaart het niet opnieuw.
 const TELWOORDEN = ['nul', 'een', 'twee', 'drie', 'vier', 'vijf', 'zes', 'zeven', 'acht', 'negen', 'tien', 'elf', 'twaalf']
 
+/** Telwoord bij een aantal, zodat een getal in copy niet hardgecodeerd staat. */
+export function telwoord(n: number): string {
+  return TELWOORDEN[n] ?? String(n)
+}
+
 export const moduleAantal = modules.length
 export const moduleAantalWoord = TELWOORDEN[modules.length] ?? String(modules.length)
 
