@@ -1,0 +1,197 @@
+<style>
+  /* Formaat: 1080 x 1920 px, het staande schermformaat. Geen drukwerk, dus
+     geen afloop en geen snijmarge: alles is beeld dat op een telefoon in één
+     oogopslag moet landen. Daarom px en geen mm, en een typetrap die ruim
+     twee keer zo groot is als in het gedrukte magazine.
+
+     Een telefoon toont dit op ongeveer 390 px breed, dus alles hier deel je
+     door 2,77 om te weten hoe groot het in de hand is. Body van 36 px leest
+     als 13 pt. Kleiner dan 30 px wordt onleesbaar en staat er dus niet in. */
+  @page { size: 1080px 1920px; margin: 0; }
+
+  :root{
+    --bg:#F4F7F7;
+    --petrol:#1A535C;
+    --petrol-light:#2A6F7A;
+    --petrol-deep:#0D343C;
+    --flame:#F15025;
+    --ink:#16262B;
+    --muted:#54666A;
+    --on-dark:rgba(226,240,241,0.84);
+    --on-dark-soft:rgba(226,240,241,0.54);
+    --hair:rgba(26,83,92,0.16);
+    --hair-dark:rgba(226,240,241,0.18);
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+
+  body{
+    font-family:'Hanken Grotesk', sans-serif;
+    color:var(--ink); background:#fff;
+    font-size:36px; line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  h1,h2,h3,h4{ font-family:'Instrument Sans', sans-serif; font-weight:700; letter-spacing:-0.032em; }
+  .mono{ font-family:'Spline Sans Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums; }
+  .dot{ color:var(--flame); }
+
+  .page{
+    position:relative; width:1080px; height:1920px; overflow:hidden;
+    page-break-after:always; background:#fff;
+  }
+  .page:last-child{ page-break-after:auto; }
+  .page.dark{ background:var(--petrol-deep); color:#fff; }
+  .page.soft{ background:var(--bg); }
+
+  /* Ruime marges: in een app-feed kan er een balk of knop over de rand
+     vallen, en een verticaal beeld wordt op sommige telefoons bijgesneden.
+     Alles wat gelezen moet worden blijft dus binnen deze bak. */
+  .pad{ position:relative; z-index:2; height:100%; padding:104px 88px 92px; display:flex; flex-direction:column; }
+
+  .glow{
+    position:absolute; inset:0; z-index:0; pointer-events:none;
+    background:radial-gradient(ellipse 90% 42% at 6% 0%, rgba(42,111,122,0.60) 0%, rgba(42,111,122,0) 62%);
+  }
+  .glow.br{ background:radial-gradient(ellipse 80% 40% at 94% 100%, rgba(42,111,122,0.46) 0%, rgba(42,111,122,0) 62%); }
+
+  /* ── koppen ── */
+  .kicker{
+    font-family:'Spline Sans Mono', monospace; font-size:24px; font-weight:500;
+    letter-spacing:0.16em; text-transform:uppercase; color:var(--muted);
+  }
+  .dark .kicker{ color:var(--on-dark-soft); }
+
+  h1.kop{ font-size:112px; line-height:0.96; margin-top:34px; }
+  h2.kop{ font-size:88px; line-height:1.0; margin-top:26px; }
+  h2.kop.groot{ font-size:104px; }
+  h3{ font-size:44px; line-height:1.15; }
+
+  .lead{ font-size:42px; line-height:1.42; color:var(--muted); margin-top:26px; }
+  .dark .lead{ color:var(--on-dark); }
+  .dark p{ color:var(--on-dark); }
+  p + p{ margin-top:22px; }
+
+  .klein{ font-size:28px; line-height:1.45; color:var(--muted); }
+  .dark .klein{ color:var(--on-dark-soft); }
+
+  /* ── voet ── */
+  .foot{
+    margin-top:auto; padding-top:44px;
+    display:flex; align-items:flex-end; justify-content:space-between;
+    font-size:24px; color:var(--muted);
+  }
+  .dark .foot{ color:var(--on-dark-soft); }
+  /* Staat er boven de voet al een blok met margin-top:auto, dan verdelen twee
+     auto-marges de vrije ruimte en valt er een gat in het midden. Op die
+     pagina's krijgt de voet een vaste marge en houdt het andere blok de auto. */
+  .foot.vast{ margin-top:56px; }
+  .foot .nr{ font-family:'Spline Sans Mono', monospace; font-size:24px; letter-spacing:0.08em; }
+  .logo-foot{ height:34px; width:auto; display:block; align-self:flex-start; }
+
+  /* ── bouwstenen ── */
+  .hr{ height:1px; background:var(--hair); border:0; }
+  .dark .hr{ background:var(--hair-dark); }
+  .streep{ width:104px; height:10px; background:var(--flame); border-radius:6px; }
+
+  /* Rij met een nummer ervoor. Op een staand scherm staat de omschrijving
+     onder de kop in plaats van ernaast: naast elkaar wordt de kolom te smal. */
+  .rij{ display:flex; gap:32px; padding:30px 0; border-top:1px solid var(--hair); }
+  .dark .rij{ border-color:var(--hair-dark); }
+  .rij:last-child{ border-bottom:1px solid var(--hair); }
+  .dark .rij:last-child{ border-bottom-color:var(--hair-dark); }
+  .rij .t{ font-family:'Spline Sans Mono', monospace; font-size:26px; color:var(--flame); width:52px; flex:none; padding-top:8px; }
+  .rij .tekst{ flex:1; }
+  .rij .k{ display:block; font-size:38px; font-weight:600; line-height:1.2; }
+  .rij .v{ display:block; font-size:30px; color:var(--muted); margin-top:8px; line-height:1.4; }
+  .dark .rij .v{ color:var(--on-dark); }
+
+  .quote{
+    font-family:'Instrument Sans',sans-serif; font-weight:700;
+    font-size:56px; line-height:1.16; letter-spacing:-0.03em;
+  }
+
+  .kaart{ background:#fff; border:1px solid var(--hair); border-radius:18px; padding:44px; }
+  .dark .kaart{ background:rgba(255,255,255,0.06); border-color:var(--hair-dark); }
+  .kaart.op-foto{ background:rgba(9,38,44,0.82); border-color:rgba(255,255,255,0.16); }
+  .kaart.diep{ background:var(--petrol-deep); border-color:transparent; color:#fff; }
+  .kaartlabel{ font-family:'Spline Sans Mono',monospace; font-size:22px; letter-spacing:0.14em;
+               text-transform:uppercase; color:var(--muted); }
+  .kaart.diep .kaartlabel, .dark .kaart .kaartlabel{ color:var(--on-dark-soft); }
+
+  .beeld{ position:relative; overflow:hidden; border-radius:18px; isolation:isolate; background:var(--petrol-deep); }
+  .beeld img{ display:block; width:100%; height:100%; object-fit:cover;
+              filter:saturate(0.6) contrast(1.04) brightness(1.02); }
+  .beeld .tint{ position:absolute; inset:0; background:var(--petrol); opacity:0.28; mix-blend-mode:color; }
+  .beeld .diep{ position:absolute; inset:0; background:var(--petrol-deep); opacity:0.10; mix-blend-mode:multiply; }
+  .bijschrift{ font-size:24px; color:var(--muted); margin-top:16px; }
+  .dark .bijschrift{ color:var(--on-dark-soft); }
+
+  .vol{ position:absolute; inset:0; z-index:0; }
+  .vol img{ width:100%; height:100%; object-fit:cover; filter:saturate(0.5) contrast(1.05); }
+  .vol .scrim{ position:absolute; inset:0;
+    background:linear-gradient(180deg, rgba(13,52,60,0.94) 0%, rgba(13,52,60,0.66) 42%, rgba(13,52,60,0.96) 100%); }
+
+  /* Invulregels: hier hoort iemand met een pen in te schrijven. Op een scherm
+     kan dat niet, dus staat de lijn er als uitnodiging om het zelf na te rekenen. */
+  .invul{ border-top:1px solid var(--hair-dark); padding:30px 0 18px; }
+  .invul:last-of-type{ border-bottom:0; }
+  .invul .k{ display:block; font-size:38px; font-weight:600; line-height:1.25; }
+  .invul .v{ display:block; font-size:27px; color:var(--on-dark-soft); margin-top:8px; }
+  .invul .lijn{ display:block; margin-top:16px; border-bottom:2px solid rgba(226,240,241,0.42); height:2px; }
+  .invul.totaal{ border-top-width:3px; border-top-color:var(--flame); }
+  .invul.totaal .k{ font-size:46px; }
+  .invul.totaal .lijn{ border-bottom-color:var(--flame); border-bottom-width:3px; }
+
+  /* Moment op de dinsdag-pagina: tijd, wat er gebeurt, en wat het kost. */
+  .moment{ border-top:3px solid var(--flame); padding-top:20px; }
+  .moment + .moment{ margin-top:34px; }
+  .moment .t{ display:block; font-family:'Spline Sans Mono',monospace; font-size:26px; color:var(--flame); }
+  .moment .k{ display:block; font-size:40px; font-weight:600; margin-top:10px; line-height:1.2; }
+  .moment .v{ display:block; font-size:30px; color:var(--muted); margin-top:8px; line-height:1.4; }
+  .dark .moment .v{ color:var(--on-dark); }
+
+  /* De losse eindjes die naar één plek trekken. Zelfde beeld als in het
+     gedrukte magazine, maar staand uitgelegd. */
+  .kaart-vlak{ position:relative; width:100%; flex:1; margin-top:40px; min-height:0; }
+  .kaart-vlak svg{ position:absolute; inset:0; width:100%; height:100%; }
+  .pil{
+    position:absolute; transform:translate(-50%,-50%);
+    background:#fff; border:1px solid var(--hair); border-radius:999px;
+    padding:14px 30px; font-size:30px; font-weight:600; color:var(--ink);
+    white-space:nowrap; box-shadow:0 2px 10px rgba(19,62,69,0.10);
+  }
+  .midden{
+    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    background:var(--petrol-deep); border-radius:20px; padding:44px 64px;
+    box-shadow:0 16px 60px rgba(13,52,60,0.30); text-align:center;
+  }
+  .midden img{ height:52px; width:auto; display:block; }
+  .midden span{ display:block; font-family:'Spline Sans Mono',monospace; font-size:20px;
+                letter-spacing:0.14em; text-transform:uppercase;
+                color:var(--on-dark-soft); margin-top:16px; }
+
+  /* Stap in de route. Op een staand scherm passen vier stappen onder elkaar,
+     precies waar het gedrukte magazine er een dubbele pagina voor nodig had. */
+  .stap{ display:flex; gap:28px; align-items:flex-start; }
+  .stap + .stap{ margin-top:40px; }
+  .stap .n{ font-family:'Spline Sans Mono',monospace; font-size:28px; color:var(--flame);
+            font-weight:600; width:52px; flex:none; padding-top:12px; }
+  .stap h3{ font-size:46px; }
+  .stap p{ font-size:31px; color:var(--muted); margin-top:8px; line-height:1.4; }
+
+  .scherm{ flex:none; border:1px solid var(--hair); border-radius:16px; overflow:hidden;
+           box-shadow:0 4px 18px rgba(19,62,69,0.10); }
+  .scherm img{ display:block; width:100%; height:100%; object-fit:cover; object-position:top center; }
+
+  .cijfers{ display:flex; gap:44px; }
+  .cijfers div{ flex:1; }
+  .cijfers .n{ font-family:'Instrument Sans',sans-serif; font-weight:700; font-size:64px; line-height:1; letter-spacing:-0.04em; }
+  .cijfers .l{ font-size:26px; color:var(--muted); margin-top:12px; line-height:1.35; }
+  .dark .cijfers .l{ color:var(--on-dark-soft); }
+
+  .regel{ display:flex; justify-content:space-between; align-items:baseline;
+          padding:16px 0; border-bottom:1px solid var(--hair-dark); }
+  .regel:last-child{ border-bottom:0; padding-bottom:0; }
+</style>
