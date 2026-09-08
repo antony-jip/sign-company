@@ -769,6 +769,36 @@ export function QuoteItemsTable({
     }
   }
 
+  /**
+   * Verschuift een prijsoptie een plek omhoog of omlaag. Bij staffels bepaalt de
+   * volgorde wat de klant als eerste leest, en dat is zelden de volgorde waarin
+   * je ze toevallig hebt ingetikt.
+   *
+   * De volgorde mag het bedrag niet veranderen. getMeetellendeVarianten valt
+   * terug op de eerste optie als er niets is aangevinkt en actieve_variant_id
+   * nergens naar wijst; daarom leggen we die keuze eerst vast en verschuiven we
+   * daarna pas.
+   */
+  const movePrijsVariant = (itemId: string, variantId: string, richting: -1 | 1) => {
+    const item = items.find((i) => i.id === itemId)
+    if (!item?.prijs_varianten) return
+    const varianten = item.prijs_varianten
+    const van = varianten.findIndex((v) => v.id === variantId)
+    const naar = van + richting
+    if (van === -1 || naar < 0 || naar >= varianten.length) return
+
+    const telMeeVastgelegd = varianten.some((v) => v.telt_mee)
+    const actieveBestaat = varianten.some((v) => v.id === item.actieve_variant_id)
+    if (!telMeeVastgelegd && !actieveBestaat) {
+      onUpdateItem(itemId, 'actieve_variant_id', varianten[0].id)
+    }
+
+    const verschoven = [...varianten]
+    const [verplaatst] = verschoven.splice(van, 1)
+    verschoven.splice(naar, 0, verplaatst)
+    onUpdateItem(itemId, 'prijs_varianten', verschoven)
+  }
+
   const updatePrijsVariantField = (
     itemId: string,
     variantId: string,
@@ -1606,9 +1636,10 @@ export function QuoteItemsTable({
                         </span>
                       </div>
 
-                      {item.prijs_varianten.map((variant) => {
+                      {item.prijs_varianten.map((variant, variantIndex) => {
                         const isActive = meetellendeVariantIds.has(variant.id)
                         const variantTotaal = calculateVariantTotaal(variant)
+                        const aantalVarianten = item.prijs_varianten!.length
 
                         return (
                           <div
@@ -1656,6 +1687,30 @@ export function QuoteItemsTable({
                                   </span>
                                 )}
                               </span>
+
+                              {/* Bij staffels bepaalt de volgorde wat de klant
+                                  bovenaan leest, dus die moet te wijzigen zijn
+                                  zonder de optie opnieuw in te tikken. */}
+                              <div className="flex flex-shrink-0 flex-col">
+                                <button
+                                  onClick={() => movePrijsVariant(item.id, variant.id, -1)}
+                                  disabled={variantIndex === 0}
+                                  className="text-muted-foreground/50 hover:text-foreground disabled:opacity-25 disabled:hover:text-muted-foreground/50 px-0.5 leading-none"
+                                  title="Deze optie een plek omhoog"
+                                  aria-label={`${variant.label || 'Prijsoptie'} omhoog`}
+                                >
+                                  <ChevronUp className="h-3.5 w-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => movePrijsVariant(item.id, variant.id, 1)}
+                                  disabled={variantIndex === aantalVarianten - 1}
+                                  className="text-muted-foreground/50 hover:text-foreground disabled:opacity-25 disabled:hover:text-muted-foreground/50 px-0.5 leading-none"
+                                  title="Deze optie een plek omlaag"
+                                  aria-label={`${variant.label || 'Prijsoptie'} omlaag`}
+                                >
+                                  <ChevronDown className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
 
                               <button
                                 onClick={() => removePrijsVariant(item.id, variant.id)}
