@@ -156,7 +156,47 @@ export const verticals: Vertical[] = [
       { href: '/features/projecten', blurb: 'Alles van schets tot service in één projectlog. Niks valt tussen wal en schip.' },
     ],
   },
+  {
+    slug: 'doeners',
+    naam: 'Doeners',
+    seoTitle: 'Software voor maakbedrijven | doen.',
+    seoDescription:
+      'Gebouwd voor signmakers, maar de route van aanvraag tot factuur is bij elk maakbedrijf hetzelfde. Offertes met marge, planning, werkbonnen en facturatie in één systeem. 30 dagen gratis.',
+    h1Lead: 'Voor doeners',
+    h1Accent: 'Maak jij ook op maat',
+    intro:
+      'doen. is gebouwd voor signmakers en daar richten we het ook op in. Maar de route is bij elk maakbedrijf hetzelfde: een aanvraag komt binnen, je rekent een prijs uit die klopt, er moet iets gemaakt en gemonteerd worden, en aan het eind gaat er een factuur uit. Herken je dat, dan werkt doen. bij jou ook.',
+    beeld: {
+      src: '/images/fotos/tekening-op-de-werkbank.webp',
+      alt: 'Twee mannen meten met een rolmaat een werktekening op de werkbank, bestelbus in de open deur van de werkplaats',
+    },
+    pains: [
+      {
+        title: 'Elk stuk is anders',
+        body: 'Werk je op maat, dan past geen enkele standaardprijslijst. Je rekent elke offerte half opnieuw uit en weet pas achteraf of er marge op zat.',
+      },
+      {
+        title: 'Kantoor en werkplaats weten iets anders',
+        body: 'Wat is afgesproken, wat ligt er klaar, wie gaat er donderdag heen? Zit dat in de mail en in iemands hoofd, dan komt het verschil er pas uit als het misgaat.',
+      },
+      {
+        title: 'De factuur loopt achter het werk aan',
+        body: 'Het meerwerk staat op een briefje, de uren komen op vrijdag binnen en de factuur gaat de week erna pas de deur uit.',
+      },
+    ],
+    highlights: [
+      { href: '/features/offertes', blurb: 'Calculeer met je eigen onderdelen en uren, zie je marge terwijl je typt en laat de klant digitaal akkoord geven.' },
+      { href: '/features/projecten', blurb: 'Van akkoord naar productie naar oplevering, met alle mail, tekeningen en afspraken op één plek.' },
+      { href: '/features/werkbonnen', blurb: "Je monteur ziet zijn klus op zijn telefoon: uren, foto's, meerwerk en een handtekening van de klant." },
+      { href: '/features/facturen', blurb: 'Factureer wat er echt gedaan is, inclusief meerwerk, en stuur hem door naar je boekhouding.' },
+    ],
+  },
 ]
+
+/* Wat er in het "Voor wie"-menu en in de voettekst staat. Lichtreclame is er
+   op verzoek uit; de pagina /voor/lichtreclame blijft gewoon bestaan en staat
+   nog in de sitemap, want een geïndexeerde pagina gooi je niet zomaar weg. */
+export const menuVerticals: Vertical[] = verticals.filter((v) => v.slug !== 'lichtreclame')
 
 export function getVerticalBySlug(slug: string): Vertical | undefined {
   return verticals.find((v) => v.slug === slug)

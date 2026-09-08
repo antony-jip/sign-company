@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import Toast, { useEasterEgg } from './Toast'
 import { modulesPerGroep } from '@/data/modules'
-import { verticals } from '@/data/verticals'
+import { menuVerticals } from '@/data/verticals'
 import { RONDLEIDING_HREF, RONDLEIDING_LABEL } from '@/data/cta'
 
 /* Vier items in de balk, net als kit.com. Het waren er zes en met het tweede
@@ -327,7 +327,7 @@ export default function Navbar({ theme = 'light' }: { theme?: 'light' | 'dark' }
                       {link.menu === 'voorwie' && (
                         <div className="mb-3 pl-0.5">
                           <ul className="grid grid-cols-2 gap-x-4">
-                            {verticals.map((v) => (
+                            {menuVerticals.map((v) => (
                               <li key={v.slug}>
                                 <Link
                                   href={`/voor/${v.slug}`}
@@ -478,7 +478,7 @@ function VoorWieMenu({ pathname, sluit }: { pathname: string; sluit: () => void 
         style={{ boxShadow: '0 1px 2px rgba(20,40,40,0.04), 0 18px 44px -20px rgba(19,62,69,0.35)' }}
       >
         <ul>
-          {verticals.map((v) => {
+          {menuVerticals.map((v) => {
             const href = `/voor/${v.slug}`
             const actief = pathname === href
             return (

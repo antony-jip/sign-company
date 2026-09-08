@@ -17,7 +17,7 @@ const columns: { title: string; links: { label: string; href: string }[] }[] = [
       { label: 'Signmakers', href: '/voor/signmakers' },
       { label: 'Autobelettering', href: '/voor/autobelettering' },
       { label: 'Grootformaat print', href: '/voor/grootformaat-print' },
-      { label: 'Lichtreclame', href: '/voor/lichtreclame' },
+      { label: 'Doeners', href: '/voor/doeners' },
     ],
   },
   {
