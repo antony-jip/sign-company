@@ -91,7 +91,7 @@ export const faqs: { category: CategoryId; q: string; a: string }[] = [
   {
     category: 'product',
     q: 'Kan mijn monteur alles vanaf zijn telefoon?',
-    a: 'Ja. **Planning, werkbonnen, taken en email** hebben dedicated mobiele weergaven. Werkbon openen, uren tikken, foto\'s erbij, klant laten tekenen, allemaal op een telefoon. Geen aparte app om te installeren.',
+    a: 'Ja. **Offertes, planning, werkbonnen, taken en email** hebben eigen mobiele weergaven. Offerte opbouwen met het totaal in beeld en versturen, werkbon openen, uren tikken, foto\'s erbij, klant laten tekenen, allemaal op een telefoon. Geen aparte app om te installeren.',
   },
   {
     category: 'product',

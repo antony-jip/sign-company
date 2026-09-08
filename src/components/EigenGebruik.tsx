@@ -44,23 +44,38 @@ export function EigenGebruikNotitie({ className = '' }: { className?: string }) 
    Licht vlak, omdat de hero al petrol-deep is en twee donkere secties op
    elkaar het beeld doodslaan.
 
-   Let op: het beeld is sfeerbeeld uit de eigen fotoserie, geen documentaire
-   foto van Sign Company. Zet er dus geen naam van een persoon onder. Zodra er
-   een echte foto van de ploeg is, hoort die hier. */
+   Hier stond sfeerbeeld met de aantekening dat er een echte foto van de ploeg
+   hoorde te komen. Die is er nu: Antony en Jos bij de bus. Namen mogen er dus
+   wel onder, en dat hoort ook, want dit blok claimt precies dat het geen
+   demo-verhaal is.
+
+   Duotoon in plaats van de kale foto: grijswaarden tussen petrol-deep en de
+   bg-tint. Opmaak, het bestand zelf blijft ongemoeid. Wil je hem in kleur,
+   haal dan de twee blend-lagen weg. */
 export function EigenGebruikBewijs() {
   return (
     <section className="bg-white">
       <div className="container-site py-14 md:py-24">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.05fr] gap-8 lg:gap-16 items-center">
-          <div className="relative aspect-[16/10] w-full overflow-hidden rounded-[10px] bg-petrol-deep/5">
-            <Image
-              src="/images/fotos/overleg-aan-de-werkbank.webp"
-              alt="Twee medewerkers rollen een geprint vel uit op de werkbank in de werkplaats, bestelbus in de open deur, printer op de achtergrond"
-              fill
-              sizes="(max-width: 1024px) 100vw, 560px"
-              className="object-cover"
-            />
-          </div>
+          <figure className="w-full max-w-[420px]">
+            <div className="relative isolate aspect-[4/5] w-full overflow-hidden rounded-[10px] bg-petrol-deep">
+              <Image
+                src="/images/maker/antony-en-jos.webp"
+                alt="Antony en Jos Bootsma bij de open zijdeur van de bestelbus voor de werkplaats van Sign Company"
+                fill
+                sizes="(max-width: 1024px) 100vw, 420px"
+                className="object-cover grayscale contrast-[1.06]"
+              />
+              {/* isolate op de wrapper hierboven is nodig: zonder eigen
+                  stapelcontext blendt deze laag niet met de foto maar met de
+                  pagina, en wordt het vlak één blok petrol. */}
+              <span aria-hidden className="absolute inset-0 bg-petrol-deep mix-blend-lighten" />
+              <span aria-hidden className="absolute inset-0 bg-[#EDF3F3] mix-blend-darken" />
+            </div>
+            <figcaption className="mt-3 text-[13px] text-muted">
+              Antony en Jos Bootsma · Sign Company, sinds 1983
+            </figcaption>
+          </figure>
 
           <div>
             <h2

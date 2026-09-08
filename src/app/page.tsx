@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Navbar from '@/components/Navbar'
 import Hero from '@/components/home/Hero'
+import OpJeTelefoon from '@/components/home/OpJeTelefoon'
 import Manifest from '@/components/home/Manifest'
 import Demo from '@/components/home/Demo'
 import Werkwoorden from '@/components/home/Werkwoorden'
@@ -27,8 +28,11 @@ export default function Home() {
       <main id="main-content">
         {/* Volgorde na de kit.com-analyse: eerst bewijs, dan de belofte,
             dan pas het product. Stond andersom: uitleg vooraan, bewijs op
-            plek vier. Zie docs/verbeterplan-home-kit.md */}
+            plek vier. Zie docs/verbeterplan-home-kit.md
+            OpJeTelefoon staat sinds september op twee, op verzoek. Het bewijs
+            schoof daarmee een plek op; wil je dat terug, wissel deze twee. */}
         <Hero />
+        <OpJeTelefoon />
         <EigenGebruikBewijs />
         <Manifest />
         <Werkwoorden />
