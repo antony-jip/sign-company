@@ -2,12 +2,9 @@ import type { Metadata } from 'next'
 import Navbar from '@/components/Navbar'
 import Hero from '@/components/home/Hero'
 import DitZitErin from '@/components/home/DitZitErin'
-import Manifest from '@/components/home/Manifest'
 import Demo from '@/components/home/Demo'
-import Werkwoorden from '@/components/home/Werkwoorden'
 import DaanSpotlight from '@/components/home/DaanSpotlight'
 import { EigenGebruikBewijs } from '@/components/EigenGebruik'
-import Modules from '@/components/home/Modules'
 import PricingSection from '@/components/home/PricingSection'
 import FaqSection from '@/components/home/FaqSection'
 import CTASection from '@/components/home/CTASection'
@@ -26,20 +23,20 @@ export default function Home() {
       <JsonLd data={softwareApplicationSchema} />
       <Navbar theme="dark" />
       <main id="main-content">
-        {/* Volgorde na de kit.com-analyse: eerst bewijs, dan de belofte,
-            dan pas het product. Stond andersom: uitleg vooraan, bewijs op
-            plek vier. Zie docs/verbeterplan-home-kit.md
-            DitZitErin staat sinds september op twee, op verzoek: eerst zien wat
-            er in doen. zit. Het bewijs schoof daarmee een plek op; wil je dat
-            terug, wissel deze twee. */}
+        {/* Volgorde na de kit.com-analyse en de conversie-doorlichting van
+            september. Eerst zien wat erin zit, dan het bewijs met de knop
+            eronder, dan Daan, dan de app zelf, dan prijs en bezwaren.
+
+            Eraf: Manifest, Werkwoorden en Modules. Werkwoorden vertelde de
+            vier stappen die DitZitErin nu als kopjes gebruikt en was met
+            1969px de langste sectie; Modules was na DitZitErin volledig
+            dubbel; Manifest is merkverhaal zonder knop en hoort op /over. De
+            componenten staan er nog, alleen niet meer in deze pagina. */}
         <Hero />
         <DitZitErin />
         <EigenGebruikBewijs />
-        <Manifest />
-        <Werkwoorden />
         <DaanSpotlight />
         <Demo />
-        <Modules />
         <PricingSection />
         <FaqSection />
         <CTASection />

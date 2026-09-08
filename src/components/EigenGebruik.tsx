@@ -18,7 +18,9 @@ import Image from 'next/image'
    Schrijf hier nooit iets als "geen losse tools meer": de boekhouding loopt
    via Exact en de mail via de eigen mailbox, dus dat zou niet kloppen. */
 
+import { ArrowRight } from 'lucide-react'
 import { modules } from '@/data/modules'
+import { ZEKERHEID_REGEL } from '@/data/cta'
 
 export const EIGEN_GEBRUIK_DUUR = 'een half jaar'
 
@@ -111,18 +113,32 @@ export function EigenGebruikBewijs() {
               ))}
             </dl>
 
-            <Link
-              href="/over"
-              className="group inline-flex items-center gap-2 mt-6 text-[15px] font-semibold text-petrol"
-            >
-              <span className="relative">
-                Lees waarom we het bouwden
-                <span className="absolute left-0 -bottom-1 h-px w-full origin-left transition-transform duration-300 group-hover:scale-x-0 bg-petrol/30" />
-              </span>
-              <span aria-hidden className="text-flame transition-transform duration-300 group-hover:translate-x-1">
-                →
-              </span>
-            </Link>
+            {/* De knop hoort hier. Tussen de hero-knop en de volgende CTA lag
+                zes schermen niets, en dit is het punt waarop de lezer het
+                warmst is: hij heeft net gelezen dat het bedrijf er zelf op
+                draait. */}
+            <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-4">
+              <a
+                href="https://app.doen.team/register"
+                className="group inline-flex h-[54px] items-center gap-2.5 rounded-[6px] bg-flame px-7 text-[15px] font-semibold text-white transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <span>Start gratis</span>
+                <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={2.5} />
+              </a>
+              <Link
+                href="/over"
+                className="group inline-flex items-center gap-2 text-[15px] font-semibold text-petrol"
+              >
+                <span className="relative">
+                  Lees waarom we het bouwden
+                  <span className="absolute left-0 -bottom-1 h-px w-full origin-left transition-transform duration-300 group-hover:scale-x-0 bg-petrol/30" />
+                </span>
+                <span aria-hidden className="text-flame transition-transform duration-300 group-hover:translate-x-1">
+                  →
+                </span>
+              </Link>
+            </div>
+            <p className="mt-4 text-[14px] text-muted">{ZEKERHEID_REGEL}</p>
           </div>
         </div>
       </div>

@@ -7,13 +7,15 @@ import { faqs } from '@/data/faq'
 import FaqAnswer from '@/components/FaqAnswer'
 
 /* Acht vragen die de koop beslissen. De rest beantwoorden we via /contact. */
+/* Vijf op de home, niet acht. Dit blok staat op scherm acht en telde 357
+   woorden; wie daar nog leest heeft geen productvragen meer maar twijfels
+   over geld, contract en het overstappen zelf. De rest (gebruikersaantallen,
+   portaal, mobiel) staat op /veelgestelde-vragen en wordt hierboven al
+   beantwoord. */
 const HOME_QUESTIONS = [
   'Kan ik doen. eerst gratis proberen?',
   'Hoeveel kost doen. na de proefperiode?',
   'Moet ik een contract tekenen?',
-  'Wat als ik meer dan 10 gebruikers heb?',
-  'Kan mijn monteur alles vanaf zijn telefoon?',
-  'Hoe werkt het klantportaal?',
   'Kan ik doen. koppelen aan mijn boekhouding?',
   'Wat gebeurt er met mijn data als ik opzeg?',
 ]
