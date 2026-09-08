@@ -88,11 +88,11 @@
   .dark .hr{ background:var(--hair-dark); }
 
   .rijen{ margin-top:8mm; }
-  .rij{ display:flex; gap:8mm; padding:4mm 0; border-top:1px solid var(--hair); }
+  .rij{ display:flex; gap:6mm; padding:4mm 0; border-top:1px solid var(--hair); }
   .dark .rij{ border-color:var(--hair-dark); }
   .rij:last-child{ border-bottom:1px solid var(--hair); }
   .dark .rij:last-child{ border-bottom-color:var(--hair-dark); }
-  .rij .t{ font-family:'Spline Sans Mono', monospace; font-size:8.5pt; color:var(--flame); width:18mm; flex:none; padding-top:0.6mm; }
+  .rij .t{ font-family:'Spline Sans Mono', monospace; font-size:8.5pt; color:var(--flame); width:11mm; flex:none; padding-top:0.6mm; }
   .rij .k{ font-size:11pt; font-weight:600; width:52mm; flex:none; }
   .rij .v{ font-size:9.5pt; color:var(--muted); flex:1; }
   .dark .rij .v{ color:var(--on-dark); }
@@ -145,6 +145,43 @@
   .invul.totaal{ border-top-width:1.4px; border-top-color:var(--flame); }
   .invul.totaal .k{ font-size:14pt; }
   .invul.totaal .lijn{ border-bottom-color:var(--flame); border-bottom-width:1.6px; height:11mm; }
+
+  /* Gereedschapskaart op pagina 3 */
+  .moment{ flex:1; border-top:1.4px solid var(--flame); padding-top:3mm; }
+  .moment .t{ display:block; font-family:'Spline Sans Mono',monospace; font-size:8pt; color:var(--flame); }
+  .moment .k{ display:block; font-size:10pt; font-weight:600; margin-top:1.5mm; line-height:1.25; }
+  .moment .v{ display:block; font-size:8.5pt; color:var(--muted); margin-top:1.5mm; line-height:1.4; }
+
+  .kaartlabel{ font-family:'Spline Sans Mono',monospace; font-size:7.5pt; letter-spacing:0.14em;
+               text-transform:uppercase; color:var(--muted); }
+
+  /* Gereedschapskaart: de losse eindjes die naar één plek trekken. Zelfde
+     beeld als de scene "Samenkomt" in de film op de site, alleen stilgezet. */
+  .kaart-vlak{ position:relative; width:100%; height:118mm; margin-top:9mm; }
+  .kaart-vlak svg{ position:absolute; inset:0; width:100%; height:100%; }
+  .pil{
+    position:absolute; transform:translate(-50%,-50%);
+    background:#fff; border:1px solid var(--hair); border-radius:999px;
+    padding:2.2mm 5mm; font-size:9.5pt; font-weight:600; color:var(--ink);
+    white-space:nowrap; box-shadow:0 0.3mm 1.2mm rgba(19,62,69,0.10);
+  }
+  .midden{
+    position:absolute; left:50%; top:48%; transform:translate(-50%,-50%);
+    background:var(--petrol-deep); border-radius:2.4mm; padding:7mm 11mm;
+    box-shadow:0 2mm 8mm rgba(13,52,60,0.28); text-align:center;
+  }
+  .midden img{ height:8mm; width:auto; display:block; }
+  .midden span{ display:block; font-family:'Spline Sans Mono',monospace; font-size:7pt;
+                letter-spacing:0.14em; text-transform:uppercase;
+                color:var(--on-dark-soft); margin-top:2.5mm; }
+
+  /* Appscherm bij een stap in het middenkatern. Echte schermen met
+     demodata uit de posters van de modulefilmpjes. */
+  .scherm{ margin-top:5mm; height:60mm; border:1px solid var(--hair); border-radius:1.8mm;
+           overflow:hidden; box-shadow:0 0.4mm 1.6mm rgba(19,62,69,0.10); }
+  /* Vaste hoogte met een snede vanaf de bovenkant: twee schermen per pagina
+     passen anders niet, en het interessante deel van een appscherm zit boven. */
+  .scherm img{ display:block; width:100%; height:100%; object-fit:cover; object-position:top center; }
 
   .streep{ width:14mm; height:1.4mm; background:var(--flame); border-radius:1mm; }
 </style>

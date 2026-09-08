@@ -30,6 +30,11 @@ BEELDEN = {
     'FOTO_ANTONY': 'public/images/maker/antony-en-jos.webp',
     'FOTO_PRIJS': 'public/images/fotos/prijs-uitrekenen.webp',
     'FOTO_HOOGWERKER': 'public/images/fotos/boren-in-de-gevel.webp',
+    'STAP_OFFERTES': 'docs/magazine/beeld/stap-offertes.jpg',
+    'STAP_PLANNING': 'docs/magazine/beeld/stap-planning.jpg',
+    'STAP_MAKEN': 'docs/magazine/beeld/stap-visualizer.jpg',
+    'STAP_FACTUREN': 'docs/magazine/beeld/stap-facturen.jpg',
+    'STAP_DAAN': 'docs/magazine/beeld/stap-daan.jpg',
 }
 
 
