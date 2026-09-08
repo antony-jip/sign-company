@@ -16,7 +16,7 @@ import { useMailLijst, useMapTellers, usePostvakken, useSyncStatus, useZoekresul
 import type { EmailBody, EmailLijstItem, MailMap } from '@/lib/mail/types'
 import { getConcept } from '@/services/conceptService'
 import { updateLeadStatus } from '@/services/leadsService'
-import { extractSenderEmail, extractSenderName, getAvatarStyle } from './emailHelpers'
+import { daanTekstNaarHtml, extractSenderEmail, extractSenderName, getAvatarStyle } from './emailHelpers'
 import { EmailMobileTopBar } from './EmailMobileTopBar'
 import { EmailFocusKaart } from './EmailFocusKaart'
 import { Mappenrail, MobieleMappenLade } from './shell/Mappenrail'
@@ -292,7 +292,7 @@ export function EmailLayout() {
     const doc = modus === 'doorsturen'
       ? documentVoorDoorsturen(mail, inhoud)
       : documentVoorAntwoord(mail, modus === 'allen', inhoud, eigenAdres)
-    if (voorstel) doc.html = `<p>${voorstel}</p>${doc.html}`
+    if (voorstel) doc.html = `${daanTekstNaarHtml(voorstel)}${doc.html}`
     zetComposer({ document: doc, variant: isDesktop ? 'inline' : 'volledig' })
   }, [eigenAdres, isDesktop])
 

@@ -105,6 +105,31 @@ export function platteTekstNaarHtml(tekst: string): string {
 }
 
 /**
+ * Tekst van Daan naar HTML voor de composer.
+ *
+ * Daan levert platte tekst met lege regels tussen de alinea's. Die gingen
+ * verloren zodra die tekst als één <p> in de editor belandde: HTML doet niets
+ * met een newline, dus kwam er een lap tekst uit. Elke alinea krijgt hier zijn
+ * eigen <p>, met de marge in de style en niet in een class: Tailwind zet
+ * p-marges op nul in de editor, en het mailprogramma van de ontvanger kent
+ * onze CSS toch niet.
+ */
+export function daanTekstNaarHtml(tekst: string): string {
+  const schoon = (tekst || '').trim()
+  if (!schoon) return ''
+  const esc = (deel: string) => deel
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+  return schoon
+    .split(/\n\s*\n/)
+    .map((alinea) => alinea.trim())
+    .filter(Boolean)
+    .map((alinea) => `<p style="margin:0 0 1em 0">${esc(alinea).replace(/\n/g, '<br>')}</p>`)
+    .join('')
+}
+
+/**
  * Body terug naar leesbare regels, of hij nu HTML of platte tekst is. Anders
  * dan stripHtml blijven de regelovergangen staan — die zijn nodig om
  * "Label: waarde"-velden uit een formuliermail te kunnen lezen.

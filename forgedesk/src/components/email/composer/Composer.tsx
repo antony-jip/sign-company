@@ -19,7 +19,7 @@ import { InlineSuggestie } from '@/components/email/InlineSuggestie'
 import { MailStatusToast, MailToastKnop } from '@/components/shared/MailStatusToast'
 import { OntvangerChips } from '@/components/shared/OntvangerVeld'
 import type { LinkInvoegHandle } from '@/components/shared/LinkInvoegKnop'
-import { lijktOpHtml } from '@/components/email/emailHelpers'
+import { daanTekstNaarHtml, lijktOpHtml } from '@/components/email/emailHelpers'
 import { usePostvakken } from '@/lib/mail/hooks'
 import { PostvakKiezer } from '@/components/email/shell/PostvakKiezer'
 import type { ComposerBijlage, ComposerDocument, Ontvanger } from '@/lib/mail/types'
@@ -265,7 +265,7 @@ export function Composer({ document: initieel, variant, onVerzonden, onSluiten, 
       const response = brief
         ? await callForgie('write-email', brief, context)
         : await callForgie('generate-reply', replyTekst || '')
-      if (response?.result) editorHandle.current?.vervangInhoud(response.result.replace(/\n/g, '<br>'))
+      if (response?.result) editorHandle.current?.vervangInhoud(daanTekstNaarHtml(response.result))
       setDaanOpen(false)
       setDaanBrief('')
     } catch (err) {
