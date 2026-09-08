@@ -1,0 +1,150 @@
+<style>
+  /* Formaat: 216 x 303 mm. Dat is A4 (210 x 297) plus 3 mm afloop rondom.
+     De drukker krijgt dus pagina's inclusief overlap; snijlijn ligt 3 mm
+     binnen de rand. Alles wat mag aflopen (kleurvlakken, foto's) loopt tot
+     de rand van de pagina, alle tekst blijft binnen .pad. */
+  @page { size: 216mm 303mm; margin: 0; }
+
+  :root{
+    --bg:#F4F7F7;
+    --petrol:#1A535C;
+    --petrol-light:#2A6F7A;
+    --petrol-deep:#0D343C;
+    --flame:#F15025;
+    --ink:#16262B;
+    --muted:#54666A;
+    --on-dark:rgba(226,240,241,0.82);
+    --on-dark-soft:rgba(226,240,241,0.52);
+    --hair:rgba(26,83,92,0.16);
+    --hair-dark:rgba(226,240,241,0.18);
+    --afloop:3mm;
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+
+  body{
+    font-family:'Hanken Grotesk', sans-serif;
+    color:var(--ink); background:#fff;
+    font-size:10.5pt; line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  h1,h2,h3,h4{ font-family:'Instrument Sans', sans-serif; font-weight:700; letter-spacing:-0.032em; }
+  .mono{ font-family:'Spline Sans Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums; }
+  .dot{ color:var(--flame); }
+
+  .page{
+    position:relative; width:216mm; height:303mm; overflow:hidden;
+    page-break-after:always; background:#fff;
+  }
+  .page:last-child{ page-break-after:auto; }
+  .page.dark{ background:var(--petrol-deep); color:#fff; }
+  .page.soft{ background:var(--bg); }
+  .page.flame{ background:var(--flame); color:#fff; }
+
+  /* 20 mm vanaf de aflooprand = 17 mm vanaf de snijlijn. Ruim binnen elke
+     drukkersmarge, ook als het snijden een millimeter verloopt. */
+  .pad{ position:relative; z-index:2; height:100%; padding:19mm 20mm 16mm; display:flex; flex-direction:column; }
+  .pad.wide{ padding:20mm 16mm; }
+
+  .glow{
+    position:absolute; inset:0; z-index:0; pointer-events:none;
+    background:radial-gradient(ellipse 80% 55% at 8% 0%, rgba(42,111,122,0.55) 0%, rgba(42,111,122,0) 62%);
+  }
+  .glow.br{ background:radial-gradient(ellipse 70% 50% at 92% 100%, rgba(42,111,122,0.42) 0%, rgba(42,111,122,0) 60%); }
+
+  /* ── kop van een binnenpagina ── */
+  .kicker{
+    font-family:'Spline Sans Mono', monospace; font-size:7.5pt; font-weight:500;
+    letter-spacing:0.16em; text-transform:uppercase; color:var(--muted);
+  }
+  .dark .kicker{ color:var(--on-dark-soft); }
+  .flame .kicker{ color:rgba(255,255,255,0.72); }
+
+  h2.kop{ font-size:30pt; line-height:1.0; margin-top:5mm; max-width:150mm; }
+  h2.kop.groot{ font-size:38pt; }
+  .lead{ font-size:12pt; line-height:1.5; color:var(--muted); max-width:120mm; margin-top:5mm; }
+  .dark .lead{ color:var(--on-dark); }
+
+  p{ max-width:none; }
+  p.smal{ max-width:118mm; }
+  p + p{ margin-top:3.5mm; }
+  .dark p{ color:var(--on-dark); }
+
+  /* ── voet ── */
+  .foot{
+    margin-top:auto; padding-top:7mm;
+    display:flex; align-items:flex-end; justify-content:space-between;
+    font-size:7.5pt; color:var(--muted); letter-spacing:0.02em;
+  }
+  .dark .foot{ color:var(--on-dark-soft); }
+  .flame .foot{ color:rgba(255,255,255,0.7); }
+  .foot .nr{ font-family:'Spline Sans Mono', monospace; font-size:8pt; }
+  .logo-foot{ height:4.4mm; width:auto; display:block; align-self:flex-start; }
+
+  /* ── bouwstenen ── */
+  .hr{ height:1px; background:var(--hair); border:0; }
+  .dark .hr{ background:var(--hair-dark); }
+
+  .rijen{ margin-top:8mm; }
+  .rij{ display:flex; gap:8mm; padding:4mm 0; border-top:1px solid var(--hair); }
+  .dark .rij{ border-color:var(--hair-dark); }
+  .rij:last-child{ border-bottom:1px solid var(--hair); }
+  .dark .rij:last-child{ border-bottom-color:var(--hair-dark); }
+  .rij .t{ font-family:'Spline Sans Mono', monospace; font-size:8.5pt; color:var(--flame); width:18mm; flex:none; padding-top:0.6mm; }
+  .rij .k{ font-size:11pt; font-weight:600; width:52mm; flex:none; }
+  .rij .v{ font-size:9.5pt; color:var(--muted); flex:1; }
+  .dark .rij .v{ color:var(--on-dark); }
+
+  .cijfers{ display:flex; gap:12mm; margin-top:8mm; }
+  .cijfers div{ flex:1; }
+  .cijfers .n{ font-family:'Instrument Sans',sans-serif; font-weight:700; font-size:26pt; line-height:1; letter-spacing:-0.04em; }
+  .cijfers .l{ font-size:8.5pt; color:var(--muted); margin-top:2mm; line-height:1.4; }
+  .dark .cijfers .l{ color:var(--on-dark-soft); }
+
+  .quote{
+    font-family:'Instrument Sans',sans-serif; font-weight:700;
+    font-size:19pt; line-height:1.18; letter-spacing:-0.03em;
+    max-width:130mm;
+  }
+
+  .kaart{ background:#fff; border:1px solid var(--hair); border-radius:2mm; padding:6mm; }
+  .dark .kaart{ background:rgba(255,255,255,0.05); border-color:var(--hair-dark); }
+  /* Boven een foto is 5% wit niet genoeg: dan leest de tekst door het beeld
+     heen. Een dichte petrol-laag houdt het rustig en blijft in het palet. */
+  .kaart.op-foto{ background:rgba(9,38,44,0.80); border-color:rgba(255,255,255,0.16); }
+
+  .beeld{ position:relative; overflow:hidden; border-radius:2mm; isolation:isolate; background:var(--petrol-deep); }
+  .beeld img{ display:block; width:100%; height:100%; object-fit:cover;
+              filter:saturate(0.6) contrast(1.04) brightness(1.02); }
+  .beeld .tint{ position:absolute; inset:0; background:var(--petrol); opacity:0.28; mix-blend-mode:color; }
+  .beeld .diep{ position:absolute; inset:0; background:var(--petrol-deep); opacity:0.10; mix-blend-mode:multiply; }
+  .bijschrift{ font-size:7.5pt; color:var(--muted); margin-top:2.5mm; }
+  .dark .bijschrift{ color:var(--on-dark-soft); }
+
+  /* volledig aflopend beeld */
+  .vol{ position:absolute; inset:0; z-index:0; }
+  .vol img{ width:100%; height:100%; object-fit:cover; filter:saturate(0.5) contrast(1.05); }
+  .vol .scrim{ position:absolute; inset:0; background:linear-gradient(180deg, rgba(13,52,60,0.92) 0%, rgba(13,52,60,0.72) 45%, rgba(13,52,60,0.94) 100%); }
+
+  .knop{
+    display:inline-flex; align-items:center; gap:2.5mm;
+    background:var(--flame); color:#fff; font-weight:600; font-size:10pt;
+    padding:3.6mm 7mm; border-radius:1.6mm; letter-spacing:-0.01em;
+  }
+  .flame .knop{ background:#fff; color:var(--flame); }
+
+  /* Invulregels op pagina 4: hier hoort iemand met een pen in te schrijven,
+     dus een echte lijn met ruimte erboven in plaats van een rij puntjes. */
+  .invul{ border-top:1px solid var(--hair-dark); padding:6mm 0 3mm; display:flex; align-items:flex-end; gap:8mm; }
+  .invul:last-of-type{ border-bottom:1px solid var(--hair-dark); }
+  .invul .k{ font-size:11.5pt; font-weight:600; width:76mm; flex:none; line-height:1.3; }
+  .invul .lijn{ width:34mm; border-bottom:1.2px solid rgba(226,240,241,0.45); height:9mm; flex:none; }
+  .invul .v{ font-size:9pt; color:var(--on-dark-soft); flex:1; text-align:right; padding-bottom:1mm; }
+  .invul.totaal{ border-top-width:1.4px; border-top-color:var(--flame); }
+  .invul.totaal .k{ font-size:14pt; }
+  .invul.totaal .lijn{ border-bottom-color:var(--flame); border-bottom-width:1.6px; height:11mm; }
+
+  .streep{ width:14mm; height:1.4mm; background:var(--flame); border-radius:1mm; }
+</style>
