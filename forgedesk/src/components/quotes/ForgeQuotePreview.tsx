@@ -17,7 +17,7 @@ import { downloadFile } from '@/services/storageService'
 import type { Offerte, OfferteItem, Klant } from '@/types'
 import type { PrijsVariant } from './QuoteItemsTable'
 import { round2 } from '@/utils/budgetUtils'
-import { getMeetellendeVarianten } from '@/utils/offerteTotalen'
+import { getMeetellendeVarianten, nettoStuksprijs } from '@/utils/offerteTotalen'
 import { logger } from '../../utils/logger'
 import { useAuth } from '@/contexts/AuthContext'
 import { useMedewerkers } from '@/contexts/MedewerkersContext'
@@ -705,7 +705,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
                               {variant.aantal}
                             </td>
                             <td className="py-2 px-2 text-right text-muted-foreground dark:text-muted-foreground/60 text-xs font-mono">
-                              {formatCurrency(variant.eenheidsprijs)}
+                              {formatCurrency(nettoStuksprijs(variant))}
                             </td>
                             <td className="py-2 px-2 text-right text-muted-foreground/60 dark:text-muted-foreground text-xs font-mono">
                               {variant.btw_percentage}%
@@ -743,7 +743,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
                       {item.aantal}
                     </td>
                     <td className="py-3 px-2 text-right text-foreground/70 dark:text-muted-foreground/50 font-mono">
-                      {formatCurrency(item.eenheidsprijs)}
+                      {formatCurrency(nettoStuksprijs(item))}
                     </td>
                     <td className="py-3 px-2 text-right text-muted-foreground dark:text-muted-foreground/60 font-mono">
                       {item.btw_percentage}%

@@ -18,7 +18,7 @@ import { INKOOP_DRAG_TYPE, type InkoopDragData } from './InkoopOffertePaneel'
 import { labelToAutofillField } from '@/utils/autofillUtils'
 import type { CalculatieRegel } from '@/types'
 import { round2 } from '@/utils/budgetUtils'
-import { berekenItemTotaal, getMeetellendeVarianten } from '@/utils/offerteTotalen'
+import { berekenItemTotaal, getMeetellendeVarianten, nettoStuksprijs } from '@/utils/offerteTotalen'
 import { berekenMarkupPercentage } from '@/utils/margeBerekening'
 import { uploadFile, downloadFile, deleteFile } from '@/services/storageService'
 import { createDocument, getSigningVisualisatiesByOfferte, getSigningVisualisatiesByProject } from '@/services/supabaseService'
@@ -1074,7 +1074,7 @@ export function QuoteItemsTable({
                     <p className="text-xs text-muted-foreground font-mono tabular-nums mt-0.5">
                       {item.prijs_varianten && item.prijs_varianten.length > 0
                         ? `${item.prijs_varianten.length} prijsvarianten`
-                        : `${item.aantal} × ${formatCurrency(item.eenheidsprijs)}${item.korting_percentage > 0 ? ` · ${item.korting_percentage}% korting` : ''}`}
+                        : `${item.aantal} × ${formatCurrency(nettoStuksprijs(item))}${item.korting_percentage > 0 ? ` · ${item.korting_percentage}% korting van ${formatCurrency(item.eenheidsprijs)}` : ''}`}
                     </p>
                   </div>
                   <span className={cn(
@@ -1525,13 +1525,19 @@ export function QuoteItemsTable({
                           </div>
                         </div>
 
-                        {/* = Totaal */}
+                        {/* = Totaal · met de stuksprijs erbij zodra er korting op zit,
+                             anders zie je alleen het totaal bewegen en niet wat een stuk kost. */}
                         <div className="space-y-1 ml-auto">
                           <label className="text-xs font-medium text-muted-foreground text-right block">Totaal</label>
-                          <div className="h-9 flex items-center justify-end">
+                          <div className="h-9 flex flex-col items-end justify-center leading-tight">
                             <span className="text-base font-bold font-mono text-foreground tabular-nums">
                               {formatCurrency(lineTotaal)}
                             </span>
+                            {item.korting_percentage > 0 && (
+                              <span className="text-2xs font-mono text-muted-foreground tabular-nums">
+                                {formatCurrency(nettoStuksprijs(item))} per stuk
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -1640,8 +1646,15 @@ export function QuoteItemsTable({
                                 className="h-7 text-xs font-semibold border-transparent bg-transparent hover:border-border dark:hover:border-border focus-visible:border-border shadow-none flex-1 max-w-[180px]"
                               />
 
-                              <span className="text-sm font-bold font-mono text-foreground tabular-nums ml-auto mr-2">
-                                {formatCurrency(variantTotaal)}
+                              <span className="ml-auto mr-2 flex flex-col items-end leading-tight">
+                                <span className="text-sm font-bold font-mono text-foreground tabular-nums">
+                                  {formatCurrency(variantTotaal)}
+                                </span>
+                                {variant.korting_percentage > 0 && (
+                                  <span className="text-2xs font-mono text-muted-foreground tabular-nums">
+                                    {formatCurrency(nettoStuksprijs(variant))} per stuk
+                                  </span>
+                                )}
                               </span>
 
                               <button

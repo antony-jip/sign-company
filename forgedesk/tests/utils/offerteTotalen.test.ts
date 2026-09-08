@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { berekenOfferteTotalen, berekenItemTotaal, berekenKortingBedrag, getMeetellendeVarianten, type OfferteTotaalRegel } from '../../src/utils/offerteTotalen'
+import { berekenOfferteTotalen, berekenItemTotaal, berekenKortingBedrag, getMeetellendeVarianten, nettoStuksprijs, type OfferteTotaalRegel } from '../../src/utils/offerteTotalen'
 
 function round2(n: number): number {
   return Math.round((n + Number.EPSILON) * 100) / 100
@@ -158,5 +158,28 @@ describe('berekenKortingBedrag', () => {
     const { subtotaal } = berekenOfferteTotalen(regels)
     const bruto = round2(regels.reduce((sum, r) => sum + r.aantal * r.eenheidsprijs, 0))
     expect(round2(subtotaal + berekenKortingBedrag(regels))).toBe(bruto)
+  })
+})
+
+describe('nettoStuksprijs', () => {
+  it('geeft de stuksprijs terug als er geen korting is', () => {
+    expect(nettoStuksprijs({ eenheidsprijs: 190, korting_percentage: 0 })).toBe(190)
+    expect(nettoStuksprijs({ eenheidsprijs: 190 })).toBe(190)
+  })
+
+  it('haalt de korting van de stuksprijs af', () => {
+    expect(nettoStuksprijs({ eenheidsprijs: 190, korting_percentage: 10 })).toBe(171)
+    expect(nettoStuksprijs({ eenheidsprijs: 190, korting_percentage: 20 })).toBe(152)
+  })
+
+  it('telt met het regeltotaal op bij een ronde korting', () => {
+    const regel = { aantal: 10, eenheidsprijs: 190, korting_percentage: 10, btw_percentage: 21 }
+    const totaal = berekenItemTotaal(regel)
+    expect(totaal).toBe(1710)
+    expect(round2(nettoStuksprijs(regel) * regel.aantal)).toBe(totaal)
+  })
+
+  it('rondt af op centen', () => {
+    expect(nettoStuksprijs({ eenheidsprijs: 33.33, korting_percentage: 10 })).toBe(30)
   })
 })

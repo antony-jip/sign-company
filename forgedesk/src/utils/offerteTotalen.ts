@@ -70,6 +70,21 @@ export function getPrijsRegels(item: PrijsRegelBron): OfferteTotaalRegel[] {
   }]
 }
 
+/**
+ * Wat de klant per stuk betaalt: de stuksprijs met de korting er al af.
+ *
+ * De korting zat alleen in het regeltotaal, dus een offerte liet 10 x €190
+ * zien met €1.710 eronder. Dat telt niet op en de klant ziet nergens wat een
+ * stuk nu kost. Bij een oneven korting kan aantal x deze prijs een cent van
+ * het regeltotaal afwijken; het regeltotaal blijft leidend, want daar rekenen
+ * het subtotaal en de BTW mee.
+ */
+export function nettoStuksprijs(regel: { eenheidsprijs: number; korting_percentage?: number }): number {
+  const korting = regel.korting_percentage || 0
+  if (!korting) return round2(regel.eenheidsprijs)
+  return round2(regel.eenheidsprijs - regel.eenheidsprijs * (korting / 100))
+}
+
 /** Het nettobedrag van een item: alle meetellende opties bij elkaar. */
 export function berekenItemTotaal(item: PrijsRegelBron): number {
   return round2(

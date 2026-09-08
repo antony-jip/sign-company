@@ -19,7 +19,7 @@ import {
 import { toast, Toaster } from 'sonner'
 import { logger } from '@/utils/logger'
 import { HandtekeningVeld } from '@/components/shared/HandtekeningVeld'
-import { getMeetellendeVarianten } from '@/utils/offerteTotalen'
+import { getMeetellendeVarianten, nettoStuksprijs } from '@/utils/offerteTotalen'
 
 // ============ TYPES ============
 
@@ -806,7 +806,9 @@ export function OffertePubliekPagina() {
                               <>
                                 <td className="py-3 pr-4 text-right text-[#6B6B66] font-mono">{toonOptieRegels ? '' : effectiveValues?.aantal ?? item.aantal}</td>
                                 <td className="py-3 pr-4 text-right text-[#9B9B95] hidden md:table-cell">{toonOptieRegels ? '' : 'stuk'}</td>
-                                <td className="py-3 pr-4 text-right text-[#6B6B66] font-mono">{toonOptieRegels ? '' : formatCurrency(effectiveValues?.eenheidsprijs ?? item.eenheidsprijs)}</td>
+                                {/* De stuksprijs staat hier ná korting, zodat aantal x prijs
+                                    op het totaal ernaast uitkomt. */}
+                                <td className="py-3 pr-4 text-right text-[#6B6B66] font-mono">{toonOptieRegels ? '' : formatCurrency(nettoStuksprijs(effectiveValues ?? item))}</td>
                                 <td className="py-3 pr-4 text-right text-[#9B9B95] hidden md:table-cell">{toonOptieRegels ? '' : `${effectiveValues?.btw_percentage ?? item.btw_percentage}%`}</td>
                                 <td className="py-3 pl-4 text-right font-semibold text-[#1A1A1A] font-mono">{formatCurrency(effectiveTotal)}</td>
                               </>
@@ -826,7 +828,7 @@ export function OffertePubliekPagina() {
                               </td>
                               <td className="py-2 pr-4 text-right text-[#6B6B66] font-mono">{v.aantal}</td>
                               <td className="py-2 pr-4 text-right text-[#9B9B95] hidden md:table-cell">stuk</td>
-                              <td className="py-2 pr-4 text-right text-[#6B6B66] font-mono">{formatCurrency(v.eenheidsprijs)}</td>
+                              <td className="py-2 pr-4 text-right text-[#6B6B66] font-mono">{formatCurrency(nettoStuksprijs(v))}</td>
                               <td className="py-2 pr-4 text-right text-[#9B9B95] hidden md:table-cell">{v.btw_percentage}%</td>
                               <td className="py-2 pl-4 text-right text-[#6B6B66] font-mono">
                                 {formatCurrency(round2(v.aantal * v.eenheidsprijs * (1 - (v.korting_percentage || 0) / 100)))}

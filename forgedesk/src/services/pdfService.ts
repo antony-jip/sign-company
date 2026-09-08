@@ -4,7 +4,7 @@ import type { Offerte, OfferteItem, OfferteItemPrijsVariant, Klant, Profile, Doc
 import { getJsPdfFontFamily, getDefaultDocumentStyle } from '@/lib/documentTemplates'
 import { round2 } from '@/utils/budgetUtils'
 import { isLabelVoor } from '@/utils/offerteSpecs'
-import { berekenKortingBedrag, getMeetellendeVarianten } from '@/utils/offerteTotalen'
+import { berekenKortingBedrag, getMeetellendeVarianten, nettoStuksprijs } from '@/utils/offerteTotalen'
 
 // jspdf-autotable adds lastAutoTable to jsPDF instances
 interface JsPDFWithAutoTable extends jsPDF {
@@ -749,6 +749,10 @@ export async function generateOffertePDF(
   const variantenVan = (item: OfferteItem) => item.prijs_varianten ?? []
   const variantTotaalVan = (variant: OfferteItemPrijsVariant) =>
     round2(variant.aantal * variant.eenheidsprijs * (1 - (variant.korting_percentage || 0) / 100))
+  // De prijs-kolom toont wat een stuk kost ná korting. Stond hier de bruto
+  // stuksprijs, dan klopte aantal x prijs niet met het totaal ernaast: 10 x
+  // € 190,00 met € 1.710,00 erachter. Het totaal blijft leidend; bij een
+  // oneven korting kan aantal x stuksprijs er een cent naast zitten.
 
   const KOL_AANTAL = kolomBreedte(
     items.flatMap((i) => [formatAantal(i.aantal), ...variantenVan(i).map((v) => formatAantal(v.aantal))]),
@@ -757,8 +761,8 @@ export async function generateOffertePDF(
   )
   const KOL_PRIJS = kolomBreedte(
     items.flatMap((i) => [
-      formatBedrag(i.eenheidsprijs),
-      ...variantenVan(i).map((v) => formatBedrag(v.eenheidsprijs)),
+      formatBedrag(nettoStuksprijs(i)),
+      ...variantenVan(i).map((v) => formatBedrag(nettoStuksprijs(v))),
     ]),
     'PRIJS',
     26
@@ -911,7 +915,7 @@ export async function generateOffertePDF(
         { content: item.beschrijving, styles: { fontStyle: 'bold', ...separatorOverride } },
         { content: formatAantal(item.aantal), rowSpan: hasDetails ? 2 : 1, styles: getalStijl },
         {
-          content: bedragCel(item.eenheidsprijs, item.totaal, item.eenheidsprijs),
+          content: bedragCel(item.eenheidsprijs, item.totaal, nettoStuksprijs(item)),
           rowSpan: hasDetails ? 2 : 1,
           styles: getalStijl,
         },
@@ -988,7 +992,7 @@ export async function generateOffertePDF(
             },
           },
           {
-            content: bedragCel(variant.eenheidsprijs, variantTotaal, variant.eenheidsprijs),
+            content: bedragCel(variant.eenheidsprijs, variantTotaal, nettoStuksprijs(variant)),
             styles: {
               fontStyle: isActief ? 'bold' : 'normal',
               cellPadding: { top: 1.5, bottom: isLast ? 3 : 1.5, left: 4, right: 4 },
