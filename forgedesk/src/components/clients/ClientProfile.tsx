@@ -87,6 +87,7 @@ import {
   getDealsByKlant,
   updateKlant,
   getContactpersonenByKlant,
+  updateContactpersoonDB,
   deleteContactpersoonDB,
   getDaanGeheugenByKlant,
   bevestigDaanGeheugen,
@@ -115,7 +116,7 @@ const statusLabels: Record<string, string> = {
   'te-plannen': 'Te plannen',
 }
 
-const KLANT_TABS = ['projecten', 'deals', 'offertes', 'facturen', 'tijdregistratie', 'communicatie', 'documenten', 'historie', 'notities']
+const KLANT_TABS = ['projecten', 'deals', 'offertes', 'facturen', 'tijdregistratie', 'communicatie', 'documenten', 'contactpersonen', 'historie', 'notities']
 
 export function ClientProfile() {
   const { id } = useParams<{ id: string }>()
@@ -154,6 +155,8 @@ export function ClientProfile() {
   const [editGeheugen, setEditGeheugen] = useState<{ id: string; inhoud: string } | null>(null)
   // Contact person form
   const [editingContact, setEditingContact] = useState<Contactpersoon | null>(null)
+  // Contactpersoon uit de contactpersonen-tabel (import/mail), die bewerken we via dezelfde dialog
+  const [editingDbContact, setEditingDbContact] = useState<ContactpersoonRecord | null>(null)
   const [contactForm, setContactForm] = useState({ naam: '', functie: '', email: '', telefoon: '' })
   const csvFileRef = useRef<HTMLInputElement>(null)
   // DB contactpersonen (from import system)
@@ -295,12 +298,14 @@ export function ClientProfile() {
 
   function openAddContact() {
     setEditingContact(null)
+    setEditingDbContact(null)
     setContactForm({ naam: '', functie: '', email: '', telefoon: '' })
     setContactDialogOpen(true)
   }
 
   function openEditContact(contact: Contactpersoon) {
     setEditingContact(contact)
+    setEditingDbContact(null)
     setContactForm({
       naam: contact.naam,
       functie: contact.functie,
@@ -310,9 +315,45 @@ export function ClientProfile() {
     setContactDialogOpen(true)
   }
 
+  function openEditDbContact(contact: ContactpersoonRecord) {
+    setEditingContact(null)
+    setEditingDbContact(contact)
+    setContactForm({
+      naam: `${contact.voornaam || ''} ${contact.achternaam || ''}`.trim(),
+      functie: contact.functie || '',
+      email: contact.email || '',
+      telefoon: contact.telefoon || '',
+    })
+    setContactDialogOpen(true)
+  }
+
   async function handleSaveContact() {
     if (!klant || !contactForm.naam.trim()) return
     const currentContacts = klant.contactpersonen || []
+
+    if (editingDbContact) {
+      // Contactpersoon uit de tabel: naam splitsen in voor- en achternaam
+      const naam = contactForm.naam.trim()
+      const spatie = naam.indexOf(' ')
+      const voornaam = spatie === -1 ? naam : naam.slice(0, spatie)
+      const achternaam = spatie === -1 ? '' : naam.slice(spatie + 1).trim()
+      try {
+        const bijgewerkt = await updateContactpersoonDB(editingDbContact.id, {
+          voornaam,
+          achternaam,
+          functie: contactForm.functie.trim(),
+          email: contactForm.email.trim(),
+          telefoon: contactForm.telefoon.trim(),
+        })
+        setImportedContacts((prev) => prev.map((c) => (c.id === bijgewerkt.id ? bijgewerkt : c)))
+        toast.success('Contactpersoon bijgewerkt')
+      } catch (err) {
+        logger.error('Fout bij bijwerken contactpersoon:', err)
+        toast.error('Fout bij bijwerken')
+      }
+      setContactDialogOpen(false)
+      return
+    }
 
     if (editingContact) {
       // Update existing
@@ -602,6 +643,7 @@ export function ClientProfile() {
     { key: 'tijdregistratie', label: 'Uren', count: clientTijdregistraties.length, icon: Clock },
     { key: 'communicatie', label: 'Communicatie', count: clientEmails.length, icon: Mail },
     { key: 'documenten', label: 'Documenten', count: clientDocumenten.length, icon: FileIcon },
+    { key: 'contactpersonen', label: 'Contactpersonen', count: contactpersonen.length + importedContacts.length, icon: Users },
     { key: 'historie', label: 'Historie', count: 0, icon: History },
   ]
 
@@ -810,14 +852,21 @@ export function ClientProfile() {
                 ))}
                 {/* Imported contactpersonen (show up to 2 total) */}
                 {contactpersonen.length < 2 && importedContacts.slice(0, 2 - contactpersonen.length).map((ic) => (
-                  <div key={ic.id} className="min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{`${ic.voornaam} ${ic.achternaam}`.trim()}</p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {ic.email || ic.telefoon || '\u2013'}
-                    </p>
+                  <div
+                    key={ic.id}
+                    className="flex items-center justify-between group cursor-pointer"
+                    onClick={() => openEditDbContact(ic)}
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{`${ic.voornaam} ${ic.achternaam}`.trim() || ic.email}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {ic.email || ic.telefoon || '\u2013'}
+                      </p>
+                    </div>
+                    <Pencil className="w-3 h-3 text-muted-foreground/50 opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex-shrink-0" />
                   </div>
                 ))}
-                {(contactpersonen.length + importedContacts.length) > 2 && (
+                {(contactpersonen.length + importedContacts.length) > 0 && (
                   <button
                     onClick={() => setActiveTab('contactpersonen')}
                     className="text-xs text-petrol dark:text-blue-400 hover:underline"
@@ -1796,6 +1845,13 @@ export function ClientProfile() {
                           </div>
                           <div className="flex items-center gap-1 flex-shrink-0">
                             <button
+                              onClick={() => openEditDbContact(ic)}
+                              className="p-1.5 rounded-md hover:bg-muted dark:hover:bg-muted transition-colors duration-150"
+                              title="Bewerken"
+                            >
+                              <Pencil className="w-3.5 h-3.5 text-muted-foreground/60" />
+                            </button>
+                            <button
                               onClick={async () => {
                                 const confirmed = await confirm({ message: `${fullName} verwijderen?`, variant: 'destructive', confirmLabel: 'Verwijderen' })
                                 if (confirmed) {
@@ -2053,10 +2109,10 @@ export function ClientProfile() {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>
-              {editingContact ? 'Contactpersoon bewerken' : 'Contactpersoon toevoegen'}
+              {editingContact || editingDbContact ? 'Contactpersoon bewerken' : 'Contactpersoon toevoegen'}
             </DialogTitle>
             <DialogDescription>
-              {editingContact
+              {editingContact || editingDbContact
                 ? 'Pas de gegevens van de contactpersoon aan.'
                 : 'Voeg een nieuwe contactpersoon toe aan dit bedrijf.'}
             </DialogDescription>
@@ -2110,7 +2166,7 @@ export function ClientProfile() {
               Annuleren
             </Button>
             <Button onClick={handleSaveContact} disabled={!contactForm.naam.trim()}>
-              {editingContact ? 'Bijwerken' : 'Toevoegen'}
+              {editingContact || editingDbContact ? 'Bijwerken' : 'Toevoegen'}
             </Button>
           </DialogFooter>
         </DialogContent>
