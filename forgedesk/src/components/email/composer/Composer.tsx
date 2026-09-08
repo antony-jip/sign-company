@@ -16,7 +16,7 @@ import { sendInBackground } from '@/utils/sendInBackground'
 import { logger } from '@/utils/logger'
 import { AIContentEditableToolbar, type AIHerschrijfHandle } from '@/components/ui/AIContentEditableToolbar'
 import { InlineSuggestie } from '@/components/email/InlineSuggestie'
-import { MailStatusToast } from '@/components/shared/MailStatusToast'
+import { MailStatusToast, MailToastKnop } from '@/components/shared/MailStatusToast'
 import { OntvangerChips } from '@/components/shared/OntvangerVeld'
 import type { LinkInvoegHandle } from '@/components/shared/LinkInvoegKnop'
 import { lijktOpHtml } from '@/components/email/emailHelpers'
@@ -92,14 +92,11 @@ function dragHeeftBestanden(e: React.DragEvent): boolean {
 
 function IngeplandToast({ label, onBewerk }: { label: string; onBewerk?: () => void }) {
   return (
-    <div className="flex items-center justify-between gap-3 min-w-[220px]">
-      <MailStatusToast titel="Ingepland" onder={`voor ${label}`} />
-      {onBewerk && (
-        <button type="button" onClick={onBewerk} className="flex-shrink-0 text-[12px] font-semibold text-petrol hover:text-flame transition-colors">
-          Bewerken
-        </button>
-      )}
-    </div>
+    <MailStatusToast
+      titel="Ingepland"
+      onder={`voor ${label}`}
+      actie={onBewerk ? <MailToastKnop onClick={onBewerk}>Bewerken</MailToastKnop> : undefined}
+    />
   )
 }
 

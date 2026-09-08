@@ -8,7 +8,7 @@ import { uploadBijlagenMetLinkFallback, valideerBijlagen } from '@/utils/groteBi
 import { inlineLokaleAfbeeldingen } from '@/utils/mailAfbeeldingen'
 import { sendInBackground } from '@/utils/sendInBackground'
 import { logger } from '@/utils/logger'
-import { MailStatusToast } from '@/components/shared/MailStatusToast'
+import { MailStatusToast, MailToastKnop } from '@/components/shared/MailStatusToast'
 import { bestandSleutel, koppelingVan, ontvangersNaarString, splitsCitaat, vulVelden, type VeldWaarden } from './document'
 
 // ─── Velden uit de koppelingen ───────────────────────────────────
@@ -220,20 +220,16 @@ function UndoToast({ seconden, onder, onOngedaan }: UndoToastProps) {
     return () => cancelAnimationFrame(id)
   }, [])
   return (
-    <div className="min-w-[240px]">
-      <div className="flex items-center justify-between gap-3">
-        <MailStatusToast titel="Verzonden" onder={onder} />
-        <button
-          type="button"
-          onClick={onOngedaan}
-          className="flex-shrink-0 text-[12px] font-semibold text-petrol hover:text-flame transition-colors"
-        >
-          Ongedaan maken
-        </button>
-      </div>
-      <div className="mt-2 h-[2px] w-full rounded-full bg-petrol/10 overflow-hidden">
+    <div className="w-full">
+      <MailStatusToast
+        titel="Verzonden"
+        onder={onder}
+        actie={<MailToastKnop onClick={onOngedaan}>Ongedaan maken</MailToastKnop>}
+      />
+      {/* De balk loopt leeg zolang je hem nog terug kunt halen. */}
+      <div className="mt-3 h-[2px] w-full rounded-full bg-petrol/10 overflow-hidden">
         <div
-          className="h-full bg-petrol/60 rounded-full"
+          className="h-full bg-petrol/50 rounded-full"
           style={{ width: loopt ? '0%' : '100%', transition: `width ${seconden}s linear` }}
         />
       </div>

@@ -388,6 +388,10 @@ function App() {
                       position="top-right"
                       visibleToasts={2}
                       duration={4000}
+                      // De header is 48px hoog; met de standaard 32px lag een
+                      // melding tegen de zoekbalk aan. 64px zet hem eronder.
+                      offset={64}
+                      gap={10}
                       toastOptions={{
                         style: {
                           background: 'rgba(253, 252, 250, 0.86)',
@@ -398,6 +402,7 @@ function App() {
                           boxShadow: '0 12px 36px -8px rgba(100, 80, 40, 0.20), 0 0 24px -6px rgba(241, 80, 37, 0.08), inset 0 0.5px 0 rgba(255, 255, 255, 0.70)',
                           color: '#191919',
                           fontSize: '12px',
+                          padding: '14px 16px',
                           animation: 'toast-in 300ms ease-out',
                         },
                         classNames: {
