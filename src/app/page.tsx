@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Navbar from '@/components/Navbar'
 import Hero from '@/components/home/Hero'
-import OpJeTelefoon from '@/components/home/OpJeTelefoon'
+import DitZitErin from '@/components/home/DitZitErin'
 import Manifest from '@/components/home/Manifest'
 import Demo from '@/components/home/Demo'
 import Werkwoorden from '@/components/home/Werkwoorden'
@@ -29,10 +29,11 @@ export default function Home() {
         {/* Volgorde na de kit.com-analyse: eerst bewijs, dan de belofte,
             dan pas het product. Stond andersom: uitleg vooraan, bewijs op
             plek vier. Zie docs/verbeterplan-home-kit.md
-            OpJeTelefoon staat sinds september op twee, op verzoek. Het bewijs
-            schoof daarmee een plek op; wil je dat terug, wissel deze twee. */}
+            DitZitErin staat sinds september op twee, op verzoek: eerst zien wat
+            er in doen. zit. Het bewijs schoof daarmee een plek op; wil je dat
+            terug, wissel deze twee. */}
         <Hero />
-        <OpJeTelefoon />
+        <DitZitErin />
         <EigenGebruikBewijs />
         <Manifest />
         <Werkwoorden />

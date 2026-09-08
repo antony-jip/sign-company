@@ -517,92 +517,57 @@ const SCHERMEN: Record<Tab, () => JSX.Element> = {
   meer: Meer,
 }
 
-// ─── De sectie ─────────────────────────────────────────────────────────────
+// ─── Het toestel ───────────────────────────────────────────────────────────
 
-export default function OpJeTelefoon() {
+/* Alleen de telefoon, zonder sectie eromheen. Hij hangt nu rechtsonder in
+   DitZitErin; de kaarten daar vertellen wat erin zit, dit toestel laat zien
+   dat het ook in je broekzak past. */
+export default function TelefoonMetDoen({ className = '' }: { className?: string }) {
   const [tab, zetTab] = useState<Tab>('offertes')
   const Scherm = SCHERMEN[tab]
 
   return (
-    <section>
-      <div className="container-site py-14 md:py-24">
-        <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-[1fr_auto] lg:gap-20">
-          <div>
-            <h2
-              className="font-heading font-bold text-petrol leading-[1.0]"
-              style={{ fontSize: 'clamp(30px, 4vw, 52px)', letterSpacing: '-0.03em', textWrap: 'balance' }}
-            >
-              Ook vanuit de bus<span className="text-flame">.</span>
-            </h2>
-            <p className="mt-4 max-w-[52ch] text-[15px] md:text-[16px] leading-[1.6] text-muted">
-              Geen uitgeknepen desktopscherm. Je maakt de offerte, rekent hem door en verstuurt hem
-              met je duim, tussen twee klussen in. Tik de menubalk aan, dan loop je er zelf doorheen.
-            </p>
+    <IphoneMockup className={className}>
+      <div className="flex h-full w-full flex-col bg-bg font-sans text-ink">
+        <Statusbalk />
+        <Scherm />
 
-            <ul className="mt-8 border-t border-petrol/10">
-              {[
-                ['Offerte de deur uit', 'Klaar voor je terug bent op kantoor.'],
-                ['Marge in beeld', 'Het totaal blijft staan terwijl je typt, ook op een klein scherm.'],
-                ['De rest gaat mee', 'Mail, projecten, planning en werkbonnen. Zelfde app, kleiner scherm.'],
-                [
-                  'Op je beginscherm',
-                  'Vanuit Safari of Chrome maak je er een webapp van. Hij opent zonder adresbalk, als een gewone app. Niks te installeren, geen app-store.',
-                ],
-              ].map(([kop, regel]) => (
-                <li key={kop} className="flex flex-col gap-1 border-b border-petrol/10 py-4 sm:flex-row sm:gap-6">
-                  <span className="w-[13rem] flex-shrink-0 text-[15px] font-semibold text-petrol">{kop}</span>
-                  <span className="text-[15px] leading-[1.55] text-muted">{regel}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="flex justify-center lg:justify-end">
-            <IphoneMockup>
-              <div className="flex h-full w-full flex-col bg-bg font-sans text-ink">
-                <Statusbalk />
-                <Scherm />
-
-                {/* De menubalk van de app. Welke vijf er staan kiest de
-                    gebruiker zelf, dus Offertes mag hier in beeld staan. */}
-                <nav
-                  aria-label="Schermen van doen."
-                  className="flex flex-shrink-0 items-stretch border-t border-petrol/10 bg-white"
-                  style={{ paddingBottom: u(14) }}
-                >
-                  {MENU.map(({ id, label }) => {
-                    const actief = id === tab
-                    return (
-                      <button
-                        key={id}
-                        type="button"
-                        onClick={() => zetTab(id)}
-                        aria-pressed={actief}
-                        className={`relative flex flex-1 flex-col items-center justify-center transition-colors ${
-                          actief ? 'text-petrol' : 'text-petrol/45 hover:text-petrol/70'
-                        }`}
-                        style={{ gap: u(3), height: u(46) }}
-                      >
-                        {actief && (
-                          <i
-                            aria-hidden
-                            className="absolute left-1/2 top-0 -translate-x-1/2 bg-flame"
-                            style={{ height: u(2), width: u(24), borderRadius: `0 0 ${u(2)} ${u(2)}` }}
-                          />
-                        )}
-                        <MenuTeken naam={id} />
-                        <span className="font-semibold" style={{ fontSize: u(8.5), letterSpacing: '-0.01em' }}>
-                          {label}
-                        </span>
-                      </button>
-                    )
-                  })}
-                </nav>
-              </div>
-            </IphoneMockup>
-          </div>
-        </div>
+        {/* De menubalk van de app. Welke vijf er staan kiest de gebruiker
+            zelf, dus Offertes mag hier in beeld staan. */}
+        <nav
+          aria-label="Schermen van doen."
+          className="flex flex-shrink-0 items-stretch border-t border-petrol/10 bg-white"
+          style={{ paddingBottom: u(14) }}
+        >
+          {MENU.map(({ id, label }) => {
+            const actief = id === tab
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => zetTab(id)}
+                aria-pressed={actief}
+                className={`relative flex flex-1 flex-col items-center justify-center transition-colors ${
+                  actief ? 'text-petrol' : 'text-petrol/45 hover:text-petrol/70'
+                }`}
+                style={{ gap: u(3), height: u(46) }}
+              >
+                {actief && (
+                  <i
+                    aria-hidden
+                    className="absolute left-1/2 top-0 -translate-x-1/2 bg-flame"
+                    style={{ height: u(2), width: u(24), borderRadius: `0 0 ${u(2)} ${u(2)}` }}
+                  />
+                )}
+                <MenuTeken naam={id} />
+                <span className="font-semibold" style={{ fontSize: u(8.5), letterSpacing: '-0.01em' }}>
+                  {label}
+                </span>
+              </button>
+            )
+          })}
+        </nav>
       </div>
-    </section>
+    </IphoneMockup>
   )
 }
