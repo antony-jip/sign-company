@@ -17,7 +17,7 @@ import { extractSenderEmail, extractSenderName } from '@/components/email/emailH
 import { Bericht, type AntwoordModus } from './Bericht'
 import { BodyFrame } from './BodyFrame'
 import { Bijlagen } from './BijlagenRij'
-import { DaanBlok } from './DaanBlok'
+import { DaanKnoppen, DaanSamenvatting, useDaan } from './DaanBlok'
 import { KoppelPopover } from './KoppelPopover'
 import { AanvraagKaart } from '@/components/email/AanvraagKaart'
 import { EmailReaderAIToolbar } from '@/components/email/EmailReaderAIToolbar'
@@ -261,6 +261,20 @@ export function ConversationView({ emailId, onSluiten, onAntwoord, onVolgende, o
 
   const deelnemers = useMemo(() => deelnemersVan(berichten, user?.email), [berichten, user?.email])
 
+  // Eén samenvatting hoort bij één gesprek: de sleutel is de thread, of de
+  // mail zelf als hij los staat.
+  const handleConcept = useCallback((voorstel: string) => {
+    if (!mailUitStore) return
+    onAntwoord('antwoord', mailUitStore, geselecteerdeBody, voorstel)
+  }, [mailUitStore, geselecteerdeBody, onAntwoord])
+  const daan = useDaan({
+    berichten,
+    geselecteerd: mailUitStore ?? null,
+    body: geselecteerdeBody,
+    onConcept: handleConcept,
+    sleutel: threadId ?? emailId,
+  })
+
   if (!mailUitStore) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-2 p-8 text-[13px] text-muted-foreground">
@@ -335,13 +349,7 @@ export function ConversationView({ emailId, onSluiten, onAntwoord, onVolgende, o
         <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
           <EmailActionsPopover email={alsEmail(mail, geselecteerdeBody)} openKlantSignal={klantSignal} onOpenProjectDialog={() => zetKoppelOpen(true)} />
           <div className="ml-auto flex-shrink-0">
-            <DaanBlok
-              berichten={berichten}
-              geselecteerd={mail}
-              body={geselecteerdeBody}
-              onConcept={(voorstel) => onAntwoord('antwoord', mail, geselecteerdeBody, voorstel)}
-              compact={compact}
-            />
+            <DaanKnoppen daan={daan} compact={compact} />
           </div>
         </div>
 
@@ -369,6 +377,15 @@ export function ConversationView({ emailId, onSluiten, onAntwoord, onVolgende, o
 
       <EmailReaderAIToolbar containerRef={scrollRef} />
       <div ref={scrollRef} className={cn('relative z-0 min-h-0 flex-1 overflow-y-auto bg-card', compact ? 'px-3 py-3' : 'px-6 py-4')}>
+        {/* De samenvatting van Daan hoort bij de mail, niet bij de kop: in de
+            vaste kop bleef hij boven elk volgend bericht staan en at hij de
+            halve leeshoogte op. Hier schuift hij gewoon mee weg. */}
+        {daan.samenvatting && (
+          <div className="mb-4">
+            <DaanSamenvatting daan={daan} compact={compact} />
+          </div>
+        )}
+
         {/* Antwoorden staat boven het gesprek: je typt bovenaan en het gesprek
             schuift eronder door, in plaats van scrollen naar de onderkant. */}
         {voet && <div className="mb-4">{voet}</div>}
