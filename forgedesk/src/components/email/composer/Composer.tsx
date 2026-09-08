@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, ChevronDown, Loader2, Paperclip, Send, Settings, Sparkles, Wand2, X } from 'lucide-react'
 import { toast } from 'sonner'
@@ -390,13 +391,13 @@ export function Composer({ document: initieel, variant, onVerzonden, onSluiten, 
     // het leesvenster vult hij de hoogte, met de verzendbalk onderaan.
     variant === 'inline' && (losstaand ? 'flex-1 min-h-0 bg-card' : 'bg-card'),
     variant === 'paneel' && 'fixed top-0 right-0 z-[10000] h-full w-[560px] max-w-[calc(100vw-2rem)] bg-background border-l border-border shadow-[-12px_0_32px_rgba(13,52,60,0.10)]',
-    variant === 'volledig' && 'fixed inset-x-0 z-[60] bg-card',
+    variant === 'volledig' && 'fixed inset-x-0 z-[10000] bg-card',
   )
   const wortelStyle = variant === 'volledig'
     ? { top: venster.top, height: venster.hoogte || '100dvh', paddingBottom: venster.toetsenbord > 60 ? 0 : 'env(safe-area-inset-bottom)' }
     : undefined
 
-  return (
+  const wortel = (
     <div
       className={wortelCls}
       style={wortelStyle}
@@ -740,4 +741,12 @@ export function Composer({ document: initieel, variant, onVerzonden, onSluiten, 
       </div>
     </div>
   )
+
+  // Het volledige opstelvenster is op mobiel het hele scherm. Het hing in de
+  // DOM onder <main>, en die staat op `position: relative; z-index: 0`
+  // (AppLayout), dus het venster bleef in die stapelcontext hangen en deelde
+  // de onderste strook met de mobiele tabbalk: opmaakknoppen en Dashboard /
+  // Projecten / Email over elkaar heen. Via een portal naar body staat hij
+  // buiten die context en dekt hij de balk gewoon af.
+  return variant === 'volledig' ? createPortal(wortel, document.body) : wortel
 }
