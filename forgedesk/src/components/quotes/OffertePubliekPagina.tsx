@@ -135,6 +135,22 @@ function dagenTotVerlopen(geldigTot: string): number {
   return Math.ceil((eind.getTime() - vandaag.getTime()) / (1000 * 60 * 60 * 24))
 }
 
+/**
+ * Eén regel in de keuzelijst van het portaal: "prijs per 10 · 10 x € 180,00 =
+ * € 1.800,00 (-10% korting)". De stuksprijs staat er ná korting in, zodat de
+ * staffels onderling te vergelijken zijn op het moment dat de klant kiest.
+ */
+function optieLabel(
+  label: string,
+  regel: { aantal: number; eenheidsprijs: number; korting_percentage?: number },
+): string {
+  const korting = regel.korting_percentage || 0
+  const stuk = nettoStuksprijs(regel)
+  const totaal = round2(regel.aantal * stuk)
+  const staart = korting > 0 ? ` (-${korting}% korting)` : ''
+  return `${label} · ${regel.aantal} x ${formatCurrency(stuk)} = ${formatCurrency(totaal)}${staart}`
+}
+
 // Get effective item values based on selected variant
 function getEffectiveItemValues(item: PubliekItem, selectedVariantId?: string): { aantal: number; eenheidsprijs: number; btw_percentage: number; korting_percentage: number } {
   if (selectedVariantId && item.prijs_varianten?.length) {
@@ -864,14 +880,18 @@ export function OffertePubliekPagina() {
                                       }}
                                       className="text-xs border border-[#EBEBEB] rounded-md px-2 py-1.5 bg-[#FFFFFF] text-[#6B6B66] focus:ring-2 focus:ring-[#1A535C] focus:border-[#1A535C] max-w-[300px]"
                                     >
+                                      {/* De prijs in de keuzelijst is die ná korting, met het
+                                          regeltotaal erachter. Stond hier de brutoprijs, dan
+                                          leken alle staffels even duur (3x "10 x € 200,00") en
+                                          zag de klant pas ná het kiezen dat er korting op zat. */}
                                       {toonBasis ? (
-                                        <option value="">Basis · {item.aantal} x {formatCurrency(item.eenheidsprijs)}</option>
+                                        <option value="">{optieLabel('Basis', item)}</option>
                                       ) : (
                                         <option value="" disabled>Selecteer een optie</option>
                                       )}
                                       {toonbareVarianten.map((v) => (
                                         <option key={v.id} value={v.id}>
-                                          {v.label} · {v.aantal} x {formatCurrency(v.eenheidsprijs)}
+                                          {optieLabel(v.label, v)}
                                         </option>
                                       ))}
                                     </select>
