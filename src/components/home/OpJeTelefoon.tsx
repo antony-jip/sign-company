@@ -229,46 +229,68 @@ function Offertes() {
 }
 
 function Dashboard() {
-  const cijfers = [
-    ['Omzet deze maand', '€ 48.320'],
-    ['Offertes open', '7'],
-    ['Te factureren', '3'],
+  /* De echte kop van het dashboard: petrol-deep band met "Klaar om te
+     <werkwoord>, <naam>." waarin het werkwoord in serif-cursief staat, en de
+     flame-punt erachter. Daaronder de KPI-strip met precies de twee kaarten
+     die de app toont, en het Vandaag-blok. */
+  const kpi = [
+    { label: 'In pijplijn', bedrag: '€ 24.180', sub: '7 offertes, ex btw', kleur: '#1A535C', vlak: 'rgba(26,83,92,0.08)' },
+    { label: 'Deze week', bedrag: '€ 8.940', sub: 'gefactureerd, ex btw', kleur: '#3A7D52', vlak: '#E8F2EC' },
   ]
   const vandaag = [
-    ['08:00', 'Montage Bakker Bouw · gevelreclame'],
-    ['11:30', 'Drukproef Hotel De Wadden nakijken'],
+    ['08:00', 'Montage Bakker Bouw'],
+    ['11:30', 'Drukproef Hotel De Wadden'],
     ['14:00', 'Inmeten Van Dijk Tandarts'],
   ]
   return (
     <>
-      <Kop titel="Vandaag" sub="Maandag 8 september" />
+      <div className="flex-shrink-0 bg-petrol-deep" style={{ padding: `${u(10)} ${u(18)} ${u(16)}` }}>
+        <p
+          className="font-heading font-bold text-white"
+          style={{ fontSize: u(23), letterSpacing: u(-1), lineHeight: 1.05 }}
+        >
+          Klaar om te{' '}
+          <span style={{ fontFamily: '"Instrument Serif", Georgia, serif', fontStyle: 'italic', fontWeight: 400 }}>
+            maken
+          </span>
+          , Antony<span style={{ color: '#F15025' }}>.</span>
+        </p>
+      </div>
+
       <div className="flex-1 overflow-hidden" style={{ padding: u(14) }}>
-        <Bloklabel>Cijfers</Bloklabel>
-        <div className="flex flex-col" style={{ gap: u(6), marginBottom: u(14) }}>
-          {cijfers.map(([label, waarde]) => (
-            <Kaart key={label}>
-              <span className="min-w-0 flex-1 truncate" style={{ fontSize: u(12.5) }}>
-                {label}
+        <div className="grid grid-cols-2" style={{ gap: u(8), marginBottom: u(14) }}>
+          {kpi.map((k) => (
+            <div key={k.label} className="bg-white" style={{ borderRadius: u(12), padding: u(11) }}>
+              <span
+                className="inline-flex items-center font-semibold"
+                style={{ background: k.vlak, color: k.kleur, borderRadius: u(6), padding: `${u(2)} ${u(6)}`, fontSize: u(9) }}
+              >
+                {k.label}
               </span>
-              <span className="flex-shrink-0 font-mono font-bold text-petrol" style={{ fontSize: u(13.5) }}>
-                {waarde}
-              </span>
-            </Kaart>
+              <p className="font-mono font-bold text-ink" style={{ fontSize: u(17), marginTop: u(7) }}>
+                {k.bedrag}
+              </p>
+              <p className="text-muted" style={{ fontSize: u(9.5), marginTop: u(2) }}>
+                {k.sub}
+              </p>
+            </div>
           ))}
         </div>
 
-        <Bloklabel>Vandaag</Bloklabel>
-        <div className="bg-white" style={{ borderRadius: u(10), padding: `${u(2)} ${u(12)}` }}>
+        <div className="bg-white" style={{ borderRadius: u(12), padding: `${u(11)} ${u(12)}` }}>
+          <p className="font-heading font-bold text-ink" style={{ fontSize: u(13), marginBottom: u(6) }}>
+            Vandaag<span className="text-flame">.</span>
+          </p>
           {vandaag.map(([tijd, wat], i) => (
             <span
               key={tijd}
               className={`flex items-center ${i > 0 ? 'border-t border-petrol/10' : ''}`}
-              style={{ gap: u(10), padding: `${u(10)} 0` }}
+              style={{ gap: u(10), padding: `${u(8)} 0` }}
             >
-              <span className="flex-shrink-0 font-mono font-semibold text-petrol" style={{ fontSize: u(11.5) }}>
+              <span className="flex-shrink-0 font-mono font-semibold text-petrol" style={{ fontSize: u(11) }}>
                 {tijd}
               </span>
-              <span className="min-w-0 flex-1 truncate" style={{ fontSize: u(12.5) }}>
+              <span className="min-w-0 flex-1 truncate" style={{ fontSize: u(12) }}>
                 {wat}
               </span>
             </span>
@@ -280,34 +302,61 @@ function Dashboard() {
 }
 
 function Projecten() {
-  // Dezelfde statuslabels en bolkleuren als ProjectsList in de app zelf.
-  const projecten: [string, string, string][] = [
-    ['Bakker Bouw · gevelreclame', 'Actief', '#2D6B48'],
-    ['Van Dijk Tandarts · raambelettering', 'Te plannen', '#F15025'],
-    ['Hotel De Wadden · lichtbak', 'In review', '#5A5A55'],
-    ['Sportclub Enkhuizen · spandoeken', 'Te factureren', '#2D6B48'],
-    ['Garage Sluis · wagenpark', 'Gepland', '#2A5580'],
+  /* De mobiele projectkaart uit de app: gekleurde balk links via een inset
+     box-shadow, naam en klant boven elkaar, statuspil rechtsboven met een
+     flame-punt achter het label, en onderin nummer, dagen open en bedrag in
+     mono. Kleuren zijn letterlijk die van getStatusTextColor en statusBg. */
+  const projecten = [
+    { naam: 'Gevelreclame nieuwe vestiging', klant: 'Bakker Bouw', status: 'Actief', tekst: '#3A5A9A', vlak: '#E8EEF9', nr: 'PRJ-2026-118', dagen: '4d', bedrag: '€ 4.820' },
+    { naam: 'Raambelettering praktijk', klant: 'Van Dijk Tandarts', status: 'Te plannen', tekst: '#8A7A4A', vlak: '#F5F2E8', nr: 'PRJ-2026-121', dagen: '11d', bedrag: '€ 1.240' },
+    { naam: 'Lichtbak entree', klant: 'Hotel De Wadden', status: 'In review', tekst: '#3A5A9A', vlak: '#E8EEF9', nr: 'PRJ-2026-124', dagen: '2d', bedrag: '€ 7.350' },
+    { naam: 'Spandoeken toernooi', klant: 'Sportclub Enkhuizen', status: 'Te factureren', tekst: '#3A7D52', vlak: '#E8F2EC', nr: 'PRJ-2026-109', dagen: '38d', bedrag: '€ 980' },
   ]
   return (
     <>
-      <Kop titel="Projecten" sub="5 lopend" />
+      <div className="flex-shrink-0 bg-white" style={{ padding: `${u(8)} ${u(18)} ${u(12)}` }}>
+        <p
+          className="font-heading font-bold text-[#1A4A52]"
+          style={{ fontSize: u(21), letterSpacing: '-0.03em' }}
+        >
+          Projecten<span className="text-flame">.</span>
+        </p>
+      </div>
       <div className="flex-1 overflow-hidden" style={{ padding: u(14) }}>
-        <div className="flex flex-col" style={{ gap: u(6) }}>
-          {projecten.map(([naam, status, kleur]) => (
-            <Kaart key={naam} gap={8}>
-              <i
-                className="block flex-shrink-0"
-                style={{ width: u(7), height: u(7), borderRadius: u(4), background: kleur }}
-              />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate font-semibold" style={{ fontSize: u(12.5) }}>
-                  {naam}
+        <div className="flex flex-col" style={{ gap: u(7) }}>
+          {projecten.map((p) => (
+            <div
+              key={p.nr}
+              className="bg-white"
+              style={{ borderRadius: u(12), padding: u(11), boxShadow: `inset ${u(3)} 0 0 0 ${p.tekst}` }}
+            >
+              <div className="flex items-start justify-between" style={{ gap: u(8), marginBottom: u(6) }}>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-semibold text-[#1A4A52]" style={{ fontSize: u(12.5) }}>
+                    {p.naam}
+                  </span>
+                  <span className="block truncate text-muted" style={{ fontSize: u(10.5), marginTop: u(1) }}>
+                    {p.klant}
+                  </span>
                 </span>
-                <span className="block text-muted" style={{ fontSize: u(10.5), marginTop: u(1) }}>
-                  {status}
+                <span
+                  className="flex-shrink-0 font-semibold"
+                  style={{ color: p.tekst, background: p.vlak, borderRadius: u(20), padding: `${u(2)} ${u(7)}`, fontSize: u(9.5) }}
+                >
+                  {p.status}
+                  <span className="text-flame">.</span>
                 </span>
-              </span>
-            </Kaart>
+              </div>
+              <div className="flex items-center justify-between text-muted" style={{ fontSize: u(9.5) }}>
+                <span className="font-mono">{p.nr}</span>
+                <span className="flex items-center" style={{ gap: u(8) }}>
+                  <span className="font-mono font-medium" style={{ color: '#9B9B95' }}>
+                    {p.dagen}
+                  </span>
+                  <span className="font-mono font-medium text-ink/80">{p.bedrag}</span>
+                </span>
+              </div>
+            </div>
           ))}
         </div>
       </div>
@@ -316,40 +365,80 @@ function Projecten() {
 }
 
 function Daan() {
+  /* Zoals ForgieChatPage: sparkles-tegel in de kop, jouw vraag rechts in een
+     lichte tint (geen petrol-vlak), Daan links in een kaart met rand en een
+     eigen sparkles-rondje, en onderin het invoerveld met de echte
+     placeholder. */
+  const Sparkle = ({ maat }: { maat: number }) => (
+    <svg viewBox="0 0 24 24" style={{ width: u(maat), height: u(maat) }} fill="none" stroke="#1A535C" strokeWidth={1.8} aria-hidden>
+      <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" strokeLinejoin="round" />
+    </svg>
+  )
   return (
     <>
-      <Kop titel="Daan" sub="Je bedrijfsgeheugen" />
+      <div className="flex flex-shrink-0 items-center bg-white" style={{ gap: u(9), padding: `${u(10)} ${u(16)} ${u(12)}` }}>
+        <span
+          className="flex items-center justify-center"
+          style={{ width: u(30), height: u(30), borderRadius: u(8), background: 'rgba(42,111,122,0.16)' }}
+        >
+          <Sparkle maat={16} />
+        </span>
+        <span>
+          <span className="block font-bold text-ink" style={{ fontSize: u(15) }}>
+            Daan
+          </span>
+          <span className="block text-muted" style={{ fontSize: u(10.5) }}>
+            Je bedrijfsgeheugen
+          </span>
+        </span>
+      </div>
+
       <div className="flex flex-1 flex-col overflow-hidden" style={{ padding: u(14), gap: u(10) }}>
         <span
-          className="self-end bg-petrol text-white"
+          className="self-end"
           style={{
-            maxWidth: '82%',
-            padding: `${u(9)} ${u(12)}`,
-            borderRadius: `${u(12)} ${u(12)} ${u(3)} ${u(12)}`,
-            fontSize: u(12),
+            maxWidth: '85%',
+            background: 'rgba(58,107,140,0.10)',
+            padding: `${u(9)} ${u(11)}`,
+            borderRadius: u(14),
+            fontSize: u(11.5),
             lineHeight: 1.5,
           }}
         >
           Wat staat er nog open bij Bakker Bouw?
         </span>
-        <span
-          className="self-start bg-white"
-          style={{
-            maxWidth: '88%',
-            padding: `${u(9)} ${u(12)}`,
-            borderRadius: `${u(12)} ${u(12)} ${u(12)} ${u(3)}`,
-            fontSize: u(12),
-            lineHeight: 1.5,
-          }}
-        >
-          Offerte OFF-2026-388 van <span className="font-mono font-semibold">€ 1.960,00</span> staat
-          sinds dinsdag open. De montage is gepland op 14 oktober en de drukproef wacht nog op akkoord.
+
+        <span className="flex self-start" style={{ gap: u(7), maxWidth: '92%' }}>
+          <span
+            className="flex flex-shrink-0 items-center justify-center bg-white"
+            style={{ width: u(22), height: u(22), borderRadius: u(11) }}
+          >
+            <Sparkle maat={12} />
+          </span>
+          <span
+            className="border border-petrol/12 bg-white"
+            style={{ padding: `${u(9)} ${u(11)}`, borderRadius: u(14), fontSize: u(11.5), lineHeight: 1.5 }}
+          >
+            Offerte OFF-2026-388 van <span className="font-mono font-semibold">€ 1.960,00</span> staat
+            sinds dinsdag open. De montage is gepland op 14 oktober en de drukproef wacht nog op akkoord.
+          </span>
         </span>
-        <span
-          className="mt-auto flex items-center border border-petrol/15 bg-white text-muted"
-          style={{ height: u(34), padding: `0 ${u(12)}`, borderRadius: u(17), fontSize: u(11.5) }}
-        >
-          Vraag Daan iets
+
+        <span className="mt-auto flex items-center" style={{ gap: u(7) }}>
+          <span
+            className="flex flex-1 items-center border border-petrol/15 bg-white text-muted"
+            style={{ height: u(34), padding: `0 ${u(12)}`, borderRadius: u(10), fontSize: u(11) }}
+          >
+            Vraag het aan Daan...
+          </span>
+          <span
+            className="flex flex-shrink-0 items-center justify-center bg-petrol"
+            style={{ width: u(34), height: u(34), borderRadius: u(10) }}
+          >
+            <svg viewBox="0 0 24 24" style={{ width: u(15), height: u(15) }} fill="none" stroke="#fff" strokeWidth={2} aria-hidden>
+              <path d="M4 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
         </span>
       </div>
     </>
@@ -357,25 +446,66 @@ function Daan() {
 }
 
 function Meer() {
-  const modules = ['Werkbonnen', 'Planning', 'Taken', 'Facturen', 'Inkoop', 'Klanten', 'Instellingen']
+  /* Meer is in de app geen lijst maar een blad dat van onderen opkomt: greep,
+     jouw naam met initialen-tegel, dan de modules als gekleurde tegels in vier
+     kolommen. De kleuren komen uit lib/navigatie. */
+  const modules = [
+    ['Werkbonnen', '#C44830'],
+    ['Planning', '#9A5A48'],
+    ['Taken', '#6B6B66'],
+    ['Facturen', '#2D6B48'],
+    ['Klanten', '#3A6B8C'],
+    ['Inkoop', '#C44830'],
+    ['Studio', '#9A5A48'],
+    ['Rapportages', '#3A6B8C'],
+  ]
   return (
-    <>
-      <Kop titel="Meer" />
-      <div className="flex-1 overflow-hidden" style={{ padding: u(14) }}>
-        <div className="bg-white" style={{ borderRadius: u(10), padding: `0 ${u(12)}` }}>
-          {modules.map((m, i) => (
-            <span
-              key={m}
-              className={`flex items-center justify-between ${i > 0 ? 'border-t border-petrol/10' : ''}`}
-              style={{ padding: `${u(11)} 0`, fontSize: u(12.5) }}
-            >
-              <span className="font-semibold">{m}</span>
-              <span className="text-petrol/40">&rsaquo;</span>
+    <div className="flex flex-1 flex-col overflow-hidden bg-white" style={{ borderTopLeftRadius: u(22), borderTopRightRadius: u(22) }}>
+      <span className="flex flex-shrink-0 justify-center" style={{ paddingTop: u(9), paddingBottom: u(4) }}>
+        <span className="bg-ink/15" style={{ height: u(4), width: u(36), borderRadius: u(2) }} />
+      </span>
+
+      <div className="flex flex-shrink-0 items-center" style={{ gap: u(10), padding: `${u(6)} ${u(18)} ${u(14)}` }}>
+        <span
+          className="flex flex-shrink-0 items-center justify-center bg-petrol font-bold text-white"
+          style={{ width: u(38), height: u(38), borderRadius: u(11), fontSize: u(13) }}
+        >
+          AB
+        </span>
+        <span className="min-w-0">
+          <span className="block truncate font-bold text-ink" style={{ fontSize: u(13) }}>
+            Antony Bootsma
+          </span>
+          <span className="block truncate text-muted" style={{ fontSize: u(10.5), marginTop: u(1) }}>
+            antony@signcompany.nl
+          </span>
+        </span>
+      </div>
+
+      <div className="flex-1 overflow-hidden" style={{ padding: `0 ${u(12)}` }}>
+        <p
+          className="font-semibold uppercase text-muted"
+          style={{ fontSize: u(9), letterSpacing: '0.14em', padding: `0 ${u(4)} ${u(9)}` }}
+        >
+          Modules
+        </p>
+        <div className="grid grid-cols-4" style={{ columnGap: u(3), rowGap: u(11) }}>
+          {modules.map(([naam, kleur]) => (
+            <span key={naam} className="flex flex-col items-center" style={{ gap: u(5) }}>
+              <span
+                className="flex items-center justify-center"
+                style={{ width: u(46), height: u(46), borderRadius: u(14), background: `${kleur}14` }}
+              >
+                <span style={{ width: u(18), height: u(18), borderRadius: u(4), background: kleur, opacity: 0.85 }} />
+              </span>
+              <span className="truncate text-center text-ink/75" style={{ fontSize: u(9.5), maxWidth: '100%' }}>
+                {naam}
+              </span>
             </span>
           ))}
         </div>
       </div>
-    </>
+    </div>
   )
 }
 
