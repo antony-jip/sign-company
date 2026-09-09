@@ -221,4 +221,30 @@
   /* Een cijfer dat het werk doet, met één regel eronder. */
   .knal{ font-family:'Instrument Sans',sans-serif; font-weight:700; letter-spacing:-0.045em;
          line-height:0.92; font-size:150px; }
+
+  /* ── van mail naar project ── */
+  /* De sterkste truc van doen. laat zich niet uitleggen, alleen laten zien:
+     hier staat de mail, daar staat het project, en ertussen zit één klik. */
+  .mailkaart{ background:#fff; border:1px solid var(--hair); border-radius:18px; padding:36px 40px;
+              box-shadow:0 6px 26px rgba(19,62,69,0.08); }
+  .mailkaart .van{ font-family:'Spline Sans Mono',monospace; font-size:22px; letter-spacing:0.1em;
+                   text-transform:uppercase; color:var(--muted); }
+  .mailkaart .onderwerp{ font-size:36px; font-weight:600; margin-top:12px; line-height:1.2; }
+  .mailkaart .body{ font-size:30px; color:var(--muted); margin-top:14px; line-height:1.4; }
+  .mailkaart .bijlage{ display:inline-flex; align-items:center; gap:12px; margin-top:20px;
+                       font-family:'Spline Sans Mono',monospace; font-size:24px; color:var(--petrol);
+                       background:rgba(26,83,92,0.08); border-radius:999px; padding:8px 20px; }
+
+  .pijl{ display:flex; flex-direction:column; align-items:center; gap:14px; padding:26px 0; }
+  .pijl .lijn{ width:3px; height:56px; background:var(--flame); border-radius:2px; }
+  .pijl .punt-driehoek{ width:0; height:0; border-left:14px solid transparent;
+                        border-right:14px solid transparent; border-top:20px solid var(--flame); margin-top:-8px; }
+  .pijl .tekst{ font-family:'Spline Sans Mono',monospace; font-size:24px; letter-spacing:0.14em;
+                text-transform:uppercase; color:var(--flame); }
+
+  .veld{ display:flex; gap:20px; padding:14px 0; border-bottom:1px solid var(--hair-dark); }
+  .veld:last-child{ border-bottom:0; }
+  .veld .l{ font-family:'Spline Sans Mono',monospace; font-size:24px; color:var(--on-dark-soft);
+            width:210px; flex:none; padding-top:6px; letter-spacing:0.06em; }
+  .veld .v{ font-size:32px; color:#fff; font-weight:600; }
 </style>

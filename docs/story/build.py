@@ -30,11 +30,8 @@ BEELDEN = {
     'LOGO': 'public/logos/doen-logo.svg',
     'LOGO_WIT': 'public/logos/doen-logo-wit.svg',
     'FOTO_GEVEL': 'public/images/fotos/hoogwerker-aan-de-gevel.webp',
-    'FOTO_ANTONY': 'public/images/maker/antony-en-jos.webp',
-    'FOTO_PRIJS': 'public/images/fotos/prijs-uitrekenen.webp',
     'FOTO_HOOGWERKER': 'public/images/fotos/boren-in-de-gevel.webp',
-    'STAP_OFFERTES': 'docs/magazine/beeld/stap-offertes.jpg',
-    'STAP_DAAN': 'docs/magazine/beeld/stap-daan.jpg',
+    'FOTO_PORTAAL': 'public/images/fotos/p-portaal-zien.webp',
 }
 
 
@@ -59,7 +56,7 @@ def bouw():
     assert '{{' not in body, 'er staat nog een onvervangen placeholder in pages.html'
 
     aantal = body.count('<div class="page')
-    assert aantal == 11, 'verwacht 11 paginas, geteld: %d' % aantal
+    assert aantal == 7, 'verwacht 7 paginas, geteld: %d' % aantal
 
     html = (
         '<!doctype html>\n<html lang="nl">\n<head>\n<meta charset="utf-8">\n'
