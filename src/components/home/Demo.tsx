@@ -81,9 +81,17 @@ export default function Demo() {
 
       {/* En hetzelfde systeem in de bus. Stond eerder in DitZitErin naast een
           lijst modules; hij hoort hier, want dit is het blok dat laat zien
-          hoe de app werkt. */}
-      <div className="container-site hidden md:block">
-        <div className="mt-16 flex items-center gap-12 border-t border-petrol/10 pt-14 lg:gap-20">
+          hoe de app werkt.
+
+          Geen extra mt: AppShowcase draagt zelf al pb-24, dus met een marge
+          erbovenop stond er 216px niets tussen de app en deze regel en las
+          het als twee losse secties in plaats van als één blok. De haarlijn
+          valt nu op het natuurlijke einde van de app.
+
+          Op mobiel stond dit blok op hidden, en dat was een fout: juist daar
+          is de telefoon het onderwerp. Nu stapelt hij. */}
+      <div className="container-site">
+        <div className="flex flex-col items-center gap-10 border-t border-petrol/10 pt-12 md:flex-row md:items-center md:gap-12 lg:gap-20">
           <div className="shrink-0">
             <TelefoonMetDoen />
           </div>
@@ -96,8 +104,7 @@ export default function Demo() {
             </h3>
             <p className="mt-4 tekst-body text-muted">
               Dezelfde offerte, dezelfde werkbon, dezelfde planning. Tik de
-              menubalk op de telefoon hiernaast aan, dan loop je er zelf
-              doorheen.
+              menubalk op de telefoon aan, dan loop je er zelf doorheen.
             </p>
           </div>
         </div>
