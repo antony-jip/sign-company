@@ -15,7 +15,7 @@ const config: Config = {
         serif: ['Georgia', 'serif'],
       },
       colors: {
-        flame: '#F15025',
+        flame: '#D24620',
         petrol: {
           DEFAULT: '#1A535C',
           light: '#2A6F7A',

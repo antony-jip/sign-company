@@ -3,13 +3,13 @@ version: alpha
 name: doen-marketing-site
 description: Petrol draagt het merk, flame is het signaal. Tegels wisselen in kleurvlak met de kleurwissel als scheiding, precies een schaduw, pillen voor acties, bodytekst op 17px.
 colors:
-  primary: "#F15025"
+  primary: "#D24620"
   bg: "#F4F7F7"
   canvas: "#FFFFFF"
   petrol: "#1A535C"
   petrol-light: "#2A6F7A"
   petrol-deep: "#0D343C"
-  flame: "#F15025"
+  flame: "#D24620"
   ink: "#16262B"
   muted: "#54666A"
   on-flame: "#FFFFFF"
@@ -167,7 +167,7 @@ Canonieke voorbeelden: `src/components/home/*` (Hero, Demo, Statement, Modules, 
 | `petrol` | `#1A535C` | koppen op licht, accenten |
 | `petrol-deep` | `#0D343C` | donkere secties (hero, prijs, footer) |
 | `petrol-light` | `#2A6F7A` | lichtval-gradients op petrol-deep |
-| `flame` | `#F15025` | primaire CTA, flame-punt, plus-iconen |
+| `flame` | `#D24620` | primaire CTA, flame-punt, plus-iconen |
 | `ink` | `#16262B` | bodytekst op licht |
 | `muted` | `#54666A` | secundaire tekst op licht (min. 15px) |
 
@@ -283,12 +283,27 @@ Wat de ronde van 9 september 2026 opleverde:
   3:1 die zelfs voor grote tekst geldt. Nu vol wit, 3,55:1. Meer zit er niet in
   zolang flame het vlak is.
 
-Wat blijft staan, en waarom je het moet weten: **wit op flame haalt 3,55:1.**
-Dat is genoeg voor grote tekst (de koppen op de flame-band, vanaf 32px bold),
-maar niet voor een knoplabel van 15 tot 16px. De primaire knop van de site
-haalt WCAG AA dus niet. Hetzelfde geldt omgekeerd voor flame-tekst op wit.
+- Wit op flame haalde 3,55:1. Genoeg voor de koppen op de flame-band, niet
+  voor een knoplabel van 15 tot 16px, en de primaire knop van de site haalde
+  WCAG AA dus niet. Met `#F15025` was dat niet op te lossen: er bestaat geen
+  wittint die daar aan 4,5:1 komt. Daarom is flame zelf donkerder geworden,
+  van `#F15025` naar `#D24620`. Dertien procent donkerder, dezelfde tint,
+  4,53:1 met wit. De knop, de flame-band en flame-tekst op wit halen nu
+  allemaal AA.
 
-Dat is met de huidige flame niet op te lossen: er bestaat geen witttint die op
-`#F15025` 4,5:1 haalt. De enige echte uitweg is een donkerder flame voor
-vlakken die tekst dragen. `#D24620` (13% donkerder, zelfde tint) haalt 4,53:1.
-Dat is een merkbeslissing, geen technische, en staat daarom open.
+**Let op, dit loopt nog niet door.** De marketingsite staat op `#D24620`, maar
+de app (`forgedesk/`), de brochure in `docs/brochure/` en het logo in
+`public/logos/` dragen nog `#F15025`. Ook de app-mockups op de site
+(`AppShowcase`, `KlusDoorlopen`, `TelefoonMetDoen`, `HoeHetWerktContent`,
+`app-ui/tokens.ts`) staan bewust nog op de oude kleur: die tonen het echte
+product, en zolang de app niet mee is verandert liegt een aangepaste mockup.
+Zodra forgedesk om is, moeten die vijf bestanden in dezelfde beweging mee.
+
+### Drie oranjes, niet twee
+
+Bij het narekenen bleek er al langer drift te zitten. Het logo in
+`public/logos/` staat op `#df5c36` en het petrol daarin op `#2b535c`, allebei
+net naast de tokens. Dat is niet nieuw en niet door deze ronde ontstaan, maar
+het betekent wel dat er nu drie oranjes in omloop zijn: `#D24620` op de site,
+`#F15025` in de app en de brochure, `#df5c36` in het logo. Op het scherm zie je
+het nauwelijks, naast elkaar op een drukwerkvel wel.

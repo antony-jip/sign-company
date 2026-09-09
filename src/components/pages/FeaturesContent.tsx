@@ -601,7 +601,7 @@ function WerktekeningDemo() {
                             <path d="M320 20 L370 20 Q390 20 390 40 L390 90 L320 90 Z" fill="#D4D2CE" />
                             <path d="M330 28 L365 28 Q380 28 380 40 L380 55 L330 55 Z" fill="#C4C2BE" />
                             <text x="100" y="62" fontFamily="var(--font-heading, system-ui)" fontWeight="800" fontSize="28" fill="#1A535C" letterSpacing="-1">doen</text>
-                            <text x="186" y="62" fontFamily="var(--font-heading, system-ui)" fontWeight="800" fontSize="28" fill="#F15025">.</text>
+                            <text x="186" y="62" fontFamily="var(--font-heading, system-ui)" fontWeight="800" fontSize="28" fill="#D24620">.</text>
                             <text x="100" y="78" fontWeight="400" fontSize="9" fill="#8A8A85">doen.team</text>
                             <circle cx="100" cy="90" r="16" fill="#B0AEA8" />
                             <circle cx="100" cy="90" r="8" fill="#D4D2CE" />

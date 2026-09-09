@@ -5,7 +5,7 @@
  *   - 24×24 viewBox
  *   - 1.6 stroke-width, round caps + joins
  *   - currentColor voor stroke (themable)
- *   - Elke icoon heeft één subtiele "flame-dot" accent in #F15025
+ *   - Elke icoon heeft één subtiele "flame-dot" accent in #D24620
  *     als doen.-handtekening (de "punt" achter elke modulenaam)
  */
 
@@ -13,7 +13,7 @@ import { type SVGProps } from 'react'
 
 type IconProps = SVGProps<SVGSVGElement>
 
-const FLAME = '#F15025'
+const FLAME = '#D24620'
 const stroke = 'currentColor'
 
 const base = (props: IconProps) => ({

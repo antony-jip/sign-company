@@ -169,7 +169,7 @@ export default function Navbar({ theme = 'light' }: { theme?: 'light' | 'dark' }
                       <span
                         aria-hidden
                         className="absolute left-3 right-3 -bottom-0.5 h-[2px] rounded-full"
-                        style={{ backgroundColor: '#F15025' }}
+                        style={{ backgroundColor: '#D24620' }}
                       />
                     )}
                   </Link>
@@ -292,7 +292,7 @@ export default function Navbar({ theme = 'light' }: { theme?: 'light' | 'dark' }
                         style={{ color: isActive ? '#16262B' : '#54666A' }}
                       >
                         {link.label}
-                        {isActive && <span style={{ color: '#F15025' }}>.</span>}
+                        {isActive && <span style={{ color: '#D24620' }}>.</span>}
                       </Link>
 
                       {/* De modules per groep direct onder Product, anders is dit
@@ -314,7 +314,7 @@ export default function Navbar({ theme = 'light' }: { theme?: 'light' | 'dark' }
                                       style={{ color: pathname === mod.href ? '#1A535C' : '#54666A' }}
                                     >
                                       {mod.label}
-                                      <span style={{ color: '#F15025' }}>.</span>
+                                      <span style={{ color: '#D24620' }}>.</span>
                                     </Link>
                                   </li>
                                 ))}

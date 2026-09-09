@@ -110,12 +110,12 @@ export default function Journey({
                 y1={byId('factuur').y}
                 x2={byId('gedaan').x - 4}
                 y2={byId('gedaan').y}
-                stroke="#F15025"
+                stroke="#D24620"
                 strokeWidth={2}
               />
               <path
                 d={`M ${byId('gedaan').x - 12} ${byId('gedaan').y - 6} L ${byId('gedaan').x - 2} ${byId('gedaan').y} L ${byId('gedaan').x - 12} ${byId('gedaan').y + 6} Z`}
-                fill="#F15025"
+                fill="#D24620"
               />
             </svg>
 
@@ -137,7 +137,7 @@ export default function Journey({
                       }`}
                       style={
                         node.final
-                          ? { boxShadow: '0 0 0 6px rgba(241,80,37,0.08), 0 12px 28px -10px rgba(13,52,60,0.4)' }
+                          ? { boxShadow: '0 0 0 6px rgba(210, 70, 32,0.08), 0 12px 28px -10px rgba(13,52,60,0.4)' }
                           : undefined
                       }
                     >

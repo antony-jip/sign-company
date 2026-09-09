@@ -17,14 +17,14 @@ body {
 }
 
 ::selection {
-  background-color: #F15025;
+  background-color: #D24620;
   color: white;
 }
 
 a:focus-visible,
 button:focus-visible,
 summary:focus-visible {
-  outline: 2px solid #F15025;
+  outline: 2px solid #D24620;
   outline-offset: 3px;
   border-radius: 2px;
 }
@@ -136,7 +136,7 @@ summary:focus-visible {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: #f15025;
+  background: #d24620;
   border: 3px solid #ffffff;
   box-shadow: 0 2px 8px -2px rgba(13, 52, 60, 0.5);
   transition: transform 0.15s ease-out;
@@ -145,7 +145,7 @@ summary:focus-visible {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: #f15025;
+  background: #d24620;
   border: 3px solid #ffffff;
   box-shadow: 0 2px 8px -2px rgba(13, 52, 60, 0.5);
   transition: transform 0.15s ease-out;
@@ -271,13 +271,13 @@ summary:focus-visible {
 }
 /* Primair: het flame-vlak. Eén per scherm, hij is het antwoord op de kop. */
 .knop-flame {
-  background-color: #f15025;
+  background-color: #d24620;
   color: #ffffff;
 }
 /* Op een flame-vlak keert hij om, anders verdwijnt de knop in de band. */
 .knop-wit {
   background-color: #ffffff;
-  color: #f15025;
+  color: #d24620;
 }
 /* Spookpil: dezelfde vorm, alleen de lijn. Voor het tweede spoor naast de
    primaire knop op een licht vlak. */
@@ -338,7 +338,7 @@ summary:focus-visible {
   outline-offset: 3px;
 }
 .knop:focus-visible {
-  outline: 2px solid #f15025;
+  outline: 2px solid #d24620;
   outline-offset: 3px;
   border-radius: 9999px;
 }
