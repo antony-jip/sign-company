@@ -17,7 +17,7 @@ export default function CTASection() {
             >
               Jij gaat maken<span className="text-white/70">.</span> Wij doen de rest<span className="text-white/70">.</span>
             </h2>
-            <p className="tekst-body font-medium" style={{ color: 'rgba(255,255,255,0.8)' }}>
+            <p className="tekst-body font-medium text-white">
               Account in 5 minuten · 30 dagen gratis · wij zetten je gegevens erover
             </p>
           </div>

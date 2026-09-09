@@ -1,3 +1,154 @@
+---
+version: alpha
+name: doen-marketing-site
+description: Petrol draagt het merk, flame is het signaal. Tegels wisselen in kleurvlak met de kleurwissel als scheiding, precies een schaduw, pillen voor acties, bodytekst op 17px.
+colors:
+  primary: "#F15025"
+  bg: "#F4F7F7"
+  canvas: "#FFFFFF"
+  petrol: "#1A535C"
+  petrol-light: "#2A6F7A"
+  petrol-deep: "#0D343C"
+  flame: "#F15025"
+  ink: "#16262B"
+  muted: "#54666A"
+  on-flame: "#FFFFFF"
+  on-dark: "#FFFFFF"
+  body-on-dark: "#BCCED0"
+  footnote-on-dark: "#829BA0"
+  footer-link: "#8DA5A9"
+  hairline: "#E0E6E7"
+typography:
+  hero:
+    fontFamily: Instrument Sans
+    fontSize: 88px
+    fontWeight: 700
+    lineHeight: 0.97
+    letterSpacing: -0.035em
+  sectiekop:
+    fontFamily: Instrument Sans
+    fontSize: 52px
+    fontWeight: 700
+    lineHeight: 1.0
+    letterSpacing: -0.03em
+  lead:
+    fontFamily: Hanken Grotesk
+    fontSize: 21px
+    fontWeight: 400
+    lineHeight: 1.4
+    letterSpacing: -0.011em
+  body:
+    fontFamily: Hanken Grotesk
+    fontSize: 17px
+    fontWeight: 400
+    lineHeight: 1.47
+    letterSpacing: -0.011em
+  caption:
+    fontFamily: Hanken Grotesk
+    fontSize: 14px
+    fontWeight: 400
+    lineHeight: 1.43
+    letterSpacing: -0.016em
+  fijn:
+    fontFamily: Hanken Grotesk
+    fontSize: 13px
+    fontWeight: 400
+    lineHeight: 1.4
+  knoplabel:
+    fontFamily: Hanken Grotesk
+    fontSize: 16px
+    fontWeight: 600
+    lineHeight: 1.0
+    letterSpacing: -0.011em
+rounded:
+  none: 0px
+  util: 8px
+  card: 18px
+  pill: 9999px
+spacing:
+  xs: 8px
+  sm: 12px
+  md: 16px
+  lg: 24px
+  xl: 32px
+  tile: 80px
+components:
+  knop-flame:
+    backgroundColor: "{colors.flame}"
+    textColor: "{colors.on-flame}"
+    typography: "{typography.knoplabel}"
+    rounded: "{rounded.pill}"
+  knop-wit:
+    backgroundColor: "{colors.canvas}"
+    textColor: "{colors.flame}"
+    typography: "{typography.knoplabel}"
+    rounded: "{rounded.pill}"
+  knop-lijn:
+    backgroundColor: "{colors.bg}"
+    textColor: "{colors.petrol}"
+    typography: "{typography.knoplabel}"
+    rounded: "{rounded.pill}"
+  knop-lijn-wit:
+    backgroundColor: "{colors.petrol-deep}"
+    textColor: "{colors.on-dark}"
+    typography: "{typography.knoplabel}"
+    rounded: "{rounded.pill}"
+  tegel-licht:
+    backgroundColor: "{colors.canvas}"
+    textColor: "{colors.ink}"
+    typography: "{typography.body}"
+    rounded: "{rounded.none}"
+  tegel-tint:
+    backgroundColor: "{colors.bg}"
+    textColor: "{colors.ink}"
+    typography: "{typography.body}"
+    rounded: "{rounded.none}"
+  tegel-donker:
+    backgroundColor: "{colors.petrol-deep}"
+    textColor: "{colors.on-dark}"
+    typography: "{typography.body}"
+    rounded: "{rounded.none}"
+  tegel-flame:
+    backgroundColor: "{colors.flame}"
+    textColor: "{colors.on-flame}"
+    typography: "{typography.sectiekop}"
+    rounded: "{rounded.none}"
+  kaart:
+    backgroundColor: "{colors.canvas}"
+    textColor: "{colors.ink}"
+    typography: "{typography.body}"
+    rounded: "{rounded.card}"
+  sectiekop-op-licht:
+    backgroundColor: "{colors.canvas}"
+    textColor: "{colors.petrol}"
+    typography: "{typography.sectiekop}"
+  toelichting-op-tint:
+    backgroundColor: "{colors.bg}"
+    textColor: "{colors.muted}"
+    typography: "{typography.body}"
+  toelichting-op-wit:
+    backgroundColor: "{colors.canvas}"
+    textColor: "{colors.muted}"
+    typography: "{typography.body}"
+  body-op-donker:
+    backgroundColor: "{colors.petrol-deep}"
+    textColor: "{colors.body-on-dark}"
+    typography: "{typography.body}"
+  voetnoot-op-donker:
+    backgroundColor: "{colors.petrol-deep}"
+    textColor: "{colors.footnote-on-dark}"
+    typography: "{typography.fijn}"
+  footer-link:
+    backgroundColor: "{colors.petrol-deep}"
+    textColor: "{colors.footer-link}"
+    typography: "{typography.body}"
+  invoerveld:
+    backgroundColor: "{colors.bg}"
+    textColor: "{colors.ink}"
+    typography: "{typography.body}"
+    rounded: "{rounded.util}"
+---
+
 # DESIGN.md — doen. marketing-site
 
 Visueel systeem sinds de redesign van juli 2026. Geldt voor `src/` (marketing-site), niet voor `forgedesk/`.
@@ -115,3 +266,29 @@ op 44px.
 Wat we bewust NIET overnemen uit Apple's systeem: Action Blue (#0066cc) en de
 hele SF Pro-ladder. Eén accentkleur hebben we al, dat is flame, en de fonts
 horen bij de app.
+
+## Contrast en de linter
+
+De YAML bovenin dit bestand is niet decoratief: `npm run design:lint` haalt er
+`@google/design.md` (de formaatspecificatie van Google Labs, Apache-2.0)
+overheen en rekent elk kleurpaar na tegen WCAG AA. Draai hem als je een kleur
+of een tekstmaat aanraakt.
+
+Wat de ronde van 9 september 2026 opleverde:
+
+- De voetnootregel in de footer stond op `rgba(226,240,241,0.45)` en haalde
+  3,57:1 op petrol-deep. Terug naar 0,55, de bodem die hierboven al beschreven
+  stond en die 4,54:1 haalt. Dat was drift, geen keuze.
+- De proefregel op de flame-band stond op wit 80% en haalde 2,76:1, onder de
+  3:1 die zelfs voor grote tekst geldt. Nu vol wit, 3,55:1. Meer zit er niet in
+  zolang flame het vlak is.
+
+Wat blijft staan, en waarom je het moet weten: **wit op flame haalt 3,55:1.**
+Dat is genoeg voor grote tekst (de koppen op de flame-band, vanaf 32px bold),
+maar niet voor een knoplabel van 15 tot 16px. De primaire knop van de site
+haalt WCAG AA dus niet. Hetzelfde geldt omgekeerd voor flame-tekst op wit.
+
+Dat is met de huidige flame niet op te lossen: er bestaat geen witttint die op
+`#F15025` 4,5:1 haalt. De enige echte uitweg is een donkerder flame voor
+vlakken die tekst dragen. `#D24620` (13% donkerder, zelfde tint) haalt 4,53:1.
+Dat is een merkbeslissing, geen technische, en staat daarom open.

@@ -71,7 +71,7 @@ export default function Footer() {
           className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 pt-6 md:pt-8"
           style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}
         >
-          <p className="tekst-fijn" style={{ color: 'rgba(226,240,241,0.45)' }}>
+          <p className="tekst-fijn" style={{ color: 'rgba(226,240,241,0.55)' }}>
             © {new Date().getFullYear()} doen. · Gemaakt door signmakers, voor signmakers
           </p>
           <a
