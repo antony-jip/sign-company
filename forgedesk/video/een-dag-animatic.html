@@ -1,0 +1,528 @@
+<title>een dag animatic</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=DM+Mono:wght@500&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Eén donkere wereld, bewust. Een filmviewer is nooit licht, dus geen
+   themawissel; alle kleuren staan expliciet zodat de pagina op elke
+   host-achtergrond blijft staan. */
+:root{
+  --grond:#0A1418;
+  --paneel:#0E1F24;
+  --paneel-op:#132A31;
+  --lijn:rgba(248,247,245,.10);
+  --lijn-sterk:rgba(248,247,245,.20);
+  --petrol:#1A535C;
+  --petrol-licht:#2C7180;
+  --flame:#F15025;
+  --offwhite:#F8F7F5;
+  --zacht:rgba(248,247,245,.60);
+  --zachter:rgba(248,247,245,.38);
+  --kop:'Bricolage Grotesque','Helvetica Neue',Arial,sans-serif;
+  --body:'Inter','Helvetica Neue',Arial,sans-serif;
+  --mono:'DM Mono',ui-monospace,'SF Mono',Menlo,monospace;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--grond);color:var(--offwhite);
+  font-family:var(--body);font-size:15px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1160px;margin:0 auto;padding:34px 22px 70px;display:flex;flex-direction:column;gap:26px}
+
+/* kop */
+.kop{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:18px}
+.titel{font-family:var(--kop);font-size:clamp(38px,6vw,60px);line-height:.98;letter-spacing:-.035em;margin:0;text-wrap:balance}
+.titel .dot{color:var(--flame)}
+.onderkop{color:var(--zacht);max-width:52ch;margin:10px 0 0;font-size:15px}
+.meta{display:flex;gap:22px;font-family:var(--mono);font-size:13px;color:var(--zachter);font-variant-numeric:tabular-nums}
+.meta b{display:block;color:var(--offwhite);font-weight:500;font-size:19px}
+
+/* stage */
+.stage{position:relative;aspect-ratio:16/9;width:100%;background:#000;border-radius:14px;overflow:hidden;border:1px solid var(--lijn)}
+.frame{position:absolute;inset:0;transform-origin:center}
+.ondertitel{position:absolute;left:50%;transform:translateX(-50%);bottom:5.5%;background:rgba(10,20,24,.78);
+  padding:8px 18px;border-radius:9px;font-size:clamp(11px,1.55vw,19px);font-weight:500;letter-spacing:-.01em;
+  white-space:nowrap;max-width:92%;overflow:hidden;text-overflow:ellipsis}
+.shotmerk{position:absolute;top:14px;left:16px;font-family:var(--mono);font-size:12px;color:rgba(248,247,245,.5);
+  background:rgba(10,20,24,.6);padding:3px 9px;border-radius:5px;letter-spacing:.04em}
+
+/* transport */
+.transport{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.knop{appearance:none;border:1px solid var(--lijn-sterk);background:var(--paneel);color:var(--offwhite);
+  font-family:var(--body);font-size:14px;font-weight:600;padding:10px 20px;border-radius:8px;cursor:pointer;
+  transition:background .15s,border-color .15s}
+.knop:hover{background:var(--paneel-op);border-color:var(--flame)}
+.knop:focus-visible{outline:2px solid var(--flame);outline-offset:2px}
+.tc{font-family:var(--mono);font-size:15px;font-variant-numeric:tabular-nums;color:var(--zacht)}
+.tc b{color:var(--offwhite);font-weight:500}
+.legenda{display:flex;gap:16px;margin-left:auto;font-size:12.5px;color:var(--zachter);flex-wrap:wrap}
+.legenda span{display:inline-flex;align-items:center;gap:7px}
+.vlak{width:11px;height:11px;border-radius:3px;display:inline-block}
+
+/* shotkaart: 50 blokken op ware proportie. De vorm is het ritme. */
+.kaart{display:flex;flex-direction:column;gap:7px}
+.scenes{display:flex;gap:3px;align-items:flex-end}
+.scene{display:flex;flex-direction:column;gap:4px;min-width:0}
+.scenelabel{font-family:var(--mono);font-size:10.5px;color:var(--zachter);letter-spacing:.06em;padding-left:1px;
+  white-space:nowrap;overflow:hidden}
+.blokken{display:flex;gap:2px}
+.blok{height:38px;border-radius:3px;border:none;padding:0;cursor:pointer;min-width:2px;
+  background:var(--petrol);transition:filter .12s;position:relative}
+.blok.blok-scherm{background:var(--flame);opacity:.82}
+.blok.blok-eind{background:var(--offwhite);opacity:.5}
+.blok:hover{filter:brightness(1.45)}
+.blok.nu{outline:2px solid var(--offwhite);outline-offset:1px;filter:brightness(1.35)}
+.blok:focus-visible{outline:2px solid var(--offwhite);outline-offset:1px}
+.as{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--zachter);
+  font-variant-numeric:tabular-nums}
+
+/* inspecteur */
+.inspect{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:1px;background:var(--lijn);
+  border:1px solid var(--lijn);border-radius:12px;overflow:hidden}
+.cel{background:var(--paneel);padding:17px 19px;min-width:0}
+.celkop{font-size:10.5px;text-transform:uppercase;letter-spacing:.12em;color:var(--zachter);margin-bottom:7px}
+.celwaarde{font-size:16px;font-weight:500;line-height:1.35;overflow-wrap:break-word}
+.celwaarde.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.celwaarde em{font-style:normal;color:var(--flame)}
+
+/* voet */
+.voet{border-top:1px solid var(--lijn);padding-top:22px;display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(268px,1fr));gap:24px;color:var(--zacht);font-size:13.5px}
+.voet h3{font-family:var(--kop);font-size:15px;margin:0 0 7px;color:var(--offwhite);letter-spacing:-.01em}
+.voet p{margin:0 0 9px}
+.waarschuw{border-left:2px solid var(--flame);padding-left:13px}
+.staal{display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:baseline;margin-right:5px}
+
+/* ---- schermen in de stage ---- */
+.scherm{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#0B181C}
+.toestel{border-radius:2.2%/1.3%;overflow:hidden;border:1px solid rgba(248,247,245,.10);
+  box-shadow:0 5% 9% -3% rgba(0,0,0,.85);background:#F4F3F0}
+.toestel.telefoon{height:93%;aspect-ratio:.6/1}
+.toestel.bureau{width:81%;aspect-ratio:16/9.02}
+.ui{width:100%;height:100%;display:flex;flex-direction:column;background:#F4F3F0;color:#1A1A18;
+  container-type:inline-size;position:relative;overflow:hidden}
+.balk{background:var(--petrol);color:var(--offwhite);padding:4.4cqw 5cqw;display:flex;align-items:center;gap:2.4cqw;flex-shrink:0}
+.merk{font-family:var(--kop);font-size:5.3cqw;letter-spacing:-.02em}
+.merk .dot{color:var(--flame)}
+.balk .titel2{font-size:4.2cqw;opacity:.72}
+.body2{padding:5cqw;display:flex;flex-direction:column;gap:3.4cqw;flex:1;min-height:0}
+.card{background:#FFFFFE;border-radius:3cqw;border:1px solid rgba(26,83,92,.10);padding:4.4cqw}
+.lbl{color:#8A8F90;font-size:3.7cqw}
+.val{font-size:4.6cqw;font-weight:500}
+.groot{font-family:var(--mono);font-size:9.6cqw;font-weight:500;letter-spacing:-.02em;font-variant-numeric:tabular-nums;display:block}
+.mid{font-family:var(--mono);font-size:6.4cqw;font-weight:500;font-variant-numeric:tabular-nums}
+.rij{display:flex;justify-content:space-between;align-items:baseline;padding:2.6cqw 0;border-bottom:1px solid rgba(26,83,92,.08)}
+.duo{display:flex;gap:3.4cqw}.duo>*{flex:1}
+.kop2{font-size:5.2cqw;font-weight:600;letter-spacing:-.015em}
+.badge{display:inline-flex;align-items:center;padding:1.4cqw 3.2cqw;border-radius:99px;font-size:3.9cqw;font-weight:600;
+  background:rgba(138,143,144,.12);border:1px solid rgba(138,143,144,.28);color:#8A8F90;transform-origin:left center}
+.badge.on{background:rgba(241,80,37,.10);border-color:rgba(241,80,37,.30);color:var(--flame)}
+.badge .dot{opacity:0}
+.badge.on .dot{opacity:1}
+.knopui{background:var(--flame);color:var(--offwhite);border-radius:2.4cqw;padding:3.8cqw 0;text-align:center;
+  font-size:4.6cqw;font-weight:600}
+.pulse{position:absolute;border-radius:50%;background:var(--flame);pointer-events:none;transform:translate(-50%,-50%)}
+.donker{background:#0E1B1F;color:var(--offwhite);align-items:center;justify-content:center;gap:7cqw}
+.glas{background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.16);border-radius:3cqw;padding:4.4cqw;width:84%}
+.klok{font-size:19cqw;font-weight:300;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.week{display:flex;gap:2cqw;height:100%}
+.dagkolom{flex:1;display:flex;flex-direction:column;gap:1.4cqw}
+.dagkop{color:#8A8F90;font-size:2.5cqw}
+.dagvlak{flex:1;border-radius:1.6cqw;background:rgba(26,83,92,.04);border:1px dashed rgba(26,83,92,.14)}
+.plankaart{position:absolute;width:17.4cqw;background:#FFFFFE;border-radius:1.6cqw;border:2px solid rgba(241,80,37,.6);
+  padding:2cqw;box-shadow:0 2cqw 4cqw -2cqw rgba(26,83,92,.4)}
+.conflict{display:flex;align-items:center;gap:1cqw;margin-top:1.4cqw;color:var(--flame);font-size:2.2cqw;font-weight:600}
+.conflictdot{width:1.2cqw;height:1.2cqw;border-radius:50%;background:var(--flame)}
+.foto{width:100%;height:26cqw;border-radius:2cqw;background:linear-gradient(140deg,#2A4A52,#16323A);
+  display:flex;align-items:center;justify-content:center;color:rgba(248,247,245,.5);font-size:3.4cqw}
+
+/* plaatshouder voor live-action */
+.plaats{position:absolute;inset:0;background:var(--petrol);display:flex;flex-direction:column;justify-content:center;
+  gap:2.2%;padding:0 7.5%}
+.plaatsmeta{display:flex;align-items:baseline;gap:1.6%;font-family:var(--mono);font-size:clamp(10px,1.35vw,17px)}
+.plaatsmeta .id{color:var(--flame)}
+.plaatsmeta .dim{color:rgba(248,247,245,.45)}
+.plaatstitel{font-family:var(--kop);font-size:clamp(19px,3.9vw,50px);line-height:1.06;letter-spacing:-.02em;
+  color:var(--offwhite);text-wrap:balance;margin:0}
+.plaatsbewijs{color:rgba(248,247,245,.6);font-size:clamp(11px,1.6vw,20px)}
+.eind{position:absolute;inset:0;background:var(--petrol);display:flex;align-items:center;justify-content:center}
+.eindmerk{font-family:var(--kop);font-size:clamp(56px,13vw,168px);letter-spacing:-.04em;color:var(--offwhite)}
+.eindmerk .dot{color:var(--flame)}
+
+@media (prefers-reduced-motion:reduce){.frame{transform:none!important}}
+@media (max-width:620px){
+  .legenda{margin-left:0;width:100%}
+  .scenelabel{font-size:9px}
+}
+</style>
+
+<div class="wrap">
+  <header class="kop">
+    <div>
+      <h1 class="titel">een dag<span class="dot">.</span></h1>
+      <p class="onderkop">Animatic van de productfilm voor doen<span style="color:var(--flame)">.</span> Vijftig shots, 75 seconden, 24 fps. De 27 schermshots zijn afgebouwde motion graphics. De 22 live-action shots staan als plaatshouder tot er gedraaid is.</p>
+    </div>
+    <div class="meta">
+      <div>duur<b>75,0s</b></div>
+      <div>frames<b>1800</b></div>
+      <div>shots<b>50</b></div>
+    </div>
+  </header>
+
+  <div class="stage" id="stage">
+    <div class="frame" id="frame"></div>
+    <div class="shotmerk" id="shotmerk">1A</div>
+    <div class="ondertitel" id="ondertitel" hidden></div>
+  </div>
+
+  <div class="transport">
+    <button class="knop" id="speel">afspelen</button>
+    <div class="tc"><b id="tc">00:31,25</b> / 01:15,00</div>
+    <div class="legenda">
+      <span><i class="vlak" style="background:var(--flame);opacity:.82"></i> app-scherm (27)</span>
+      <span><i class="vlak" style="background:var(--petrol)"></i> live-action (22)</span>
+      <span><i class="vlak" style="background:var(--offwhite);opacity:.5"></i> end card</span>
+    </div>
+  </div>
+
+  <div class="kaart">
+    <div class="scenes" id="scenes"></div>
+    <div class="as"><span>00:00</span><span>ritme: scenes 1-3 traag, 4-9 snel, 10-11 traag</span><span>01:15</span></div>
+  </div>
+
+  <div class="inspect">
+    <div class="cel"><div class="celkop">shot</div><div class="celwaarde mono" id="i-shot">5B</div></div>
+    <div class="cel"><div class="celkop">duur</div><div class="celwaarde mono" id="i-duur">2,6s</div></div>
+    <div class="cel"><div class="celkop">beeld</div><div class="celwaarde" id="i-beeld">offertestatus</div></div>
+    <div class="cel" style="grid-column:span 2"><div class="celkop">bewijst</div><div class="celwaarde" id="i-bewijst">het is echt weg</div></div>
+  </div>
+
+  <div class="voet">
+    <div class="waarschuw">
+      <h3>De kleur staat nog open</h3>
+      <p>Deze pagina gebruikt <span class="staal" style="background:#F15025"></span>Flame <span style="font-family:var(--mono)">#F15025</span> uit het brief. Het logobestand gebruikt <span class="staal" style="background:#D24620"></span><span style="font-family:var(--mono)">#D24620</span>, en dat is 461 keer in de repo tegen 24 keer voor de brief-waarde.</p>
+      <p>Shot 11C zet het echte logo op dit petrol met deze flame ernaast. Zolang die twee uit elkaar lopen staan er in het laatste frame van de film twee verschillende oranjes, precies waar de kijker naar de kleur kijkt.</p>
+    </div>
+    <div>
+      <h3>Wat je hier ziet</h3>
+      <p>De schermen zijn gebouwd, niet gefilmd. In de echte film worden dit opnames uit de app zelf, want een videomodel verzint UI en het brief verbiedt dat.</p>
+      <p>Bedragen lopen bewust door: de offerte in scene 4 en de factuur in scene 9 tellen allebei naar EUR 5.235,00. Verandert dat bedrag onderweg, dan is de kijker de film kwijt.</p>
+    </div>
+    <div>
+      <h3>Wat er nog niet is</h3>
+      <p>Geluid. Het sound design draagt in deze film meer dan de voice-over: 62 woorden in 75 seconden, dus twee derde is stilte met printer, busdeur en avondstilte.</p>
+      <p>De ondertitels hieronder in beeld zijn de voice-over. Die gaan in de eindmontage uit.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const DATA = {"shots":[{"id":"1A","scene":1,"van":0,"tot":62,"soort":"beeld","bewijst":"het uur waarop zijn dag begint","beeld":"wekkerdisplay 06:45, macro, hand tast"},{"id":"1B","scene":1,"van":62,"tot":120,"soort":"scherm","bewijst":"een melding is genoeg","scherm":"lockscreen","stap":"een melding"},{"id":"2A","scene":2,"van":120,"tot":187,"soort":"beeld","bewijst":"hij pakt niets anders op","beeld":"loopt door de gang naar de keuken"},{"id":"2B","scene":2,"van":187,"tot":230,"soort":"beeld","bewijst":"de app wacht op hem","beeld":"telefoon tegen de fruitschaal, koffie aan"},{"id":"2C","scene":2,"van":230,"tot":288,"soort":"scherm","bewijst":"alles op een scherm","scherm":"dashboard","stap":"omzet telt op"},{"id":"3A","scene":3,"van":288,"tot":355,"soort":"beeld","bewijst":"niets, dit is ademruimte","beeld":"koffie loopt, stoom in tegenlicht"},{"id":"3B","scene":3,"van":355,"tot":413,"soort":"scherm","bewijst":"de lead staat er al","scherm":"leads","stap":"lead openen"},{"id":"3C","scene":3,"van":413,"tot":480,"soort":"scherm","bewijst":"hij typt niets over","scherm":"klantkaart","stap":"velden vullen zich"},{"id":"4A","scene":4,"van":480,"tot":509,"soort":"beeld","bewijst":"het tempo breekt","beeld":"busdeur open, stapt in"},{"id":"4B","scene":4,"van":509,"tot":535,"soort":"beeld","bewijst":"motor staat nog uit","beeld":"telefoon in de houder"},{"id":"4C","scene":4,"van":535,"tot":564,"soort":"scherm","bewijst":"offerte komt uit het project","scherm":"offerte","stap":"offerte openen"},{"id":"4D","scene":4,"van":564,"tot":586,"soort":"scherm","bewijst":"een tik is een regel","scherm":"offerte","stap":"regel toevoegen"},{"id":"4E","scene":4,"van":586,"tot":614,"soort":"scherm","bewijst":"het product staat er al in","scherm":"offerte","stap":"regel vult"},{"id":"4F","scene":4,"van":614,"tot":636,"soort":"scherm","bewijst":"de prijs rekent zichzelf","scherm":"offerte","stap":"prijs telt op"},{"id":"4G","scene":4,"van":636,"tot":670,"soort":"scherm","bewijst":"het totaal klopt zonder rekenwerk","scherm":"offerte","stap":"totaal"},{"id":"4H","scene":4,"van":670,"tot":694,"soort":"scherm","bewijst":"versturen is een tik","scherm":"offerte","stap":"versturen"},{"id":"4I","scene":4,"van":694,"tot":720,"soort":"beeld","bewijst":"de rit begint pas nu","beeld":"hand terug aan het stuur, bus rijdt weg"},{"id":"5A","scene":5,"van":720,"tot":754,"soort":"scherm","bewijst":"de status voor het versturen","scherm":"offertestatus","stap":"concept"},{"id":"5B","scene":5,"van":754,"tot":816,"soort":"scherm","bewijst":"het is echt weg","scherm":"offertestatus","stap":"verstuurd"},{"id":"6A","scene":6,"van":816,"tot":845,"soort":"beeld","bewijst":"de werkplaats is echt","beeld":"wide, printer loopt achterin"},{"id":"6B","scene":6,"van":845,"tot":869,"soort":"beeld","bewijst":"hij loopt door naar het werk","beeld":"loopt door het beeld naar de statafel"},{"id":"6C","scene":6,"van":869,"tot":898,"soort":"beeld","bewijst":"hij bedient het met een hand","beeld":"telefoon rechtop, gefreesde letter in de andere hand"},{"id":"6D","scene":6,"van":898,"tot":919,"soort":"scherm","bewijst":"de camera zit in de werkbon","scherm":"werkbon","stap":"camera openen"},{"id":"6E","scene":6,"van":919,"tot":948,"soort":"beeld","bewijst":"hij fotografeert echt werk","beeld":"gefreesde letter in de zoeker"},{"id":"6F","scene":6,"van":948,"tot":970,"soort":"scherm","bewijst":"de foto zit meteen op de bon","scherm":"werkbon","stap":"foto landt"},{"id":"6G","scene":6,"van":970,"tot":1003,"soort":"scherm","bewijst":"uren zijn twee tikken","scherm":"werkbon","stap":"uren loggen"},{"id":"6H","scene":6,"van":1003,"tot":1027,"soort":"scherm","bewijst":"de bon is klaar","scherm":"werkbon","stap":"gelogd"},{"id":"6I","scene":6,"van":1027,"tot":1056,"soort":"beeld","bewijst":"hij loopt weg van de telefoon","beeld":"pakt de letter op, loopt uit beeld"},{"id":"7A","scene":7,"van":1056,"tot":1087,"soort":"beeld","bewijst":"geen apart kantoor","beeld":"kantoorhoek in de werkplaats"},{"id":"7B","scene":7,"van":1087,"tot":1116,"soort":"scherm","bewijst":"het conflict is zichtbaar","scherm":"planning","stap":"conflict"},{"id":"7C","scene":7,"van":1116,"tot":1147,"soort":"beeld","bewijst":"hij pakt het zelf vast","beeld":"hand komt in beeld, pakt de kaart"},{"id":"7D","scene":7,"van":1147,"tot":1181,"soort":"scherm","bewijst":"verplaatsen is slepen","scherm":"planning","stap":"slepen"},{"id":"7E","scene":7,"van":1181,"tot":1210,"soort":"scherm","bewijst":"hij snapt in het raster","scherm":"planning","stap":"landt"},{"id":"7F","scene":7,"van":1210,"tot":1248,"soort":"scherm","bewijst":"het conflict lost zichzelf op","scherm":"planning","stap":"conflict dooft"},{"id":"8A","scene":8,"van":1248,"tot":1277,"soort":"beeld","bewijst":"twee plekken tegelijk","beeld":"split screen, klant links, bus rechts"},{"id":"8B","scene":8,"van":1277,"tot":1303,"soort":"scherm","bewijst":"de klant ziet het zelf","scherm":"portaal","stap":"offerte open"},{"id":"8C","scene":8,"van":1303,"tot":1332,"soort":"scherm","bewijst":"tekenen is een tik","scherm":"portaal","stap":"akkoord"},{"id":"8D","scene":8,"van":1332,"tot":1358,"soort":"beeld","bewijst":"hij hoort het zonder te bellen","beeld":"telefoon in de houder licht op"},{"id":"8E","scene":8,"van":1358,"tot":1392,"soort":"scherm","bewijst":"geen belletje nodig","scherm":"offertestatus","stap":"getekend"},{"id":"9A","scene":9,"van":1392,"tot":1421,"soort":"beeld","bewijst":"hij staat bij de bus","beeld":"schuift plaatmateriaal in de bus"},{"id":"9B","scene":9,"van":1421,"tot":1447,"soort":"beeld","bewijst":"de dag loopt door","beeld":"achterdeuren dicht, harde klap"},{"id":"9C","scene":9,"van":1447,"tot":1476,"soort":"scherm","bewijst":"niemand maakt de factuur","scherm":"factuur","stap":"rolt uit project"},{"id":"9D","scene":9,"van":1476,"tot":1502,"soort":"scherm","bewijst":"het bedrag komt uit de offerte","scherm":"factuur","stap":"bedrag telt op"},{"id":"9E","scene":9,"van":1502,"tot":1536,"soort":"scherm","bewijst":"getekend is gefactureerd","scherm":"factuur","stap":"verstuurd"},{"id":"10A","scene":10,"van":1536,"tot":1594,"soort":"beeld","bewijst":"de dag sluit zichzelf af","beeld":"avondtafel, telefoon ligt, kind ver onscherp"},{"id":"10B","scene":10,"van":1594,"tot":1637,"soort":"beeld","bewijst":"hij kijkt niet eens","beeld":"telefoon licht op"},{"id":"10C","scene":10,"van":1637,"tot":1680,"soort":"scherm","bewijst":"het geld komt binnen zonder hem","scherm":"push","stap":"betaald"},{"id":"11A","scene":11,"van":1680,"tot":1718,"soort":"beeld","bewijst":"hij sluit af","beeld":"laptop gaat dicht"},{"id":"11B","scene":11,"van":1718,"tot":1747,"soort":"beeld","bewijst":"de dag is voorbij","beeld":"werkplaatslicht uit, wide"},{"id":"11C","scene":11,"van":1747,"tot":1800,"soort":"eind","bewijst":"doen. gedaan."}],"vo":[{"frame":24,"tekst":"Zes uur vijfenveertig. Je dag is al begonnen."},{"frame":144,"tekst":"Geen mappen. Geen appjes. Een overzicht."},{"frame":312,"tekst":"De lead staat er al in. De gegevens vult doen. zelf."},{"frame":528,"tekst":"Offerte onderweg. Klaar voordat je er bent."},{"frame":744,"tekst":"verstuurd."},{"frame":864,"tekst":"De werkvloer typt niet. Die tikt."},{"frame":1080,"tekst":"Planning schuift mee. Het conflict lost zichzelf op."},{"frame":1272,"tekst":"De klant tekent digitaal. Jij hoeft niet te bellen."},{"frame":1416,"tekst":"Getekend is gefactureerd."},{"frame":1608,"tekst":"betaald."},{"frame":1728,"tekst":"doen. gedaan."}]};
+const FPS = 24, TOTAAL_FRAMES = 1800;
+const KLANT = "Bouwbedrijf Kuiper", PROJECT = "Lichtbakken hoofdvestiging";
+const REGEL = "Lichtbak 3000x800 enkelzijdig", STUKS = 3, STUKPRIJS = 1485, MONTAGE = 780;
+const TOTAAL = STUKS * STUKPRIJS + MONTAGE;
+const TELEFOON = ["lockscreen","dashboard","leads","klantkaart","offerte","offertestatus","werkbon","push"];
+
+const euro = n => n.toLocaleString("nl-NL",{minimumFractionDigits:2,maximumFractionDigits:2});
+const getal = (n,d) => n.toLocaleString("nl-NL",{minimumFractionDigits:d,maximumFractionDigits:d});
+const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
+const lerp = (f,f0,f1,v0,v1) => v0 + (v1-v0)*clamp((f-f0)/(f1-f0),0,1);
+const uitCubic = t => 1-Math.pow(1-t,3);
+
+/* ---- schermen ---- */
+const badge = (woord, flip) => `<span class="badge" data-badge="${flip}">${woord}<span class="dot">.</span></span>`;
+const pulse = (f,x,y) => `<i class="pulse" data-pulse="${f}" style="left:${x}%;top:${y}%"></i>`;
+
+const SCHERMEN = {
+  lockscreen: () => `<div class="ui donker">
+    <div class="klok">06:45</div>
+    <div class="glas">
+      <div style="display:flex;gap:2.4cqw;align-items:center;margin-bottom:1.6cqw">
+        <span class="merk">doen<span class="dot">.</span></span><span style="opacity:.55;font-size:3.4cqw">nu</span>
+      </div>
+      <div style="font-size:5cqw;font-weight:600">nieuwe lead</div>
+      <div style="opacity:.72;font-size:4.2cqw">${KLANT}</div>
+    </div></div>`,
+
+  dashboard: () => `<div class="ui"><div class="balk"><span class="merk">doen<span class="dot">.</span></span><span class="titel2">vandaag</span></div>
+    <div class="body2">
+      <div class="card"><div class="lbl">omzet deze maand</div>
+        <span class="groot" data-count="48320" data-cs="6" data-cd="16" data-cpre="EUR " data-cfrom="28992">EUR 48.320</span></div>
+      <div class="duo">
+        <div class="card"><div class="lbl">projecten</div><span class="groot" data-count="3" data-cs="10" data-cd="8">3</span></div>
+        <div class="card"><div class="lbl">vandaag gepland</div><span class="groot" data-count="5" data-cs="12" data-cd="8">5</span></div>
+      </div>
+      <div class="card"><div class="kop2">${PROJECT}</div><div class="lbl" style="margin-top:1cqw">${KLANT}</div></div>
+    </div></div>`,
+
+  leads: () => `<div class="ui"><div class="balk"><span class="merk">doen<span class="dot">.</span></span><span class="titel2">leads</span></div>
+    <div class="body2">
+      <div class="card" style="border-color:rgba(241,80,37,.34)">
+        <div class="kop2">${KLANT}</div><div class="lbl" style="margin-top:1cqw">drie lichtbakken, hoofdvestiging</div>
+        <div style="margin-top:2.8cqw">${badge("nieuw",-999)}</div></div>
+      <div class="card" style="opacity:.45"><div class="kop2">Garage Bakker</div><div class="lbl" style="margin-top:1cqw">gevelbelettering</div></div>
+      <div class="card" style="opacity:.28"><div class="kop2">De Vries Transport</div></div>
+      ${pulse(22,50,26)}
+    </div></div>`,
+
+  klantkaart: () => `<div class="ui"><div class="balk"><span class="merk">doen<span class="dot">.</span></span><span class="titel2">klantkaart</span></div>
+    <div class="body2"><div class="card">
+      <div class="kop2" style="margin-bottom:2.4cqw">${KLANT}</div>
+      ${[["KvK","37109482",14],["adres","Nijverheidsweg 12",19],["plaats","Hoorn",24],["contact","R. Kuiper",29],["e-mail","r.kuiper@bbkuiper.nl",34]]
+        .map(([l,v,f])=>`<div class="rij" data-reveal="${f}"><span class="lbl">${l}</span><span class="val">${v}</span></div>`).join("")}
+    </div></div></div>`,
+
+  offerte: stap => {
+    const toonRegel = stap!=="offerte openen" && stap!=="regel toevoegen";
+    const toonPrijs = ["prijs telt op","totaal","versturen"].includes(stap);
+    const toonTotaal = ["totaal","versturen"].includes(stap);
+    return `<div class="ui"><div class="balk"><span class="merk">doen<span class="dot">.</span></span><span class="titel2">offerte</span></div>
+    <div class="body2">
+      <div class="card"><div class="lbl">klant</div><div class="kop2">${KLANT}</div></div>
+      <div class="card" style="flex:1">
+        ${toonRegel ? `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:2cqw">
+            <div><div class="val">${REGEL}</div><div class="lbl" style="margin-top:.6cqw">${STUKS} stuks</div></div>
+            ${toonPrijs ? `<span class="mid" data-count="${STUKS*STUKPRIJS}" data-cs="2" data-cd="12" data-cpre="EUR " data-cdec="2">EUR ${euro(STUKS*STUKPRIJS)}</span>`
+                        : `<span class="mid" style="color:#8A8F90">EUR ...</span>`}
+          </div>`
+        : `<div class="lbl" style="font-size:4.6cqw;display:flex;align-items:center;gap:2cqw">
+             <span style="font-size:7cqw;color:var(--flame)">+</span> regel toevoegen</div>`}
+        ${toonTotaal ? `<div style="margin-top:4.4cqw;padding-top:3.4cqw;border-top:1px solid rgba(26,83,92,.12);display:flex;justify-content:space-between;align-items:baseline">
+            <span class="kop2" style="font-size:4.6cqw">totaal excl. btw</span><span class="mid">EUR ${euro(TOTAAL)}</span></div>` : ``}
+      </div>
+      ${stap==="versturen" ? `<div class="knopui">versturen</div>` : ``}
+      ${stap==="regel toevoegen" ? pulse(6,32,42) : ``}
+      ${stap==="versturen" ? pulse(8,50,88) : ``}
+    </div></div>`;
+  },
+
+  offertestatus: stap => `<div class="ui"><div class="balk"><span class="merk">doen<span class="dot">.</span></span><span class="titel2">offerte</span></div>
+    <div class="body2"><div class="card">
+      <div class="kop2">${PROJECT}</div><div class="lbl" style="margin-top:1cqw">${KLANT}</div>
+      <div class="mid" style="margin-top:3cqw;display:block">EUR ${euro(TOTAAL)}</div>
+      <div style="margin-top:4cqw">${stap==="concept" ? badge("concept",99999) : badge(stap==="getekend"?"getekend":"verstuurd",4)}</div>
+    </div></div></div>`,
+
+  werkbon: stap => {
+    const toonFoto = ["foto landt","uren loggen","gelogd"].includes(stap);
+    const toonUren = ["uren loggen","gelogd"].includes(stap);
+    return `<div class="ui"><div class="balk"><span class="merk">doen<span class="dot">.</span></span><span class="titel2">werkbon</span></div>
+    <div class="body2">
+      <div class="card"><div class="kop2">${PROJECT}</div></div>
+      <div class="card">${toonFoto ? `<div class="foto">foto gefreesde letter</div>`
+        : `<div class="lbl" style="font-size:4.6cqw;text-align:center;padding:8cqw 0">foto toevoegen</div>`}</div>
+      <div class="card"><div style="display:flex;justify-content:space-between;align-items:center">
+        <span class="lbl" style="font-size:4.4cqw">uren</span>
+        ${toonUren ? `<span class="mid" data-count="3.5" data-cs="2" data-cd="14" data-cdec="1" data-csuf=" u">3,5 u</span>`
+                   : `<span class="mid" style="color:#8A8F90">0,0 u</span>`}</div></div>
+      ${stap==="gelogd" ? `<div>${badge("gelogd",4)}</div>` : ``}
+      ${stap==="camera openen" ? pulse(5,50,45) : ``}
+      ${stap==="gelogd" ? pulse(2,50,74) : ``}
+    </div></div>`;
+  },
+
+  planning: stap => {
+    const dagen = ["ma","di","wo","do","vr"];
+    const sleept = stap==="slepen", geland = ["landt","conflict dooft"].includes(stap), dooft = stap==="conflict dooft";
+    return `<div class="ui"><div class="balk"><span class="merk">doen<span class="dot">.</span></span><span class="titel2">planning</span></div>
+    <div class="body2" style="position:relative">
+      <div class="week">${dagen.map(d=>`<div class="dagkolom"><div class="dagkop">${d}</div><div class="dagvlak"></div></div>`).join("")}</div>
+      <div class="plankaart" data-drag="${sleept?1:0}" data-geland="${geland?1:0}" style="left:5cqw;top:11cqw">
+        <div style="font-size:2.6cqw;font-weight:600">Montage Kuiper</div>
+        <div style="color:#8A8F90;font-size:2.2cqw;margin-top:.4cqw">2 monteurs</div>
+        <div class="conflict" data-conflict="${dooft?1:0}"><span class="conflictdot"></span>conflict</div>
+      </div>
+      ${sleept ? pulse(2,30,30) : ``}
+    </div></div>`;
+  },
+
+  portaal: stap => `<div class="ui" style="background:#F8F7F5"><div class="balk"><span class="merk">doen<span class="dot">.</span></span><span class="titel2">klantportaal</span></div>
+    <div class="body2" style="position:relative">
+      <div class="card" style="max-width:62cqw">
+        <div class="lbl" style="font-size:2.6cqw">offerte van Signbedrijf</div>
+        <div class="kop2" style="font-size:4cqw;margin-top:.8cqw">${PROJECT}</div>
+        <div class="mid" style="font-size:4.6cqw;margin-top:2cqw;display:block">EUR ${euro(TOTAAL)}</div>
+        <div style="margin-top:3cqw;display:flex;gap:1.6cqw;align-items:center">
+          <div style="border-radius:1.2cqw;padding:1.8cqw 4cqw;font-size:2.6cqw;font-weight:600;${stap==="akkoord"?"background:var(--flame);color:#F8F7F5":"background:rgba(26,83,92,.10);color:#1A1A18"}">akkoord</div>
+          <div style="color:#8A8F90;font-size:2.6cqw">vraag stellen</div>
+        </div>
+      </div>
+      ${stap==="akkoord" ? pulse(8,17,63) : ``}
+    </div></div>`,
+
+  factuur: stap => {
+    const rolt = stap==="rolt uit project", telt = stap==="bedrag telt op";
+    const regels = [[REGEL, STUKS*STUKPRIJS],["Montage op locatie", MONTAGE]];
+    return `<div class="ui"><div class="balk"><span class="merk">doen<span class="dot">.</span></span><span class="titel2">factuur</span></div>
+    <div class="body2"><div class="card" style="max-width:66cqw">
+      <div class="lbl" style="font-size:2.6cqw">uit project</div>
+      <div class="kop2" style="font-size:3.8cqw;margin-top:.6cqw">${PROJECT}</div>
+      <div style="margin-top:3cqw">${regels.map(([n,b],i)=>
+        `<div class="rij" ${rolt?`data-reveal="${6+i*8}"`:``}><span style="font-size:2.8cqw">${n}</span><span class="mid" style="font-size:2.8cqw">EUR ${euro(b)}</span></div>`).join("")}</div>
+      <div style="margin-top:2.6cqw;display:flex;justify-content:space-between;align-items:baseline">
+        <span class="kop2" style="font-size:3.4cqw">totaal</span>
+        ${telt ? `<span class="mid" style="font-size:4.6cqw" data-count="${TOTAAL}" data-cs="2" data-cd="14" data-cpre="EUR " data-cdec="2">EUR ${euro(TOTAAL)}</span>`
+               : `<span class="mid" style="font-size:4.6cqw">EUR ${euro(TOTAAL)}</span>`}
+      </div>
+      ${stap==="verstuurd" ? `<div style="margin-top:2.6cqw">${badge("verstuurd",6)}</div>` : ``}
+    </div></div></div>`;
+  },
+
+  push: () => `<div class="ui donker"><div class="glas">
+      <div class="merk" style="margin-bottom:2cqw">doen<span class="dot">.</span></div>
+      <div style="display:flex;align-items:center;gap:3cqw;flex-wrap:wrap">
+        ${badge("betaald",8)}<span class="mid" style="font-size:4.4cqw;opacity:.72">EUR ${euro(TOTAAL)}</span></div>
+      <div style="opacity:.55;font-size:3.6cqw;margin-top:1.6cqw">${KLANT}</div>
+    </div></div>`,
+};
+
+/* ---- opbouw ---- */
+const stage = document.getElementById("stage");
+const frameEl = document.getElementById("frame");
+const shotmerk = document.getElementById("shotmerk");
+const ondertitel = document.getElementById("ondertitel");
+const tcEl = document.getElementById("tc");
+const speelKnop = document.getElementById("speel");
+
+const scenesEl = document.getElementById("scenes");
+const perScene = {};
+DATA.shots.forEach(s => (perScene[s.scene] = perScene[s.scene] || []).push(s));
+Object.keys(perScene).sort((a,b)=>a-b).forEach(nr => {
+  const groep = perScene[nr];
+  const breedte = groep.reduce((a,s)=>a+(s.tot-s.van),0);
+  const wrap = document.createElement("div");
+  wrap.className = "scene";
+  wrap.style.flex = `${breedte} 0 0`;
+  const lab = document.createElement("div");
+  lab.className = "scenelabel";
+  lab.textContent = `${nr}`;
+  const blokken = document.createElement("div");
+  blokken.className = "blokken";
+  groep.forEach(s => {
+    const b = document.createElement("button");
+    b.className = `blok ${s.soort==="scherm"?"blok-scherm":s.soort==="eind"?"blok-eind":""}`;
+    b.style.flex = `${s.tot-s.van} 0 0`;
+    b.dataset.van = s.van;
+    b.title = `${s.id} ${(((s.tot-s.van)/FPS).toFixed(1)).replace(".",",")}s, ${s.bewijst}`;
+    b.setAttribute("aria-label", `${s.id}, ga naar ${(s.van/FPS).toFixed(1)} seconden`);
+    b.addEventListener("click", () => { zetFrame(s.van); teken(); });
+    blokken.appendChild(b);
+  });
+  wrap.append(lab, blokken);
+  scenesEl.appendChild(wrap);
+});
+const alleBlokken = [...scenesEl.querySelectorAll(".blok")];
+
+/* ---- staat ---- */
+let frame = 780;           // opent op de "verstuurd."-beat, het eerste betaalmoment van de film
+let speelt = false, vorigeShot = null, startTijd = 0, startFrame = 0;
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+const shotOp = f => DATA.shots.find(s => f >= s.van && f < s.tot) || DATA.shots[DATA.shots.length-1];
+const zetFrame = f => { frame = clamp(f,0,TOTAAL_FRAMES-1); startFrame = frame; startTijd = performance.now(); };
+
+function bouwShot(shot){
+  if (shot.soort === "beeld"){
+    const sec = ((shot.tot-shot.van)/FPS).toFixed(1).replace(".",",");
+    frameEl.innerHTML = `<div class="plaats">
+      <div class="plaatsmeta"><span class="id">${shot.id}</span><span class="dim">${sec}s</span><span class="dim">live-action</span></div>
+      <p class="plaatstitel">${shot.beeld}</p>
+      <div class="plaatsbewijs">bewijst: ${shot.bewijst}</div></div>`;
+  } else if (shot.soort === "eind"){
+    frameEl.innerHTML = `<div class="eind"><span class="eindmerk">doen<span class="dot">.</span></span></div>`;
+  } else {
+    const soort = TELEFOON.includes(shot.scherm) ? "telefoon" : "bureau";
+    frameEl.innerHTML = `<div class="scherm"><div class="toestel ${soort}">${SCHERMEN[shot.scherm](shot.stap)}</div></div>`;
+  }
+}
+
+function animeer(f){
+  frameEl.querySelectorAll("[data-count]").forEach(el => {
+    const doel = +el.dataset.count, s = +el.dataset.cs||0, d = +el.dataset.cd||12, dec = +el.dataset.cdec||0;
+    const van = el.dataset.cfrom !== undefined ? +el.dataset.cfrom : (doel > 1000 ? doel*0.6 : 0);
+    const t = clamp((f-s)/d, 0, 1);
+    el.textContent = (el.dataset.cpre||"") + getal(van + (doel-van)*uitCubic(t), dec) + (el.dataset.csuf||"");
+  });
+  frameEl.querySelectorAll("[data-reveal]").forEach(el => {
+    el.style.opacity = lerp(f, +el.dataset.reveal, +el.dataset.reveal+5, 0, 1);
+  });
+  frameEl.querySelectorAll("[data-badge]").forEach(el => {
+    const flip = +el.dataset.badge, om = f >= flip;
+    el.classList.toggle("on", om);
+    el.querySelector(".dot").style.opacity = (om && f >= flip+2) ? 1 : 0;
+    const t = clamp((f-flip)/10, 0, 1);
+    el.style.transform = `scale(${om ? (t<.5 ? 1+t*.12 : 1.06-(t-.5)*.12) : 1})`;
+  });
+  frameEl.querySelectorAll("[data-pulse]").forEach(el => {
+    const s = +el.dataset.pulse, dt = f - s;
+    if (dt < 0 || dt > 8){ el.style.opacity = 0; return; }
+    const maat = lerp(dt,0,8,0,44);
+    el.style.width = el.style.height = maat+"px";
+    el.style.opacity = lerp(dt,0,8,.4,0);
+  });
+  const kaart = frameEl.querySelector("[data-drag]");
+  if (kaart){
+    const sleept = kaart.dataset.drag === "1", geland = kaart.dataset.geland === "1";
+    const x = sleept ? lerp(f,0,30,0,17.4) : geland ? 17.4 : 0;
+    kaart.style.transform = `translateX(${x}cqw)`;
+    const c = kaart.querySelector("[data-conflict]");
+    if (c) c.style.opacity = c.dataset.conflict === "1" ? lerp(f,6,18,1,0) : 1;
+    const rand = c && c.dataset.conflict === "1" ? lerp(f,6,18,.6,0) : .6;
+    kaart.style.borderColor = `rgba(241,80,37,${rand})`;
+  }
+}
+
+function teken(){
+  const shot = shotOp(frame);
+  if (shot !== vorigeShot){
+    bouwShot(shot);
+    vorigeShot = shot;
+    shotmerk.textContent = shot.id;
+    document.getElementById("i-shot").textContent = shot.id;
+    document.getElementById("i-duur").textContent = ((shot.tot-shot.van)/FPS).toFixed(1).replace(".",",")+"s";
+    document.getElementById("i-beeld").textContent = shot.soort === "scherm" ? shot.scherm + (shot.stap ? ", "+shot.stap : "") : shot.soort === "eind" ? "end card" : "live-action";
+    document.getElementById("i-bewijst").textContent = shot.bewijst;
+    alleBlokken.forEach(b => b.classList.toggle("nu", +b.dataset.van === shot.van));
+  }
+  const lokaal = frame - shot.van;
+  animeer(lokaal);
+
+  // lichte handheld: twee sinussen die binnen een shot niet hoorbaar herhalen
+  if (!reduce && shot.soort !== "eind"){
+    const x = Math.sin(frame/37)*.28 + Math.sin(frame/13)*.11;
+    const y = Math.cos(frame/43)*.22 + Math.cos(frame/17)*.08;
+    frameEl.style.transform = `translate(${x}%, ${y}%) rotate(${Math.sin(frame/59)*.12}deg)`;
+  } else frameEl.style.transform = "none";
+
+  const vo = [...DATA.vo].reverse().find(r => frame >= r.frame && frame < r.frame + 66);
+  if (vo){ ondertitel.hidden = false; ondertitel.textContent = vo.tekst; ondertitel.style.opacity = lerp(frame-vo.frame,0,6,0,1) * lerp(frame-vo.frame,58,66,1,0); }
+  else ondertitel.hidden = true;
+
+  const sec = frame/FPS;
+  tcEl.textContent = `${String(Math.floor(sec/60)).padStart(2,"0")}:${String(Math.floor(sec%60)).padStart(2,"0")},${String(Math.round((sec%1)*100)).padStart(2,"0")}`;
+}
+
+function lus(nu){
+  if (!speelt) return;
+  const f = startFrame + Math.round((nu - startTijd)/1000*FPS);
+  if (f >= TOTAAL_FRAMES){ zetFrame(0); }
+  else frame = f;
+  teken();
+  requestAnimationFrame(lus);
+}
+
+speelKnop.addEventListener("click", () => {
+  speelt = !speelt;
+  speelKnop.textContent = speelt ? "pauze" : "afspelen";
+  if (speelt){ startFrame = frame >= TOTAAL_FRAMES-1 ? 0 : frame; startTijd = performance.now(); requestAnimationFrame(lus); }
+});
+document.addEventListener("keydown", e => {
+  if (e.code === "Space"){ e.preventDefault(); speelKnop.click(); }
+  if (e.code === "ArrowRight"){ zetFrame(frame + (e.shiftKey?24:1)); teken(); }
+  if (e.code === "ArrowLeft"){ zetFrame(frame - (e.shiftKey?24:1)); teken(); }
+});
+
+teken();
+</script>
