@@ -32,6 +32,7 @@ import {
   CheckCircle2,
   Download,
   Trash2,
+  Pencil,
 } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -238,6 +239,12 @@ export function QuotesPipeline() {
   const [showClosed, setShowClosed] = useState(false)
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  // Hernoemen vanuit de lijst; de naam is een label, het nummer blijft leidend.
+  const [renamingId, setRenamingId] = useState<string | null>(null)
+  const [renameInput, setRenameInput] = useState('')
+  // Het rij-menu geeft bij sluiten de focus terug aan zijn knop; dat zou het
+  // net geopende naamveld direct weer blurren. Deze vlag houdt dat tegen.
+  const renameStartedRef = useRef(false)
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false)
   const deleteTimersRef = useRef<Map<string, number>>(new Map())
   const deleteBufferRef = useRef<Map<string, Offerte>>(new Map())
@@ -706,6 +713,21 @@ export function QuotesPipeline() {
     if (listSortColumn === column) setListSortDir(d => d === 'asc' ? 'desc' : 'asc')
     else { setListSortColumn(column); setListSortDir('asc') }
   }, [listSortColumn])
+
+  const handleRename = useCallback(async (offerte: Offerte) => {
+    const titel = renameInput.trim()
+    setRenamingId(null)
+    if (!titel || titel === (offerte.titel || '')) return
+    await runOptimistic({
+      snapshot: offertes,
+      apply: (prev) => prev.map(o => o.id === offerte.id ? { ...o, titel } : o),
+      commit: async () => {
+        const updated = await updateOfferte(offerte.id, { titel })
+        return (prev: Offerte[]) => prev.map(o => o.id === offerte.id ? { ...o, ...updated } : o)
+      },
+      errorMessage: 'Kon naam niet wijzigen',
+    })
+  }, [renameInput, offertes, runOptimistic])
 
   const handleStatusChange = useCallback(async (offerteId: string, newStatus: string) => {
     if (newStatus === 'verzonden') {
@@ -1511,6 +1533,24 @@ export function QuotesPipeline() {
                                 <td className="py-3.5 pr-4">
                                   <div className="min-w-0">
                                     <div className="flex items-baseline gap-2.5">
+                                      {renamingId === offerte.id ? (
+                                        <input
+                                          type="text"
+                                          autoFocus
+                                          value={renameInput}
+                                          onClick={e => e.stopPropagation()}
+                                          onChange={e => setRenameInput(e.target.value)}
+                                          onKeyDown={e => {
+                                            e.stopPropagation()
+                                            if (e.key === 'Enter') { e.preventDefault(); void handleRename(offerte) }
+                                            else if (e.key === 'Escape') { setRenamingId(null) }
+                                          }}
+                                          onBlur={() => void handleRename(offerte)}
+                                          placeholder="Naam van de offerte"
+                                          aria-label={`Naam van offerte ${offerte.nummer}`}
+                                          className="h-7 w-full max-w-[280px] px-1.5 text-[15px] font-semibold text-foreground border border-flame rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-flame/30"
+                                        />
+                                      ) : (
                                       <Link
                                         to={`/offertes/${offerte.id}/bewerken`}
                                         onClick={e => e.stopPropagation()}
@@ -1518,6 +1558,7 @@ export function QuotesPipeline() {
                                       >
                                         {offerte.titel || offerte.nummer}
                                       </Link>
+                                      )}
                                       {offerte.nummer && (
                                         <span className="text-[10px] text-muted-foreground/80 font-mono flex-shrink-0 tabular-nums bg-background px-1.5 py-0.5 rounded">{offerte.nummer}</span>
                                       )}
@@ -1632,9 +1673,16 @@ export function QuotesPipeline() {
                                           <MoreHorizontal className="w-3.5 h-3.5 text-muted-foreground" />
                                         </button>
                                       </DropdownMenuTrigger>
-                                      <DropdownMenuContent align="end" className="w-48">
+                                      <DropdownMenuContent
+                                        align="end"
+                                        className="w-48"
+                                        onCloseAutoFocus={e => { if (renameStartedRef.current) { e.preventDefault(); renameStartedRef.current = false } }}
+                                      >
                                         <DropdownMenuItem onClick={e => { e.stopPropagation(); navigateWithTab({ path: `/offertes/${offerte.id}/bewerken`, label: offerte.nummer || offerte.titel || 'Offerte', id: `/offertes/${offerte.id}` }) }}>
                                           Bewerken
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={e => { e.stopPropagation(); renameStartedRef.current = true; setRenameInput(offerte.titel || ''); setRenamingId(offerte.id) }}>
+                                          <Pencil className="w-3.5 h-3.5 mr-2" /> Hernoemen
                                         </DropdownMenuItem>
                                         <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(`/offertes/${offerte.id}/preview`) }}>
                                           <Eye className="w-3.5 h-3.5 mr-2" /> Preview

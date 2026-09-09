@@ -617,6 +617,21 @@ export function ProjectDetail() {
     }
   }
 
+  // Hernoemen van een offerte vanuit de cockpit. De naam is puur een label;
+  // het offertenummer blijft leidend, dus dit mag in elke status.
+  const handleUpdateOfferteTitel = async (offerte: Offerte, titel: string) => {
+    if (!id) return
+    try {
+      await updateOfferte(offerte.id, { titel })
+      setProjectOffertes((prev) => prev.map((o) => (o.id === offerte.id ? { ...o, titel } : o)))
+      toast.success('Naam bijgewerkt')
+    } catch (err) {
+      logger.error('Kon offertenaam niet bijwerken:', err)
+      toast.error('Kon naam niet bijwerken')
+      throw err
+    }
+  }
+
   // ── Verstuur naar klant dialog ──
   const [verstuurOpen, setVerstuurOpen] = useState(false)
   const [selectedDocIds, setSelectedDocIds] = useState<string[]>([])
@@ -1970,6 +1985,7 @@ export function ProjectDetail() {
             onNewOfferte={openNieuweOfferte}
             onQuickOfferte={handleQuickOfferte}
             onUpdateOffertePrice={handleUpdateOffertePrice}
+            onUpdateOfferteTitel={handleUpdateOfferteTitel}
             onTaakStatusChange={async (taakId, newStatus) => {
               try {
                 await updateTaak(taakId, { status: newStatus })
@@ -1981,6 +1997,16 @@ export function ProjectDetail() {
               } catch (err) {
                 logger.error('Kon taak status niet wijzigen:', err)
                 toast.error('Kon status niet wijzigen')
+              }
+            }}
+            onTaakHernoem={async (taak, titel) => {
+              try {
+                await updateTaak(taak.id, { titel })
+                setProjectTaken((prev) => prev.map((t) => (t.id === taak.id ? { ...t, titel } : t)))
+              } catch (err) {
+                logger.error('Kon taaknaam niet bijwerken:', err)
+                toast.error('Kon naam niet bijwerken')
+                throw err
               }
             }}
             onTaakDelete={async (taak) => {

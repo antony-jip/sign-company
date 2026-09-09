@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ListChecks, ListPlus, Receipt, Plus, Trash2, Wrench, CalendarDays, MapPin, ClipboardCheck } from 'lucide-react'
+import { ListChecks, ListPlus, Receipt, Plus, Trash2, Wrench, CalendarDays, MapPin, ClipboardCheck, Pencil } from 'lucide-react'
 import { formatAmount, getInitials } from '@/lib/utils'
 import { exBtw } from '@/utils/btwWeergave'
 import { getStatusPillClass, getStatusPillTone, getStatusLabel, type PillTone } from '@/utils/statusColors'
@@ -60,6 +60,8 @@ interface TakenOfferteGridProps {
   onTaakStatusChange: (taakId: string, newStatus: Taak['status']) => Promise<void>
   onTaakEdit?: (taak: Taak) => void
   onTaakDelete?: (taak: Taak) => Promise<void> | void
+  /** Hernoemt een taak vanuit de lijst. */
+  onTaakHernoem?: (taak: Taak, titel: string) => Promise<void> | void
   onOpdrachtbevestiging?: (offerte: Offerte) => void
   onOfferteDelete?: (offerte: Offerte) => Promise<void> | void
   /** Factureert precies deze offerte, of opent de factuur die er al is. */
@@ -68,6 +70,8 @@ interface TakenOfferteGridProps {
   onTeFacturerenWissel?: (offerte: Offerte) => void
   onQuickOfferte?: (bedrag: number) => Promise<void>
   onUpdateOffertePrice?: (offerte: Offerte, bedragExclBtw: number) => Promise<void>
+  /** Hernoemt deze offerte; de naam is alleen een label, het nummer blijft leidend. */
+  onUpdateOfferteTitel?: (offerte: Offerte, titel: string) => Promise<void>
 }
 
 export function TakenOfferteGrid({
@@ -85,11 +89,13 @@ export function TakenOfferteGrid({
   onTaakStatusChange,
   onTaakEdit,
   onTaakDelete,
+  onTaakHernoem,
   onOfferteDelete,
   onFactureerOfferte,
   onTeFacturerenWissel,
   onQuickOfferte,
   onUpdateOffertePrice,
+  onUpdateOfferteTitel,
 }: TakenOfferteGridProps) {
   const navigate = useNavigate()
   const [quickBedrag, setQuickBedrag] = useState('')
@@ -97,6 +103,9 @@ export function TakenOfferteGrid({
   const [editingPriceId, setEditingPriceId] = useState<string | null>(null)
   const [priceInput, setPriceInput] = useState('')
   const [savingPrice, setSavingPrice] = useState(false)
+  const [editingTitelId, setEditingTitelId] = useState<string | null>(null)
+  const [titelInput, setTitelInput] = useState('')
+  const [savingTitel, setSavingTitel] = useState(false)
   const [takenUitOfferteBezig, setTakenUitOfferteBezig] = useState(false)
 
   async function handleTakenUitOfferte() {
@@ -143,6 +152,24 @@ export function TakenOfferteGrid({
       setEditingPriceId(null)
     } finally {
       setSavingPrice(false)
+    }
+  }
+
+  function startEditTitel(offerte: Offerte) {
+    setTitelInput(offerte.titel || '')
+    setEditingTitelId(offerte.id)
+  }
+
+  async function submitEditTitel(offerte: Offerte) {
+    if (!onUpdateOfferteTitel) { setEditingTitelId(null); return }
+    const titel = titelInput.trim()
+    if (!titel || titel === (offerte.titel || '')) { setEditingTitelId(null); return }
+    setSavingTitel(true)
+    try {
+      await onUpdateOfferteTitel(offerte, titel)
+      setEditingTitelId(null)
+    } finally {
+      setSavingTitel(false)
     }
   }
 
@@ -279,6 +306,7 @@ export function TakenOfferteGrid({
               onStatusChange={onTaakStatusChange}
               onTaskClick={onTaakEdit}
               onTaakDelete={onTaakDelete}
+              onTaakHernoem={onTaakHernoem}
             />
           </div>
         ) : (
@@ -340,9 +368,42 @@ export function TakenOfferteGrid({
                   />
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
-                      <p className="text-[14px] font-semibold text-foreground truncate group-hover:text-petrol transition-colors">
-                        {offerte.titel || 'Offerte zonder titel'}
-                      </p>
+                      {onUpdateOfferteTitel && editingTitelId === offerte.id ? (
+                        <input
+                          type="text"
+                          autoFocus
+                          value={titelInput}
+                          disabled={savingTitel}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={(e) => setTitelInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            e.stopPropagation()
+                            if (e.key === 'Enter') { e.preventDefault(); void submitEditTitel(offerte) }
+                            else if (e.key === 'Escape') { setEditingTitelId(null) }
+                          }}
+                          onBlur={() => void submitEditTitel(offerte)}
+                          placeholder="Naam van de offerte"
+                          aria-label={`Naam van offerte ${offerte.nummer}`}
+                          className="w-full h-7 px-1.5 text-[14px] font-semibold text-foreground border border-flame rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-flame/30 disabled:opacity-50"
+                        />
+                      ) : (
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <p className="text-[14px] font-semibold text-foreground truncate group-hover:text-petrol transition-colors">
+                            {offerte.titel || 'Offerte zonder titel'}
+                          </p>
+                          {onUpdateOfferteTitel && (
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); startEditTitel(offerte) }}
+                              title={`Offerte ${offerte.nummer} hernoemen`}
+                              aria-label={`Offerte ${offerte.nummer} hernoemen`}
+                              className="h-5 w-5 rounded flex items-center justify-center flex-shrink-0 opacity-0 group-hover:opacity-100 focus:opacity-100 text-muted-foreground/70 hover:bg-[rgba(210,70,32,0.1)] hover:text-flame transition-all"
+                            >
+                              <Pencil className="h-3 w-3" strokeWidth={1.75} />
+                            </button>
+                          )}
+                        </div>
+                      )}
                       <div className="flex items-center gap-2 mt-1">
                         <span className="font-mono text-[10px] text-muted-foreground bg-[rgba(26,83,92,0.05)] px-1.5 py-0.5 rounded">{offerte.nummer}</span>
                         <span className={getStatusPillClass(offerte.status)} style={{ fontSize: 11, padding: '2px 8px' }}>

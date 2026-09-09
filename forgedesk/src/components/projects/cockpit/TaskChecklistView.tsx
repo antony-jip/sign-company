@@ -1,4 +1,5 @@
-import { Check, Trash2 } from 'lucide-react'
+import { useState } from 'react'
+import { Check, Trash2, Pencil } from 'lucide-react'
 import { cn, getInitials } from '@/lib/utils'
 import type { Taak, Medewerker } from '@/types'
 
@@ -8,6 +9,8 @@ interface TaskChecklistViewProps {
   onStatusChange: (taakId: string, status: Taak['status']) => void
   onTaskClick?: (taak: Taak) => void
   onTaakDelete?: (taak: Taak) => Promise<void> | void
+  /** Hernoemt de taak ter plekke; laat het volledige bewerken via onTaskClick intact. */
+  onTaakHernoem?: (taak: Taak, titel: string) => Promise<void> | void
 }
 
 const statusStyle: Record<string, { label: string; color: string }> = {
@@ -39,7 +42,24 @@ function formatDeadline(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit' })
 }
 
-export function TaskChecklistView({ taken, medewerkers, onStatusChange, onTaskClick, onTaakDelete }: TaskChecklistViewProps) {
+export function TaskChecklistView({ taken, medewerkers, onStatusChange, onTaskClick, onTaakDelete, onTaakHernoem }: TaskChecklistViewProps) {
+  const [hernoemId, setHernoemId] = useState<string | null>(null)
+  const [hernoemInput, setHernoemInput] = useState('')
+  const [hernoemBezig, setHernoemBezig] = useState(false)
+
+  async function submitHernoem(taak: Taak) {
+    if (!onTaakHernoem) { setHernoemId(null); return }
+    const titel = hernoemInput.trim()
+    if (!titel || titel === taak.titel) { setHernoemId(null); return }
+    setHernoemBezig(true)
+    try {
+      await onTaakHernoem(taak, titel)
+      setHernoemId(null)
+    } finally {
+      setHernoemBezig(false)
+    }
+  }
+
   const sorted = [...taken].sort((a, b) => {
     if (a.status === 'klaar' && b.status !== 'klaar') return 1
     if (a.status !== 'klaar' && b.status === 'klaar') return -1
@@ -97,12 +117,46 @@ export function TaskChecklistView({ taken, medewerkers, onStatusChange, onTaskCl
                 {isDone && <Check className="h-3 w-3" strokeWidth={3} />}
               </button>
 
-              <span className={cn(
-                'flex-1 text-[13px] font-medium text-foreground truncate min-w-0',
-                isDone && 'line-through !text-muted-foreground'
-              )}>
-                {taak.titel}
-              </span>
+              {onTaakHernoem && hernoemId === taak.id ? (
+                <input
+                  type="text"
+                  autoFocus
+                  value={hernoemInput}
+                  disabled={hernoemBezig}
+                  onClick={(e) => e.stopPropagation()}
+                  onChange={(e) => setHernoemInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    e.stopPropagation()
+                    if (e.key === 'Enter') { e.preventDefault(); void submitHernoem(taak) }
+                    else if (e.key === 'Escape') { setHernoemId(null) }
+                  }}
+                  onBlur={() => void submitHernoem(taak)}
+                  placeholder="Naam van de taak"
+                  aria-label={`Naam van taak ${taak.titel}`}
+                  className="flex-1 min-w-0 h-7 px-1.5 text-[13px] font-medium text-foreground border border-flame rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-flame/30 disabled:opacity-50"
+                />
+              ) : (
+                <>
+                  <span className={cn(
+                    'flex-1 text-[13px] font-medium text-foreground truncate min-w-0',
+                    isDone && 'line-through !text-muted-foreground'
+                  )}>
+                    {taak.titel}
+                  </span>
+
+                  {onTaakHernoem && (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setHernoemInput(taak.titel); setHernoemId(taak.id) }}
+                      title={`Taak "${taak.titel}" hernoemen`}
+                      aria-label={`Taak "${taak.titel}" hernoemen`}
+                      className="opacity-0 group-hover:opacity-100 focus:opacity-100 h-5 w-5 rounded flex items-center justify-center text-muted-foreground/70 hover:bg-[rgba(210,70,32,0.1)] hover:text-flame transition-all flex-shrink-0"
+                    >
+                      <Pencil className="h-3 w-3" strokeWidth={1.75} />
+                    </button>
+                  )}
+                </>
+              )}
 
               {taak.urenveld && taak.urenveld !== taak.titel && (
                 <span

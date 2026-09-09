@@ -2207,6 +2207,8 @@ export function QuoteCreation() {
       <QuoteHeader
         isEditMode={isEditMode}
         offerteNummer={offerteNummer}
+        offerteTitel={offerteTitel}
+        setOfferteTitel={setOfferteTitel}
         geldigTot={geldigTot}
         autoSaveStatus={autoSaveStatus}
         selectedKlant={selectedKlant}

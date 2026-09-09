@@ -24,6 +24,7 @@ import {
   XCircle,
   Zap,
   History,
+  Pencil,
 } from 'lucide-react'
 import type { Klant } from '@/types'
 import { cn } from '@/lib/utils'
@@ -33,6 +34,9 @@ import { KlantStatusWarning } from '@/components/shared/KlantStatusWarning'
 export interface QuoteHeaderProps {
   isEditMode: boolean
   offerteNummer: string
+  /** Naam van de offerte; hier inline te hernoemen, ook nadat de offerte bestaat. */
+  offerteTitel: string
+  setOfferteTitel: (v: string) => void
   geldigTot: string
   autoSaveStatus: 'idle' | 'saving' | 'saved'
   selectedKlant: Klant | undefined
@@ -91,6 +95,8 @@ export interface QuoteHeaderProps {
 export function QuoteHeader({
   isEditMode,
   offerteNummer,
+  offerteTitel,
+  setOfferteTitel,
   geldigTot,
   autoSaveStatus,
   selectedKlant,
@@ -130,6 +136,7 @@ export function QuoteHeader({
   klanten,
 }: QuoteHeaderProps) {
   const location = useLocation()
+  const [titelEditing, setTitelEditing] = React.useState(false)
   const navigate = useNavigate()
   const from = (location.state as { from?: string })?.from
 
@@ -252,8 +259,41 @@ export function QuoteHeader({
             )}
           </div>
 
-          {/* Subline: klant + autosave-status */}
+          {/* Subline: naam + klant + autosave-status */}
           <div className="mt-2 text-[13px] flex items-center gap-2 flex-wrap">
+            {/* Naam van de offerte · hier te hernoemen, ook na het aanmaken */}
+            {titelEditing ? (
+              <input
+                type="text"
+                autoFocus
+                value={offerteTitel}
+                onChange={(e) => setOfferteTitel(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') { e.preventDefault(); setTitelEditing(false) }
+                  else if (e.key === 'Escape') { setTitelEditing(false) }
+                }}
+                onBlur={() => setTitelEditing(false)}
+                placeholder="Naam van de offerte"
+                aria-label="Naam van de offerte"
+                className="h-7 min-w-[200px] max-w-full px-1.5 text-[13px] font-semibold text-foreground border border-flame rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-flame/30"
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => { hapticLight(); setTitelEditing(true) }}
+                title="Naam van de offerte aanpassen"
+                className="group inline-flex items-center gap-1.5 max-w-full rounded-md px-1 -mx-1 hover:bg-[rgba(210,70,32,0.08)] transition-colors"
+              >
+                <span className={cn(
+                  'truncate font-semibold',
+                  offerteTitel ? 'text-foreground/80' : 'text-muted-foreground font-normal',
+                )}>
+                  {offerteTitel || 'Naam toevoegen'}
+                </span>
+                <Pencil className="h-3 w-3 shrink-0 text-muted-foreground/70 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity" strokeWidth={1.75} />
+              </button>
+            )}
+            {selectedKlant && <span className="text-muted-foreground/70">·</span>}
             {selectedKlant ? (
               <span className="inline-flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#3A6B8C]" />
