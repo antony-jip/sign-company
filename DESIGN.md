@@ -299,11 +299,18 @@ de app (`forgedesk/`), de brochure in `docs/brochure/` en het logo in
 product, en zolang de app niet mee is verandert liegt een aangepaste mockup.
 Zodra forgedesk om is, moeten die vijf bestanden in dezelfde beweging mee.
 
-### Drie oranjes, niet twee
+### De uitrol
 
-Bij het narekenen bleek er al langer drift te zitten. Het logo in
-`public/logos/` staat op `#df5c36` en het petrol daarin op `#2b535c`, allebei
-net naast de tokens. Dat is niet nieuw en niet door deze ronde ontstaan, maar
-het betekent wel dat er nu drie oranjes in omloop zijn: `#D24620` op de site,
-`#F15025` in de app en de brochure, `#df5c36` in het logo. Op het scherm zie je
-het nauwelijks, naast elkaar op een drukwerkvel wel.
+Er waren even drie oranjes: `#D24620` op de site, `#F15025` in de app, en
+`#df5c36` in het logo, dat al voor deze ronde naast het token stond. Inmiddels
+staat alles op `#D24620`: de site, de app (`forgedesk/`, inclusief de
+HSL-tokens in `index.css` en de hoverstand die van `#D94520` naar `#BD3C1C`
+ging omdat hij anders lichter was dan flame zelf), de logo-SVG's, het favicon,
+de PWA-iconen en de Supabase-auth-mails.
+
+Nog niet mee, want dat vraagt een nieuwe export in plaats van een
+zoek-vervang: de brochure in `docs/brochure/`, het magazine in
+`docs/magazine/`, `docs/story/` en `forgedesk/video/`.
+
+Wat wél nog naast het token staat is het **petrol in de logo's**: `#2b535c`
+tegen `#1A535C` in de tokens. Dat is nooit aangeraakt en staat er nog steeds.
