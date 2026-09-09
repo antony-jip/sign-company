@@ -1,6 +1,6 @@
 import { interpolate, useCurrentFrame } from "remotion";
 import { fonts } from "../fonts";
-import { FLAME, GRIJS, INK, KAART, OFFWHITE, PAGINA, PETROL } from "./palet";
+import { FLAME, flameA, GRIJS, INK, KAART, OFFWHITE, PAGINA, PETROL } from "./palet";
 import { CursorPulse, StatusBadge, TelOp } from "./overlays";
 import type { Scherm } from "./tijdlijn";
 
@@ -261,7 +261,7 @@ const Planning: React.FC<Props> = ({ stap }) => {
             width: 290,
             backgroundColor: KAART,
             borderRadius: 14,
-            border: `2px solid ${dooft ? `rgba(241,80,37,${conflict * 0.6})` : "rgba(241,80,37,0.6)"}`,
+            border: `2px solid ${dooft ? flameA(conflict * 0.6) : flameA(0.6)}`,
             padding: 20,
             boxShadow: "0 18px 40px -18px rgba(26,83,92,0.4)",
           }}

@@ -1,6 +1,6 @@
 import { interpolate, useCurrentFrame } from "remotion";
 import { fonts } from "../fonts";
-import { FLAME, GRIJS, INK } from "./palet";
+import { FLAME, flameA, GRIJS, INK } from "./palet";
 
 // De drie overlays uit sectie 7 van het productieboek. Ze zitten hier bij
 // elkaar omdat ze samen de UI-behandeling van de hele film zijn: wat hier
@@ -83,8 +83,8 @@ export const StatusBadge: React.FC<{
   const om = f >= 0;
 
   const kleur = om ? FLAME : GRIJS;
-  const achter = om ? "rgba(241,80,37,0.10)" : "rgba(138,143,144,0.12)";
-  const rand = om ? "rgba(241,80,37,0.30)" : "rgba(138,143,144,0.28)";
+  const achter = om ? flameA(0.1) : "rgba(138,143,144,0.12)";
+  const rand = om ? flameA(0.3) : "rgba(138,143,144,0.28)";
 
   const schaal = interpolate(f, [0, 5, 10], [1, 1.06, 1], {
     extrapolateLeft: "clamp",

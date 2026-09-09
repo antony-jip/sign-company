@@ -29,7 +29,7 @@ aanvoelen alsof iemand meeloopt, niet alsof iets zweeft. Geen drone.
 
 ---
 
-## 2. Palet en de kleurconflict-waarschuwing
+## 2. Palet
 
 Het brief schrijft Flame `#F15025` en Petrol `#1A535C` voor. Dat wijkt af
 van wat er in de repo staat. Gemeten:
@@ -42,20 +42,24 @@ van wat er in de repo staat. Gemeten:
 | `video/src/brand.ts` | `#df5c36` | `#2b535c` |
 | voorkomens in de repo | `#D24620` 461x, `#F15025` 24x | `#1A535C` 493x, `#2b535c` 18x |
 
-**Dit moet voor de grade beslist worden.** Het probleem is concreet en
-zichtbaar: de end card in shot 11C zet het echte logo op Petrol. Als de
-grade naar `#F15025` trekt terwijl het logobestand `#D24620` is, staat er
-in het laatste shot van de film een oranje dot naast een andere oranje
-wordmark. Dat is precies het frame waar de kijker naar de kleur kijkt.
+**Beslist (Antony, september 2026): Flame is `#D24620`, de logowaarde.**
+Het probleem was concreet en zichtbaar: de end card in shot 11C zet het
+echte logo op Petrol. Met `#F15025` uit het brief stond er in het laatste
+shot een oranje dot naast een andere oranje wordmark, precies in het frame
+waar de kijker naar de kleur kijkt.
+
+**Petrol blijft `#1A535C`**, dus de brief- en app-waarde, niet de
+`#2b535c` uit het logo. Die twee schelen alleen 17 in het rode kanaal
+(26,83,92 tegen 43,83,92); dat leest niet op scherm, en `#1A535C` staat
+493 keer in de repo tegen 18 keer voor de logowaarde. Het verschil dat
+wel las zat in de flame, en dat is nu weg.
 
 Ook `video/src/brand.ts` klopt niet met zichzelf: de comment zegt
 "canoniek uit logo-SVG" bij `#df5c36`, maar de logo-SVG bevat `#D24620`.
 
-Dit script volgt het brief (`#F15025` / `#1A535C`) omdat dat expliciet
-opgedragen is. Aanbeveling is echter de logowaarden aan te houden
-(`#D24620` / `#2b535c`) en het brief bij te stellen, omdat het logo het
-enige is dat naast de kleur in beeld komt. Dit is een beslissing voor
-Antony, niet voor de colorist.
+Het brief schrijft `#F15025` voor; dat is met deze beslissing achterhaald
+en het brief moet daarop bijgesteld worden. De grade richt zich op
+`#D24620`.
 
 Overige palet-regels, ongewijzigd uit het brief:
 
@@ -703,10 +707,8 @@ ondernemer is 's avonds niet geschoren en 's ochtends niet ongeschoren.
 
 ## 14. Openstaande beslissingen
 
-1. **Flame-waarde.** `#F15025` uit het brief of `#D24620` uit het logo.
-   Blokkeert de grade en shot 11C. Zie sectie 2. Aanbeveling: `#D24620`.
-2. **Petrol-waarde.** `#1A535C` (brief en app) of `#2b535c` (logo).
-   Kleiner verschil, maar raakt hetzelfde end card.
+1. ~~**Flame-waarde.**~~ Beslist: `#D24620`, de logowaarde. Zie sectie 2.
+2. ~~**Petrol-waarde.**~~ Beslist: `#1A535C` blijft. Zie sectie 2.
 3. **Demo-account.** Werken 3C (klantkaart vult zichzelf) en 9C
    (factuur uit project) echt zo in de app, zonder tussenstappen. Te
    controleren voor de opnamedag.
