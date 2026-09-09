@@ -253,7 +253,7 @@ function Dashboard() {
           <span style={{ fontFamily: '"Instrument Serif", Georgia, serif', fontStyle: 'italic', fontWeight: 400 }}>
             maken
           </span>
-          , Antony<span style={{ color: '#F15025' }}>.</span>
+          , Antony<span style={{ color: '#D24620' }}>.</span>
         </p>
       </div>
 

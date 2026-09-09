@@ -6,7 +6,7 @@ import { Space_Grotesk } from 'next/font/google'
    dan pas je het hier aan en niet op twee plekken.
 
    Herkomst: forgedesk/tailwind.config.js + forgedesk/src/index.css
-   (--background #F8F7F5, --primary #F15025, petrol #1A535C). */
+   (--background #F8F7F5, --primary #D24620, petrol #1A535C). */
 
 // De app zet alle cijfers en codes in Space Grotesk (tabular-nums); binnen
 // een mockup overschrijft dit de site-brede Spline Sans Mono.
@@ -18,7 +18,7 @@ export const spaceGrotesk = Space_Grotesk({
 
 export const PETROL = '#1A535C'
 export const PETROL_DEEP = '#0F3A42'
-export const FLAME = '#F15025'
+export const FLAME = '#D24620'
 export const INK = '#1A1A1A'
 export const MUTED = '#6B6B66'
 export const LINE = 'rgba(26,83,92,0.08)'

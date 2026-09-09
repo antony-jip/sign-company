@@ -12,7 +12,7 @@ Referentie: Linear (precisie), Notion (witruimte), Stripe (data-elegantie).
 
 | Token | Hex | Gebruik |
 |-------|-----|---------|
-| Flame | `#F15025` | De punt, CTA's, urgente badges. Max 3-5 per scherm. |
+| Flame | `#D24620` | De punt, CTA's, urgente badges. Max 3-5 per scherm. |
 | Petrol | `#1A535C` | Sidebar bg, heading accenten, links, active states. |
 | Pagina bg | `#F8F7F5` | Warm off-white. Nooit koud wit. |
 | Card bg | `#FFFFFF` | Met shadow `rgba(0,0,0,0.03)`, geen border. |
@@ -22,7 +22,7 @@ Referentie: Linear (precisie), Notion (witruimte), Stripe (data-elegantie).
 NOOIT: `gray-50/100/200`, `bg-white`, `shadow-sm/md/lg`, `border-gray-*`.
 
 ### Module kleuren
-Projecten=`#1A535C`, Offertes=`#F15025`, Facturen=`#2D6B48`, Klanten=`#3A6B8C`, Planning=`#9A5A48`, Werkbonnen=`#C44830`, Taken/Team=`#5A5A55`, Email/Portaal=`#6A5A8A`.
+Projecten=`#1A535C`, Offertes=`#D24620`, Facturen=`#2D6B48`, Klanten=`#3A6B8C`, Planning=`#9A5A48`, Werkbonnen=`#C44830`, Taken/Team=`#5A5A55`, Email/Portaal=`#6A5A8A`.
 
 ## De Flame Punt
 
@@ -30,7 +30,7 @@ Projecten=`#1A535C`, Offertes=`#F15025`, Facturen=`#2D6B48`, Klanten=`#3A6B8C`, 
 `Gepland.` `Verstuurd.` `Betaald.` `Opgeleverd.` `Gedaan.`
 
 ```tsx
-<span>Gepland</span><span className="text-[#F15025]">.</span>
+<span>Gepland</span><span className="text-[#D24620]">.</span>
 ```
 
 Statussen als tekst + punt, NIET als gekleurde pill badges.

@@ -33,7 +33,7 @@
 
 | Token | Hex | Gebruik |
 |-------|-----|---------|
-| flame | #F15025 | Primaire accent. CTAs bij onomkeerbare acties, urgentie, "Doen" knoppen. Max 5-8 flame elementen per scherm |
+| flame | #D24620 | Primaire accent. CTAs bij onomkeerbare acties, urgentie, "Doen" knoppen. Max 5-8 flame elementen per scherm |
 | petrol | #1A535C | Secundaire accent. Daan AI, focus rings, save-knoppen, vertrouwen |
 | ink | #191919 | Primaire tekst |
 | bg | #FAFAF8 | Pagina achtergrond |
@@ -50,7 +50,7 @@ Elke module heeft drie tinten: vol (icoon), licht (card-bg, badge-bg), border.
 | Module | Vol | Licht | Border | Tekst |
 |--------|-----|-------|--------|-------|
 | Projecten | #1A535C | #E2F0F0 | #B8D8DA | #1A535C |
-| Offertes + Deals | #F15025 | #FDE8E2 | #F5C4B4 | #C03A18 |
+| Offertes + Deals | #D24620 | #FDE8E2 | #F5C4B4 | #C03A18 |
 | Facturen | #2D6B48 | #E4F0EA | #C0DBCC | #2D6B48 |
 | Klanten | #3A6B8C | #E5ECF6 | #C0D0EA | #2A5580 |
 | Planning + Montage | #9A5A48 | #F2E8E5 | #E0CFC8 | #7A4538 |
@@ -64,12 +64,12 @@ Elke module heeft drie tinten: vol (icoon), licht (card-bg, badge-bg), border.
 Het kleurenspectrum van flame naar petrol is de visuele ruggengraat van Doen. Het vertelt het verhaal van actie naar resultaat.
 
 ```
-Flame #F15025 → #D4453A → #9A4070 → #6A5A8A → #3A6B8C → #2D6B48 → #1A535C Petrol
+Flame #D24620 → #D4453A → #9A4070 → #6A5A8A → #3A6B8C → #2D6B48 → #1A535C Petrol
 ```
 
 CSS gradient:
 ```css
-background: linear-gradient(90deg, #F15025 0%, #D4453A 18%, #9A4070 38%, #6A5A8A 50%, #3A6B8C 65%, #2D6B48 80%, #1A535C 100%);
+background: linear-gradient(90deg, #D24620 0%, #D4453A 18%, #9A4070 38%, #6A5A8A 50%, #3A6B8C 65%, #2D6B48 80%, #1A535C 100%);
 ```
 
 Toepassingen van het spectrum:
@@ -101,7 +101,7 @@ Toepassingen van het spectrum:
 | border | #E6E4E0 | #3A3A36 |
 | ink | #191919 | #E8E6E0 |
 | text-sec | #5A5A55 | #A0A098 |
-| flame | #F15025 | #F15025 (ongewijzigd) |
+| flame | #D24620 | #D24620 (ongewijzigd) |
 | petrol | #1A535C | #2A7A86 (iets lichter) |
 
 Warm donker, niet koud zwart. Modulekleuren worden gedempt, niet feller.
@@ -163,7 +163,7 @@ Regels:
 ## 5. Componenten
 
 ### Buttons
-- **Flame** (onomkeerbare actie: versturen, "Doen"): bg #F15025, wit tekst, weight 600, radius 6px
+- **Flame** (onomkeerbare actie: versturen, "Doen"): bg #D24620, wit tekst, weight 600, radius 6px
 - **Petrol** (opslaan, bewaren): bg #1A535C, wit tekst
 - **Ghost** (annuleren, secundair): transparant, border, text-secondary
 - Geen "Doen" als label behalve op confirmatie-dialogen en Daan acties
@@ -172,7 +172,7 @@ Regels:
 - Border: 0.5px #E6E4E0
 - Achtergrond: #FAFAF8 (warm)
 - Focus: petrol ring — border-color #1A535C + box-shadow 0 0 0 2px rgba(26,83,92,0.12)
-- Error: flame ring — border-color #F15025 + box-shadow 0 0 0 2px rgba(241,80,37,0.1)
+- Error: flame ring — border-color #D24620 + box-shadow 0 0 0 2px rgba(241,80,37,0.1)
 - Labels: 11px, weight 500, boven het veld
 - Nummervelden (bedragen, telefoon, KVK): DM Mono font
 
@@ -415,7 +415,7 @@ De huidige app (FORGEdesk) werkt en is live. Elke migratiestap moet:
 1. Nieuwe fonts laden: Bricolage Grotesque, IBM Plex Sans, DM Mono (vervang Plus Jakarta Sans)
 2. CSS variables updaten in index.css / tailwind.config:
    - Achtergrond: `#F4F3F0` → `#FAFAF8`
-   - Accent: amber/oranje → flame `#F15025`
+   - Accent: amber/oranje → flame `#D24620`
    - Secundair accent: → petrol `#1A535C`
    - Alle pastel tokens → nieuwe modulekleuren
 3. Tailwind config: nieuwe kleuren toevoegen (flame, petrol, module kleuren)

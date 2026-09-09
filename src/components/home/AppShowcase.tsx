@@ -35,10 +35,10 @@ const navGroups: NavGroup[] = [
     section: 'Werk',
     items: [
       { icon: Hammer, label: 'Projecten', activeOn: ['projecten', 'detail'], color: '#1A535C' },
-      { icon: FileText, label: 'Offertes', activeOn: ['offerte'], color: '#F15025' },
+      { icon: FileText, label: 'Offertes', activeOn: ['offerte'], color: '#D24620' },
       { icon: Building2, label: 'Klanten', activeOn: ['klanten'], color: '#3A6B8C' },
       { icon: Wrench, label: 'Werkbonnen', activeOn: [], color: '#C44830' },
-      { icon: Ruler, label: 'Maatjes', activeOn: [], color: '#F15025' },
+      { icon: Ruler, label: 'Maatjes', activeOn: [], color: '#D24620' },
       { icon: Wand2, label: 'Studio', activeOn: [], color: '#9A5A48' },
     ],
   },
@@ -398,7 +398,7 @@ function FeatureList({ view }: { view: View }) {
               >
                 <span
                   className="w-4 h-4 rounded-[4px] inline-flex items-center justify-center flex-shrink-0 mt-0.5"
-                  style={{ backgroundColor: 'rgba(241,80,37,0.10)' }}
+                  style={{ backgroundColor: 'rgba(210, 70, 32,0.10)' }}
                 >
                   <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: FLAME }} />
                 </span>
@@ -448,7 +448,7 @@ function SideNavItem({ item, view, setView }: { item: NavItem; view: View; setVi
       {active && (
         <span
           className="absolute left-0 top-1/2 -translate-y-1/2"
-          style={{ width: 2.5, height: 18, borderRadius: '0 3px 3px 0', background: FLAME, boxShadow: '0 0 6px rgba(241,80,37,0.25)' }}
+          style={{ width: 2.5, height: 18, borderRadius: '0 3px 3px 0', background: FLAME, boxShadow: '0 0 6px rgba(210, 70, 32,0.25)' }}
         />
       )}
       <Icon
@@ -523,7 +523,7 @@ function SideNav({ view, setView }: { view: View; setView: (v: View) => void }) 
             className="w-[30px] h-[30px] rounded-full inline-flex items-center justify-center shrink-0"
             style={{
               background: 'linear-gradient(145deg, rgba(26,83,92,0.12), rgba(26,83,92,0.04))',
-              border: '1.5px solid rgba(241,80,37,0.18)',
+              border: '1.5px solid rgba(210, 70, 32,0.18)',
             }}
           >
             <span className="text-[12px] font-bold" style={{ color: PETROL }}>J</span>
@@ -753,7 +753,7 @@ function DashboardView({ setView }: { setView: (v: View) => void }) {
                   <button
                     type="button"
                     onClick={() => setView('offerte')}
-                    className="w-full flex items-center gap-3 py-2.5 text-left transition-colors cursor-pointer hover:bg-[rgba(241,80,37,0.04)] rounded-md -mx-1 px-1"
+                    className="w-full flex items-center gap-3 py-2.5 text-left transition-colors cursor-pointer hover:bg-[rgba(210, 70, 32,0.04)] rounded-md -mx-1 px-1"
                     style={{ borderTop: `1px solid ${LINE}` }}
                   >
                     <div className="flex-1 min-w-0">
@@ -1193,7 +1193,7 @@ function ProjectDetailView({ setView }: { setView: (v: View) => void }) {
             <button
               type="button"
               onClick={() => setView('offerte')}
-              className="w-full flex items-center justify-between py-2 px-3 rounded-[8px] text-left transition-colors cursor-pointer hover:bg-[rgba(241,80,37,0.05)]"
+              className="w-full flex items-center justify-between py-2 px-3 rounded-[8px] text-left transition-colors cursor-pointer hover:bg-[rgba(210, 70, 32,0.05)]"
               style={{ backgroundColor: BG, border: `1px solid ${LINE}` }}
             >
               <div>
@@ -1232,7 +1232,7 @@ function ProjectDetailView({ setView }: { setView: (v: View) => void }) {
         </div>
 
         {/* "Doen"-suggestie — contextuele volgende stap, zoals in ProjectDetail */}
-        <div className="rounded-[12px] px-4 py-3 flex items-center justify-between gap-3" style={{ backgroundColor: 'rgba(241,80,37,0.05)', border: `1px solid rgba(241,80,37,0.18)` }}>
+        <div className="rounded-[12px] px-4 py-3 flex items-center justify-between gap-3" style={{ backgroundColor: 'rgba(210, 70, 32,0.05)', border: `1px solid rgba(210, 70, 32,0.18)` }}>
           <p className="text-[12.5px]" style={{ color: INK }}>
             <span className="font-semibold">Offerte staat klaar.</span>{' '}
             <span className="italic" style={{ color: MUTED, fontFamily: '"Instrument Serif", Georgia, serif' }}>versturen naar de klant?</span>
@@ -1425,7 +1425,7 @@ function EmailView() {
           <button
             type="button"
             className="inline-flex items-center gap-2 h-9 px-3.5 rounded-[10px] font-semibold text-[12.5px] text-white shrink-0"
-            style={{ backgroundColor: FLAME, boxShadow: '0 6px 16px rgba(241,80,37,0.28)' }}
+            style={{ backgroundColor: FLAME, boxShadow: '0 6px 16px rgba(210, 70, 32,0.28)' }}
           >
             <Pencil className="w-3.5 h-3.5" strokeWidth={2.4} />
             Opstellen
@@ -1886,7 +1886,7 @@ function PlanningView() {
         </div>
         <div className="flex items-center justify-between px-4 pb-2">
           <p className="font-mono text-[10px] font-bold tracking-[0.18em] uppercase" style={{ color: FLAME }}>Te plannen</p>
-          <span className="rounded-full inline-flex items-center justify-center font-mono text-[10px] font-bold" style={{ backgroundColor: 'rgba(241,80,37,0.12)', color: FLAME, width: 20, height: 18 }}>
+          <span className="rounded-full inline-flex items-center justify-center font-mono text-[10px] font-bold" style={{ backgroundColor: 'rgba(210, 70, 32,0.12)', color: FLAME, width: 20, height: 18 }}>
             {tePlannen.length}
           </span>
         </div>
@@ -2033,7 +2033,7 @@ function OfferteView() {
           <span className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md text-[12px] font-bold text-white" style={{ backgroundColor: PETROL_DEEP }}>
             <FileEdit className="w-3.5 h-3.5" strokeWidth={2} /> Opslaan
           </span>
-          <span className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md text-[12px] font-bold text-white" style={{ backgroundColor: FLAME, boxShadow: '0 6px 16px rgba(241,80,37,0.28)' }}>
+          <span className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md text-[12px] font-bold text-white" style={{ backgroundColor: FLAME, boxShadow: '0 6px 16px rgba(210, 70, 32,0.28)' }}>
             <Send className="w-3.5 h-3.5" strokeWidth={2.4} /> Verstuur
             <ChevronDown className="w-3 h-3 ml-0.5" strokeWidth={2} />
           </span>
@@ -2171,8 +2171,8 @@ function OfferteView() {
                   }}
                   animate={{
                     boxShadow: [
-                      '0 4px 10px rgba(20,40,40,0.18), 0 0 0 0 rgba(241,80,37,0.55)',
-                      '0 4px 10px rgba(20,40,40,0.18), 0 0 0 10px rgba(241,80,37,0)',
+                      '0 4px 10px rgba(20,40,40,0.18), 0 0 0 0 rgba(210, 70, 32,0.55)',
+                      '0 4px 10px rgba(20,40,40,0.18), 0 0 0 10px rgba(210, 70, 32,0)',
                     ],
                   }}
                   transition={{ duration: 1.6, repeat: Infinity, ease: 'easeOut' }}
@@ -2321,7 +2321,7 @@ function OfferteView() {
 
           {/* Inkoop card (collapsible-feel) */}
           <div className="rounded-[12px] p-3 flex items-center gap-3" style={{ backgroundColor: CARD, border: `1px solid ${HAIRLINE}`, boxShadow: PANEL_SHADOW }}>
-            <span className="w-9 h-9 rounded-[8px] inline-flex items-center justify-center" style={{ backgroundColor: 'rgba(241,80,37,0.10)' }}>
+            <span className="w-9 h-9 rounded-[8px] inline-flex items-center justify-center" style={{ backgroundColor: 'rgba(210, 70, 32,0.10)' }}>
               <DollarSign className="w-4 h-4" style={{ color: FLAME }} strokeWidth={2} />
             </span>
             <div className="flex-1">
@@ -2472,7 +2472,7 @@ function InkoopView() {
                     isApproved
                       ? { backgroundColor: 'rgba(45,107,72,0.12)', color: '#2D6B48' }
                       : isNew
-                      ? { backgroundColor: 'rgba(241,80,37,0.10)', color: FLAME }
+                      ? { backgroundColor: 'rgba(210, 70, 32,0.10)', color: FLAME }
                       : { backgroundColor: 'rgba(229,207,164,0.30)', color: '#9A5A48' }
                   }
                   title={isApproved ? 'Klik om terug te zetten' : 'Klik om goed te keuren'}
@@ -2848,7 +2848,7 @@ function CalculatieModal({ onClose }: { onClose: () => void }) {
             type="button"
             onClick={onClose}
             className="inline-flex items-center gap-2 h-10 px-5 rounded-md text-[13px] font-bold text-white"
-            style={{ backgroundColor: FLAME, boxShadow: '0 6px 16px rgba(241,80,37,0.32)' }}
+            style={{ backgroundColor: FLAME, boxShadow: '0 6px 16px rgba(210, 70, 32,0.32)' }}
           >
             <FileEdit className="w-3.5 h-3.5" strokeWidth={2.4} />
             Calculatie overnemen

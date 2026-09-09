@@ -489,13 +489,13 @@ function Aanvraagkaart({ bezig, aanmaken }: { bezig: boolean; aanmaken: () => vo
         border: `1px solid ${BORDER}`,
         boxShadow: '0 1px 3px rgba(120,90,50,0.07), inset 0 1px 0 rgba(255,255,255,0.55)',
         backgroundImage:
-          'radial-gradient(ellipse 65% 50% at 0% 0%, rgba(26,83,92,0.06), transparent 70%), radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.06), transparent 65%)',
+          'radial-gradient(ellipse 65% 50% at 0% 0%, rgba(26,83,92,0.06), transparent 70%), radial-gradient(ellipse 85% 65% at 100% 100%, rgba(210, 70, 32,0.06), transparent 65%)',
       }}
     >
       <span
         aria-hidden
         className="absolute inset-y-0 left-0 w-[3px]"
-        style={{ background: `linear-gradient(to bottom, ${FLAME}, rgba(241,80,37,0.3))` }}
+        style={{ background: `linear-gradient(to bottom, ${FLAME}, rgba(210, 70, 32,0.3))` }}
       />
       <X aria-hidden className="absolute top-3.5 right-3.5 h-3.5 w-3.5" style={{ color: MUTED_HEX }} />
 

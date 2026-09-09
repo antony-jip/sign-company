@@ -45,7 +45,7 @@ Per module:
 | Module | Icoon bg | Icoon kleur | Knop bg |
 |--------|----------|-------------|---------|
 | Projecten | #E2F0F0 | #1A535C | #1A535C |
-| Offertes | #FDE8E2 | #F15025 | #F15025 |
+| Offertes | #FDE8E2 | #D24620 | #D24620 |
 | Facturen | #E4F0EA | #2D6B48 | #2D6B48 |
 | Klanten | #E5ECF6 | #3A6B8C | #3A6B8C |
 | Planning | #F2E8E5 | #9A5A48 | #9A5A48 |
@@ -73,9 +73,9 @@ Kleur per type:
 |------|------------------------------|
 | Actief / open | #1A535C petrol |
 | Te factureren | #3A6B8C blauw |
-| Verlopen / te laat | #F15025 flame |
+| Verlopen / te laat | #D24620 flame |
 | Afgerond / betaald | #2D6B48 groen |
-| Verstuurd | #F15025 flame |
+| Verstuurd | #D24620 flame |
 | Concept | #5A5A55 grijs |
 
 ---
@@ -133,8 +133,8 @@ Kleuren per status — zie docs/DESIGN-SYSTEM.md sectie 7. Samenvatting:
 
 | Prioriteit | Weergave |
 |-----------|----------|
-| Urgent | NIET tonen als badge. Toon een flame dot (8px, #F15025) links van de rij |
-| Hoog | Flame dot (8px, #F15025) |
+| Urgent | NIET tonen als badge. Toon een flame dot (8px, #D24620) links van de rij |
+| Hoog | Flame dot (8px, #D24620) |
 | Medium | NIET tonen. Medium is de default — het voegt niks toe |
 | Laag | NIET tonen |
 
@@ -188,7 +188,7 @@ Kleuren per status — zie docs/DESIGN-SYSTEM.md sectie 7. Samenvatting:
 | Border-radius | 2px |
 | Achtergrond (leeg deel) | sand (#E6E4E0) |
 | Vulling | Spectrum gradient, breedte = percentage van project voortgang |
-| Gradient | linear-gradient(90deg, #F15025 0%, #D4453A 18%, #9A4070 38%, #6A5A8A 50%, #3A6B8C 65%, #2D6B48 80%, #1A535C 100%) |
+| Gradient | linear-gradient(90deg, #D24620 0%, #D4453A 18%, #9A4070 38%, #6A5A8A 50%, #3A6B8C 65%, #2D6B48 80%, #1A535C 100%) |
 | Positie | Direct onder de projectnaam, geen extra spacing |
 
 ---
@@ -236,7 +236,7 @@ Kleuren per status — zie docs/DESIGN-SYSTEM.md sectie 7. Samenvatting:
 | Type | Achtergrond | Tekst | Border | Gebruik |
 |------|-------------|-------|--------|---------|
 | Primair (module) | module-DEFAULT | wit | geen | Hoofdactie per pagina |
-| Flame (onomkeerbaar) | #F15025 | wit | geen | "Doen", versturen |
+| Flame (onomkeerbaar) | #D24620 | wit | geen | "Doen", versturen |
 | Petrol (opslaan) | #1A535C | wit | geen | Opslaan, bewaren |
 | Ghost | transparant | text-sec | 0.5px sand | Annuleren, secundair |
 | Destructive | #FDE8E2 | #C03A18 | geen | Verwijderen (zacht, niet alarmerend) |
@@ -257,7 +257,7 @@ Hover: iets donkerder achtergrond.
 | Font | IBM Plex Sans 400, 13px, ink |
 | Placeholder | muted (#A0A098) |
 | Focus | border-color #1A535C + box-shadow 0 0 0 2px rgba(26,83,92,0.12) |
-| Error | border-color #F15025 + box-shadow 0 0 0 2px rgba(241,80,37,0.1) |
+| Error | border-color #D24620 + box-shadow 0 0 0 2px rgba(241,80,37,0.1) |
 | Nummervelden | DM Mono 400, 13px |
 | Label | IBM Plex Sans 500, 11px, text-sec, boven het veld, mb-1.5 |
 

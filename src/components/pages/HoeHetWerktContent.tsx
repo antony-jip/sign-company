@@ -307,7 +307,7 @@ function MockupAanvraag() {
         </p>
         <span
           className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] text-[10px] font-bold uppercase tracking-[0.1em]"
-          style={{ backgroundColor: 'rgba(241,80,37,0.10)', color: FLAME }}
+          style={{ backgroundColor: 'rgba(210, 70, 32,0.10)', color: FLAME }}
         >
           <span className="w-1.5 h-1.5 rounded-full motion-safe:animate-pulse" style={{ backgroundColor: FLAME }} />
           1 nieuw
@@ -415,7 +415,7 @@ function MockupOfferte() {
         </span>
         <span
           className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-md text-[11px] font-bold text-white ml-auto"
-          style={{ backgroundColor: FLAME, boxShadow: '0 6px 16px rgba(241,80,37,0.28)' }}
+          style={{ backgroundColor: FLAME, boxShadow: '0 6px 16px rgba(210, 70, 32,0.28)' }}
         >
           <Send className="w-3 h-3" strokeWidth={2.4} /> Verstuur
         </span>
