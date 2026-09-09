@@ -14,7 +14,7 @@
   --lijn-sterk:rgba(248,247,245,.20);
   --petrol:#1A535C;
   --petrol-licht:#2C7180;
-  --flame:#F15025;
+  --flame:#D24620;
   --offwhite:#F8F7F5;
   --zacht:rgba(248,247,245,.60);
   --zachter:rgba(248,247,245,.38);
@@ -117,7 +117,7 @@ body{
 .kop2{font-size:5.2cqw;font-weight:600;letter-spacing:-.015em}
 .badge{display:inline-flex;align-items:center;padding:1.4cqw 3.2cqw;border-radius:99px;font-size:3.9cqw;font-weight:600;
   background:rgba(138,143,144,.12);border:1px solid rgba(138,143,144,.28);color:#8A8F90;transform-origin:left center}
-.badge.on{background:rgba(241,80,37,.10);border-color:rgba(241,80,37,.30);color:var(--flame)}
+.badge.on{background:rgba(210,70,32,.10);border-color:rgba(210,70,32,.30);color:var(--flame)}
 .badge .dot{opacity:0}
 .badge.on .dot{opacity:1}
 .knopui{background:var(--flame);color:var(--offwhite);border-radius:2.4cqw;padding:3.8cqw 0;text-align:center;
@@ -130,7 +130,7 @@ body{
 .dagkolom{flex:1;display:flex;flex-direction:column;gap:1.4cqw}
 .dagkop{color:#8A8F90;font-size:2.5cqw}
 .dagvlak{flex:1;border-radius:1.6cqw;background:rgba(26,83,92,.04);border:1px dashed rgba(26,83,92,.14)}
-.plankaart{position:absolute;width:17.4cqw;background:#FFFFFE;border-radius:1.6cqw;border:2px solid rgba(241,80,37,.6);
+.plankaart{position:absolute;width:17.4cqw;background:#FFFFFE;border-radius:1.6cqw;border:2px solid rgba(210,70,32,.6);
   padding:2cqw;box-shadow:0 2cqw 4cqw -2cqw rgba(26,83,92,.4)}
 .conflict{display:flex;align-items:center;gap:1cqw;margin-top:1.4cqw;color:var(--flame);font-size:2.2cqw;font-weight:600}
 .conflictdot{width:1.2cqw;height:1.2cqw;border-radius:50%;background:var(--flame)}
@@ -200,9 +200,9 @@ body{
 
   <div class="voet">
     <div class="waarschuw">
-      <h3>De kleur staat nog open</h3>
-      <p>Deze pagina gebruikt <span class="staal" style="background:#F15025"></span>Flame <span style="font-family:var(--mono)">#F15025</span> uit het brief. Het logobestand gebruikt <span class="staal" style="background:#D24620"></span><span style="font-family:var(--mono)">#D24620</span>, en dat is 461 keer in de repo tegen 24 keer voor de brief-waarde.</p>
-      <p>Shot 11C zet het echte logo op dit petrol met deze flame ernaast. Zolang die twee uit elkaar lopen staan er in het laatste frame van de film twee verschillende oranjes, precies waar de kijker naar de kleur kijkt.</p>
+      <h3>De kleur is beslist</h3>
+      <p>Flame volgt het logo: <span class="staal" style="background:#D24620"></span><span style="font-family:var(--mono)">#D24620</span>, niet de brief-waarde <span class="staal" style="background:#F15025"></span><span style="font-family:var(--mono)">#F15025</span>. Shot 11C zet het echte logo naast de gegradede flame, en met de brief-waarde stonden daar twee verschillende oranjes in het laatste frame.</p>
+      <p>Petrol blijft <span style="font-family:var(--mono)">#1A535C</span>. Het logo gebruikt <span style="font-family:var(--mono)">#2b535c</span>, maar die twee schelen alleen 17 in rood en dat leest niet.</p>
     </div>
     <div>
       <h3>Wat je hier ziet</h3>
@@ -259,7 +259,7 @@ const SCHERMEN = {
 
   leads: () => `<div class="ui"><div class="balk"><span class="merk">doen<span class="dot">.</span></span><span class="titel2">leads</span></div>
     <div class="body2">
-      <div class="card" style="border-color:rgba(241,80,37,.34)">
+      <div class="card" style="border-color:rgba(210,70,32,.34)">
         <div class="kop2">${KLANT}</div><div class="lbl" style="margin-top:1cqw">drie lichtbakken, hoofdvestiging</div>
         <div style="margin-top:2.8cqw">${badge("nieuw",-999)}</div></div>
       <div class="card" style="opacity:.45"><div class="kop2">Garage Bakker</div><div class="lbl" style="margin-top:1cqw">gevelbelettering</div></div>
@@ -476,7 +476,7 @@ function animeer(f){
     const c = kaart.querySelector("[data-conflict]");
     if (c) c.style.opacity = c.dataset.conflict === "1" ? lerp(f,6,18,1,0) : 1;
     const rand = c && c.dataset.conflict === "1" ? lerp(f,6,18,.6,0) : .6;
-    kaart.style.borderColor = `rgba(241,80,37,${rand})`;
+    kaart.style.borderColor = `rgba(210,70,32,${rand})`;
   }
 }
 
