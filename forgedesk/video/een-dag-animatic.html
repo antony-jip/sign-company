@@ -32,7 +32,7 @@ body{
 
 /* kop */
 .kop{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:18px}
-.titel{font-family:var(--kop);font-size:clamp(38px,6vw,60px);line-height:.98;letter-spacing:-.035em;margin:0;text-wrap:balance}
+.titel{font-family:var(--kop);font-weight:800;font-size:clamp(38px,6vw,60px);line-height:.98;letter-spacing:-.035em;margin:0;text-wrap:balance}
 .titel .dot{color:var(--flame)}
 .onderkop{color:var(--zacht);max-width:52ch;margin:10px 0 0;font-size:15px}
 .meta{display:flex;gap:22px;font-family:var(--mono);font-size:13px;color:var(--zachter);font-variant-numeric:tabular-nums}
@@ -89,7 +89,7 @@ body{
 /* voet */
 .voet{border-top:1px solid var(--lijn);padding-top:22px;display:grid;
   grid-template-columns:repeat(auto-fit,minmax(268px,1fr));gap:24px;color:var(--zacht);font-size:13.5px}
-.voet h3{font-family:var(--kop);font-size:15px;margin:0 0 7px;color:var(--offwhite);letter-spacing:-.01em}
+.voet h3{font-family:var(--kop);font-weight:800;font-size:15px;margin:0 0 7px;color:var(--offwhite);letter-spacing:-.01em}
 .voet p{margin:0 0 9px}
 .waarschuw{border-left:2px solid var(--flame);padding-left:13px}
 .staal{display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:baseline;margin-right:5px}
@@ -103,7 +103,7 @@ body{
 .ui{width:100%;height:100%;display:flex;flex-direction:column;background:#F4F3F0;color:#1A1A18;
   container-type:inline-size;position:relative;overflow:hidden}
 .balk{background:var(--petrol);color:var(--offwhite);padding:4.4cqw 5cqw;display:flex;align-items:center;gap:2.4cqw;flex-shrink:0}
-.merk{font-family:var(--kop);font-size:5.3cqw;letter-spacing:-.02em}
+.merk{font-family:var(--kop);font-weight:800;font-size:5.3cqw;letter-spacing:-.02em}
 .merk .dot{color:var(--flame)}
 .balk .titel2{font-size:4.2cqw;opacity:.72}
 .body2{padding:5cqw;display:flex;flex-direction:column;gap:3.4cqw;flex:1;min-height:0}
@@ -143,11 +143,11 @@ body{
 .plaatsmeta{display:flex;align-items:baseline;gap:1.6%;font-family:var(--mono);font-size:clamp(10px,1.35vw,17px)}
 .plaatsmeta .id{color:var(--flame)}
 .plaatsmeta .dim{color:rgba(248,247,245,.45)}
-.plaatstitel{font-family:var(--kop);font-size:clamp(19px,3.9vw,50px);line-height:1.06;letter-spacing:-.02em;
+.plaatstitel{font-family:var(--kop);font-weight:800;font-size:clamp(19px,3.9vw,50px);line-height:1.06;letter-spacing:-.02em;
   color:var(--offwhite);text-wrap:balance;margin:0}
 .plaatsbewijs{color:rgba(248,247,245,.6);font-size:clamp(11px,1.6vw,20px)}
 .eind{position:absolute;inset:0;background:var(--petrol);display:flex;align-items:center;justify-content:center}
-.eindmerk{font-family:var(--kop);font-size:clamp(56px,13vw,168px);letter-spacing:-.04em;color:var(--offwhite)}
+.eindmerk{font-family:var(--kop);font-weight:800;font-size:clamp(56px,13vw,168px);letter-spacing:-.04em;color:var(--offwhite)}
 .eindmerk .dot{color:var(--flame)}
 
 @media (prefers-reduced-motion:reduce){.frame{transform:none!important}}
@@ -385,6 +385,12 @@ const shotmerk = document.getElementById("shotmerk");
 const ondertitel = document.getElementById("ondertitel");
 const tcEl = document.getElementById("tc");
 const speelKnop = document.getElementById("speel");
+const inspect = {
+  shot: document.getElementById("i-shot"),
+  duur: document.getElementById("i-duur"),
+  beeld: document.getElementById("i-beeld"),
+  bewijst: document.getElementById("i-bewijst"),
+};
 
 const scenesEl = document.getElementById("scenes");
 const perScene = {};
@@ -480,10 +486,10 @@ function teken(){
     bouwShot(shot);
     vorigeShot = shot;
     shotmerk.textContent = shot.id;
-    document.getElementById("i-shot").textContent = shot.id;
-    document.getElementById("i-duur").textContent = ((shot.tot-shot.van)/FPS).toFixed(1).replace(".",",")+"s";
-    document.getElementById("i-beeld").textContent = shot.soort === "scherm" ? shot.scherm + (shot.stap ? ", "+shot.stap : "") : shot.soort === "eind" ? "end card" : "live-action";
-    document.getElementById("i-bewijst").textContent = shot.bewijst;
+    inspect.shot.textContent = shot.id;
+    inspect.duur.textContent = ((shot.tot-shot.van)/FPS).toFixed(1).replace(".",",")+"s";
+    inspect.beeld.textContent = shot.soort === "scherm" ? shot.scherm + (shot.stap ? ", "+shot.stap : "") : shot.soort === "eind" ? "end card" : "live-action";
+    inspect.bewijst.textContent = shot.bewijst;
     alleBlokken.forEach(b => b.classList.toggle("nu", +b.dataset.van === shot.van));
   }
   const lokaal = frame - shot.van;
