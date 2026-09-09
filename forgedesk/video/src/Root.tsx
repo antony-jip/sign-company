@@ -22,6 +22,8 @@ import { ModuleEmail, MODULE_EMAIL_DUUR } from "./scenes/moduleloops/ModuleEmail
 import { ModuleTaken, MODULE_TAKEN_DUUR } from "./scenes/moduleloops/ModuleTaken";
 import { ModuleStudio, MODULE_STUDIO_DUUR } from "./scenes/moduleloops/ModuleStudio";
 import { ModuleAI, MODULE_AI_DUUR } from "./scenes/moduleloops/ModuleAI";
+import { EenDag } from "./eendag/EenDag";
+import { DUUR as EEN_DAG_DUUR, FPS as EEN_DAG_FPS } from "./eendag/tijdlijn";
 
 // Hoofdformaat: 1920x1080 16:9 30fps. DoenDemo = de volle montage (Series van
 // alle 7 scenes). Hero-loop en 9:16-variant als aparte Composities. De losse
@@ -229,6 +231,19 @@ export const RemotionRoot: React.FC = () => {
         component={Scene11Maatje}
         durationInFrames={180}
         fps={30}
+        width={1920}
+        height={1080}
+      />
+      {/* "een dag": 75s live-action film, 24 fps. Hier als animatic: de 27
+          schermshots zijn afgebouwde motion graphics, de 22 live-action shots
+          zijn plaatshouders tot de opnames er zijn. Zie
+          EEN-DAG-PRODUCTIEBOEK.md. Let op de afwijkende fps: de rest van dit
+          bestand is 30. */}
+      <Composition
+        id="EenDag"
+        component={EenDag}
+        durationInFrames={EEN_DAG_DUUR}
+        fps={EEN_DAG_FPS}
         width={1920}
         height={1080}
       />
