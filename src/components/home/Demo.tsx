@@ -23,7 +23,7 @@ export default function Demo() {
   return (
     <section className="tegel tegel-tint pb-0 md:pb-0">
       <div className="container-site">
-        <div className="flex flex-wrap items-baseline justify-between gap-x-10 gap-y-3 max-w-5xl">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-10 gap-y-4">
           <h2
             className="font-heading font-bold text-petrol leading-[1.0]"
             style={{ fontSize: 'clamp(30px, 4vw, 52px)', letterSpacing: '-0.03em' }}
@@ -31,7 +31,7 @@ export default function Demo() {
             Dit is doen<span className="text-flame">.</span>{' '}
             <span className="hidden md:inline">Klik maar door.</span>
           </h2>
-          <div className="max-w-sm">
+          <div className="max-w-xs">
             <p className="tekst-body text-muted">
               <span className="md:hidden">Geen mockup, de echte app. Op desktop klik je er zelf doorheen.</span>
               <span className="hidden md:inline">Geen mockup, de echte app. Zo ziet je dag eruit als alles gewoon klopt.</span>
