@@ -1947,7 +1947,7 @@ export function FactuurEditor() {
           a.click()
           document.body.removeChild(a)
           URL.revokeObjectURL(url)
-          toast.success(<>PDF gedownload<span style={{ color: '#F15025' }}>.</span></>)
+          toast.success(<>PDF gedownload<span style={{ color: '#D24620' }}>.</span></>)
           return
         }
       } catch (storageErr) {
@@ -1997,7 +1997,7 @@ export function FactuurEditor() {
     try {
       const doc = generateFactuurPDF(factuurData, pdfItems, selectedKlant, bedrijfsProfiel, documentStyle)
       doc.save(filename)
-      toast.success(<>PDF gedownload<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>PDF gedownload<span style={{ color: '#D24620' }}>.</span></>)
     } catch (err) {
       logger.error('Fout bij genereren PDF:', err)
       toast.error('Kon PDF niet genereren')
@@ -3994,7 +3994,7 @@ export function FactuurEditor() {
                 <button
                   type="button"
                   onClick={handleAddItem}
-                  className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-flame hover:text-[#D94520] transition-colors"
+                  className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-flame hover:text-[#BD3C1C] transition-colors"
                 >
                   <Plus className="h-4 w-4" />
                   Regel toevoegen
@@ -4092,7 +4092,7 @@ export function FactuurEditor() {
         <Card className="mt-6">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <ClipboardList className="h-4 w-4" style={{ color: '#F15025' }} />
+              <ClipboardList className="h-4 w-4" style={{ color: '#D24620' }} />
               Nog te factureren
               <Badge variant="secondary" className="text-xs ml-1">
                 Nog {filteredTeFacturerenProjecten.length} project{filteredTeFacturerenProjecten.length !== 1 ? 'en' : ''} te factureren
@@ -4119,7 +4119,7 @@ export function FactuurEditor() {
                       variant="ghost"
                       onClick={() => navigate(`/facturen/nieuw?project_id=${project.id}`)}
                       className="text-xs font-semibold"
-                      style={{ color: '#F15025' }}
+                      style={{ color: '#D24620' }}
                     >
                       Factureer →
                     </Button>
@@ -4363,7 +4363,7 @@ export function FactuurEditor() {
           </DialogHeader>
           <div className="space-y-3 py-2">
             {exactStandWaarschuwing && (
-              <div className="rounded-lg border border-[#F15025]/30 bg-[#F15025]/5 p-3 text-sm text-[#1A535C] dark:text-foreground">
+              <div className="rounded-lg border border-[#D24620]/30 bg-[#D24620]/5 p-3 text-sm text-[#1A535C] dark:text-foreground">
                 {exactStandWaarschuwing}
               </div>
             )}
@@ -4383,7 +4383,7 @@ export function FactuurEditor() {
                 </p>
               )}
               {herinneringOntvanger && !herinneringOntvanger.email && (
-                <p className="mt-1 text-xs text-[#F15025]">Geen emailadres bekend voor deze klant</p>
+                <p className="mt-1 text-xs text-[#D24620]">Geen emailadres bekend voor deze klant</p>
               )}
             </div>
             <div>
@@ -4408,7 +4408,7 @@ export function FactuurEditor() {
               </Select>
             </div>
             {herinneringTekst(herinneringType)?.kanaal === 'intern' && (
-              <div className="rounded-lg border border-[#F15025]/30 bg-[#F15025]/5 p-3 text-sm text-[#1A535C] dark:text-foreground">
+              <div className="rounded-lg border border-[#D24620]/30 bg-[#D24620]/5 p-3 text-sm text-[#1A535C] dark:text-foreground">
                 Deze stap staat in Instellingen op intern. Normaal krijgt de klant hier geen mail, maar bel je zelf.
                 Verstuur je hem toch, dan gaat de tekst gewoon naar de klant.
               </div>
@@ -4474,7 +4474,7 @@ export function FactuurEditor() {
               type="button"
               onClick={() => handleSave(true)}
               disabled={isSaving || ketenBezig}
-              className="tap-press h-11 px-4 inline-flex items-center gap-1.5 text-[14px] font-semibold rounded-lg bg-flame text-white hover:bg-flame/90 shadow-[0_2px_8px_rgba(241,80,37,0.25)] transition-colors disabled:opacity-50 flex-shrink-0"
+              className="tap-press h-11 px-4 inline-flex items-center gap-1.5 text-[14px] font-semibold rounded-lg bg-flame text-white hover:bg-flame/90 shadow-[0_2px_8px_rgba(210, 70, 32,0.25)] transition-colors disabled:opacity-50 flex-shrink-0"
             >
               <Send className="h-4 w-4" />
               Verwerken

@@ -173,7 +173,7 @@ export function PortaalAlerts() {
         locatie: '',
       })
       logCreate({ user, entityType: 'taak', entityId: taak.id })
-      toast.success(<>Taak aangemaakt<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Taak aangemaakt<span style={{ color: '#D24620' }}>.</span></>)
       setTaakOpen(false)
       await handleDismiss(taakNotifId)
       fetchAlerts()
@@ -201,7 +201,7 @@ export function PortaalAlerts() {
         {visibleAlerts.map(alert => {
           const isGoedkeuring = alert.type === 'portaal_goedkeuring'
           const Icon = isGoedkeuring ? CheckCircle2 : RotateCcw
-          const accentColor = isGoedkeuring ? '#2D6B48' : '#F15025'
+          const accentColor = isGoedkeuring ? '#2D6B48' : '#D24620'
 
           return (
             <div

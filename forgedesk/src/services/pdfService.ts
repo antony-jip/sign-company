@@ -173,7 +173,7 @@ function addSpectrumStrip(doc: jsPDF, height: number = 1.5): void {
   const pageWidth = doc.internal.pageSize.getWidth()
   // Approximate the spectrum gradient with color segments
   const stops: { pct: number; color: [number, number, number] }[] = [
-    { pct: 0, color: [241, 80, 37] },     // #F15025
+    { pct: 0, color: [210, 70, 32] },     // #D24620
     { pct: 18, color: [212, 69, 58] },     // #D4453A
     { pct: 38, color: [154, 64, 112] },    // #9A4070
     { pct: 50, color: [106, 90, 138] },    // #6A5A8A

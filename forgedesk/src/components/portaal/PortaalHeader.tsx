@@ -36,7 +36,7 @@ export function PortaalHeader({
         <svg width="100%" height="100%" className="opacity-[0.08]">
           <defs>
             <pattern id="dots" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
-              <circle cx="4" cy="4" r="2" fill="#F15025" />
+              <circle cx="4" cy="4" r="2" fill="#D24620" />
               <circle cx="16" cy="16" r="1.5" fill="#ffffff" />
             </pattern>
           </defs>

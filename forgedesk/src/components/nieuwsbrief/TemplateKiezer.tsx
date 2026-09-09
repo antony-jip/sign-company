@@ -109,7 +109,7 @@ export function TemplateKiezer({ open, bezig, onKies, onSluit }: Props) {
                   disabled={bezig}
                   className={cn(
                     'group flex flex-col overflow-hidden rounded-2xl border-2 bg-card text-left transition-all hover:-translate-y-[1px] hover:shadow-lg',
-                    actief ? 'border-flame shadow-[0_0_0_3px_rgba(241,80,37,0.15)]' : 'border-border hover:border-petrol/40',
+                    actief ? 'border-flame shadow-[0_0_0_3px_rgba(210, 70, 32,0.15)]' : 'border-border hover:border-petrol/40',
                   )}
                 >
                   <Miniatuur html={m.html} achtergrond={m.achtergrond} />
@@ -144,7 +144,7 @@ export function TemplateKiezer({ open, bezig, onKies, onSluit }: Props) {
             type="button"
             disabled={!actieveTemplate || bezig}
             onClick={() => actieveTemplate && onKies({ soort: 'template', template: actieveTemplate })}
-            className="ml-auto inline-flex flex-shrink-0 items-center gap-2 rounded-xl bg-flame px-5 py-2.5 text-sm font-semibold text-white shadow-[0_2px_8px_rgba(241,80,37,0.25)] transition-all hover:-translate-y-[1px] hover:bg-[#E04520] disabled:opacity-60"
+            className="ml-auto inline-flex flex-shrink-0 items-center gap-2 rounded-xl bg-flame px-5 py-2.5 text-sm font-semibold text-white shadow-[0_2px_8px_rgba(210, 70, 32,0.25)] transition-all hover:-translate-y-[1px] hover:bg-[#E04520] disabled:opacity-60"
           >
             {bezig ? <RefreshCw className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
             Gebruik deze template

@@ -23,14 +23,14 @@ export function VannachtGeleerdBlok() {
     const ok = await bevestigDaanGeheugen(v.id)
     if (!ok) { toast.error('Aannemen mislukt'); return }
     setVoorstellen(prev => prev.filter(r => r.id !== v.id))
-    toast.success(<>Daan onthoudt dit voortaan<span style={{ color: '#F15025' }}>.</span></>)
+    toast.success(<>Daan onthoudt dit voortaan<span style={{ color: '#D24620' }}>.</span></>)
   }
 
   const handleAfwijzen = async (v: DaanVoorstel) => {
     const ok = await wijsDaanGeheugenAf(v.id)
     if (!ok) { toast.error('Afwijzen mislukt'); return }
     setVoorstellen(prev => prev.filter(r => r.id !== v.id))
-    toast.success(<>Afgewezen<span style={{ color: '#F15025' }}>.</span></>)
+    toast.success(<>Afgewezen<span style={{ color: '#D24620' }}>.</span></>)
   }
 
   if (voorstellen.length === 0) return null

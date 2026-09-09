@@ -284,7 +284,7 @@ export function PortalenOverzicht() {
         bestede_tijd: 0,
       })
       logCreate({ user, entityType: 'taak', entityId: taak.id })
-      toast.success(<>Taak aangemaakt<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Taak aangemaakt<span style={{ color: '#D24620' }}>.</span></>)
       setTaakDialogOpen(false)
     } catch (err) {
       logger.error('Kon taak niet aanmaken:', err)
@@ -424,7 +424,7 @@ export function PortalenOverzicht() {
                       <div className="flex items-center gap-2 mt-1.5">
                         <Badge className={`${status.color} text-2xs px-1.5 flex items-center gap-0.5`}>
                           <StatusIcon className="h-2.5 w-2.5" />
-                          {status.label}<span style={{ color: '#F15025' }}>.</span>
+                          {status.label}<span style={{ color: '#D24620' }}>.</span>
                         </Badge>
                       </div>
 

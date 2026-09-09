@@ -102,7 +102,7 @@ export function LoginPage() {
             Offertes, werkbonnen, planning en facturen op één plek.
             Inloggen en weer aan het{' '}
             <span className="text-white font-semibold">
-              doen<span style={{ color: '#F15025' }}>.</span>
+              doen<span style={{ color: '#D24620' }}>.</span>
             </span>
           </motion.p>
         </motion.section>
@@ -115,7 +115,7 @@ export function LoginPage() {
         >
           <DoenFormCard accentColor="#1A535C">
             <h2 className="font-heading text-[22px] font-extrabold text-foreground dark:text-foreground tracking-[-0.02em] mb-1">
-              Aanmelden<span style={{ color: '#F15025' }}>.</span>
+              Aanmelden<span style={{ color: '#D24620' }}>.</span>
             </h2>
             <p className="text-[13px] text-foreground/70 mb-6">
               Log in op je doen.-account.
@@ -179,7 +179,7 @@ export function LoginPage() {
                 type="submit"
                 // Arbitrary background i.p.v. bg-flame: de Button-default zet
                 // een linear-gradient op de shorthand, die wint anders.
-                className="w-full h-12 rounded-xl font-semibold text-[15px] transition-all group text-white mt-3 [background:linear-gradient(135deg,#F1602F_0%,#D8431C_100%)] hover:[background:linear-gradient(135deg,#F15025_0%,#C63B16_100%)] [box-shadow:0_8px_24px_-8px_rgba(241,80,37,0.55)] hover:[box-shadow:0_10px_28px_-8px_rgba(241,80,37,0.7)]"
+                className="w-full h-12 rounded-xl font-semibold text-[15px] transition-all group text-white mt-3 [background:linear-gradient(135deg,#F1602F_0%,#D8431C_100%)] hover:[background:linear-gradient(135deg,#D24620_0%,#C63B16_100%)] [box-shadow:0_8px_24px_-8px_rgba(210, 70, 32,0.55)] hover:[box-shadow:0_10px_28px_-8px_rgba(210, 70, 32,0.7)]"
                 disabled={isLoading}
               >
                 {isLoading ? (

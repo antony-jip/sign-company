@@ -39,7 +39,7 @@ const STATUS_LABEL: Record<Nieuwsbrief['status'], string> = { concept: 'Concept'
 const AFZENDER = 'Sign Company'
 
 const KNOP_SECUNDAIR = 'inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground transition-all hover:border-petrol/50 hover:bg-background disabled:opacity-60'
-const KNOP_PRIMAIR = 'inline-flex items-center gap-2 rounded-xl bg-flame px-5 py-2.5 text-sm font-semibold text-white shadow-[0_2px_8px_rgba(241,80,37,0.25),0_0_0_1px_rgba(241,80,37,0.1)] transition-all duration-200 hover:-translate-y-[1px] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35),0_0_0_1px_rgba(241,80,37,0.15)] active:translate-y-0 disabled:opacity-60 disabled:hover:translate-y-0'
+const KNOP_PRIMAIR = 'inline-flex items-center gap-2 rounded-xl bg-flame px-5 py-2.5 text-sm font-semibold text-white shadow-[0_2px_8px_rgba(210, 70, 32,0.25),0_0_0_1px_rgba(210, 70, 32,0.1)] transition-all duration-200 hover:-translate-y-[1px] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(210, 70, 32,0.35),0_0_0_1px_rgba(210, 70, 32,0.15)] active:translate-y-0 disabled:opacity-60 disabled:hover:translate-y-0'
 const INPUT = 'w-full rounded-lg border border-border bg-background px-3 py-2 text-[13px] text-foreground outline-none placeholder:text-muted-foreground/60 focus:border-petrol focus:ring-2 focus:ring-petrol/10 dark:focus:border-white/25 dark:focus:ring-white/10'
 
 function toLocalInputWaarde(d: Date): string {

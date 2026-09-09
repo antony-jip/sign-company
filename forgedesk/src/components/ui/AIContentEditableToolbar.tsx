@@ -391,7 +391,7 @@ function AIContentEditableToolbar({ editorRef, onContentChange, disabled, skipTo
                         className={cn(
                           'w-full flex items-center justify-center gap-2 px-3 py-2.5 mb-1.5 rounded-lg bg-petrol text-white text-xs font-medium transition-all',
                           heeftSchrijfstijl
-                            ? 'hover:bg-petrol/95 hover:shadow-[0_0_18px_rgba(241,80,37,0.18)] cursor-pointer'
+                            ? 'hover:bg-petrol/95 hover:shadow-[0_0_18px_rgba(210, 70, 32,0.18)] cursor-pointer'
                             : 'opacity-50 cursor-not-allowed'
                         )}
                       >

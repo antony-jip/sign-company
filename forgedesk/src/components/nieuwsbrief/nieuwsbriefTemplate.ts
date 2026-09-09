@@ -4,7 +4,7 @@
 // dus geen eigen <html>/<body> hier. Kleuren volgen de Sign Company-huisstijl.
 export const NIEUWSBRIEF_BASIS_TEMPLATE = `<table width="100%" cellpadding="0" cellspacing="0" role="presentation">
   <tr><td style="padding-bottom:22px;border-bottom:1px solid #EBEBEB;">
-    <span style="font-size:20px;font-weight:800;letter-spacing:-0.02em;color:#1A1A1A;">Sign Company</span><span style="font-size:20px;font-weight:800;color:#F15025;">.</span>
+    <span style="font-size:20px;font-weight:800;letter-spacing:-0.02em;color:#1A1A1A;">Sign Company</span><span style="font-size:20px;font-weight:800;color:#D24620;">.</span>
   </td></tr>
 </table>
 
@@ -28,7 +28,7 @@ export const NIEUWSBRIEF_BASIS_TEMPLATE = `<table width="100%" cellpadding="0" c
 </ul>
 
 <table cellpadding="0" cellspacing="0" role="presentation" style="margin:28px 0 0;">
-  <tr><td style="border-radius:8px;background:#F15025;">
+  <tr><td style="border-radius:8px;background:#D24620;">
     <a href="https://signcompany.nl" style="display:inline-block;padding:13px 28px;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:8px;">Bekijk meer</a>
   </td></tr>
 </table>

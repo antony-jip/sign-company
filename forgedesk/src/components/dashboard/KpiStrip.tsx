@@ -40,7 +40,7 @@ interface DoenFact {
 const CAT_META: Record<FactCategory, { icon: LucideIcon; color: string; bg: string; label: string }> = {
   ai:       { icon: Bot,         color: '#6A5A8A', bg: 'linear-gradient(135deg, #EDE8F4 0%, #DDD3EA 100%)', label: 'Daan AI' },
   finance:  { icon: Receipt,     color: '#3A7D52', bg: 'linear-gradient(135deg, #E8F2EC 0%, #D3E8DC 100%)', label: 'Geld' },
-  planning: { icon: Wrench,      color: '#F15025', bg: 'linear-gradient(135deg, #FDE8E4 0%, #FBD7CC 100%)', label: 'Planning' },
+  planning: { icon: Wrench,      color: '#D24620', bg: 'linear-gradient(135deg, #FDE8E4 0%, #FBD7CC 100%)', label: 'Planning' },
   sales:    { icon: Mail,        color: '#1A535C', bg: 'linear-gradient(135deg, rgba(26,83,92,0.10) 0%, rgba(26,83,92,0.20) 100%)', label: 'Sales' },
   vibe:     { icon: Sparkles,    color: '#8A7A4A', bg: 'linear-gradient(135deg, #F5F2E8 0%, #EDE6CE 100%)', label: 'Vibe' },
 }

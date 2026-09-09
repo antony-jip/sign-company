@@ -55,7 +55,7 @@ export function PortaalVerlopen({ token, bedrijfsnaam, telefoon, email, logoUrl 
         </div>
         <div>
           <h1 className="text-2xl font-bold tracking-[-0.3px] text-[#1A1A1A] mb-2">
-            Deze link is verlopen<span className="text-[#F15025]">.</span>
+            Deze link is verlopen<span className="text-[#D24620]">.</span>
           </h1>
           <p className="text-[#6B6B66]">
             Neem contact op met {bedrijfsnaam || 'het bedrijf'} voor een nieuwe link, of vraag er hieronder een aan.
@@ -88,7 +88,7 @@ export function PortaalVerlopen({ token, bedrijfsnaam, telefoon, email, logoUrl 
               {fout && <p className="text-sm text-[#C0451A]">{fout}</p>}
               <Button
                 type="submit"
-                className="w-full bg-[#F15025] text-white hover:bg-[#D9481F]"
+                className="w-full bg-[#D24620] text-white hover:bg-[#D9481F]"
                 disabled={loading}
               >
                 {loading ? (

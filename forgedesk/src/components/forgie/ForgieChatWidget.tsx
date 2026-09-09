@@ -673,7 +673,7 @@ export function ForgieChatWidget() {
                 {supportAttentie > 0 && (
                   <span
                     className="absolute top-1 ml-1 inline-flex items-center justify-center text-white font-bold"
-                    style={{ minWidth: 16, height: 16, padding: '0 4px', fontSize: 10, borderRadius: 999, backgroundColor: '#F15025' }}
+                    style={{ minWidth: 16, height: 16, padding: '0 4px', fontSize: 10, borderRadius: 999, backgroundColor: '#D24620' }}
                   >
                     {supportAttentie}
                   </span>
@@ -715,7 +715,7 @@ export function ForgieChatWidget() {
                           >
                             <div className="flex items-center justify-between gap-1.5">
                               <span className="text-[12px] font-semibold text-foreground flex items-center gap-1.5 min-w-0">
-                                {wacht && <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: '#F15025' }} />}
+                                {wacht && <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: '#D24620' }} />}
                                 <span className="truncate">{g.org_naam}</span>
                               </span>
                               <span className="text-[9px] text-muted-foreground/70 flex-shrink-0">
@@ -755,7 +755,7 @@ export function ForgieChatWidget() {
                         <button
                           onClick={handleAfronden}
                           className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-white rounded-md transition-opacity hover:opacity-90"
-                          style={{ backgroundColor: '#F15025' }}
+                          style={{ backgroundColor: '#D24620' }}
                         >
                           <Check className="w-3 h-3" />
                           Gesprek afronden
@@ -999,7 +999,7 @@ export function ForgieChatWidget() {
                 {showUnread && (
                   <span
                     className="absolute -top-1 -right-1 rounded-full animate-pulse"
-                    style={{ width: 10, height: 10, backgroundColor: '#F15025', border: '2px solid #FFFFFF' }}
+                    style={{ width: 10, height: 10, backgroundColor: '#D24620', border: '2px solid #FFFFFF' }}
                   />
                 )}
               </>

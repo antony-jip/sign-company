@@ -343,7 +343,7 @@ export function BlokBouwer({ document: doc, onChange, disabled }: Props) {
                   className={cn(
                     'group/blok relative rounded-md transition-shadow',
                     bewerkbaar && 'cursor-pointer',
-                    isActief ? 'shadow-[0_0_0_2px_#F15025]' : bewerkbaar && 'hover:shadow-[0_0_0_1.5px_rgba(26,83,92,0.45)]',
+                    isActief ? 'shadow-[0_0_0_2px_#D24620]' : bewerkbaar && 'hover:shadow-[0_0_0_1.5px_rgba(26,83,92,0.45)]',
                     sleeptBlok === blok.id && 'opacity-40',
                   )}
                   style={{ marginBottom: laatste ? 0 : BLOK_AFSTAND[blok.type] ?? 20 }}

@@ -502,7 +502,7 @@ export function MontageTijdlijnView({
                         // Alleen de uitzondering krijgt kleur · met een streep per
                         // status wordt de week een kleurenstaal en valt niets meer op.
                         borderLeft: prio
-                          ? '2px solid #F15025'
+                          ? '2px solid #D24620'
                           : accentKleur(a) === 'transparent'
                             ? undefined
                             : `2px solid ${accentKleur(a)}`,

@@ -24,11 +24,11 @@ export interface NavGroep {
 // icoon en dezelfde kleur houdt. Kleuren volgen het doen. design-systeem.
 const WERK_ITEMS: NavItem[] = [
   { label: 'Projecten', icon: Hammer, path: '/projecten', color: '#1A535C' },
-  { label: 'Offertes', icon: FileText, path: '/offertes', color: '#F15025' },
+  { label: 'Offertes', icon: FileText, path: '/offertes', color: '#D24620' },
   { label: 'Klanten', icon: Building2, path: '/klanten', color: '#3A6B8C' },
   { label: 'Leveranciers', icon: Truck, path: '/leveranciers', color: '#3A6B8C' },
   { label: 'Werkbonnen', icon: ClipboardCheck, path: '/werkbonnen', color: '#C44830' },
-  { label: 'Maatjes', icon: Ruler, path: '/maatjes', color: '#F15025' },
+  { label: 'Maatjes', icon: Ruler, path: '/maatjes', color: '#D24620' },
   { label: 'Studio', icon: Wand2, path: '/visualizer', color: '#9A5A48' },
   { label: 'Nacalculatie', icon: Calculator, path: '/nacalculatie', color: '#1A535C' },
 ]
@@ -55,7 +55,7 @@ const COMMUNICATIE_ITEMS: NavItem[] = [
 
 export const DASHBOARD_ITEM: NavItem = { label: 'Dashboard', icon: LayoutDashboard, path: '/', color: '#1A535C' }
 export const SETTINGS_ITEM: NavItem = { label: 'Instellingen', icon: SlidersHorizontal, path: '/instellingen', color: 'hsl(var(--muted-foreground))' }
-export const SUPPORT_ITEM: NavItem = { label: 'Support', icon: LifeBuoy, path: '/support', color: '#F15025' }
+export const SUPPORT_ITEM: NavItem = { label: 'Support', icon: LifeBuoy, path: '/support', color: '#D24620' }
 // Owner-only: nieuwsbrief-module is persoonlijk voor de eigenaar (zie 149_nieuwsbrief.sql).
 export const NIEUWSBRIEF_ITEM: NavItem = { label: 'Nieuwsbrief', icon: Newspaper, path: '/nieuwsbrief', color: '#6A5A8A' }
 

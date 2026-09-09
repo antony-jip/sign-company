@@ -233,7 +233,7 @@ function DezeWeekCard() {
         tijd,
         titel: m.titel || klant?.bedrijfsnaam || 'Montage',
         sub: sub || m.locatie || '',
-        dotColor: '#F15025',
+        dotColor: '#D24620',
         href: '/planning',
         date: d,
       })
@@ -246,7 +246,7 @@ function DezeWeekCard() {
       const hours = String(d.getHours()).padStart(2, '0')
       const mins = String(d.getMinutes()).padStart(2, '0')
       const tijd = hours === '00' && mins === '00' ? null : `${hours}:${mins}`
-      const dot = e.type === 'deadline' ? '#F15025' : e.type === 'meeting' ? '#1A535C' : '#C4A463'
+      const dot = e.type === 'deadline' ? '#D24620' : e.type === 'meeting' ? '#1A535C' : '#C4A463'
       list.push({
         id: `e-${e.id}`,
         tijd,
@@ -332,7 +332,7 @@ function DezeWeekCard() {
               </span>
               <span
                 className="w-1 h-1 rounded-full"
-                style={{ backgroundColor: hasActivity ? '#F15025' : 'transparent' }}
+                style={{ backgroundColor: hasActivity ? '#D24620' : 'transparent' }}
                 aria-hidden
               />
             </div>
@@ -479,7 +479,7 @@ function TeamCard() {
           medewerker: monteur,
           fallbackInitials: 'MO',
           fallbackBg: '#FDE8E4',
-          fallbackColor: '#F15025',
+          fallbackColor: '#D24620',
           label: 'Montage afgerond',
           detail: m.klant_naam || m.titel,
           sortDate: new Date(m.updated_at),

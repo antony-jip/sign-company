@@ -50,7 +50,7 @@ function escapeHtml(str: string): string {
 function pagina(titel: string, tekst: string, knop?: { label: string; email: string; token: string; nieuwsbriefId: string }): string {
   const keuzes = knop
     ? REDENEN.map(r => `<label style="display:flex;align-items:center;gap:10px;padding:9px 0;font-size:14px;color:#57574F;cursor:pointer;">
-        <input type="radio" name="r" value="${r.waarde}" style="accent-color:#F15025;width:16px;height:16px;">${escapeHtml(r.label)}</label>`).join('')
+        <input type="radio" name="r" value="${r.waarde}" style="accent-color:#D24620;width:16px;height:16px;">${escapeHtml(r.label)}</label>`).join('')
     : ''
   const formulier = knop
     ? `<form method="post" style="margin-top:24px;">
@@ -59,14 +59,14 @@ function pagina(titel: string, tekst: string, knop?: { label: string; email: str
           <div style="margin:16px 0 4px;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#9B9B95;">Mag ik vragen waarom?</div>
           ${keuzes}
         </div>
-        <button type="submit" style="background:#F15025;color:#fff;border:0;border-radius:10px;padding:13px 26px;font-size:15px;font-weight:700;cursor:pointer;">${escapeHtml(knop.label)}</button>
+        <button type="submit" style="background:#D24620;color:#fff;border:0;border-radius:10px;padding:13px 26px;font-size:15px;font-weight:700;cursor:pointer;">${escapeHtml(knop.label)}</button>
       </form>`
     : ''
   return `<!DOCTYPE html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(titel)}</title></head>
 <body style="margin:0;background:#F5F4F1;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#1A1A1A;">
   <div style="max-width:520px;margin:64px auto;padding:0 20px;">
     <div style="background:#fff;border-radius:16px;padding:40px 36px;box-shadow:0 8px 24px -12px rgba(26,26,26,0.12);">
-      <div style="font-size:20px;font-weight:800;letter-spacing:-0.02em;">Sign Company<span style="color:#F15025;">.</span></div>
+      <div style="font-size:20px;font-weight:800;letter-spacing:-0.02em;">Sign Company<span style="color:#D24620;">.</span></div>
       <h1 style="margin:24px 0 0;font-size:24px;line-height:1.25;font-weight:800;letter-spacing:-0.02em;">${escapeHtml(titel)}</h1>
       <p style="margin:12px 0 0;font-size:15px;line-height:1.65;color:#57574F;">${tekst}</p>
       ${formulier}

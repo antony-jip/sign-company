@@ -481,7 +481,7 @@ export function KlantContactSelector({
         <div>
           <Label
             className="text-[11px] font-semibold mb-1.5 block uppercase tracking-wider"
-            style={{ color: contactLabelAccent ? '#F15025' : '#A0A098' }}
+            style={{ color: contactLabelAccent ? '#D24620' : '#A0A098' }}
           >
             {contactLabelAccent ? 'Verzenden naar' : 'Contactpersoon'}
           </Label>

@@ -79,7 +79,7 @@ export function MijnEmailSubTab() {
                   <span className="text-sm font-medium text-foreground">{postvak.naam}</span>
                   {postvak.isStandaard && postvakken.length > 1 && (
                     <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                      standaard<span style={{ color: '#F15025' }}>.</span>
+                      standaard<span style={{ color: '#D24620' }}>.</span>
                     </span>
                   )}
                   {postvak.soort === 'gedeeld' && (

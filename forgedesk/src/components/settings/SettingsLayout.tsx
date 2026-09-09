@@ -670,7 +670,7 @@ function DocumentenTab() {
         factuur_outro_tekst: factuurOutroTekst,
       })
       await refreshSettings()
-      toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Opgeslagen<span style={{ color: '#D24620' }}>.</span></>)
     } catch (err) {
       logger.error('Fout bij opslaan documentinstellingen:', err)
       toast.error('Kon documentinstellingen niet opslaan')

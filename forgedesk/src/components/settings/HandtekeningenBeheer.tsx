@@ -52,7 +52,7 @@ export function HandtekeningenBeheer({ onGeladen }: { onGeladen?: (aantal: numbe
     try {
       await bewaarHandtekening(h)
       await Promise.all([laad(), refreshProfile()])
-      toast.success(<>Handtekening opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Handtekening opgeslagen<span style={{ color: '#D24620' }}>.</span></>)
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Opslaan mislukt')
     } finally {

@@ -154,7 +154,7 @@ export function BestelbonnenLayout() {
     const a = document.createElement('a')
     a.href = url; a.download = 'bestelbonnen.csv'; a.click()
     URL.revokeObjectURL(url)
-    toast.success(<>CSV gedownload<span style={{ color: '#F15025' }}>.</span></>)
+    toast.success(<>CSV gedownload<span style={{ color: '#D24620' }}>.</span></>)
   }, [gefilterd, getLeverancierNaam, getProjectNaam, bedragen])
 
   if (isLoading) {
@@ -232,7 +232,7 @@ export function BestelbonnenLayout() {
         <div className="overflow-x-auto">
           {gefilterd.length === 0 ? (
             <div className="flex flex-col items-center gap-3 py-16">
-              <div className="rounded-full" style={{ width: '40px', height: '4px', backgroundColor: '#F15025' }} />
+              <div className="rounded-full" style={{ width: '40px', height: '4px', backgroundColor: '#D24620' }} />
               <p className="font-semibold" style={{ fontSize: '14px', color: 'hsl(var(--foreground))' }}>Geen bestelbonnen gevonden</p>
               <p style={{ fontSize: '12px', color: 'hsl(var(--muted-foreground))' }}>Maak een bestelbon aan voor je leveranciers.</p>
               <Button variant="outline" size="sm" onClick={() => navigate('/bestelbonnen/nieuw')}>

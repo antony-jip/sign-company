@@ -105,7 +105,7 @@ const PRIORITEIT_ORDER: Record<string, number> = { kritiek: 4, hoog: 3, medium: 
 // switchen automatisch per theme · pastel in light, gedimde versie in dark.
 // Binair: belangrijk (kritiek) = flame met lichte tint; de rest = rustig lichtblauw.
 const PRIORITEIT_COLORS: Record<TaakPrioriteit, { border: string; bg: string; text: string; dot: string }> = {
-  kritiek: { border: '#F15025', bg: 'rgba(241,80,37,0.09)',  text: '#C03A18', dot: '#F15025' },
+  kritiek: { border: '#D24620', bg: 'rgba(210, 70, 32,0.09)',  text: '#C03A18', dot: '#D24620' },
   hoog:    { border: '#1A535C', bg: 'rgba(26,83,92,0.07)',   text: '#1A535C', dot: '#1A535C' },
   medium:  { border: '#1A535C', bg: 'rgba(26,83,92,0.07)',   text: '#1A535C', dot: '#1A535C' },
   laag:    { border: '#1A535C', bg: 'rgba(26,83,92,0.07)',   text: '#1A535C', dot: '#1A535C' },
@@ -127,7 +127,7 @@ const PRIORITEIT_LABEL: Record<TaakPrioriteit, string> = {
 // Een wash over het kaartpapier · alleen kritiek verdient kleur, de rest zou
 // een raster van gelijk gekleurde blokken opleveren
 const PRIO_CARD_BG: Record<TaakPrioriteit, string> = {
-  kritiek: 'bg-[rgba(241,80,37,0.055)] dark:bg-[rgba(241,80,37,0.12)]',
+  kritiek: 'bg-[rgba(210, 70, 32,0.055)] dark:bg-[rgba(210, 70, 32,0.12)]',
   hoog: 'bg-transparent',
   medium: 'bg-transparent',
   laag: 'bg-transparent',
@@ -155,7 +155,7 @@ const PRIORITEIT_RING_COLORS: Record<TaakPrioriteit, string> = {
 }
 
 // Deterministic project color from name
-const PROJECT_COLORS = ['#1A535C', '#F15025', '#2D6B48', '#3A6B8C', '#9A5A48', '#6A5A8A', '#C44830', '#5A5A55']
+const PROJECT_COLORS = ['#1A535C', '#D24620', '#2D6B48', '#3A6B8C', '#9A5A48', '#6A5A8A', '#C44830', '#5A5A55']
 function getProjectColor(name: string): string {
   let hash = 0
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
@@ -1230,7 +1230,7 @@ export function TasksLayout() {
           logWijziging({ userId: user.id, entityType: 'taak', entityId: newTaak.id, actie: 'gewijzigd', veld: 'toewijzing', medewerkerNaam, nieuweWaarde: newTaak.toegewezen_aan })
         }
       }
-      toast.success(<>Taak aangemaakt<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Taak aangemaakt<span style={{ color: '#D24620' }}>.</span></>)
       return true
     } catch (error) {
       logger.error('Fout bij aanmaken:', error)
@@ -1282,14 +1282,14 @@ export function TasksLayout() {
     if (user?.id) {
       logWijziging({ userId: user.id, entityType: 'taak', entityId: taak.id, actie: 'status_gewijzigd', medewerkerNaam, veld: 'status', oudeWaarde: taak.status, nieuweWaarde: newStatus })
     }
-    if (newStatus === 'klaar') toast.success(<>Taak afgerond<span style={{ color: '#F15025' }}>.</span></>)
+    if (newStatus === 'klaar') toast.success(<>Taak afgerond<span style={{ color: '#D24620' }}>.</span></>)
   }
 
   async function handleDeleteDirect(taak: Taak) {
     try {
       await deleteTaak(taak.id)
       setTaken((prev) => prev.filter((t) => t.id !== taak.id))
-      toast.success(<>Taak verwijderd<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Taak verwijderd<span style={{ color: '#D24620' }}>.</span></>)
     } catch (error) {
       logger.error('Fout bij verwijderen:', error)
       toast.error('Kon taak niet verwijderen')
@@ -1382,7 +1382,7 @@ export function TasksLayout() {
     try {
       await deleteTaak(deletingTaak.id)
       setTaken((prev) => prev.filter((t) => t.id !== deletingTaak.id))
-      toast.success(<>Taak verwijderd<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Taak verwijderd<span style={{ color: '#D24620' }}>.</span></>)
       setDeleteDialogOpen(false)
       setDeletingTaak(null)
     } catch (error) {
@@ -2162,7 +2162,7 @@ export function TasksLayout() {
                     'group/cell relative p-2 transition-colors flex flex-col min-h-0',
                     !isCurrentMonth ? 'bg-background text-muted-foreground/80' : 'bg-card',
                     isToday && 'bg-petrol/[0.04] dark:bg-white/[0.03]',
-                    isDropHere && 'bg-flame/[0.06] shadow-[inset_0_2px_0_#F15025]'
+                    isDropHere && 'bg-flame/[0.06] shadow-[inset_0_2px_0_#D24620]'
                   )}
                   onClick={(e) => {
                     if (!isCurrentMonth || isAddingHere) return
@@ -2575,7 +2575,7 @@ export function TasksLayout() {
               />
             </div>
             <button
-              className="w-full h-9 text-sm font-semibold text-white rounded-xl bg-flame shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35)] hover:-translate-y-[1px] active:translate-y-0 transition-all disabled:opacity-40 disabled:shadow-none disabled:translate-y-0"
+              className="w-full h-9 text-sm font-semibold text-white rounded-xl bg-flame shadow-[0_2px_8px_rgba(210, 70, 32,0.25)] hover:shadow-[0_4px_16px_rgba(210, 70, 32,0.35)] hover:-translate-y-[1px] active:translate-y-0 transition-all disabled:opacity-40 disabled:shadow-none disabled:translate-y-0"
               disabled={!fabTitle.trim()}
               onClick={handleFabAdd}
             >
@@ -2587,8 +2587,8 @@ export function TasksLayout() {
         <button
           onClick={() => setFabOpen(!fabOpen)}
           className={cn(
-            'flex items-center justify-center w-14 h-14 rounded-2xl shadow-[0_4px_16px_rgba(241,80,37,0.35)] transition-all duration-200',
-            'bg-flame text-white hover:shadow-[0_6px_24px_rgba(241,80,37,0.45)] hover:scale-105',
+            'flex items-center justify-center w-14 h-14 rounded-2xl shadow-[0_4px_16px_rgba(210, 70, 32,0.35)] transition-all duration-200',
+            'bg-flame text-white hover:shadow-[0_6px_24px_rgba(210, 70, 32,0.45)] hover:scale-105',
             fabOpen && 'rotate-45'
           )}
         >
@@ -3012,7 +3012,7 @@ function DayColumn({
           style={{ top: `${nowLineTop}%` }}
         >
           <div className="flex items-center">
-            <div className="w-2 h-2 rounded-full bg-flame shadow-[0_0_0_3px_rgba(241,80,37,0.18)] -ml-1.5 flex-shrink-0" />
+            <div className="w-2 h-2 rounded-full bg-flame shadow-[0_0_0_3px_rgba(210, 70, 32,0.18)] -ml-1.5 flex-shrink-0" />
             <div className="flex-1 h-[1.5px] bg-flame/70" />
           </div>
         </div>

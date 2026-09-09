@@ -502,7 +502,7 @@ export function ClientsLayout() {
           </div>
           <button
             onClick={() => { setEditingKlant(undefined); setAddDialogOpen(true) }}
-            className="inline-flex items-center gap-2 bg-flame text-white px-3 md:pl-4 md:pr-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25),0_0_0_1px_rgba(241,80,37,0.1)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35),0_0_0_1px_rgba(241,80,37,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:bg-[#D03A18] transition-all duration-200"
+            className="inline-flex items-center gap-2 bg-flame text-white px-3 md:pl-4 md:pr-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(210, 70, 32,0.25),0_0_0_1px_rgba(210, 70, 32,0.1)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(210, 70, 32,0.35),0_0_0_1px_rgba(210, 70, 32,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:bg-[#D03A18] transition-all duration-200"
           >
             <Plus className="w-4 h-4 opacity-80" />
             <span className="hidden md:inline">Nieuwe klant</span>
@@ -900,7 +900,7 @@ export function ClientsLayout() {
             de projectenlijst. */}
         <div className="md:hidden space-y-2">
           {paginatedKlanten.map((klant, i) => {
-            const stripeHex = klantNeedsAttention(klant) ? '#F15025' : klantStatusHex(klant.status)
+            const stripeHex = klantNeedsAttention(klant) ? '#D24620' : klantStatusHex(klant.status)
             const tint = avatarTint(klant.bedrijfsnaam)
             return (
               <div
@@ -980,7 +980,7 @@ export function ClientsLayout() {
               </thead>
               <tbody>
                 {paginatedKlanten.map((klant, i) => {
-                  const stripeHex = klantNeedsAttention(klant) ? '#F15025' : klantStatusHex(klant.status)
+                  const stripeHex = klantNeedsAttention(klant) ? '#D24620' : klantStatusHex(klant.status)
                   return (
                   <tr
                     key={klant.id}

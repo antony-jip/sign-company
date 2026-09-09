@@ -5,7 +5,7 @@ import type { MaatjeAnnotatie, MaatjeKleur, MaatjePunt } from '@/types'
  * gerenderd kunnen worden (geen Tailwind-tokens in canvas-context).
  */
 export const MAATJE_KLEUREN: Record<MaatjeKleur, string> = {
-  flame: '#F15025',
+  flame: '#D24620',
   petrol: '#1A535C',
   groen: '#2D6B48',
   wit: '#FFFFFF',

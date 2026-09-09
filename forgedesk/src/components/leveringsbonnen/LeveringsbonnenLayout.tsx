@@ -133,7 +133,7 @@ export function LeveringsbonnenLayout() {
     const a = document.createElement('a')
     a.href = url; a.download = 'leveringsbonnen.csv'; a.click()
     URL.revokeObjectURL(url)
-    toast.success(<>CSV gedownload<span style={{ color: '#F15025' }}>.</span></>)
+    toast.success(<>CSV gedownload<span style={{ color: '#D24620' }}>.</span></>)
   }, [gefilterd, getKlantNaam, getProjectNaam])
 
   if (isLoading) {

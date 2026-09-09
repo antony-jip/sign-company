@@ -1040,7 +1040,7 @@ export function WerkbonDetail() {
         { fotos }
       )
       doc.save(`werkbon-${werkbonNummer || 'nieuw'}.pdf`)
-      toast.success(<>PDF gedownload<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>PDF gedownload<span style={{ color: '#D24620' }}>.</span></>)
     } catch (err) {
       console.error('PDF generatie fout:', err)
       toast.error('Kon PDF niet genereren')
@@ -1164,7 +1164,7 @@ export function WerkbonDetail() {
       <div className="flex items-center justify-between gap-3 mb-5 flex-wrap">
         <div className="flex items-center gap-3">
           <BackButton fallbackPath="/werkbonnen" />
-          <div className="h-10 w-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#F15025' }}>
+          <div className="h-10 w-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#D24620' }}>
             <ClipboardCheck className="h-4 w-4 text-white" />
           </div>
           <div>
@@ -1173,7 +1173,7 @@ export function WerkbonDetail() {
             </h1>
             {!isNew && (
               <span className={cn('inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold', STATUS_CONFIG[status]?.bg, STATUS_CONFIG[status]?.color)}>
-                {STATUS_CONFIG[status]?.label || status}<span style={{ color: '#F15025' }}>.</span>
+                {STATUS_CONFIG[status]?.label || status}<span style={{ color: '#D24620' }}>.</span>
               </span>
             )}
           </div>
@@ -1265,7 +1265,7 @@ export function WerkbonDetail() {
               <button
                 onClick={handleItemToevoegen}
                 className="inline-flex items-center gap-1 h-8 px-3 text-[12px] font-semibold rounded-lg text-white transition-all hover:opacity-90"
-                style={{ backgroundColor: '#F15025' }}
+                style={{ backgroundColor: '#D24620' }}
               >
                 <Plus className="h-3.5 w-3.5" /> Item toevoegen
               </button>

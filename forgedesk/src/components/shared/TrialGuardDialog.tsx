@@ -50,7 +50,7 @@ export function TrialGuardDialog({ open, onOpenChange }: TrialGuardDialogProps) 
           <Button
             onClick={handleActivate}
             className="text-white font-bold sm:order-2 inline-flex items-center gap-2"
-            style={{ backgroundColor: '#F15025' }}
+            style={{ backgroundColor: '#D24620' }}
           >
             Activeer abonnement · €{bedragExcl}/maand
             <ArrowRight className="h-4 w-4" />

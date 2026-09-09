@@ -81,7 +81,7 @@ export function OfferteVervolgDialog({ open, onOpenChange, offerteId, onBijgewer
       const { project, offerte: bijgewerkt } = await converteerOfferteNaarProject(huidig, user?.id)
       logCreate({ user, medewerkers, entityType: 'project', entityId: project.id, omschrijving: `Aangemaakt vanuit offerte ${huidig.nummer}` })
       onBijgewerkt?.(bijgewerkt)
-      toast.success(<>Project aangemaakt<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Project aangemaakt<span style={{ color: '#D24620' }}>.</span></>)
       onOpenChange(false)
       navigate(`/projecten/${project.id}`)
     } catch (err) {
@@ -113,7 +113,7 @@ export function OfferteVervolgDialog({ open, onOpenChange, offerteId, onBijgewer
     try {
       const bijgewerkt = await wijsOfferteAf(offerte, redenTekst)
       onBijgewerkt?.(bijgewerkt)
-      toast.success(<>Offerte afgewezen<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Offerte afgewezen<span style={{ color: '#D24620' }}>.</span></>)
       onOpenChange(false)
     } catch (err) {
       logger.error('Afwijzen mislukt:', err)
@@ -207,7 +207,7 @@ export function OfferteVervolgDialog({ open, onOpenChange, offerteId, onBijgewer
                   type="button"
                   onClick={handleAfwijzen}
                   disabled={!reden || !!bezig || (reden === 'Iets anders' && !toelichting.trim())}
-                  className="inline-flex items-center justify-center gap-2 min-h-[44px] sm:min-h-[36px] px-4 text-[13px] font-semibold rounded-xl bg-flame text-white hover:bg-[#E04520] shadow-[0_2px_8px_rgba(241,80,37,0.25)] transition-all disabled:opacity-50"
+                  className="inline-flex items-center justify-center gap-2 min-h-[44px] sm:min-h-[36px] px-4 text-[13px] font-semibold rounded-xl bg-flame text-white hover:bg-[#E04520] shadow-[0_2px_8px_rgba(210, 70, 32,0.25)] transition-all disabled:opacity-50"
                 >
                   {bezig === 'afwijzen' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <XCircle className="h-3.5 w-3.5" strokeWidth={1.75} />}
                   {bezig === 'afwijzen' ? 'Bezig…' : 'Afwijzen'}

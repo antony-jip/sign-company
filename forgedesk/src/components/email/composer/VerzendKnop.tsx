@@ -40,7 +40,7 @@ export function VerzendKnop({ onVerzend, onPlan, onConceptVerwijderen, bezig = f
         type="button"
         onClick={onVerzend}
         disabled={bezig}
-        className="tap-press h-9 pl-4 pr-3.5 rounded-l-[10px] text-[13px] font-semibold text-white bg-flame shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_12px_rgba(241,80,37,0.35)] hover:-translate-y-px active:translate-y-0 transition-all duration-150 flex items-center gap-2 disabled:opacity-50"
+        className="tap-press h-9 pl-4 pr-3.5 rounded-l-[10px] text-[13px] font-semibold text-white bg-flame shadow-[0_2px_8px_rgba(210, 70, 32,0.25)] hover:shadow-[0_4px_12px_rgba(210, 70, 32,0.35)] hover:-translate-y-px active:translate-y-0 transition-all duration-150 flex items-center gap-2 disabled:opacity-50"
       >
         {bezig ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
         Verzenden

@@ -23,9 +23,9 @@ interface TypeStyle {
 const TYPE_STYLES: Record<ItemType, TypeStyle> = {
   montage: {
     icon: Wrench,
-    iconColor: '#F15025',
+    iconColor: '#D24620',
     bg: 'linear-gradient(135deg, #FDE8E4 0%, #FBD7CC 100%)',
-    hoverBg: 'linear-gradient(90deg, rgba(241,80,37,0.04) 0%, rgba(241,80,37,0.00) 100%)',
+    hoverBg: 'linear-gradient(90deg, rgba(210, 70, 32,0.04) 0%, rgba(210, 70, 32,0.00) 100%)',
   },
   taak: {
     icon: CheckSquare,
@@ -137,7 +137,7 @@ export function VandaagBlok() {
     try {
       await updateTaak(taakId, { status: 'klaar' })
       refresh()
-      toast.success(<>Taak afgerond<span style={{ color: '#F15025' }}>.</span></>, {
+      toast.success(<>Taak afgerond<span style={{ color: '#D24620' }}>.</span></>, {
         duration: 5000,
         action: {
           label: 'Ongedaan',
@@ -194,7 +194,7 @@ export function VandaagBlok() {
       }
     }, 5000)
     pendingDeleteTimersRef.current.set(taakId, timer)
-    toast.success(<>Taak verwijderd<span style={{ color: '#F15025' }}>.</span></>, {
+    toast.success(<>Taak verwijderd<span style={{ color: '#D24620' }}>.</span></>, {
       duration: 5000,
       action: {
         label: 'Ongedaan',
@@ -230,7 +230,7 @@ export function VandaagBlok() {
     try {
       await updateTaak(taakId, { deadline: newDeadline })
       refresh()
-      toast.success(<>Verplaatst naar morgen<span style={{ color: '#F15025' }}>.</span></>, {
+      toast.success(<>Verplaatst naar morgen<span style={{ color: '#D24620' }}>.</span></>, {
         duration: 5000,
         action: originalDeadline
           ? {
@@ -304,7 +304,7 @@ export function VandaagBlok() {
       })
       setQuickAddInput('')
       refresh()
-      toast.success(<>Taak aangemaakt<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Taak aangemaakt<span style={{ color: '#D24620' }}>.</span></>)
     } catch {
       toast.error('Kon taak niet aanmaken')
     } finally {

@@ -3,7 +3,7 @@ import { useMemo } from 'react'
 // Kleine CSS-only confetti. Geen extra dependency en geen JS-animatieloop, zodat
 // dit overal ingezet kan worden zonder de motion-conventie te doorbreken.
 
-const KLEUREN = ['#F15025', '#1A535C', '#3A7D52', '#E8B44A', '#4E96A3']
+const KLEUREN = ['#D24620', '#1A535C', '#3A7D52', '#E8B44A', '#4E96A3']
 
 interface Props {
   /** Aantal snippers. Houd dit laag op kleine kaarten. */

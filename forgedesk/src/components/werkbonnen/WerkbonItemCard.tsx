@@ -291,7 +291,7 @@ export const WerkbonItemCard = React.memo(function WerkbonItemCard({
                               type="button"
                               onClick={() => onImageGrootteChange(item.id, afb.id, g)}
                               className={`flex-1 h-7 text-[10px] uppercase tracking-wider rounded transition-colors ${active ? 'font-semibold text-white' : 'text-muted-foreground hover:bg-white'}`}
-                              style={active ? { backgroundColor: '#F15025' } : undefined}
+                              style={active ? { backgroundColor: '#D24620' } : undefined}
                               aria-pressed={active}
                             >
                               {GROOTTE_LABEL[g]}

@@ -5,7 +5,7 @@
 /* ================================================================
    DOEN DESIGN SYSTEM v4 — PREMIUM
    $200/mo SaaS energy — warm, deep, liquid
-   #1A535C #F15025 #FAFAF8 #191919
+   #1A535C #D24620 #FAFAF8 #191919
    Fonts: Inter overal
    ================================================================ */
 
@@ -38,7 +38,7 @@
     --sidebar-ring: 186 53% 23%;
 
     /* Primary: petrol — voor hoofdknoppen */
-    --primary: 12 87% 54%;             /* #F15025 Flame as primary */
+    --primary: 13 74% 47%;             /* #D24620 Flame as primary */
     --primary-foreground: 0 0% 100%;
 
     /* Secondary */
@@ -50,7 +50,7 @@
     --muted-foreground: 25 10% 45%;
 
     /* Accent */
-    --accent: 12 87% 57%;              /* #F15025 flame */
+    --accent: 13 74% 50%;              /* #D24620 flame */
     --accent-foreground: 0 0% 100%;
 
     /* Borders */
@@ -113,7 +113,7 @@
     --wm-noise: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
 
     /* DOEN brand colors */
-    --color-flame: #F15025;
+    --color-flame: #D24620;
     --color-petrol: #1A535C;
     --color-petrol-light: #237580;
     --color-petrol-dark: #143F46;
@@ -203,13 +203,13 @@
     --sidebar-background: 190 40% 4%;    /* #061216 deepest */
     --sidebar-foreground: 190 8% 90%;
     --sidebar-border: 190 25% 14%;
-    --primary: 14 88% 55%;               /* #F15025 Flame als primary */
+    --primary: 14 74% 48%;               /* #D24620 Flame als primary */
     --primary-foreground: 0 0% 100%;
     --secondary: 190 25% 12%;            /* #15282D subtle surface */
     --secondary-foreground: 190 8% 75%;
     --muted: 190 25% 12%;
     --muted-foreground: 190 14% 74%;     /* warmer grijs, beter leesbaar in dark */
-    --accent: 14 88% 55%;                /* Flame */
+    --accent: 14 74% 48%;                /* Flame */
     --accent-foreground: 0 0% 100%;
     --border: 190 25% 20%;               /* iets lichter petrol-hairline voor card-separation */
     --input: 190 25% 18%;
@@ -239,7 +239,7 @@
     --prio-laag-text: #A8AAAC;
 
     /* Status-badge dark — gedimde tints */
-    --status-flame-bg: rgba(241, 80, 37, 0.16);
+    --status-flame-bg: rgba(210, 70, 32, 0.16);
     --status-flame-text: #FF8866;
     --status-green-bg: rgba(58, 125, 82, 0.16);
     --status-green-text: #66BC85;
@@ -263,7 +263,7 @@
     --wm-pale: 14 50% 20%;
     --wm-glass: rgba(19, 21, 24, 0.90);
     --wm-glass-border: rgba(255, 255, 255, 0.06);
-    --wm-glow: 0 0 40px rgba(241, 80, 37, 0.08);
+    --wm-glow: 0 0 40px rgba(210, 70, 32, 0.08);
 
     /* Elevation — dark: diepte via licht (inset rim-light + petrol-rand),
        niet alleen via zwarte schaduw. Hogere lagen vangen meer licht. */
@@ -272,7 +272,7 @@
     --shadow-md: 0 4px 16px -2px rgba(0,0,0,0.5), 0 2px 4px -1px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05);
     --shadow-lg: 0 12px 40px -8px rgba(0,0,0,0.6), 0 4px 12px -4px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06), 0 0 0 1px rgba(95,181,192,0.07);
     --shadow-xl: 0 20px 60px -12px rgba(0,0,0,0.7), 0 8px 24px -8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.07), 0 0 0 1px rgba(95,181,192,0.09);
-    --shadow-glow: 0 0 0 1px rgba(241,80,37,0.10), 0 4px 24px -4px rgba(241,80,37,0.15);
+    --shadow-glow: 0 0 0 1px rgba(210, 70, 32,0.10), 0 4px 24px -4px rgba(210, 70, 32,0.15);
     --shadow-inner-light: inset 0 1px 0 rgba(255,255,255,0.04);
     --surface-raised: 30 12% 11%;
     --surface-overlay: 30 12% 13%;
@@ -321,13 +321,13 @@
   /* Primary CTA "lift" in licht — zachte warme gloed onder flame/petrol
      buttons, alsof ze net boven het papier zweven. Subtieler dan de dark
      ember (licht draagt minder glow), zelfde taal. */
-  button[class*="bg-[#F15025]"]:not(:disabled):hover,
-  a[class*="bg-[#F15025]"]:hover,
+  button[class*="bg-[#D24620]"]:not(:disabled):hover,
+  a[class*="bg-[#D24620]"]:hover,
   button[class*="bg-flame"]:not(:disabled):hover,
   a[class*="bg-flame"]:hover {
     box-shadow:
-      0 4px 14px -2px rgba(241, 80, 37, 0.32),
-      0 0 22px -6px rgba(241, 80, 37, 0.14),
+      0 4px 14px -2px rgba(210, 70, 32, 0.32),
+      0 0 22px -6px rgba(210, 70, 32, 0.14),
       inset 0 1px 0 rgba(255, 255, 255, 0.22);
   }
   button[class*="bg-[#1A535C]"]:not(:disabled):hover,
@@ -343,13 +343,13 @@
   /* Primary CTA "lift" — flame/petrol buttons gloeien in dark als smeulende
      kolen: brede zachte glow + rim-light bovenrand. Matcht zowel hex-classes
      als de petrol/flame-tokens. */
-  .dark button[class*="bg-[#F15025]"]:not(:disabled):hover,
-  .dark a[class*="bg-[#F15025]"]:hover,
+  .dark button[class*="bg-[#D24620]"]:not(:disabled):hover,
+  .dark a[class*="bg-[#D24620]"]:hover,
   .dark button[class*="bg-flame"]:not(:disabled):hover,
   .dark a[class*="bg-flame"]:hover {
     box-shadow:
-      0 6px 20px -2px rgba(241, 80, 37, 0.42),
-      0 0 32px -4px rgba(241, 80, 37, 0.22),
+      0 6px 20px -2px rgba(210, 70, 32, 0.42),
+      0 0 32px -4px rgba(210, 70, 32, 0.22),
       inset 0 1px 0 rgba(255, 255, 255, 0.10);
   }
   .dark button[class*="bg-[#1A535C]"]:not(:disabled):hover,
@@ -679,7 +679,7 @@ input:focus, textarea:focus, select:focus {
   .badge-flame::after, .badge-petrol::after, .badge-groen::after,
   .badge-blauw::after, .badge-paars::after, .badge-grijs::after, .badge-warm-paars::after {
     content: '.';
-    color: #F15025;
+    color: #D24620;
     font-weight: 800;
     margin-left: -2px;
   }
@@ -731,9 +731,9 @@ input:focus, textarea:focus, select:focus {
 
   /* DOEN status badges with Flame dot */
   .badge-flame { background: #FDE8E2; color: #C03A18; }
-  .badge-flame::before { background: #F15025; }
-  .dark .badge-flame { background: rgba(241, 80, 37, 0.22); color: #F18060; }
-  .dark .badge-flame::before { background: #F15025; }
+  .badge-flame::before { background: #D24620; }
+  .dark .badge-flame { background: rgba(210, 70, 32, 0.22); color: #F18060; }
+  .dark .badge-flame::before { background: #D24620; }
 
   .badge-petrol { background: #E2F0F0; color: #1A535C; }
   .badge-petrol::before { background: #1A535C; }
@@ -805,18 +805,18 @@ input:focus, textarea:focus, select:focus {
     gap: 8px;
     padding: 9px 16px;
     border-radius: 8px;
-    background: #F15025;
+    background: #D24620;
     color: #FFFFFF;
     font-size: 13px;
     font-weight: 600;
     line-height: 1;
-    box-shadow: 0 1px 2px rgba(241, 80, 37, 0.25);
+    box-shadow: 0 1px 2px rgba(210, 70, 32, 0.25);
     transition: background 150ms ease, transform 150ms ease, box-shadow 150ms ease;
   }
   .btn-primary-flame:hover {
-    background: #D94520;
+    background: #BD3C1C;
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(241, 80, 37, 0.35);
+    box-shadow: 0 2px 8px rgba(210, 70, 32, 0.35);
   }
 
 }
@@ -1105,7 +1105,7 @@ tbody tr:hover {
   left: 0;
   width: 100%;
   height: 200px;
-  background: radial-gradient(ellipse at 20% 0%, rgba(241, 80, 37, 0.07) 0%, transparent 70%);
+  background: radial-gradient(ellipse at 20% 0%, rgba(210, 70, 32, 0.07) 0%, transparent 70%);
   pointer-events: none;
   z-index: 0;
 }
@@ -1122,7 +1122,7 @@ tbody tr:hover {
 
 .dark .doen-sidebar {
   background: linear-gradient(172deg, #1A1C20 0%, #15171A 40%, #111315 100%);
-  border-right-color: rgba(241, 80, 37, 0.06);
+  border-right-color: rgba(210, 70, 32, 0.06);
 }
 
 /* Glass-variant — alleen actief wanneer de rail open hovert (overlay over content) */
@@ -1173,7 +1173,7 @@ tbody tr:hover {
 }
 .doen-sidebar-section::after {
   content: '.';
-  color: #F15025;
+  color: #D24620;
   font-weight: 800;
   margin-left: 1px;
 }
@@ -1187,8 +1187,8 @@ tbody tr:hover {
   width: 2.5px;
   height: 18px;
   border-radius: 0 3px 3px 0;
-  background: #F15025;
-  box-shadow: 0 0 6px rgba(241, 80, 37, 0.25);
+  background: #D24620;
+  box-shadow: 0 0 6px rgba(210, 70, 32, 0.25);
 }
 
 /* Sidebar nav item hover sweep */
@@ -1234,7 +1234,7 @@ tbody tr:hover {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #F15025;
+  background: #D24620;
 }
 
 /* Active item — frosted surface (expanded mode) */
@@ -1262,7 +1262,7 @@ tbody tr:hover {
 
 /* User avatar ring — static (iOS-clean: no idle shift) */
 .doen-sidebar-avatar {
-  border: 1.5px solid rgba(241, 80, 37, 0.18);
+  border: 1.5px solid rgba(210, 70, 32, 0.18);
 }
 
 /* ================================================================
@@ -2855,7 +2855,7 @@ button, a, [role="button"], summary, label, input[type="checkbox"], input[type="
 
 /* Doen. toast styling */
 [data-sonner-toast] [data-icon] svg { color: #1A535C; }
-[data-sonner-toast][data-type="error"] [data-icon] svg { color: #F15025; }
+[data-sonner-toast][data-type="error"] [data-icon] svg { color: #D24620; }
 [data-sonner-toast][data-type="success"] [data-icon] svg { color: #1A535C; }
 
 /* Doen. module-based badge classes — consolidated in @layer components above */
@@ -2931,11 +2931,11 @@ button, a, [role="button"], summary, label, input[type="checkbox"], input[type="
   box-shadow: 0 4px 12px rgba(26, 83, 92, 0.35);
 }
 .dark .sidebar-logo-mark {
-  background: linear-gradient(135deg, #F15025 0%, #D94520 100%);
-  box-shadow: 0 2px 8px rgba(241, 80, 37, 0.25);
+  background: linear-gradient(135deg, #D24620 0%, #BD3C1C 100%);
+  box-shadow: 0 2px 8px rgba(210, 70, 32, 0.25);
 }
 .dark .sidebar-logo-mark:hover {
-  box-shadow: 0 4px 12px rgba(241, 80, 37, 0.35);
+  box-shadow: 0 4px 12px rgba(210, 70, 32, 0.35);
 }
 
 /* Premium page header with accent strip */
@@ -2984,7 +2984,7 @@ button, a, [role="button"], summary, label, input[type="checkbox"], input[type="
   100% { background-position: 200% 0; }
 }
 .spectrum-loading {
-  background: linear-gradient(90deg, #F15025 0%, #9A4070 25%, #3A6B8C 50%, #1A535C 75%, #F15025 100%);
+  background: linear-gradient(90deg, #D24620 0%, #9A4070 25%, #3A6B8C 50%, #1A535C 75%, #D24620 100%);
   background-size: 200% 100%;
   animation: spectrum-shimmer 2s ease-in-out infinite;
   height: 3px;
@@ -3142,7 +3142,7 @@ button, a, [role="button"], summary, label, input[type="checkbox"], input[type="
 .doen-stat-tile {
   background-image:
     radial-gradient(ellipse 65% 50% at 0% 0%, rgba(26,83,92,0.06), transparent 70%),
-    radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241,80,37,0.06), transparent 65%);
+    radial-gradient(ellipse 85% 65% at 100% 100%, rgba(210, 70, 32,0.06), transparent 65%);
   border: 1px solid rgba(26,83,92,0.08);
   box-shadow: 0 1px 2px rgba(20,62,71,0.04), 0 8px 24px rgba(20,62,71,0.025);
 }
@@ -3152,7 +3152,7 @@ button, a, [role="button"], summary, label, input[type="checkbox"], input[type="
   background-color: hsl(190 28% 10%);
   background-image:
     radial-gradient(ellipse 70% 60% at 0% 0%, rgba(36, 117, 128, 0.12), transparent 70%),
-    radial-gradient(ellipse 90% 70% at 100% 100%, rgba(241, 80, 37, 0.05), transparent 65%);
+    radial-gradient(ellipse 90% 70% at 100% 100%, rgba(210, 70, 32, 0.05), transparent 65%);
   border-color: rgba(95, 181, 192, 0.10);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.035),
@@ -3316,9 +3316,9 @@ button, a, [role="button"], summary, label, input[type="checkbox"], input[type="
 /* Native-tint: op Apple tinten native checkboxes/radio's/cursors mee in
    het merk (zoals een echte macOS-app de accent-kleur respecteert). */
 :root { accent-color: #1A535C; }
-.dark body { accent-color: #F15025; }
+.dark body { accent-color: #D24620; }
 input, textarea, [contenteditable="true"] { caret-color: #1A535C; }
-.dark input, .dark textarea, .dark [contenteditable="true"] { caret-color: #F15025; }
+.dark input, .dark textarea, .dark [contenteditable="true"] { caret-color: #D24620; }
 
 /* iOS overlay-scrollbars: dun, translucent, zwevende thumb. */
 .doen-toolbar ~ * ::-webkit-scrollbar,
@@ -3357,7 +3357,7 @@ button.doen-panel:hover {
 .dark .doen-panel {
   background:
     radial-gradient(ellipse 70% 60% at 0% 0%, rgba(36, 117, 128, 0.10), transparent 70%),
-    radial-gradient(ellipse 90% 70% at 100% 100%, rgba(241, 80, 37, 0.045), transparent 65%),
+    radial-gradient(ellipse 90% 70% at 100% 100%, rgba(210, 70, 32, 0.045), transparent 65%),
     hsl(190 28% 10%);
   border-color: rgba(95, 181, 192, 0.10);
   box-shadow:
@@ -3380,7 +3380,7 @@ button.doen-panel:hover {
 .doen-wash {
   background-image:
     radial-gradient(ellipse 65% 50% at 0% 0%, rgba(26, 83, 92, 0.06), transparent 70%),
-    radial-gradient(ellipse 85% 65% at 100% 100%, rgba(241, 80, 37, 0.06), transparent 65%);
+    radial-gradient(ellipse 85% 65% at 100% 100%, rgba(210, 70, 32, 0.06), transparent 65%);
 }
 
 /* Bijzin naast een kop of KPI-getal: Petrol i.p.v. grijs, afgesloten met
@@ -3533,7 +3533,7 @@ button.doen-panel:hover {
   color: hsl(190 8% 90%) !important;
   box-shadow:
     0 12px 36px -8px rgba(0, 0, 0, 0.60),
-    0 0 24px -6px rgba(241, 80, 37, 0.10),
+    0 0 24px -6px rgba(210, 70, 32, 0.10),
     inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
 }
 .dark [data-sonner-toast][data-type="success"] {
@@ -3655,7 +3655,7 @@ button.doen-panel:hover {
 @keyframes punt-landt {
   0%   { offset-distance: 0%;   opacity: 0; --punt-kleur: #1A535C; }
   14%  { opacity: 1; }
-  100% { offset-distance: 100%; opacity: 1; --punt-kleur: #F15025; }
+  100% { offset-distance: 100%; opacity: 1; --punt-kleur: #D24620; }
 }
 
 /* Staart · kind van de punt, dus hij draait mee met de baan en blijft
@@ -3696,7 +3696,7 @@ button.doen-panel:hover {
 
 @media (prefers-reduced-motion: reduce) {
   .animate-checkmark { animation: none; stroke-dashoffset: 0; }
-  .punt-vlucht { offset-path: none; animation: none; background: #F15025; }
+  .punt-vlucht { offset-path: none; animation: none; background: #D24620; }
   .punt-vlucht::before { display: none; }
   .antwoord-landt { animation: none; }
 }
@@ -3881,7 +3881,7 @@ button.doen-panel:hover {
   height: 5px;
   margin-left: 5px;
   border-radius: 9999px;
-  background: #F15025;
+  background: #D24620;
   vertical-align: middle;
 }
 
@@ -3904,7 +3904,7 @@ button.doen-panel:hover {
   color: hsl(var(--muted-foreground));
 }
 .is-vandaag .stapel-dagnaam { color: var(--stapel-tekst); }
-.stapel-punt { color: #F15025; }
+.stapel-punt { color: #D24620; }
 
 .stapel-datum {
   font-size: 15px;
@@ -3940,7 +3940,7 @@ button.doen-panel:hover {
 }
 .stapel-dag:hover .stapel-plus,
 .stapel-plus:focus-visible { opacity: 1; }
-.stapel-plus:hover { color: #F15025; background: color-mix(in srgb, #F15025 10%, transparent); }
+.stapel-plus:hover { color: #D24620; background: color-mix(in srgb, #D24620 10%, transparent); }
 
 .stapel-invoer {
   width: 100%;
@@ -3992,9 +3992,9 @@ button.doen-panel:hover {
 .stapel-kaart:hover { --kaart-bg: var(--stapel-kaart); box-shadow: var(--stapel-schaduw-hoog); }
 .stapel-kaart:active { cursor: grabbing; }
 .stapel-kaart.is-sleept { opacity: 0.35; }
-.stapel-kaart[data-prio="kritiek"] { border-left-color: #F15025; }
+.stapel-kaart[data-prio="kritiek"] { border-left-color: #D24620; }
 .stapel-kaart[data-prio="kritiek"]:hover {
-  --kaart-bg: color-mix(in srgb, #F15025 4%, var(--stapel-kaart));
+  --kaart-bg: color-mix(in srgb, #D24620 4%, var(--stapel-kaart));
 }
 .stapel-kaart.is-klaar {
   --kaart-bg: color-mix(in srgb, #1A535C 3.5%, transparent);
@@ -4031,7 +4031,7 @@ button.doen-panel:hover {
   transition: width 160ms ease, height 160ms ease, opacity 160ms ease;
 }
 .stapel-vink:hover .stapel-vink-dot { width: 6px; height: 6px; opacity: 1; }
-.stapel-kaart[data-prio="kritiek"] .stapel-vink-dot { background: #F15025; opacity: 1; }
+.stapel-kaart[data-prio="kritiek"] .stapel-vink-dot { background: #D24620; opacity: 1; }
 
 .stapel-tekst { min-width: 0; }
 
@@ -4111,9 +4111,9 @@ button.doen-panel:hover {
   color: hsl(var(--muted-foreground));
   transition: color 150ms ease, background-color 150ms ease;
 }
-.stapel-actie:hover { color: #F15025; background: color-mix(in srgb, #F15025 10%, transparent); }
-.stapel-actie.is-aan { opacity: 1; color: #F15025; }
-.stapel-kaart .stapel-actie.is-aan svg { fill: #F15025; }
+.stapel-actie:hover { color: #D24620; background: color-mix(in srgb, #D24620 10%, transparent); }
+.stapel-actie.is-aan { opacity: 1; color: #D24620; }
+.stapel-kaart .stapel-actie.is-aan svg { fill: #D24620; }
 .stapel-actie.is-verwijder:hover { color: #C03A18; background: color-mix(in srgb, #C03A18 10%, transparent); }
 
 /* De vlam brandde vroeger permanent op kritieke kaarten. Met de oranje
@@ -4139,13 +4139,13 @@ button.doen-panel:hover {
 .stapel-drop.is-laatste { height: 26px; }
 .stapel-drop.is-actief {
   height: 6px;
-  background: #F15025;
+  background: #D24620;
 }
 
 .stapel-nu {
   height: 1px;
   margin: 3px 2px;
-  background: #F15025;
+  background: #D24620;
   position: relative;
 }
 .stapel-nu::before {
@@ -4156,7 +4156,7 @@ button.doen-panel:hover {
   width: 6px;
   height: 6px;
   border-radius: 9999px;
-  background: #F15025;
+  background: #D24620;
 }
 
 .stapel-leeg {
@@ -4342,7 +4342,7 @@ button.doen-panel:hover {
   100% { transform: scale(1) rotate(0); }
 }
 
-.sleep-punt { color: #F15025; }
+.sleep-punt { color: #D24620; }
 
 @media (prefers-reduced-motion: reduce) {
   .sleep-acties { animation: none; }
@@ -4381,8 +4381,8 @@ button.doen-panel:hover {
 .stapel-drop.is-actief {
   height: 30px;
   margin: 3px 0;
-  background: color-mix(in srgb, #F15025 12%, transparent);
-  border: 1px dashed color-mix(in srgb, #F15025 55%, transparent);
+  background: color-mix(in srgb, #D24620 12%, transparent);
+  border: 1px dashed color-mix(in srgb, #D24620 55%, transparent);
   border-radius: 10px;
 }
 
@@ -4846,12 +4846,12 @@ button.doen-panel:hover {
   background: color-mix(in srgb, #1A535C 55%, transparent);
   transition: width 320ms cubic-bezier(0.22, 1, 0.36, 1);
 }
-.stapel-belasting.is-vol::after { background: #F15025; width: 100%; }
+.stapel-belasting.is-vol::after { background: #D24620; width: 100%; }
 .dark .stapel-belasting { background: rgba(255, 255, 255, 0.12); }
 .dark .stapel-belasting::after { background: rgba(159, 197, 204, 0.6); }
-.dark .stapel-belasting.is-vol::after { background: #F15025; }
+.dark .stapel-belasting.is-vol::after { background: #D24620; }
 
-.stapel-uren-zacht.is-vol { color: #F15025; opacity: 1; font-weight: 600; }
+.stapel-uren-zacht.is-vol { color: #D24620; opacity: 1; font-weight: 600; }
 
 /* Geselecteerd voor een bulk-actie · geen vinkje op elke kaart, alleen een
    duidelijk vlak op wat je hebt aangewezen. */
@@ -4916,7 +4916,7 @@ button.doen-panel:hover {
   position: absolute;
   inset: -3px;
   border-radius: 9999px;
-  background: #F15025;
+  background: #D24620;
   opacity: 0;
   animation: doen-puls-ring 2.4s ease-out infinite;
   pointer-events: none;

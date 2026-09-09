@@ -21,7 +21,7 @@ const STYLES: Record<EventType, { label: string; icon: typeof Send; color: strin
   offerte_verstuurd: { label: 'Offerte verstuurd', icon: Send, color: '#1A535C', bg: 'rgba(26,83,92,0.08)' },
   offerte_bekeken: { label: 'Offerte bekeken', icon: Eye, color: '#8A7A4A', bg: '#F5F2E8' },
   akkoord: { label: 'Akkoord ontvangen', icon: CheckCircle2, color: '#3A7D52', bg: '#E8F2EC' },
-  wijziging: { label: 'Wijziging gevraagd', icon: AlertCircle, color: '#F15025', bg: '#FDE8E4' },
+  wijziging: { label: 'Wijziging gevraagd', icon: AlertCircle, color: '#D24620', bg: '#FDE8E4' },
   factuur_betaald: { label: 'Factuur betaald', icon: Receipt, color: '#3A7D52', bg: '#E8F2EC' },
 }
 

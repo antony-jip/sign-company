@@ -605,7 +605,7 @@ export function WerkbonMonteurView() {
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-6 text-center" style={{ backgroundColor: '#F8F7F5' }}>
         <ClipboardCheck className="h-10 w-10 mb-4" style={{ color: 'hsl(var(--muted-foreground))' }} />
         <p className="text-[15px] font-medium" style={{ color: 'hsl(var(--foreground))' }}>
-          Werkbon niet gevonden<span style={{ color: '#F15025' }}>.</span>
+          Werkbon niet gevonden<span style={{ color: '#D24620' }}>.</span>
         </p>
         <button
           type="button"
@@ -635,7 +635,7 @@ export function WerkbonMonteurView() {
                 {werkbon.werkbon_nummer}
               </span>
               <span className="text-[12px]" style={{ color: 'hsl(var(--muted-foreground))' }}>
-                {statusLabel}<span style={{ color: '#F15025' }}>.</span>
+                {statusLabel}<span style={{ color: '#D24620' }}>.</span>
               </span>
             </div>
             <h1 className="text-[18px] font-semibold leading-tight truncate" style={{ color: 'hsl(var(--foreground))' }}>
@@ -811,7 +811,7 @@ export function WerkbonMonteurView() {
         {mislukteFotos.length > 0 && (
           <section
             className="rounded-xl border p-3 flex flex-wrap items-center gap-3"
-            style={{ borderColor: '#F15025', backgroundColor: '#FDF1ED' }}
+            style={{ borderColor: '#D24620', backgroundColor: '#FDF1ED' }}
           >
             <div className="flex-1 min-w-[12rem]">
               <p className="text-sm font-semibold">
@@ -838,7 +838,7 @@ export function WerkbonMonteurView() {
               onClick={probeerFotosOpnieuw}
               disabled={isRetrying}
               className="h-10 px-4 rounded-lg text-sm font-bold text-white disabled:opacity-60"
-              style={{ backgroundColor: '#F15025' }}
+              style={{ backgroundColor: '#D24620' }}
             >
               {isRetrying ? 'Versturen...' : 'Opnieuw versturen'}
             </button>

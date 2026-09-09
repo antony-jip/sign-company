@@ -87,7 +87,7 @@ export function BetaaldPagina() {
               <CheckCircle2 className="h-8 w-8" style={{ color: '#3A7D52' }} />
             </div>
             <h2 className="text-xl font-bold" style={{ color: '#1A1A1A', letterSpacing: '-0.3px' }}>
-              Betaling ontvangen<span style={{ color: '#F15025' }}>.</span>
+              Betaling ontvangen<span style={{ color: '#D24620' }}>.</span>
             </h2>
             <p className="text-sm" style={{ color: '#6B6B66' }}>
               Bedankt voor uw betaling{info.bedrijfsnaam ? ` aan ${info.bedrijfsnaam}` : ''}.
@@ -103,7 +103,7 @@ export function BetaaldPagina() {
               <Clock className="h-8 w-8" style={{ color: '#8A7A4A' }} />
             </div>
             <h2 className="text-xl font-bold" style={{ color: '#1A1A1A', letterSpacing: '-0.3px' }}>
-              Betaling in verwerking<span style={{ color: '#F15025' }}>.</span>
+              Betaling in verwerking<span style={{ color: '#D24620' }}>.</span>
             </h2>
             <p className="text-sm" style={{ color: '#6B6B66' }}>
               We hebben nog geen bevestiging van uw betaling ontvangen. Is de betaling gelukt,
@@ -127,7 +127,7 @@ export function BetaaldPagina() {
               <CheckCircle2 className="h-8 w-8" style={{ color: '#3A7D52' }} />
             </div>
             <h2 className="text-xl font-bold" style={{ color: '#1A1A1A', letterSpacing: '-0.3px' }}>
-              Bedankt<span style={{ color: '#F15025' }}>.</span>
+              Bedankt<span style={{ color: '#D24620' }}>.</span>
             </h2>
             <p className="text-sm" style={{ color: '#6B6B66' }}>
               Als uw betaling is gelukt, wordt de factuur automatisch als betaald gemarkeerd.

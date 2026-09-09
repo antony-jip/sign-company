@@ -16,7 +16,7 @@ const KLEUREN = [
   { naam: 'Zwart', hex: '#1A1A1A' },
   { naam: 'Grijs', hex: '#6B6B66' },
   { naam: 'Petrol', hex: '#1A535C' },
-  { naam: 'Flame', hex: '#F15025' },
+  { naam: 'Flame', hex: '#D24620' },
   { naam: 'Blauw', hex: '#3A5A9A' },
   { naam: 'Groen', hex: '#3A7D52' },
 ]

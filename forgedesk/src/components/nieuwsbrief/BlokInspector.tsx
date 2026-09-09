@@ -376,10 +376,10 @@ function BlokOpmaakVelden({ opmaak, onChange }: { opmaak: BlokOpmaak | undefined
 }
 
 const THEMAS: { naam: string; stijl: Partial<NieuwsbriefStijl> }[] = [
-  { naam: 'Sign Company', stijl: { accent: '#F15025', tekst: '#1A1A1A', secundair: '#57574F', kaart: '#FFFFFF', achtergrond: '#F5F4F1' } },
+  { naam: 'Sign Company', stijl: { accent: '#D24620', tekst: '#1A1A1A', secundair: '#57574F', kaart: '#FFFFFF', achtergrond: '#F5F4F1' } },
   { naam: 'Petrol', stijl: { accent: '#1A535C', tekst: '#10282C', secundair: '#4E6366', kaart: '#FFFFFF', achtergrond: '#E9EFEF' } },
   { naam: 'Warm', stijl: { accent: '#B5530D', tekst: '#2B1D12', secundair: '#6B5A4C', kaart: '#FFFCF8', achtergrond: '#F3E9DD' } },
-  { naam: 'Donker', stijl: { accent: '#F15025', tekst: '#F5F4F1', secundair: '#C9C7C0', kaart: '#1E1E1C', achtergrond: '#111110' } },
+  { naam: 'Donker', stijl: { accent: '#D24620', tekst: '#F5F4F1', secundair: '#C9C7C0', kaart: '#1E1E1C', achtergrond: '#111110' } },
   { naam: 'Frisgroen', stijl: { accent: '#2E7D5B', tekst: '#14251E', secundair: '#4F6A5E', kaart: '#FFFFFF', achtergrond: '#EAF3EE' } },
   { naam: 'Inkt', stijl: { accent: '#1A1A1A', tekst: '#1A1A1A', secundair: '#57574F', kaart: '#FFFFFF', achtergrond: '#FFFFFF' } },
 ]

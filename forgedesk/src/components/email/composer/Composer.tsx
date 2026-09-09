@@ -354,7 +354,7 @@ export function Composer({ document: initieel, variant, onVerzonden, onSluiten, 
     if (id) {
       try { await verwijderConcept(id) } catch (err) { logger.warn('Concept verwijderen mislukt:', err) }
     }
-    toast.success(<>Concept verwijderd<span style={{ color: '#F15025' }}>.</span></>)
+    toast.success(<>Concept verwijderd<span style={{ color: '#D24620' }}>.</span></>)
     onSluiten()
   }
 
@@ -449,7 +449,7 @@ export function Composer({ document: initieel, variant, onVerzonden, onSluiten, 
             type="button"
             onClick={() => verzend()}
             disabled={bezig}
-            className="tap-press h-9 pl-3.5 pr-4 rounded-full text-[14px] font-semibold text-white bg-flame shadow-[0_2px_8px_rgba(241,80,37,0.25)] active:scale-[0.96] transition-transform duration-100 flex items-center gap-1.5 disabled:opacity-50"
+            className="tap-press h-9 pl-3.5 pr-4 rounded-full text-[14px] font-semibold text-white bg-flame shadow-[0_2px_8px_rgba(210, 70, 32,0.25)] active:scale-[0.96] transition-transform duration-100 flex items-center gap-1.5 disabled:opacity-50"
           >
             {bezig ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             Verzenden

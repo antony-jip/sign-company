@@ -23,14 +23,14 @@ const typeIcon: Record<ActivityEvent['type'], LucideIcon> = {
 
 const typeColor: Record<ActivityEvent['type'], string> = {
   project:  '#1A535C',
-  offerte:  '#F15025',
+  offerte:  '#D24620',
   montage:  '#2D6B48',
   werkbon:  '#C44830',
   factuur:  '#2D6B48',
   taak:     '#5A5A55',
   foto:     '#9A5A48',
   portaal:  'var(--m-portaal)',
-  tijd:     '#F15025',
+  tijd:     '#D24620',
 }
 
 function formatRelativeTime(dateStr: string): string {

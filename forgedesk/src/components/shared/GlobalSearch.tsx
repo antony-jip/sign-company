@@ -496,7 +496,7 @@ export function GlobalSearch({ className, compact }: GlobalSearchProps) {
       {showDropdown && (
         <div
           ref={dropdownRef}
-          className="absolute top-full left-0 right-0 mt-2 bg-card border border-border/60 rounded-xl shadow-2xl shadow-black/10 dark:bg-popover/90 dark:backdrop-blur-xl dark:border-white/10 dark:shadow-[0_24px_80px_-12px_rgba(0,0,0,0.6),0_0_24px_-6px_rgba(241,80,37,0.10)] z-50 overflow-hidden max-h-[420px] overflow-y-auto"
+          className="absolute top-full left-0 right-0 mt-2 bg-card border border-border/60 rounded-xl shadow-2xl shadow-black/10 dark:bg-popover/90 dark:backdrop-blur-xl dark:border-white/10 dark:shadow-[0_24px_80px_-12px_rgba(0,0,0,0.6),0_0_24px_-6px_rgba(210, 70, 32,0.10)] z-50 overflow-hidden max-h-[420px] overflow-y-auto"
         >
           {isLoading && categories.length === 0 ? (
             <div className="flex items-center justify-center gap-2 py-8 text-muted-foreground">

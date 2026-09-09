@@ -150,7 +150,7 @@ freelancers of gevoelige cross-org scenarios.
 
 ## 6. Brand
 
-- **Kleuren:** Flame `#F15025` (accent), Petrol `#1A535C` (dominant).
+- **Kleuren:** Flame `#D24620` (accent), Petrol `#1A535C` (dominant).
 - **Geen emojis in UI.**
 - **"doen."** lowercase bold + Flame dot signature.
 - **Status-woorden** eindigen op Flame dot: verstuurd. betaald. gedaan.

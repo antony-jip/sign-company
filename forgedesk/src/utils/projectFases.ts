@@ -5,7 +5,7 @@
  */
 
 export const PROJECT_FASES = {
-  offerte: { label: 'Offerte', percentage: 10, color: '#F15025' },
+  offerte: { label: 'Offerte', percentage: 10, color: '#D24620' },
   goedgekeurd: { label: 'Goedgekeurd', percentage: 20, color: '#D4453A' },
   voorbereiding: { label: 'Voorbereiding', percentage: 35, color: '#9A4070' },
   in_voorbereiding: { label: 'Voorbereiding', percentage: 35, color: '#9A4070' },
@@ -17,7 +17,7 @@ export const PROJECT_FASES = {
   afgerond: { label: 'Afgerond', percentage: 100, color: '#1A535C' },
   gearchiveerd: { label: 'Afgerond', percentage: 100, color: '#1A535C' },
   // Map hyphenated DB statuses
-  gepland: { label: 'Gepland', percentage: 10, color: '#F15025' },
+  gepland: { label: 'Gepland', percentage: 10, color: '#D24620' },
   actief: { label: 'Actief', percentage: 45, color: '#6A5A8A' },
   'in-review': { label: 'In review', percentage: 65, color: '#3A6B8C' },
   'on-hold': { label: 'On-hold', percentage: 30, color: '#9A4070' },

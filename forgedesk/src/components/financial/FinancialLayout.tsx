@@ -40,7 +40,7 @@ import { DiscountsSettings } from './DiscountsSettings'
 
 const MAAND_LABELS = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec']
 
-const PIE_COLORS = ['#1A535C', '#F15025', '#E8B931', '#9B9B95']
+const PIE_COLORS = ['#1A535C', '#D24620', '#E8B931', '#9B9B95']
 
 function formatTooltipValue(value: number) {
   return formatCurrency(value)
@@ -202,7 +202,7 @@ export function FinancialLayout() {
       sub: vervallenFacturen.length > 0
         ? `${vervallenFacturen.length} vervallen, ex btw`
         : `${facturen.filter((f) => f.status === 'verzonden').length} wachtend, ex btw`,
-      dot: vervallenFacturen.length > 0 ? '#F15025' : '#8A7A4A',
+      dot: vervallenFacturen.length > 0 ? '#D24620' : '#8A7A4A',
       pulse: vervallenFacturen.length > 0,
     },
     {
@@ -300,7 +300,7 @@ export function FinancialLayout() {
                       type="button"
                       onClick={() => navigate('/facturen/nieuw')}
                       className="h-9 px-4 text-sm font-semibold text-white rounded-lg transition-colors"
-                      style={{ backgroundColor: '#F15025' }}
+                      style={{ backgroundColor: '#D24620' }}
                     >
                       Eerste factuur maken
                     </button>

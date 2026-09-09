@@ -196,14 +196,14 @@ export function ClientProfile() {
     const ok = await bevestigDaanGeheugen(regel.id)
     if (!ok) { toast.error('Opslaan mislukt'); return }
     setDaanGeheugen(prev => prev.map(r => r.id === regel.id ? { ...r, status: 'actief' } : r))
-    toast.success(<>Daan onthoudt dit voortaan<span style={{ color: '#F15025' }}>.</span></>)
+    toast.success(<>Daan onthoudt dit voortaan<span style={{ color: '#D24620' }}>.</span></>)
   }
 
   const handleGeheugenWeggooien = async (regel: DaanGeheugenRegel) => {
     const ok = await wijsDaanGeheugenAf(regel.id)
     if (!ok) { toast.error('Weggooien mislukt'); return }
     setDaanGeheugen(prev => prev.filter(r => r.id !== regel.id))
-    toast.success(<>Weggegooid<span style={{ color: '#F15025' }}>.</span></>)
+    toast.success(<>Weggegooid<span style={{ color: '#D24620' }}>.</span></>)
   }
 
   const handleGeheugenBewerken = async () => {
@@ -1315,7 +1315,7 @@ export function ClientProfile() {
             <Card>
               {clientOffertes.length === 0 ? (
                 <CardContent className="py-12 text-center">
-                  <FileText className="doen-subtitel mb-3 inline-block h-12 w-12" strokeWidth={1.5} style={{ color: 'rgba(241,80,37,0.6)' }} />
+                  <FileText className="doen-subtitel mb-3 inline-block h-12 w-12" strokeWidth={1.5} style={{ color: 'rgba(210, 70, 32,0.6)' }} />
                   <p
                     className="text-muted-foreground"
                   >

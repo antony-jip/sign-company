@@ -433,7 +433,7 @@ export function IntegratiesTab() {
       setExactBevestigOntkoppel(false)
       setExactStatusTrigger((t) => t + 1)
       refreshSettings?.()
-      toast.success(<>Exact Online ontkoppeld<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Exact Online ontkoppeld<span style={{ color: '#D24620' }}>.</span></>)
     } catch (err) {
       logger.error('Exact Online ontkoppelen mislukt:', err)
       toast.error(err instanceof Error ? err.message : 'Ontkoppelen mislukt')
@@ -502,7 +502,7 @@ export function IntegratiesTab() {
     try {
       await saveIntegrationSettings({ boekhoud_pakket: pakket })
       refreshSettings?.()
-      toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Opgeslagen<span style={{ color: '#D24620' }}>.</span></>)
     } catch (err) {
       logger.error('Fout bij opslaan boekhoudpakket:', err)
       setBoekhoudPakket(vorige)
@@ -603,7 +603,7 @@ export function IntegratiesTab() {
       if (admins.length === 1) {
         await handleMoneybirdAdministratieChange(admins[0].id)
       }
-      toast.success(<>Moneybird verbonden<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Moneybird verbonden<span style={{ color: '#D24620' }}>.</span></>)
     } catch (err) {
       logger.error('Moneybird verbinden mislukt:', err)
       toast.error(err instanceof Error ? err.message : 'Verbinden mislukt')
@@ -622,7 +622,7 @@ export function IntegratiesTab() {
         moneybird_tax_rate_nul: moneybirdTaxNul,
       })
       refreshSettings?.()
-      toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Opgeslagen<span style={{ color: '#D24620' }}>.</span></>)
     } catch (err) {
       logger.error('Moneybird instellingen opslaan mislukt:', err)
       toast.error('Kon Moneybird instellingen niet opslaan')
@@ -687,7 +687,7 @@ export function IntegratiesTab() {
       setBoekhoudTokenAanwezig(true)
       setEboekhoudenToken('')
       setEboekhoudenConfigGeladen(false)
-      toast.success(<>e-Boekhouden verbonden<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>e-Boekhouden verbonden<span style={{ color: '#D24620' }}>.</span></>)
     } catch (err) {
       logger.error('e-Boekhouden verbinden mislukt:', err)
       toast.error(err instanceof Error ? err.message : 'Verbinden mislukt')
@@ -704,7 +704,7 @@ export function IntegratiesTab() {
         eboekhouden_omzet_ledger_id: eboekhoudenOmzetLedgerId,
       })
       refreshSettings?.()
-      toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Opgeslagen<span style={{ color: '#D24620' }}>.</span></>)
     } catch (err) {
       logger.error('e-Boekhouden instellingen opslaan mislukt:', err)
       toast.error('Kon e-Boekhouden instellingen niet opslaan')
@@ -732,7 +732,7 @@ export function IntegratiesTab() {
       setBoekhoudPakket('')
       setBevestigOntkoppel(false)
       refreshSettings?.()
-      toast.success(<>Ontkoppeld<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Ontkoppeld<span style={{ color: '#D24620' }}>.</span></>)
     } catch (err) {
       logger.error('Boekhoudkoppeling ontkoppelen mislukt:', err)
       toast.error(err instanceof Error ? err.message : 'Ontkoppelen mislukt')
@@ -797,7 +797,7 @@ export function IntegratiesTab() {
       setBoekhoudTokenAanwezig(true)
       setSnelstartSleutel('')
       setSnelstartConfigGeladen(false)
-      toast.success(<>SnelStart verbonden<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>SnelStart verbonden<span style={{ color: '#D24620' }}>.</span></>)
     } catch (err) {
       logger.error('SnelStart verbinden mislukt:', err)
       toast.error(err instanceof Error ? err.message : 'Verbinden mislukt')
@@ -817,7 +817,7 @@ export function IntegratiesTab() {
         snelstart_grootboek_nul_id: snelstartGrootboekNulId,
       })
       refreshSettings?.()
-      toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Opgeslagen<span style={{ color: '#D24620' }}>.</span></>)
     } catch (err) {
       logger.error('SnelStart instellingen opslaan mislukt:', err)
       toast.error('Kon SnelStart instellingen niet opslaan')
@@ -895,7 +895,7 @@ export function IntegratiesTab() {
         drive_map_aanmaken: driveMapAanmaken,
       })
       await refreshSettings()
-      toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Opgeslagen<span style={{ color: '#D24620' }}>.</span></>)
     } catch (err) {
       logger.error('Fout bij opslaan Drive-instellingen:', err)
       toast.error(err instanceof Error ? err.message : 'Kon Drive-instellingen niet opslaan')
@@ -917,7 +917,7 @@ export function IntegratiesTab() {
     try {
       await saveIntegrationSettings({ mollie_enabled: mollieEnabled, mollie_api_key: mollieApiKey.trim() })
       if (mollieApiKey) setMollieKeyOpgeslagen(true)
-      toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Opgeslagen<span style={{ color: '#D24620' }}>.</span></>)
     } catch (err) {
       logger.error('Fout bij opslaan Mollie instellingen:', err)
       toast.error(err instanceof Error ? err.message : 'Kon Mollie instellingen niet opslaan')
@@ -944,7 +944,7 @@ export function IntegratiesTab() {
         exact_betaalsync_actief: exactBetaalsyncActief,
       })
       if (exactClientSecret) setExactSecretOpgeslagen(true)
-      toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Opgeslagen<span style={{ color: '#D24620' }}>.</span></>)
     } catch (err) {
       logger.error('Fout bij opslaan Exact Online instellingen:', err)
       toast.error('Kon Exact Online instellingen niet opslaan')

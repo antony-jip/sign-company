@@ -80,7 +80,7 @@ export default {
         // (oude pastel palette verwijderd — vervangen door mod-* kleuren)
         // DOEN rebrand — nieuwe kleuren
         flame: {
-          DEFAULT: '#F15025',
+          DEFAULT: '#D24620',
           light: '#FDE8E2',
           border: '#F5C4B4',
           text: '#C03A18',
@@ -104,7 +104,7 @@ export default {
           text: '#1A535C',
         },
         'mod-offertes': {
-          DEFAULT: '#F15025',
+          DEFAULT: '#D24620',
           light: '#FDE8E2',
           border: '#F5C4B4',
           text: '#C03A18',

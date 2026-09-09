@@ -24,7 +24,7 @@ vier auditrapporten (architectuur, functies, sync, klik-doorloop).
 - Migraties schrijft de hoofdsessie (244 staat klaar). Mis je een kolom: stop
   en meld het in LOGBOEK.md, verzin geen eigen migratie.
 - Nederlands in code, types PascalCase Nederlands, geen emoji's, geen
-  em-dashes, Flame `#F15025` alleen voor de primaire actie, Petrol `#1A535C`.
+  em-dashes, Flame `#D24620` alleen voor de primaire actie, Petrol `#1A535C`.
 - Elke gedragsverandering die een gebruiker kan merken krijgt een schakelaar
   in `src/lib/functies.ts` (groep `mail`) of een voorkeur in localStorage
   (`doen_mail_<naam>`). Zie sectie 7.

@@ -61,7 +61,7 @@ export function ProfielTab() {
         telefoon,
       })
       await refreshProfile()
-      toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Opgeslagen<span style={{ color: '#D24620' }}>.</span></>)
     } catch (err: any) {
       logger.error('Fout bij opslaan profiel:', err)
       const msg = err?.message || err?.details || 'Onbekende fout'
@@ -106,7 +106,7 @@ export function ProfielTab() {
             <div
               className="w-20 h-20 rounded-2xl flex items-center justify-center text-[28px] font-extrabold text-white shadow-[0_4px_16px_rgba(26,83,92,0.25)] select-none"
               style={{
-                background: 'linear-gradient(135deg, #1A535C 0%, #2D6B72 45%, #F15025 130%)',
+                background: 'linear-gradient(135deg, #1A535C 0%, #2D6B72 45%, #D24620 130%)',
               }}
             >
               {initials}
@@ -145,7 +145,7 @@ export function ProfielTab() {
                 width: `${completionPct}%`,
                 background: completionPct === 100
                   ? 'linear-gradient(90deg, #2D6B48, #1A535C)'
-                  : 'linear-gradient(90deg, #1A535C, #F15025)',
+                  : 'linear-gradient(90deg, #1A535C, #D24620)',
               }}
             />
           </div>
@@ -190,7 +190,7 @@ export function ProfielTab() {
             type="button"
             onClick={handleSave}
             disabled={isSaving || isLoading}
-            className="inline-flex items-center gap-2 bg-flame text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25),0_0_0_1px_rgba(241,80,37,0.1)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35),0_0_0_1px_rgba(241,80,37,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:bg-[#D03A18] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+            className="inline-flex items-center gap-2 bg-flame text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(210, 70, 32,0.25),0_0_0_1px_rgba(210, 70, 32,0.1)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(210, 70, 32,0.35),0_0_0_1px_rgba(210, 70, 32,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:bg-[#D03A18] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
           >
             {isSaving ? 'Opslaan...' : 'Opslaan'}
           </button>
@@ -200,7 +200,7 @@ export function ProfielTab() {
       {/* ── Right column: live identity preview ───────────────────────── */}
       <aside className="space-y-3">
         <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4" strokeWidth={1.75} style={{ color: '#F15025' }} />
+          <Sparkles className="h-4 w-4" strokeWidth={1.75} style={{ color: '#D24620' }} />
           <span className="text-[11px] font-semibold uppercase tracking-widest text-foreground/70">
             Hoe anderen je zien
           </span>
@@ -215,13 +215,13 @@ export function ProfielTab() {
           <div
             aria-hidden
             className="absolute -top-8 -right-8 w-32 h-32 rounded-full opacity-[0.07]"
-            style={{ background: 'radial-gradient(circle, #F15025 0%, transparent 70%)' }}
+            style={{ background: 'radial-gradient(circle, #D24620 0%, transparent 70%)' }}
           />
           <div className="relative flex items-center gap-3 mb-4">
             <div
               className="w-12 h-12 rounded-xl flex items-center justify-center text-[16px] font-extrabold text-white select-none"
               style={{
-                background: 'linear-gradient(135deg, #1A535C 0%, #2D6B72 50%, #F15025 130%)',
+                background: 'linear-gradient(135deg, #1A535C 0%, #2D6B72 50%, #D24620 130%)',
               }}
             >
               {initials}

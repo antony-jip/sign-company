@@ -75,7 +75,7 @@ STRICTE OUTPUT-REGELS:
 - Lever ALLEEN de inhoud die binnen de mailbody komt: GEEN <html>, <head>, <body> of buitenste container (die wordt automatisch toegevoegd).
 - Gebruik e-mail-veilige HTML: <table>-layout waar nodig, ALLE styling inline (style="..."), geen <style>-blok, geen externe CSS, geen JavaScript.
 - Breedte maximaal 536px; afbeeldingen responsive met style="max-width:100%;height:auto;display:block;border-radius:8px;".
-- Huisstijl-kleuren: tekst #1A1A1A, secundair #57574F, accent/knoppen #F15025 (flame), links/koppen mogen #1A535C (petrol). Achtergrond van de kaart is wit.
+- Huisstijl-kleuren: tekst #1A1A1A, secundair #57574F, accent/knoppen #D24620 (flame), links/koppen mogen #1A535C (petrol). Achtergrond van de kaart is wit.
 - Knoppen "bulletproof": een <table> met achtergrondkleur en een <a> met inline padding, geen CSS-only knoppen.
 - Nederlands. Gebruik GEEN em-dashes (—); gebruik puntkomma's, komma's of een middelpunt (·).
 - Sluit af met een nette ondertekening namens Sign Company.`

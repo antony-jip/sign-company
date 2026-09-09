@@ -189,7 +189,7 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
         <div
           className="flex items-center justify-center h-10 w-10 rounded-xl text-white text-[15px] font-extrabold flex-shrink-0"
           style={{
-            background: `linear-gradient(135deg, ${klantKleur} 0%, ${klantKleur} 55%, #F15025 240%)`,
+            background: `linear-gradient(135deg, ${klantKleur} 0%, ${klantKleur} 55%, #D24620 240%)`,
             boxShadow: `0 2px 8px ${klantKleur}40`,
           }}
         >
@@ -309,7 +309,7 @@ export function KlantCard({ klant, project, contactpersonen, onContactpersoonCha
               <button
                 disabled={!editNaam.trim() || saving}
                 onClick={handleSaveCp}
-                className="text-[11px] font-semibold text-white bg-flame hover:bg-[#D94520] transition-colors px-3 py-1 rounded-md disabled:opacity-40"
+                className="text-[11px] font-semibold text-white bg-flame hover:bg-[#BD3C1C] transition-colors px-3 py-1 rounded-md disabled:opacity-40"
               >
                 {saving ? 'Bezig…' : 'Opslaan'}
               </button>

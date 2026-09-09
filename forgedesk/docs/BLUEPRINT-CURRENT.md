@@ -437,7 +437,7 @@ De termen komen nog wel voor als **thema-namen/strings** in PaletteContext en ge
 Gedefinieerd in `src/lib/moduleColors.ts`:
 ```typescript
 MODULE_COLORS = {
-  offertes:   { DEFAULT: '#F15025', light: '#FDE8E2', text: '#C03A18' },
+  offertes:   { DEFAULT: '#D24620', light: '#FDE8E2', text: '#C03A18' },
   facturen:   { DEFAULT: '#2D6B48', light: '#E4F0EA', text: '#2D6B48' },
   klanten:    { DEFAULT: '#3A6B8C', light: '#E5ECF6', text: '#2A5580' },
   projecten:  { DEFAULT: '#1A535C', light: '#E2F0F0', text: '#1A535C' },

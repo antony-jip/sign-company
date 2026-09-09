@@ -1680,7 +1680,7 @@ export function QuoteCreation() {
         primaireKleur: primaireKleur || '#2563eb',
       }, documentStyle)
       doc.save(`${offerteNummer}.pdf`)
-      toast.success(<>PDF gedownload<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>PDF gedownload<span style={{ color: '#D24620' }}>.</span></>)
     } catch (err) {
       logger.error('Failed to generate PDF:', err)
       toast.error('Kon PDF niet genereren')
@@ -2058,7 +2058,7 @@ export function QuoteCreation() {
       const r = await rondOfferteCheckAf(editOfferteId, 'akkoord')
       if (r.offerte?.updated_at) lastKnownUpdatedAtRef.current = r.offerte.updated_at
       updateCheckInfo({ ...checkInfoRef.current, status: 'akkoord' })
-      toast.success(<>Akkoord gegeven<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Akkoord gegeven<span style={{ color: '#D24620' }}>.</span></>)
     } catch (err) {
       logger.error('Akkoord geven mislukt:', err)
       toast.error(err instanceof Error && err.message ? err.message : 'Kon geen akkoord geven')
@@ -2077,7 +2077,7 @@ export function QuoteCreation() {
       updateCheckInfo({ ...checkInfoRef.current, status: 'wijzigingen', reactie: wijzigingenTekst.trim() })
       setWijzigingenOpen(false)
       setWijzigingenTekst('')
-      toast.success(<>Wijzigingen gevraagd<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Wijzigingen gevraagd<span style={{ color: '#D24620' }}>.</span></>)
     } catch (err) {
       logger.error('Wijzigingen aanvragen mislukt:', err)
       toast.error(err instanceof Error && err.message ? err.message : 'Kon geen wijzigingen aanvragen')
@@ -2105,7 +2105,7 @@ export function QuoteCreation() {
       setVerstuurdOp(nu)
       setOfferteStatus('verzonden')
       voltooiCheckNaVersturen(quoteId)
-      toast.success(<>Gemarkeerd als verzonden<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Gemarkeerd als verzonden<span style={{ color: '#D24620' }}>.</span></>)
     } catch (err) {
       logger.error('Markeren als verzonden mislukt:', err)
       toast.error('Kon offerte niet als verzonden markeren')
@@ -2556,7 +2556,7 @@ export function QuoteCreation() {
                   Offerte-items<span className="text-flame">.</span>
                 </span>
                 {items.length > 0 && (
-                  <span className="ml-2 font-mono text-[10px] font-semibold bg-[rgba(241,80,37,0.1)] text-flame rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums">
+                  <span className="ml-2 font-mono text-[10px] font-semibold bg-[rgba(210, 70, 32,0.1)] text-flame rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums">
                     {items.length}
                   </span>
                 )}
@@ -2868,7 +2868,7 @@ export function QuoteCreation() {
                   <button
                     onClick={handleSendEmailInline}
                     disabled={!email.emailTo.trim() || !email.emailSubject.trim() || email.isSendingEmail || email.emailExtraBijlagen.reduce((s, b) => s + b.grootte, 0) > MAX_BIJLAGEN_BYTES}
-                    className="inline-flex items-center gap-1.5 px-5 py-2 text-sm font-medium rounded-lg bg-flame text-white hover:bg-[#D94520] disabled:opacity-40 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-5 py-2 text-sm font-medium rounded-lg bg-flame text-white hover:bg-[#BD3C1C] disabled:opacity-40 transition-colors"
                   >
                     <Send className="h-3.5 w-3.5" />
                     {email.isSendingEmail ? 'Verzenden...' : email.emailScheduled ? 'Inplannen' : 'Verstuur'}
@@ -3100,7 +3100,7 @@ export function QuoteCreation() {
             type="button"
             onClick={handleVerstuurOfferte}
             disabled={isSaving}
-            className="tap-press h-11 px-3 inline-flex items-center gap-1.5 text-[14px] font-semibold rounded-lg bg-flame text-white hover:bg-[#E04520] shadow-[0_2px_8px_rgba(241,80,37,0.25)] transition-colors disabled:opacity-50 flex-shrink-0"
+            className="tap-press h-11 px-3 inline-flex items-center gap-1.5 text-[14px] font-semibold rounded-lg bg-flame text-white hover:bg-[#E04520] shadow-[0_2px_8px_rgba(210, 70, 32,0.25)] transition-colors disabled:opacity-50 flex-shrink-0"
           >
             <Send className="h-4 w-4" />
             Verstuur

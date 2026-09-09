@@ -71,7 +71,7 @@ export function ResetPasswordPage() {
           <Button
             type="submit"
             className="w-full h-11 text-white hover:opacity-90 rounded-xl font-semibold text-[14px]"
-            style={{ backgroundColor: '#F15025' }}
+            style={{ backgroundColor: '#D24620' }}
             disabled={isLoading}
           >
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}

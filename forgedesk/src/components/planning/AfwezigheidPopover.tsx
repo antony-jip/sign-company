@@ -286,7 +286,7 @@ export function AfwezigheidPopover({
               type="button"
               onClick={addAfwezigheid}
               disabled={afwBezig || !start}
-              className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg bg-flame px-3 py-2.5 text-[13px] font-semibold text-white shadow-[0_1px_3px_rgba(241,80,37,0.25)] hover:bg-[#E0481D] disabled:opacity-40 transition-colors"
+              className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg bg-flame px-3 py-2.5 text-[13px] font-semibold text-white shadow-[0_1px_3px_rgba(210, 70, 32,0.25)] hover:bg-[#E0481D] disabled:opacity-40 transition-colors"
             >
               <Plus className="h-3.5 w-3.5" />
               {afwBezig ? 'Toevoegen...' : 'Afwezigheid toevoegen'}

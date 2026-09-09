@@ -406,7 +406,7 @@ export const WerkbonMonteurFeedback = React.memo(function WerkbonMonteurFeedback
           <button
             onClick={onAfronden}
             disabled={isSaving}
-            className="w-full py-3.5 rounded-xl text-[15px] font-bold text-white bg-flame hover:bg-[#E04520] active:bg-[#D03A18] disabled:opacity-50 transition-colors flex items-center justify-center gap-2 shadow-[0_2px_8px_rgba(241,80,37,0.25)]"
+            className="w-full py-3.5 rounded-xl text-[15px] font-bold text-white bg-flame hover:bg-[#E04520] active:bg-[#D03A18] disabled:opacity-50 transition-colors flex items-center justify-center gap-2 shadow-[0_2px_8px_rgba(210, 70, 32,0.25)]"
           >
             <ClipboardCheck className="h-5 w-5" />
             {isSaving ? 'Bezig met opslaan...' : 'Werkbon afronden'}

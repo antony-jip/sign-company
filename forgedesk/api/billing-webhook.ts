@@ -55,7 +55,7 @@ const FACTUUR_AFZENDER = process.env.DOEN_FACTUUR_AFZENDER || 'doen. <noreply@do
 const FACTUUR_ANTWOORD = process.env.DOEN_FACTUUR_ANTWOORD || 'antony@signcompany.nl'
 
 const PETROL: [number, number, number] = [26, 83, 92]
-const FLAME: [number, number, number] = [241, 80, 37]
+const FLAME: [number, number, number] = [210, 70, 32]
 const INKT: [number, number, number] = [26, 26, 26]
 const GRIJS: [number, number, number] = [120, 120, 115]
 

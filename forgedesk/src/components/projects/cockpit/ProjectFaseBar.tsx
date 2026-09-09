@@ -42,7 +42,7 @@ interface ProjectFaseBarProps {
 }
 
 const PETROL = '#1A535C'
-const FLAME = '#F15025'
+const FLAME = '#D24620'
 
 export function ProjectFaseBar({ status, onStatusChange, totaalBedrag, deadline }: ProjectFaseBarProps) {
   const currentIdx = faseIndex(status)
@@ -373,7 +373,7 @@ function Sparkle({ delay, top, left, small }: { delay: number; top: string; left
     >
       <path
         d="M6 0L7.2 4.8L12 6L7.2 7.2L6 12L4.8 7.2L0 6L4.8 4.8L6 0Z"
-        fill="#F15025"
+        fill="#D24620"
       />
     </motion.svg>
   )

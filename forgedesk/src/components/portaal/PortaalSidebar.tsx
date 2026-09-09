@@ -50,7 +50,7 @@ function StatusBadge({ status }: { status: string }) {
     'te-factureren': { color: '#3A7D52', label: 'afgerond' },
     gefactureerd: { color: '#3A7D52', label: 'afgerond' },
     afgerond: { color: '#3A7D52', label: 'afgerond' },
-    offerte: { color: '#F15025', label: 'offerte' },
+    offerte: { color: '#D24620', label: 'offerte' },
     lopend: { color: '#1A535C', label: 'lopend' },
     productie: { color: '#1A535C', label: 'in productie' },
     montage: { color: '#1A535C', label: 'montage' },
@@ -58,7 +58,7 @@ function StatusBadge({ status }: { status: string }) {
   const s = map[status?.toLowerCase()] || { color: '#1A535C', label: 'in behandeling' }
   return (
     <span className="inline-flex items-baseline text-xs font-semibold" style={{ color: s.color }}>
-      {s.label}<span style={{ color: '#F15025' }}>.</span>
+      {s.label}<span style={{ color: '#D24620' }}>.</span>
     </span>
   )
 }
@@ -223,7 +223,7 @@ function SidebarContent({
         <p className="text-center" style={{ fontSize: 11, color: '#9B9B95' }}>
           mogelijk gemaakt door{' '}
           <span style={{ fontFamily: '"Instrument Sans", sans-serif', fontWeight: 800 }}>
-            doen<span style={{ color: '#F15025' }}>.</span>
+            doen<span style={{ color: '#D24620' }}>.</span>
           </span>
         </p>
       </div>

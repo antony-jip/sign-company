@@ -34,7 +34,7 @@ function StatusBadge({ status }: { status: string }) {
   const s = map[status] || map.verstuurd
   return (
     <span className="inline-flex items-baseline text-xs font-semibold flex-shrink-0" style={{ color: s.color }}>
-      {s.label}<span style={{ color: '#F15025' }}>.</span>
+      {s.label}<span style={{ color: '#D24620' }}>.</span>
     </span>
   )
 }

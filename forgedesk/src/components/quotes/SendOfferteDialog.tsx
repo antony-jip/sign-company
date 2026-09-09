@@ -476,7 +476,7 @@ export function SendOfferteDialog({
                   variant="outline"
                   onClick={() => {
                     navigator.clipboard.writeText(publiekeLink)
-                    toast.success(<>Link gekopieerd<span style={{ color: '#F15025' }}>.</span></>)
+                    toast.success(<>Link gekopieerd<span style={{ color: '#D24620' }}>.</span></>)
                   }}
                 >
                   <Copy className="h-3.5 w-3.5" />

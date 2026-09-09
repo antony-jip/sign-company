@@ -350,7 +350,7 @@ export const WerkbonCanvasElement = React.memo(function WerkbonCanvasElement({
                 'absolute w-2.5 h-2.5 bg-flame border-2 border-white',
                 'shadow-[0_0_0_0.5px_rgba(0,0,0,0.15)]',
                 activeCorner === corner &&
-                  'shadow-[0_0_0_3px_rgba(241,80,37,0.25)]',
+                  'shadow-[0_0_0_3px_rgba(210, 70, 32,0.25)]',
               )}
               style={{
                 top: corner === 'nw' || corner === 'ne' ? '-5px' : 'calc(100% - 5px)',

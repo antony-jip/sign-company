@@ -54,7 +54,7 @@ function tekenGloed(ctx: CanvasRenderingContext2D, a: MaatjeAnnotatie, w: number
   const basis = Math.min(w, h)
   ctx.save()
   ctx.globalAlpha = Math.max(0, Math.min(1, alpha))
-  ctx.strokeStyle = '#F15025'
+  ctx.strokeStyle = '#D24620'
   ctx.lineCap = 'round'
   ctx.lineJoin = 'round'
   ctx.lineWidth = Math.max(10, basis * 0.022)
@@ -651,7 +651,7 @@ export function MaatjeEditor({
                 aria-label={label}
                 className={cn(
                   'flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-150 active:scale-90',
-                  tool === key ? 'bg-flame text-white shadow-[0_2px_10px_rgba(241,80,37,0.4)]' : 'text-white/70 hover:bg-white/10',
+                  tool === key ? 'bg-flame text-white shadow-[0_2px_10px_rgba(210, 70, 32,0.4)]' : 'text-white/70 hover:bg-white/10',
                 )}
               >
                 <Icon className="h-5 w-5" strokeWidth={1.75} />

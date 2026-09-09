@@ -441,7 +441,7 @@ export function Sidebar() {
                     {supportAttentie > 0 && (
                       <span
                         className="absolute top-1 right-2 rounded-full pointer-events-none"
-                        style={{ width: 8, height: 8, backgroundColor: '#F15025', border: '1.5px solid var(--background, #fff)' }}
+                        style={{ width: 8, height: 8, backgroundColor: '#D24620', border: '1.5px solid var(--background, #fff)' }}
                       />
                     )}
                   </div>
@@ -491,7 +491,7 @@ export function Sidebar() {
                     {supportAttentie > 0 && (
                       <span
                         className="absolute right-5 top-1/2 -translate-y-1/2 inline-flex items-center justify-center text-white font-bold pointer-events-none"
-                        style={{ minWidth: 18, height: 18, padding: '0 5px', fontSize: 10, borderRadius: 999, backgroundColor: '#F15025' }}
+                        style={{ minWidth: 18, height: 18, padding: '0 5px', fontSize: 10, borderRadius: 999, backgroundColor: '#D24620' }}
                       >
                         {supportAttentie}
                       </span>

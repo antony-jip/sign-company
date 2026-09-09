@@ -5,7 +5,7 @@
 # Tokens leven in tailwind.config.js + src/index.css. Vervangingen:
 #   rounded-[Xpx]    → rounded-button|tile|card|modal of rounded-md|lg|xl|2xl
 #   text-[Xpx]       → text-tiny|caption|body|headline|title-sm|title|title-lg
-#   #F15025          → var(--color-flame) of class text-flame
+#   #D24620          → var(--color-flame) of class text-flame
 #   #1A535C          → var(--color-petrol) of class text-petrol
 
 cd "$(dirname "$0")/.."
@@ -26,8 +26,8 @@ count "Arbitrary rounded-[Xpx]" \
 count "Arbitrary text-[Xpx]" \
   "$(grep -rE 'text-\[[0-9]+px\]' src/ --include='*.tsx' --include='*.ts' 2>/dev/null | wc -l | tr -d ' ')"
 
-count "Hardcoded #F15025 (Flame)" \
-  "$(grep -rF '#F15025' src/ --include='*.tsx' --include='*.ts' --include='*.css' 2>/dev/null | wc -l | tr -d ' ')"
+count "Hardcoded #D24620 (Flame)" \
+  "$(grep -rF '#D24620' src/ --include='*.tsx' --include='*.ts' --include='*.css' 2>/dev/null | wc -l | tr -d ' ')"
 
 count "Hardcoded #1A535C (Petrol)" \
   "$(grep -rF '#1A535C' src/ --include='*.tsx' --include='*.ts' --include='*.css' 2>/dev/null | wc -l | tr -d ' ')"

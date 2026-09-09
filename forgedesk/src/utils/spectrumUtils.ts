@@ -1,7 +1,7 @@
 /**
  * Spectrum utilities — maps project status to a flame→petrol gradient position.
  * The spectrum tells the project lifecycle story:
- *   flame (#F15025) = start / offerte
+ *   flame (#D24620) = start / offerte
  *   petrol (#1A535C) = afgerond / klaar
  */
 
@@ -22,7 +22,7 @@ export function getAgingColor(dagenOpen: number): string {
   if (dagenOpen <= 21) return '#6A5A8A'  // paars
   if (dagenOpen <= 30) return '#9A4070'  // warm paars
   if (dagenOpen <= 45) return '#D4453A'  // donker flame
-  return '#F15025'                        // flame — actie nodig
+  return '#D24620'                        // flame — actie nodig
 }
 
 /** Lichte achtergrondkleur bij de aging kleur (voor badges) */

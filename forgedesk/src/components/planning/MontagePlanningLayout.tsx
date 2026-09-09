@@ -174,7 +174,7 @@ const STATUS_CONFIG: Record<
   MontageAfspraak["status"],
   { label: string; text: string; bg: string; border: string; dot: string }
 > = {
-  "te-plannen": { label: "Te plannen", text: "#B5451F", bg: "#FCEEE8", border: "#F3D2C4", dot: "#F15025" },
+  "te-plannen": { label: "Te plannen", text: "#B5451F", bg: "#FCEEE8", border: "#F3D2C4", dot: "#D24620" },
   gepland: { label: "Gepland", text: "#3A5A9A", bg: "#E8EEF9", border: "#C5D5EA", dot: "#4A7AC7" },
   onderweg: { label: "Onderweg", text: "#8A6A2A", bg: "#F5F2E8", border: "#E5DCC8", dot: "#C49A30" },
   bezig: { label: "Bezig", text: "#3A7D52", bg: "#E8F2EC", border: "#C5E0D0", dot: "#4AA366" },
@@ -186,7 +186,7 @@ const STATUS_CONFIG: Record<
 // inline style; in dark mode moeten bg en tekst via classes schakelen,
 // anders krijg je witte tekst op pastel (onleesbaar).
 const STATUS_CARD_BG: Record<MontageAfspraak["status"], string> = {
-  "te-plannen": "bg-[#FCEEE8] dark:bg-[rgba(241,80,37,0.13)]",
+  "te-plannen": "bg-[#FCEEE8] dark:bg-[rgba(210, 70, 32,0.13)]",
   gepland: "bg-[#E8EEF9] dark:bg-[rgba(74,122,199,0.16)]",
   onderweg: "bg-[#F5F2E8] dark:bg-[rgba(196,154,48,0.15)]",
   bezig: "bg-[#E8F2EC] dark:bg-[rgba(74,163,102,0.15)]",
@@ -194,14 +194,14 @@ const STATUS_CARD_BG: Record<MontageAfspraak["status"], string> = {
   uitgesteld: "bg-[#FDE8E2] dark:bg-[rgba(224,74,40,0.15)]",
 };
 const STATUS_PILL_CLASSES: Record<MontageAfspraak["status"], string> = {
-  "te-plannen": "bg-[#FCEEE8] text-[#B5451F] dark:bg-[rgba(241,80,37,0.16)] dark:text-[#FF9166]",
+  "te-plannen": "bg-[#FCEEE8] text-[#B5451F] dark:bg-[rgba(210, 70, 32,0.16)] dark:text-[#FF9166]",
   gepland: "bg-[#E8EEF9] text-[#3A5A9A] dark:bg-[rgba(74,122,199,0.20)] dark:text-[#7FA8E6]",
   onderweg: "bg-[#F5F2E8] text-[#8A6A2A] dark:bg-[rgba(196,154,48,0.18)] dark:text-[#D4B566]",
   bezig: "bg-[#E8F2EC] text-[#3A7D52] dark:bg-[rgba(74,163,102,0.18)] dark:text-[#7AAF85]",
   afgerond: "bg-[#E2F0F0] text-petrol dark:bg-[rgba(42,138,138,0.18)] dark:text-[#5FB5C0]",
   uitgesteld: "bg-[#FDE8E2] text-[#C03A18] dark:bg-[rgba(224,74,40,0.18)] dark:text-[#FF8866]",
 };
-const PRIO_CARD_BG_CLASS = "bg-[rgba(241,80,37,0.06)] dark:bg-[rgba(241,80,37,0.15)]";
+const PRIO_CARD_BG_CLASS = "bg-[rgba(210, 70, 32,0.06)] dark:bg-[rgba(210, 70, 32,0.15)]";
 const FALLBACK_CARD_BG_CLASS = "bg-[rgba(26,83,92,0.04)] dark:bg-[rgba(95,181,192,0.10)]";
 
 const DAG_NAMEN = ["Ma", "Di", "Wo", "Do", "Vr", "Za", "Zo"];
@@ -758,7 +758,7 @@ export function MontagePlanningLayout() {
       const created = await createPlanningWeergave({ naam, instellingen: huidigeInstellingen, gedeeld: weergaveDelen });
       setWeergaven((prev) => [...prev, created].sort((a, b) => a.volgorde - b.volgorde || a.naam.localeCompare(b.naam)));
       setWeergaveDialogOpen(false);
-      toast.success(<>Weergave opgeslagen<span style={{ color: '#F15025' }}>.</span></>);
+      toast.success(<>Weergave opgeslagen<span style={{ color: '#D24620' }}>.</span></>);
     } catch (err) {
       logger.error('[planning] weergave opslaan mislukt:', err);
       toast.error('Kon de weergave niet opslaan');
@@ -1907,7 +1907,7 @@ export function MontagePlanningLayout() {
         onOpen={openEditDialog}
         onNieuwOpTijd={(datum, startTijd) => openNewDialog(datum, undefined, startTijd)}
         accentKleur={(a) => a.prioriteit
-          ? '#F15025'
+          ? '#D24620'
           : (a.status === 'gepland' || a.status === 'afgerond')
             ? 'transparent'
             : (STATUS_CONFIG[a.status]?.dot ?? 'transparent')}
@@ -2007,7 +2007,7 @@ export function MontagePlanningLayout() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => openNewDialog()}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold text-white bg-flame shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35)] hover:-translate-y-[1px] active:translate-y-0 transition-all"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold text-white bg-flame shadow-[0_2px_8px_rgba(210, 70, 32,0.25)] hover:shadow-[0_4px_16px_rgba(210, 70, 32,0.35)] hover:-translate-y-[1px] active:translate-y-0 transition-all"
             >
               <Plus className="h-3.5 w-3.5" />
               Nieuw
@@ -2742,7 +2742,7 @@ export function MontagePlanningLayout() {
             </button>
             {tePlannenProjecten.length > 0 && (
               <span
-                className="text-[10px] font-bold flex items-center justify-center tabular-nums bg-[#FDE8E2] text-flame dark:bg-[rgba(241,80,37,0.20)] dark:text-[#FF8866]"
+                className="text-[10px] font-bold flex items-center justify-center tabular-nums bg-[#FDE8E2] text-flame dark:bg-[rgba(210, 70, 32,0.20)] dark:text-[#FF8866]"
                 style={{ minWidth: '20px', height: '20px', padding: '0 5px' }}
               >
                 {tePlannenProjecten.length}
@@ -2778,7 +2778,7 @@ export function MontagePlanningLayout() {
           <div className="px-3 py-2.5 flex items-center justify-between border-l-2 border-l-petrol shrink-0">
             <h2 className="text-[11px] font-bold text-flame uppercase tracking-wider">Te plannen</h2>
             <span
-              className="text-[11px] font-bold flex items-center justify-center rounded-full bg-[#FDE8E2] text-flame dark:bg-[rgba(241,80,37,0.20)] dark:text-[#FF8866]"
+              className="text-[11px] font-bold flex items-center justify-center rounded-full bg-[#FDE8E2] text-flame dark:bg-[rgba(210, 70, 32,0.20)] dark:text-[#FF8866]"
               style={{ minWidth: '22px', height: '22px', padding: '0 7px' }}
             >
               {tePlannenProjecten.length}
@@ -3056,7 +3056,7 @@ export function MontagePlanningLayout() {
           {/* Primaire actie */}
           <button
             onClick={() => openNewDialog()}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[13px] font-semibold text-white bg-flame shadow-[0_1px_3px_rgba(241,80,37,0.25)] hover:bg-[#E0481D] transition-colors"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[13px] font-semibold text-white bg-flame shadow-[0_1px_3px_rgba(210, 70, 32,0.25)] hover:bg-[#E0481D] transition-colors"
           >
             <Plus className="h-3.5 w-3.5" />
             Nieuw

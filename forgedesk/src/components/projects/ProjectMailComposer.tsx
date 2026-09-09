@@ -220,7 +220,7 @@ function bronAccent(bron: BijlageBron): { bg: string; border: string } {
     case 'offerte': return { bg: 'rgba(58,107,140,0.08)', border: 'rgba(58,107,140,0.25)' }
     case 'factuur': return { bg: 'rgba(26,83,92,0.08)', border: 'rgba(26,83,92,0.25)' }
     case 'werkbon': return { bg: 'rgba(154,90,72,0.08)', border: 'rgba(154,90,72,0.25)' }
-    case 'visualisatie': return { bg: 'rgba(241,80,37,0.08)', border: 'rgba(241,80,37,0.25)' }
+    case 'visualisatie': return { bg: 'rgba(210, 70, 32,0.08)', border: 'rgba(210, 70, 32,0.25)' }
     case 'foto': return { bg: 'rgba(63,125,107,0.08)', border: 'rgba(63,125,107,0.25)' }
     case 'bestand': return { bg: '#F0EEEA', border: '#E4E1DB' }
     default: return { bg: 'hsl(var(--background))', border: 'hsl(var(--border))' }
@@ -232,7 +232,7 @@ function bijlageIcon(bron: BijlageBron, mimeType: string) {
     case 'offerte': return <Receipt className="h-3.5 w-3.5" style={{ color: '#3A6B8C' }} />
     case 'factuur': return <CreditCard className="h-3.5 w-3.5" style={{ color: '#1A535C' }} />
     case 'werkbon': return <Wrench className="h-3.5 w-3.5" style={{ color: '#9A5A48' }} />
-    case 'visualisatie': return <ImageIcon className="h-3.5 w-3.5" style={{ color: '#F15025' }} />
+    case 'visualisatie': return <ImageIcon className="h-3.5 w-3.5" style={{ color: '#D24620' }} />
     case 'foto': return <ImageIcon className="h-3.5 w-3.5" style={{ color: '#3F7D6B' }} />
     default: return getFileIcon(mimeType)
   }
@@ -559,7 +559,7 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
     const tekst = vulProjectvelden(templateNaarPlattetekst(tmpl.body))
     setBody(tekst)
     setTemplateOpen(false)
-    toast.success(<>Template toegepast<span style={{ color: '#F15025' }}>.</span></>)
+    toast.success(<>Template toegepast<span style={{ color: '#D24620' }}>.</span></>)
   }, [vulProjectvelden])
 
   // Inplan-popover sluiten bij klik buiten
@@ -862,12 +862,12 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
       items: projectWerkbonnen.map((w) => ({ id: w.id, label: w.titel || `Werkbon ${w.werkbon_nummer}`, icon: <Wrench className="h-3.5 w-3.5" style={{ color: '#9A5A48' }} />, onToggle: () => toggleWerkbon(w) })),
     },
     {
-      key: 'visualisaties', label: 'Visualisaties', color: '#F15025', count: projectVisualisaties.length,
+      key: 'visualisaties', label: 'Visualisaties', color: '#D24620', count: projectVisualisaties.length,
       tabIcon: <ImageIcon className="h-3.5 w-3.5" />,
       items: projectVisualisaties.map((v) => ({
         id: v.id,
         label: v.aangepaste_prompt?.trim() || v.prompt_gebruikt?.slice(0, 40) || `Visualisatie ${new Date(v.created_at).toLocaleDateString('nl-NL')}`,
-        icon: <ImageIcon className="h-3.5 w-3.5" style={{ color: '#F15025' }} />,
+        icon: <ImageIcon className="h-3.5 w-3.5" style={{ color: '#D24620' }} />,
         onToggle: () => toggleVisualisatie(v),
       })),
     },
@@ -1041,8 +1041,8 @@ export const ProjectMailComposer = forwardRef<ProjectMailComposerHandle, Project
       try { localStorage.removeItem(draftKey) } catch { /* ignore */ }
 
       toast.success(scheduledAt
-        ? <>Email ingepland<span style={{ color: '#F15025' }}>.</span></>
-        : <>Email verstuurd<span style={{ color: '#F15025' }}>.</span></>)
+        ? <>Email ingepland<span style={{ color: '#D24620' }}>.</span></>
+        : <>Email verstuurd<span style={{ color: '#D24620' }}>.</span></>)
       setBijlagen([])
       setBody(defaultBody)
       setSubject(defaultSubject)

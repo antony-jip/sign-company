@@ -127,7 +127,7 @@ export function SupportInboxPage() {
       await stuurUpdate(composeOrg.id, tekst)
       setComposeText('')
       setComposeOrg(null)
-      toast.success(<>Bericht verstuurd naar {naam}<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Bericht verstuurd naar {naam}<span style={{ color: '#D24620' }}>.</span></>)
     } catch {
       toast.error('Versturen mislukt')
     }
@@ -140,7 +140,7 @@ export function SupportInboxPage() {
       const n = await broadcast(tekst)
       setComposeText('')
       setBroadcastMode(false)
-      toast.success(<>Verstuurd naar {n} account{n === 1 ? '' : 's'}<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Verstuurd naar {n} account{n === 1 ? '' : 's'}<span style={{ color: '#D24620' }}>.</span></>)
     } catch {
       toast.error('Broadcast mislukt')
     }
@@ -163,7 +163,7 @@ export function SupportInboxPage() {
               Support<span className="text-flame">.</span>
               {attentie > 0 && (
                 <span className="inline-flex items-center justify-center text-white font-bold"
-                  style={{ minWidth: 18, height: 18, padding: '0 5px', fontSize: 10, borderRadius: 999, backgroundColor: '#F15025' }}>
+                  style={{ minWidth: 18, height: 18, padding: '0 5px', fontSize: 10, borderRadius: 999, backgroundColor: '#D24620' }}>
                   {attentie}
                 </span>
               )}
@@ -250,7 +250,7 @@ export function SupportInboxPage() {
                       >
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-[13px] font-semibold text-foreground flex items-center gap-1.5 min-w-0">
-                            {wacht && <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: '#F15025' }} />}
+                            {wacht && <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: '#D24620' }} />}
                             <span className="truncate">{g.org_naam}</span>
                           </span>
                           <span className="text-[10px] text-muted-foreground/70 flex-shrink-0">{formatTijd(g.laatste_bericht_op)}</span>
@@ -371,7 +371,7 @@ export function SupportInboxPage() {
                   />
                 )}
                 {activeGesprek.status === 'open' ? (
-                  <button onClick={() => zetStatus('afgerond')} className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold text-white rounded-md transition-opacity hover:opacity-90" style={{ backgroundColor: '#F15025' }}>
+                  <button onClick={() => zetStatus('afgerond')} className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold text-white rounded-md transition-opacity hover:opacity-90" style={{ backgroundColor: '#D24620' }}>
                     <Check className="w-3.5 h-3.5" /> Gesprek afronden
                   </button>
                 ) : (

@@ -224,7 +224,7 @@ const FACTUUR_STATUS_HEX: Record<string, string> = {
   open: '#1A535C',
   verzonden: '#3A5A9A',
   betaald: '#2D6B48',
-  vervallen: '#F15025',
+  vervallen: '#D24620',
   gecrediteerd: '#6A5A8A',
   gedeeltelijk_betaald: '#8A7A4A',
 }
@@ -1378,7 +1378,7 @@ export function FacturenLayout() {
       Totaal: f.totaal,
     }))
     exportCSV('facturen', headers, rows)
-    toast.success(<>CSV gedownload<span style={{ color: '#F15025' }}>.</span></>)
+    toast.success(<>CSV gedownload<span style={{ color: '#D24620' }}>.</span></>)
   }, [filteredFacturen])
 
   const handleExportExcel = useCallback(() => {
@@ -1395,7 +1395,7 @@ export function FacturenLayout() {
       Totaal: f.totaal,
     }))
     exportExcel('facturen', headers, rows, 'Facturen')
-    toast.success(<>Excel gedownload<span style={{ color: '#F15025' }}>.</span></>)
+    toast.success(<>Excel gedownload<span style={{ color: '#D24620' }}>.</span></>)
   }, [filteredFacturen])
 
   const handleDownloadPdf = useCallback(
@@ -2421,7 +2421,7 @@ export function FacturenLayout() {
             </button>
             <button
               onClick={() => navigate('/facturen/nieuw')}
-              className="inline-flex items-center gap-2 bg-flame text-white px-3 md:pl-4 md:pr-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25),0_0_0_1px_rgba(241,80,37,0.1)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35),0_0_0_1px_rgba(241,80,37,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:bg-[#D03A18] transition-all duration-200"
+              className="inline-flex items-center gap-2 bg-flame text-white px-3 md:pl-4 md:pr-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(210, 70, 32,0.25),0_0_0_1px_rgba(210, 70, 32,0.1)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(210, 70, 32,0.35),0_0_0_1px_rgba(210, 70, 32,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:bg-[#D03A18] transition-all duration-200"
             >
               <Plus className="w-4 h-4 opacity-80" />
               <span className="hidden md:inline">Nieuwe factuur</span>
@@ -2432,7 +2432,7 @@ export function FacturenLayout() {
         {/* KPI tiles · clickable triage entry-points */}
         <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-3">
           {([
-            { key: 'verlopen' as FilterStatus,      label: 'Vervallen',        sub: 'te laat betaald',         count: verlopenCount,                              isMoney: false, dot: '#F15025', pulse: true },
+            { key: 'verlopen' as FilterStatus,      label: 'Vervallen',        sub: 'te laat betaald',         count: verlopenCount,                              isMoney: false, dot: '#D24620', pulse: true },
             { key: 'verzonden' as FilterStatus,     label: 'Openstaand',       sub: 'wacht op betaling, ex btw',     count: statistics.totaalOpenstaand,                isMoney: true,  dot: '#3A5A9A', pulse: false },
             { key: 'te_factureren' as FilterStatus, label: 'Te factureren',    sub: 'klaar om te sturen',       count: teFacturerenProjecten.length + teFacturerenOffertes.length, isMoney: false, dot: '#8A7A4A', pulse: false },
             { key: 'betaald' as FilterStatus,       label: 'Betaald',          sub: 'deze maand, ex btw',            count: statistics.betaaldDezeMaand,                isMoney: true,  dot: '#2D6B48', pulse: false },
@@ -2770,7 +2770,7 @@ export function FacturenLayout() {
                             size="sm"
                             onClick={() => navigate(`/facturen/nieuw?project_id=${project.id}`)}
                             className="text-white text-xs font-semibold"
-                            style={{ backgroundColor: '#F15025' }}
+                            style={{ backgroundColor: '#D24620' }}
                           >
                             Factureer
                           </Button>
@@ -2825,7 +2825,7 @@ export function FacturenLayout() {
                               navigate(`/facturen/nieuw?${params.toString()}`)
                             }}
                             className="text-white text-xs font-semibold"
-                            style={{ backgroundColor: '#F15025' }}
+                            style={{ backgroundColor: '#D24620' }}
                           >
                             Factureer
                           </Button>
@@ -3040,7 +3040,7 @@ export function FacturenLayout() {
                     key={factuur.id}
                     className={cn(
                       'doen-row border-b border-border last:border-0 cursor-pointer transition-colors duration-200 group',
-                      attention && !selectedIds.has(factuur.id) && 'bg-[rgba(241,80,37,0.025)]',
+                      attention && !selectedIds.has(factuur.id) && 'bg-[rgba(210, 70, 32,0.025)]',
                       'hover:bg-[rgba(26,83,92,0.04)] dark:hover:bg-white/[0.03]',
                       selectedIds.has(factuur.id) && 'bg-petrol/[0.05] dark:bg-white/[0.05]'
                     )}
@@ -3342,7 +3342,7 @@ export function FacturenLayout() {
                                 try { await navigator.share({ title: `Factuur ${factuur.nummer}`, url }) } catch (err) { /* cancelled */ }
                               } else {
                                 await navigator.clipboard.writeText(url)
-                                toast.success(<>Link gekopieerd naar klembord<span style={{ color: '#F15025' }}>.</span></>)
+                                toast.success(<>Link gekopieerd naar klembord<span style={{ color: '#D24620' }}>.</span></>)
                               }
                             }}>
                               <Share2 className="h-4 w-4 mr-2" />
@@ -4184,7 +4184,7 @@ export function FacturenLayout() {
           </DialogHeader>
           <div className="space-y-4">
             {exactStandWaarschuwing && (
-              <div className="rounded-lg border border-[#F15025]/30 bg-[#F15025]/5 p-3 text-sm text-[#1A535C] dark:text-foreground">
+              <div className="rounded-lg border border-[#D24620]/30 bg-[#D24620]/5 p-3 text-sm text-[#1A535C] dark:text-foreground">
                 {exactStandWaarschuwing}
               </div>
             )}
@@ -4197,7 +4197,7 @@ export function FacturenLayout() {
                     <span className="text-muted-foreground"> · {HERINNERING_BRON_LABEL[herinneringOntvanger.bron]}</span>
                   </>
                 ) : herinneringOntvanger ? (
-                  <span className="text-[#F15025]">Geen emailadres bekend voor deze klant</span>
+                  <span className="text-[#D24620]">Geen emailadres bekend voor deze klant</span>
                 ) : (
                   <span className="text-muted-foreground">Ontvanger opzoeken...</span>
                 )}
@@ -4232,7 +4232,7 @@ export function FacturenLayout() {
               </div>
             </div>
             {herinneringTekst(herinneringType)?.kanaal === 'intern' && (
-              <div className="rounded-lg border border-[#F15025]/30 bg-[#F15025]/5 p-3 text-sm text-[#1A535C] dark:text-foreground">
+              <div className="rounded-lg border border-[#D24620]/30 bg-[#D24620]/5 p-3 text-sm text-[#1A535C] dark:text-foreground">
                 Deze stap staat in Instellingen op intern. Normaal krijgt de klant hier geen mail, maar bel je zelf.
                 Verstuur je hem toch, dan gaat de tekst gewoon naar de klant.
               </div>

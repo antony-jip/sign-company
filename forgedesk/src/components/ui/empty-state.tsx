@@ -8,7 +8,7 @@ const MODULE_COLORS: Record<EmptyStateModule, string> = {
   offertes: '#5A4A78',
   facturen: '#C03A18',
   klanten: '#2A5580',
-  werkbonnen: '#F15025',
+  werkbonnen: '#D24620',
   planning: '#1A535C',
   taken: '#3A6B8C',
   inkoopfacturen: '#C44830',

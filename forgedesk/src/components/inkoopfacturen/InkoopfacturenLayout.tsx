@@ -40,7 +40,7 @@ const STATUS_CONFIG: Record<InkoopFactuurStatus, { label: string; bg: string; te
 }
 
 const INKOOP_STATUS_HEX: Record<string, string> = {
-  nieuw: '#F15025',
+  nieuw: '#D24620',
   verwerkt: '#D4621A',
   toegewezen: '#3A5A9A',
   goedgekeurd: '#2D6B48',
@@ -552,7 +552,7 @@ export function InkoopfacturenLayout() {
       Status: STATUS_CONFIG[f.status].label,
     }))
     exportCSV('inkoopfacturen', headers, rows)
-    toast.success(<>CSV gedownload<span style={{ color: '#F15025' }}>.</span></>)
+    toast.success(<>CSV gedownload<span style={{ color: '#D24620' }}>.</span></>)
   }, [filtered])
 
   const handleExportExcel = useCallback(() => {
@@ -567,7 +567,7 @@ export function InkoopfacturenLayout() {
       Status: STATUS_CONFIG[f.status].label,
     }))
     exportExcel('inkoopfacturen', headers, rows, 'Inkoopfacturen')
-    toast.success(<>Excel gedownload<span style={{ color: '#F15025' }}>.</span></>)
+    toast.success(<>Excel gedownload<span style={{ color: '#D24620' }}>.</span></>)
   }, [filtered])
 
   const statistics = useMemo(() => {
@@ -625,7 +625,7 @@ export function InkoopfacturenLayout() {
         {/* KPI tiles · clickable triage entry-points */}
         <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-3">
           {([
-            { key: 'verwerkt' as FilterStatus,    label: 'Te reviewen',    sub: 'wacht op goedkeuring',   count: wachtendCount,                          isMoney: false, dot: '#F15025', pulse: true },
+            { key: 'verwerkt' as FilterStatus,    label: 'Te reviewen',    sub: 'wacht op goedkeuring',   count: wachtendCount,                          isMoney: false, dot: '#D24620', pulse: true },
             { key: 'nieuw' as FilterStatus,       label: 'Open',           sub: 'nog te betalen',      count: statistics.totaalOpen,                  isMoney: true,  dot: '#D4621A', pulse: false },
             { key: 'goedgekeurd' as FilterStatus, label: 'Goedgekeurd',    sub: 'verwerkt',               count: statistics.goedgekeurdCount,            isMoney: false, dot: '#2D6B48', pulse: false },
             { key: 'alle' as FilterStatus,        label: 'Deze maand',     sub: `${maandStats.aantalDezeMaand} stuks`, count: maandStats.totaalDezeMaand, isMoney: true,  dot: '#8A7A4A', pulse: false },
@@ -904,7 +904,7 @@ export function InkoopfacturenLayout() {
                       style={{ animationDelay: `${idx * 25}ms`, ['--row-accent' as string]: stripeHex } as React.CSSProperties}
                       className={cn(
                         'border-b border-border last:border-0 hover:bg-[rgba(26,83,92,0.04)] dark:hover:bg-white/[0.03] cursor-pointer transition-colors doen-row group',
-                        attention && !selectedIds.has(factuur.id) && 'bg-[rgba(241,80,37,0.025)]',
+                        attention && !selectedIds.has(factuur.id) && 'bg-[rgba(210, 70, 32,0.025)]',
                         selectedIds.has(factuur.id) && 'bg-petrol/[0.05]',
                         isDimmed && 'opacity-45'
                       )}

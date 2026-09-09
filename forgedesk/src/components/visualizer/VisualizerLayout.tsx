@@ -949,7 +949,7 @@ export function VisualizerLayout() {
             size="icon"
             onClick={handleSend}
             disabled={!chatInput.trim() || isGenerating || (!!foto && creditSaldo <= 0)}
-            className="rounded-full h-9 w-9 bg-flame hover:bg-[#D94520] text-white flex-shrink-0 shadow-sm"
+            className="rounded-full h-9 w-9 bg-flame hover:bg-[#BD3C1C] text-white flex-shrink-0 shadow-sm"
           >
             {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </Button>
@@ -1605,7 +1605,7 @@ export function VisualizerLayout() {
               <button
                 onClick={handleSendShareEmail}
                 disabled={!shareEmailTo.trim() || isSendingShareEmail}
-                className="inline-flex items-center gap-1.5 px-5 py-2 text-sm font-medium rounded-lg bg-flame text-white hover:bg-[#D94520] disabled:opacity-40 transition-colors"
+                className="inline-flex items-center gap-1.5 px-5 py-2 text-sm font-medium rounded-lg bg-flame text-white hover:bg-[#BD3C1C] disabled:opacity-40 transition-colors"
               >
                 <Send className="h-3.5 w-3.5" />
                 {isSendingShareEmail ? 'Verzenden...' : 'Verstuur'}

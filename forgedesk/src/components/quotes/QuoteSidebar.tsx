@@ -301,7 +301,7 @@ export function QuoteSidebar({
                         {selectedKlant ? (
                           <div className="doen-slate-surface rounded-2xl overflow-hidden">
                             <button onClick={() => setKlantPanelOpen(!klantPanelOpen)} className="w-full flex items-center gap-2.5 px-4 py-3 hover:bg-card/50 transition-colors" style={{ borderBottom: '1px solid rgba(26,83,92,0.08)' }}>
-                              <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 shadow-[0_2px_6px_rgba(58,107,140,0.2)]" style={{ background: 'linear-gradient(135deg, #3A6B8C 0%, #2A5580 50%, #F15025 200%)' }}>
+                              <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 shadow-[0_2px_6px_rgba(58,107,140,0.2)]" style={{ background: 'linear-gradient(135deg, #3A6B8C 0%, #2A5580 50%, #D24620 200%)' }}>
                                 <span className="text-white font-extrabold text-[12px]">{selectedKlant.bedrijfsnaam[0]?.toUpperCase()}</span>
                               </div>
                               <div className="flex-1 text-left min-w-0">
@@ -423,7 +423,7 @@ export function QuoteSidebar({
                                 vocht met de totalenkaart eronder. */}
                             <div className="p-4 pb-3">
                               <div className="flex items-center gap-2 mb-3">
-                                <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-[rgba(241,80,37,0.10)] text-flame">
+                                <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-[rgba(210, 70, 32,0.10)] text-flame">
                                   <Receipt className="h-3.5 w-3.5" />
                                 </span>
                                 <p className="font-heading text-[13px] font-bold text-foreground">
@@ -448,7 +448,7 @@ export function QuoteSidebar({
                                   if (selectedProjectId) params.set('project_id', selectedProjectId)
                                   navigate(`/facturen/nieuw?${params.toString()}`)
                                 }}
-                                className="w-full inline-flex items-center justify-center gap-2 h-10 rounded-xl bg-flame text-white text-[13px] font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:bg-[#D9431E] hover:shadow-[0_4px_14px_rgba(241,80,37,0.32)] hover:-translate-y-[1px] active:translate-y-0 transition-all"
+                                className="w-full inline-flex items-center justify-center gap-2 h-10 rounded-xl bg-flame text-white text-[13px] font-semibold shadow-[0_2px_8px_rgba(210, 70, 32,0.25)] hover:bg-[#D9431E] hover:shadow-[0_4px_14px_rgba(210, 70, 32,0.32)] hover:-translate-y-[1px] active:translate-y-0 transition-all"
                               >
                                 Factuur aanmaken
                                 <ArrowRight className="h-3.5 w-3.5" />
@@ -462,11 +462,11 @@ export function QuoteSidebar({
                     {/* ── SAMENVATTING ── */}
                     {sectionId === 'samenvatting' && (
                       <div className="doen-slate-surface rounded-2xl overflow-hidden">
-                        <div className="p-4 relative overflow-hidden dark:shadow-[0_0_28px_rgba(241,80,37,0.14),inset_0_1px_0_rgba(255,255,255,0.05)]" style={{ background: 'linear-gradient(135deg, #1A535C 0%, #0F3D44 100%)' }}>
+                        <div className="p-4 relative overflow-hidden dark:shadow-[0_0_28px_rgba(210, 70, 32,0.14),inset_0_1px_0_rgba(255,255,255,0.05)]" style={{ background: 'linear-gradient(135deg, #1A535C 0%, #0F3D44 100%)' }}>
                           {/* Decorative flame glow · smeult sterker in dark */}
                           <div
                             aria-hidden
-                            className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-[radial-gradient(circle,rgba(241,80,37,0.18)_0%,transparent_70%)] dark:bg-[radial-gradient(circle,rgba(241,80,37,0.34)_0%,transparent_70%)]"
+                            className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-[radial-gradient(circle,rgba(210, 70, 32,0.18)_0%,transparent_70%)] dark:bg-[radial-gradient(circle,rgba(210, 70, 32,0.34)_0%,transparent_70%)]"
                           />
                           <p className="relative text-[10px] uppercase tracking-widest text-white/75 font-semibold">
                             Totaal ex BTW<span className="text-flame">.</span>
@@ -744,7 +744,7 @@ export function QuoteSidebar({
                           <div className="pt-3 border-t border-[rgba(26,83,92,0.08)] grid grid-cols-3 gap-2">
                             <button
                               onClick={handleVerstuurOfferte}
-                              className="inline-flex items-center justify-center gap-1.5 h-9 rounded-xl bg-flame text-white text-[12px] font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:bg-[#E04520] hover:shadow-[0_4px_14px_rgba(241,80,37,0.35)] hover:-translate-y-[1px] active:translate-y-0 transition-all"
+                              className="inline-flex items-center justify-center gap-1.5 h-9 rounded-xl bg-flame text-white text-[12px] font-semibold shadow-[0_2px_8px_rgba(210, 70, 32,0.25)] hover:bg-[#E04520] hover:shadow-[0_4px_14px_rgba(210, 70, 32,0.35)] hover:-translate-y-[1px] active:translate-y-0 transition-all"
                             >
                               <Send className="h-3.5 w-3.5" />Verstuur
                             </button>
@@ -776,7 +776,7 @@ export function QuoteSidebar({
                         >
                           <div
                             className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 shadow-[0_2px_6px_rgba(196,72,48,0.25)]"
-                            style={{ background: 'linear-gradient(135deg, #F15025 0%, #C44830 100%)' }}
+                            style={{ background: 'linear-gradient(135deg, #D24620 0%, #C44830 100%)' }}
                           >
                             <ShoppingCart className="h-4 w-4 text-white" />
                           </div>

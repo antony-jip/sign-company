@@ -1358,7 +1358,7 @@ export function QuoteItemsTable({
                       className={cn(
                         "flex items-center gap-2 group rounded-md transition-colors hover:bg-[rgba(26,83,92,0.03)] dark:hover:bg-white/[0.03]",
                         dragOverRegelId === regel.id && dragRegel?.itemId === item.id
-                          ? "bg-[rgba(241,80,37,0.04)] ring-1 ring-[rgba(241,80,37,0.25)]"
+                          ? "bg-[rgba(210, 70, 32,0.04)] ring-1 ring-[rgba(210, 70, 32,0.25)]"
                           : "",
                         dragRegel?.regelId === regel.id ? "opacity-40" : ""
                       )}

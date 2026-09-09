@@ -181,7 +181,7 @@ function MailboxGezondheidKaart({ settings, isConnected }: { settings: EmailSett
       })
       await mailStore.laadSyncStatus()
       const naam = doel.gmail_address !== settings.gmail_address ? ` (${doel.gmail_address})` : ''
-      toast.success(<>Opnieuw verbonden{naam}<span style={{ color: '#F15025' }}>.</span> De volgende synchronisatie start direct.</>)
+      toast.success(<>Opnieuw verbonden{naam}<span style={{ color: '#D24620' }}>.</span> De volgende synchronisatie start direct.</>)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Opnieuw verbinden mislukt')
     } finally {
@@ -325,7 +325,7 @@ function PostvakRij({
       await hernoem(postvak.id, schoon)
       setHernoemt(false)
       onVernieuw()
-      toast.success(<>Hernoemd<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Hernoemd<span style={{ color: '#D24620' }}>.</span></>)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Hernoemen mislukt')
       setNaam(postvak.naam)
@@ -339,7 +339,7 @@ function PostvakRij({
     try {
       await zetStandaard(postvak.id)
       onVernieuw()
-      toast.success(<>Standaard postvak gewijzigd<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Standaard postvak gewijzigd<span style={{ color: '#D24620' }}>.</span></>)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Standaard instellen mislukt')
     } finally {
@@ -384,7 +384,7 @@ function PostvakRij({
               <span className="text-sm font-semibold text-foreground">{postvak.naam}</span>
               {postvak.isStandaard && (
                 <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                  standaard<span style={{ color: '#F15025' }}>.</span>
+                  standaard<span style={{ color: '#D24620' }}>.</span>
                 </span>
               )}
               {postvak.soort === 'gedeeld' && (
@@ -525,7 +525,7 @@ function EmailTemplatesBeheerTab() {
       await deleteEmailTemplate(id)
       setTemplates(prev => prev.filter(t => t.id !== id))
       if (editId === id) { setEditId(null); setShowNew(false) }
-      toast.success(<>Template verwijderd<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Template verwijderd<span style={{ color: '#D24620' }}>.</span></>)
     } catch {
       toast.error('Verwijderen mislukt')
     }
@@ -805,7 +805,7 @@ export function EmailTab() {
         } : {}),
       })
       await Promise.all([refreshProfile(), refreshSettings()])
-      toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Opgeslagen<span style={{ color: '#D24620' }}>.</span></>)
     } catch (err) {
       logger.error('Fout bij opslaan e-mailinstellingen:', err)
       toast.error('Kon e-mailinstellingen niet opslaan')
@@ -1237,7 +1237,7 @@ export function EmailTab() {
                   }
                   await laadPostvakken()
                   checkEmailStatus()
-                  toast.success(<>Postvak ontkoppeld<span style={{ color: '#F15025' }}>.</span> Je mail blijft in doen. staan.</>)
+                  toast.success(<>Postvak ontkoppeld<span style={{ color: '#D24620' }}>.</span> Je mail blijft in doen. staan.</>)
                 } catch (err) {
                   toast.error(err instanceof Error ? err.message : 'Ontkoppelen mislukt')
                 }
@@ -1322,7 +1322,7 @@ export function EmailTab() {
                     await updateAppSettings(user.id, { email_fetch_limit: emailFetchLimit })
                     await setBackfillTarget(backfillTarget)
                     await refreshSettings()
-                    toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>)
+                    toast.success(<>Opgeslagen<span style={{ color: '#D24620' }}>.</span></>)
                   } catch (err) {
                     console.error('[SettingsLayout] Email voorkeuren opslaan mislukt:', err)
                     toast.error('Kon voorkeuren niet opslaan')

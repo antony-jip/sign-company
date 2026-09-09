@@ -303,12 +303,12 @@ export function TakenOfferteGrid({
       <div className="doen-slate-surface rounded-2xl p-5">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <Receipt className="h-4 w-4" strokeWidth={1.75} style={{ color: '#F15025' }} />
+            <Receipt className="h-4 w-4" strokeWidth={1.75} style={{ color: '#D24620' }} />
             <h3 className="font-heading text-[15px] font-bold text-foreground">
               Offertes<span className="text-flame">.</span>
             </h3>
             {offertes.length > 0 && (
-              <span className="font-mono text-[10px] font-semibold bg-[rgba(241,80,37,0.1)] text-flame rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums">
+              <span className="font-mono text-[10px] font-semibold bg-[rgba(210, 70, 32,0.1)] text-flame rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums">
                 {offertes.length}
               </span>
             )}
@@ -374,7 +374,7 @@ export function TakenOfferteGrid({
                           type="button"
                           onClick={(e) => { e.stopPropagation(); startEditPrice(offerte) }}
                           title="Prijs aanpassen"
-                          className="font-mono text-[15px] tabular-nums flex-shrink-0 mt-0.5 rounded-md px-1 -mr-1 hover:bg-[rgba(241,80,37,0.08)] transition-colors"
+                          className="font-mono text-[15px] tabular-nums flex-shrink-0 mt-0.5 rounded-md px-1 -mr-1 hover:bg-[rgba(210, 70, 32,0.08)] transition-colors"
                         >
                           <span className="text-muted-foreground">€</span>
                           <span className="text-foreground font-bold ml-0.5 border-b border-dashed border-flame/30">{formatAmount(exBtw(offerte))}</span>
@@ -402,8 +402,8 @@ export function TakenOfferteGrid({
                         aria-pressed={!!offerte.te_factureren}
                         className={`h-7 w-7 rounded-md flex items-center justify-center transition-all flex-shrink-0 ${
                           offerte.te_factureren
-                            ? 'text-flame bg-[rgba(241,80,37,0.1)] hover:bg-[rgba(241,80,37,0.18)]'
-                            : 'opacity-0 group-hover:opacity-100 focus:opacity-100 text-muted-foreground/70 hover:bg-[rgba(241,80,37,0.1)] hover:text-flame'
+                            ? 'text-flame bg-[rgba(210, 70, 32,0.1)] hover:bg-[rgba(210, 70, 32,0.18)]'
+                            : 'opacity-0 group-hover:opacity-100 focus:opacity-100 text-muted-foreground/70 hover:bg-[rgba(210, 70, 32,0.1)] hover:text-flame'
                         }`}
                       >
                         <ClipboardCheck className="h-3.5 w-3.5" strokeWidth={1.75} />
@@ -469,7 +469,7 @@ export function TakenOfferteGrid({
                 type="submit"
                 disabled={!canQuickSubmit}
                 className="h-9 px-3.5 text-[12px] font-semibold text-white rounded-lg transition-colors whitespace-nowrap disabled:opacity-40"
-                style={{ backgroundColor: '#F15025' }}
+                style={{ backgroundColor: '#D24620' }}
               >
                 {quickSubmitting ? 'Aanmaken.' : 'Prijs aanmaken'}
               </button>
@@ -485,9 +485,9 @@ export function TakenOfferteGrid({
         ) : (
           <button
             onClick={onNewOfferte}
-            className="w-full rounded-xl border border-dashed border-[rgba(241,80,37,0.22)] bg-transparent hover:bg-muted/40 hover:border-[rgba(241,80,37,0.4)] transition-all px-4 py-8 flex flex-col items-center gap-2.5 text-center group"
+            className="w-full rounded-xl border border-dashed border-[rgba(210, 70, 32,0.22)] bg-transparent hover:bg-muted/40 hover:border-[rgba(210, 70, 32,0.4)] transition-all px-4 py-8 flex flex-col items-center gap-2.5 text-center group"
           >
-            <Receipt className="h-7 w-7 transition-transform group-hover:scale-110" strokeWidth={1.5} style={{ color: 'rgba(241,80,37,0.5)' }} />
+            <Receipt className="h-7 w-7 transition-transform group-hover:scale-110" strokeWidth={1.5} style={{ color: 'rgba(210, 70, 32,0.5)' }} />
             <div>
               <p className="text-[13px] font-semibold text-foreground">Offerte maken</p>
               <p

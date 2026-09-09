@@ -75,7 +75,7 @@ function StatusBadge({ status }: { status: string }) {
   const s = map[status] || map.verstuurd
   return (
     <span className="inline-flex items-baseline text-xs font-semibold flex-shrink-0" style={{ color: s.color }}>
-      {s.label}<span style={{ color: '#F15025' }}>.</span>
+      {s.label}<span style={{ color: '#D24620' }}>.</span>
     </span>
   )
 }
@@ -217,7 +217,7 @@ export function PortaalFeedItemOfferte({
   return (
     <div>
       {/* Card header accent */}
-      <div className="h-1 rounded-t-[10px]" style={{ backgroundColor: '#F15025' }} />
+      <div className="h-1 rounded-t-[10px]" style={{ backgroundColor: '#D24620' }} />
       <div
         className="rounded-b-[10px] bg-white"
         style={{ border: '0.5px solid #E8E6E1' }}

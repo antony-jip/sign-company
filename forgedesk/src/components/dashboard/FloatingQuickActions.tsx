@@ -24,7 +24,7 @@ interface QuickAction {
 export const QUICK_ACTIONS: QuickAction[] = [
   { id: 'project', label: 'Nieuw project', icon: FolderPlus, color: '#1A535C' },
   { id: 'klant', label: 'Nieuwe klant', icon: UserPlus, color: '#3A6B8C' },
-  { id: 'offerte', label: 'Nieuwe offerte', icon: FilePlus, color: '#F15025' },
+  { id: 'offerte', label: 'Nieuwe offerte', icon: FilePlus, color: '#D24620' },
   { id: 'taak', label: 'Nieuwe taak', icon: CheckSquare, color: 'hsl(var(--muted-foreground))' },
   { id: 'mail', label: 'Nieuwe mail', icon: Mail, color: '#7BABC7' },
 ]
@@ -122,8 +122,8 @@ export function FloatingQuickActions() {
                 height: 56,
                 borderTopLeftRadius: 8,
                 borderBottomLeftRadius: 8,
-                background: 'linear-gradient(135deg, #F15025 0%, #D4453A 100%)',
-                boxShadow: '-2px 0 8px rgba(241, 80, 37, 0.25)',
+                background: 'linear-gradient(135deg, #D24620 0%, #D4453A 100%)',
+                boxShadow: '-2px 0 8px rgba(210, 70, 32, 0.25)',
               }}
             >
               <ChevronLeft className="w-3 h-3 text-white" />
@@ -225,16 +225,16 @@ export function FloatingQuickActions() {
               width: 40,
               height: 40,
               borderRadius: 12,
-              background: 'linear-gradient(135deg, #F15025 0%, #D4453A 100%)',
-              boxShadow: '0 2px 12px rgba(241, 80, 37, 0.3)',
+              background: 'linear-gradient(135deg, #D24620 0%, #D4453A 100%)',
+              boxShadow: '0 2px 12px rgba(210, 70, 32, 0.3)',
             }}
             onMouseEnter={e => {
               (e.currentTarget as HTMLElement).style.transform = 'scale(1.05)'
-              ;(e.currentTarget as HTMLElement).style.boxShadow = '0 4px 16px rgba(241, 80, 37, 0.4)'
+              ;(e.currentTarget as HTMLElement).style.boxShadow = '0 4px 16px rgba(210, 70, 32, 0.4)'
             }}
             onMouseLeave={e => {
               (e.currentTarget as HTMLElement).style.transform = 'scale(1)'
-              ;(e.currentTarget as HTMLElement).style.boxShadow = '0 2px 12px rgba(241, 80, 37, 0.3)'
+              ;(e.currentTarget as HTMLElement).style.boxShadow = '0 2px 12px rgba(210, 70, 32, 0.3)'
             }}
           >
             {isOpen ? (

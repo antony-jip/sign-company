@@ -399,7 +399,7 @@ function App() {
                           WebkitBackdropFilter: 'blur(24px) saturate(180%)',
                           border: '0.5px solid rgba(26, 83, 92, 0.14)',
                           borderRadius: '14px',
-                          boxShadow: '0 12px 36px -8px rgba(100, 80, 40, 0.20), 0 0 24px -6px rgba(241, 80, 37, 0.08), inset 0 0.5px 0 rgba(255, 255, 255, 0.70)',
+                          boxShadow: '0 12px 36px -8px rgba(100, 80, 40, 0.20), 0 0 24px -6px rgba(210, 70, 32, 0.08), inset 0 0.5px 0 rgba(255, 255, 255, 0.70)',
                           color: '#191919',
                           fontSize: '12px',
                           padding: '14px 16px',

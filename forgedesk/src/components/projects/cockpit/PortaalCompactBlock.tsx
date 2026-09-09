@@ -80,7 +80,7 @@ function OfferteKaart({ item }: { item: PortaalItem }) {
   return (
     <div className="max-w-[400px]">
       <AfzenderLabel item={item} />
-      <div className="rounded-xl bg-card ring-1 ring-border/50 overflow-hidden" style={{ boxShadow: 'inset 3px 0 0 #F15025, 0 1px 4px rgba(0,0,0,0.05)' }}>
+      <div className="rounded-xl bg-card ring-1 ring-border/50 overflow-hidden" style={{ boxShadow: 'inset 3px 0 0 #D24620, 0 1px 4px rgba(0,0,0,0.05)' }}>
         <div className="p-4 pl-[17px]">
         <p className="text-[11px] font-mono uppercase tracking-wide text-flame/80 flex items-center gap-1.5"><Receipt className="h-3.5 w-3.5" strokeWidth={2} />Offerte</p>
         <p className="text-sm font-medium text-foreground mt-1">{item.titel}</p>
@@ -247,7 +247,7 @@ function FeedItem({ item }: { item: PortaalItem }) {
         <div
           key={r.id}
           className="ml-4 mt-1.5 border-l-2 pl-3 py-1"
-          style={{ borderColor: '#F15025' }}
+          style={{ borderColor: '#D24620' }}
         >
           <div className="flex items-center gap-1.5">
             <span className="text-[11px] font-semibold" style={{ color: r.type === 'goedkeuring' ? '#3A7D52' : r.type === 'revisie' ? '#C0451A' : '#5A5A55' }}>
@@ -418,7 +418,7 @@ function InputBar({
         thumbnail_url: tekeningFile.type.startsWith('image/') ? url : undefined,
         uploaded_by: 'bedrijf',
       })
-      toast.success(<>Tekening gedeeld<span style={{ color: '#F15025' }}>.</span></>); setTekeningFile(null); setTekeningTitel(''); setTekeningPopoverOpen(false)
+      toast.success(<>Tekening gedeeld<span style={{ color: '#D24620' }}>.</span></>); setTekeningFile(null); setTekeningTitel(''); setTekeningPopoverOpen(false)
       await fetchItems()
       if (notificeerKlant) sendEmailNotification(tekeningTitel || tekeningFile.name, tekeningTitel || tekeningFile.name)
     })

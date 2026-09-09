@@ -19,7 +19,7 @@ export function PortaalGesloten({ bedrijfsnaam, telefoon, email, logoUrl }: Port
         </div>
         <div>
           <h1 className="text-2xl font-bold tracking-[-0.3px] text-[#1A1A1A] mb-2">
-            Dit portaal is gesloten<span className="text-[#F15025]">.</span>
+            Dit portaal is gesloten<span className="text-[#D24620]">.</span>
           </h1>
           <p className="text-[#6B6B66]">
             Neem contact op met {bedrijfsnaam || 'het bedrijf'} voor vragen.

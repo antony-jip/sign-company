@@ -29,7 +29,7 @@ function StatusBadge({ status }: { status: string }) {
   const s = map[status] || map.verstuurd
   return (
     <span className="inline-flex items-baseline text-xs font-semibold flex-shrink-0" style={{ color: s.color }}>
-      {s.label}<span style={{ color: '#F15025' }}>.</span>
+      {s.label}<span style={{ color: '#D24620' }}>.</span>
     </span>
   )
 }
@@ -156,7 +156,7 @@ export function PortaalFeedItemFactuur({
             <a
               href={item.mollie_payment_url}
               className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors hover:opacity-90"
-              style={{ backgroundColor: '#F15025' }}
+              style={{ backgroundColor: '#D24620' }}
             >
               Betalen
             </a>

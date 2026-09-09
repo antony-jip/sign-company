@@ -111,7 +111,7 @@ export function NieuwsbriefStats({ nieuwsbrief, onTerug, onHerzonden }: Props) {
       sub: stats && stats.openTotaal > stats.opened ? `${stats.openTotaal} keer in totaal` : 'unieke openers',
     },
     {
-      key: 'geklikt', label: 'Geklikt', Icon: MousePointerClick, kleur: '#F15025',
+      key: 'geklikt', label: 'Geklikt', Icon: MousePointerClick, kleur: '#D24620',
       waarde: stats?.clicked ?? 0, rate: pct(percentages?.geklikt ?? null),
       sub: `${pct(percentages?.ctor ?? null)} van wie hem opende`,
     },

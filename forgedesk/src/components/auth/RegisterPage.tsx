@@ -165,9 +165,9 @@ export function RegisterPage() {
           transition={{ delay: 0.25, type: 'spring', stiffness: 180, damping: 22, mass: 0.9 }}
           className="lg:col-span-5 lg:pt-2 w-full"
         >
-          <DoenFormCard accentColor="#F15025">
+          <DoenFormCard accentColor="#D24620">
             <h2 className="font-heading text-[22px] font-extrabold text-foreground dark:text-foreground tracking-[-0.02em] mb-1">
-              Aan de slag<span style={{ color: '#F15025' }}>.</span>
+              Aan de slag<span style={{ color: '#D24620' }}>.</span>
             </h2>
             <p className="text-[13px] text-foreground/70 mb-6">
               Maak een account. Kost je een minuut.
@@ -254,7 +254,7 @@ export function RegisterPage() {
 
               <Button
                 type="submit"
-                className="w-full h-12 rounded-xl font-semibold text-[15px] transition-all group text-white mt-3 [background:linear-gradient(135deg,#F1602F_0%,#D8431C_100%)] hover:[background:linear-gradient(135deg,#F15025_0%,#C63B16_100%)] [box-shadow:0_8px_24px_-8px_rgba(241,80,37,0.55)] hover:[box-shadow:0_10px_28px_-8px_rgba(241,80,37,0.7)]"
+                className="w-full h-12 rounded-xl font-semibold text-[15px] transition-all group text-white mt-3 [background:linear-gradient(135deg,#F1602F_0%,#D8431C_100%)] hover:[background:linear-gradient(135deg,#D24620_0%,#C63B16_100%)] [box-shadow:0_8px_24px_-8px_rgba(210, 70, 32,0.55)] hover:[box-shadow:0_10px_28px_-8px_rgba(210, 70, 32,0.7)]"
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -316,7 +316,7 @@ export function RegisterPage() {
             Hoe het werkt
           </p>
           <h2 className="font-heading text-[28px] sm:text-[36px] lg:text-[44px] font-extrabold tracking-[-0.03em] leading-[1.05] text-foreground dark:text-foreground">
-            Klant tot factuur. In één flow<span style={{ color: '#F15025' }}>.</span>
+            Klant tot factuur. In één flow<span style={{ color: '#D24620' }}>.</span>
           </h2>
           <p className="mt-3 text-[15px] sm:text-[16px] text-foreground/70 max-w-[520px] mx-auto leading-[1.6]">
             Niets meer overtypen tussen 8 systemen. Eén klant, één project, één plek waar alles samenkomt.
@@ -336,7 +336,7 @@ export function RegisterPage() {
             Waarom doen
           </p>
           <h2 className="font-heading text-[26px] sm:text-[32px] lg:text-[38px] font-extrabold tracking-[-0.025em] leading-[1.1] text-foreground dark:text-foreground">
-            Drie redenen om vandaag te beginnen<span style={{ color: '#F15025' }}>.</span>
+            Drie redenen om vandaag te beginnen<span style={{ color: '#D24620' }}>.</span>
           </h2>
         </div>
 
@@ -365,7 +365,7 @@ export function RegisterPage() {
             Overstappen
           </p>
           <h2 className="font-heading text-[26px] sm:text-[32px] lg:text-[38px] font-extrabold tracking-[-0.025em] leading-[1.1] text-foreground dark:text-foreground">
-            Eenvoudig overzetten uit ieder pakket<span style={{ color: '#F15025' }}>.</span>
+            Eenvoudig overzetten uit ieder pakket<span style={{ color: '#D24620' }}>.</span>
           </h2>
           <p className="mt-3 text-[14px] sm:text-[15px] text-foreground/70 max-w-[520px] mx-auto leading-[1.6]">
             Werk je nu met een ander pakket of in Excel? Twee opties. Kies wat bij je past. Je data komt netjes mee.
@@ -415,7 +415,7 @@ export function RegisterPage() {
       {/* CONVERSION SECTION 3 · Final close: zero-risk reframe + scroll back to form */}
       <section className="relative z-10 max-w-[820px] w-full mx-auto px-6 sm:px-10 py-12 sm:py-16 text-center">
         <h2 className="font-heading text-[30px] sm:text-[42px] lg:text-[52px] font-extrabold tracking-[-0.03em] leading-[1.05] text-foreground dark:text-foreground">
-          Beginnen kost je niks<span style={{ color: '#F15025' }}>.</span>
+          Beginnen kost je niks<span style={{ color: '#D24620' }}>.</span>
         </h2>
         <p className="mt-5 text-[15px] sm:text-[17px] text-foreground/70 leading-[1.6] max-w-[560px] mx-auto">
           30 dagen volledig gratis. Geen creditcard. Geen verplichting na de proef.
@@ -423,7 +423,7 @@ export function RegisterPage() {
         </p>
         <a
           href="#aanmelden"
-          className="inline-flex items-center justify-center gap-2 mt-8 h-12 px-7 rounded-xl font-semibold text-[15px] bg-flame hover:bg-[#D94520] text-white transition-all group shadow-[0_8px_28px_-10px_rgba(241,80,37,0.6)]"
+          className="inline-flex items-center justify-center gap-2 mt-8 h-12 px-7 rounded-xl font-semibold text-[15px] bg-flame hover:bg-[#BD3C1C] text-white transition-all group shadow-[0_8px_28px_-10px_rgba(210, 70, 32,0.6)]"
         >
           Begin gratis
           <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
@@ -516,7 +516,7 @@ function ConversionCard({
       {highlight && (
         <span
           className="absolute -top-2 right-5 text-[10px] font-bold uppercase tracking-[0.14em] px-2 py-1 rounded-full text-white"
-          style={{ background: '#F15025', fontFamily: '"DM Mono", ui-monospace, monospace' }}
+          style={{ background: '#D24620', fontFamily: '"DM Mono", ui-monospace, monospace' }}
         >
           Belangrijkste
         </span>
@@ -561,8 +561,8 @@ export function DoenAuthShell({ children }: { children: React.ReactNode }) {
           backgroundColor: '#0E3138',
           backgroundImage: `
             radial-gradient(ellipse 90% 70% at 12% 0%, #1C5A64 0%, transparent 62%),
-            radial-gradient(ellipse 70% 55% at 100% 8%, rgba(241,80,37,0.16), transparent 60%),
-            radial-gradient(ellipse 80% 60% at 62% 108%, rgba(241,80,37,0.10), transparent 65%),
+            radial-gradient(ellipse 70% 55% at 100% 8%, rgba(210, 70, 32,0.16), transparent 60%),
+            radial-gradient(ellipse 80% 60% at 62% 108%, rgba(210, 70, 32,0.10), transparent 65%),
             linear-gradient(135deg, #14424A 0%, #0A2429 100%)
           `,
         }}
@@ -619,7 +619,7 @@ function CursorFlameSpot() {
       aria-hidden
       className="fixed top-0 left-0 w-[400px] h-[400px] rounded-full pointer-events-none z-0 mix-blend-multiply dark:mix-blend-screen"
       style={{
-        background: 'radial-gradient(circle, rgba(241,80,37,0.10) 0%, rgba(241,80,37,0.04) 35%, transparent 70%)',
+        background: 'radial-gradient(circle, rgba(210, 70, 32,0.10) 0%, rgba(210, 70, 32,0.04) 35%, transparent 70%)',
         willChange: 'transform',
         transform: 'translate3d(-1000px, -1000px, 0)',
       }}
@@ -633,7 +633,7 @@ export function DropInDot({ delay = 0.5 }: { delay?: number }) {
       initial={{ y: -55, scale: 0.3, opacity: 0 }}
       animate={{ y: 0, scale: 1, opacity: 1 }}
       transition={{ delay, type: 'spring', stiffness: 420, damping: 13, mass: 0.7 }}
-      style={{ display: 'inline-block', color: '#F15025', transformOrigin: 'center' }}
+      style={{ display: 'inline-block', color: '#D24620', transformOrigin: 'center' }}
     >
       .
     </motion.span>
@@ -709,10 +709,10 @@ export function DoenAuthFooter() {
     <footer className="relative z-10 max-w-[1200px] w-full mx-auto px-6 sm:px-10 pb-7 pt-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <p className="text-[11px] text-white/45">
-          © {new Date().getFullYear()} doen<span style={{ color: '#F15025' }}>.</span> Gemaakt voor doeners.
+          © {new Date().getFullYear()} doen<span style={{ color: '#D24620' }}>.</span> Gemaakt voor doeners.
         </p>
         <p className="text-[11px] text-white/45 tracking-[0.12em] uppercase">
-          Slim gedaan<span style={{ color: '#F15025' }}>.</span>
+          Slim gedaan<span style={{ color: '#D24620' }}>.</span>
         </p>
       </div>
     </footer>

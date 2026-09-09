@@ -1454,7 +1454,7 @@ export function ProjectDetail() {
   const copyApprovalLink = (token: string) => {
     const link = `${window.location.origin}/goedkeuring/${token}`
     navigator.clipboard.writeText(link)
-    toast.success(<>Link gekopieerd naar klembord<span style={{ color: '#F15025' }}>.</span></>)
+    toast.success(<>Link gekopieerd naar klembord<span style={{ color: '#D24620' }}>.</span></>)
   }
 
   const recenteActiviteiten = useMemo(
@@ -1654,7 +1654,7 @@ export function ProjectDetail() {
                 if (e.key === 'Escape') { setNaamDraft(project.naam); setEditingNaam(false) }
               }}
               className="text-[32px] font-extrabold text-foreground tracking-[-0.5px] leading-none flex-1 min-w-0"
-              style={{ background: 'transparent', border: 'none', outline: 'none', boxShadow: 'none', padding: 0, margin: 0, caretColor: '#F15025' }}
+              style={{ background: 'transparent', border: 'none', outline: 'none', boxShadow: 'none', padding: 0, margin: 0, caretColor: '#D24620' }}
             />
           ) : (
             <h1
@@ -2093,7 +2093,7 @@ export function ProjectDetail() {
                   </span>
                 </div>
                 <button
-                  className="inline-flex items-center gap-1.5 text-[13px] font-semibold bg-flame text-white px-4 py-2 rounded-xl shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35)] hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 flex-shrink-0"
+                  className="inline-flex items-center gap-1.5 text-[13px] font-semibold bg-flame text-white px-4 py-2 rounded-xl shadow-[0_2px_8px_rgba(210, 70, 32,0.25)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(210, 70, 32,0.35)] hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 flex-shrink-0"
                   onClick={suggestion.action}
                 >
                   Doen<span>.</span>
@@ -2312,7 +2312,7 @@ export function ProjectDetail() {
                           const confirmed = await confirm({ message: `Werkbon ${wb.werkbon_nummer} verwijderen?`, variant: 'destructive', confirmLabel: 'Verwijderen' })
                           if (confirmed) {
                             deleteWerkbon(wb.id)
-                              .then(() => { setProjectWerkbonnen(prev => prev.filter(w => w.id !== wb.id)); toast.success(<>Werkbon verwijderd<span style={{ color: '#F15025' }}>.</span></>) })
+                              .then(() => { setProjectWerkbonnen(prev => prev.filter(w => w.id !== wb.id)); toast.success(<>Werkbon verwijderd<span style={{ color: '#D24620' }}>.</span></>) })
                               .catch(() => toast.error('Kon werkbon niet verwijderen'))
                           }
                         }}
@@ -2399,7 +2399,7 @@ export function ProjectDetail() {
                 const linkedFactuur = offerteFactuurMap[offerte.id]
                 const offerteStatusLabel = offerte.status === 'concept' ? 'Concept' : offerte.status === 'verzonden' ? 'Verzonden' : offerte.status === 'goedgekeurd' ? 'Goedgekeurd' : offerte.status === 'afgewezen' ? 'Afgewezen' : offerte.status === 'gefactureerd' ? 'Gefactureerd' : offerte.status
                 const isStalled = (offerte.status === 'verzonden' || offerte.status === 'bekeken') && offerte.verstuurd_op && Math.floor((Date.now() - new Date(offerte.verstuurd_op).getTime()) / 86400000) > 14
-                const accentColor = isStalled ? '#D4621A' : offerte.status === 'goedgekeurd' || offerte.status === 'gefactureerd' ? '#2D6B48' : offerte.status === 'afgewezen' ? '#C0451A' : '#F15025'
+                const accentColor = isStalled ? '#D4621A' : offerte.status === 'goedgekeurd' || offerte.status === 'gefactureerd' ? '#2D6B48' : offerte.status === 'afgewezen' ? '#C0451A' : '#D24620'
                 return (
                   <div key={offerte.id} className="bg-card rounded-xl overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.05)]">
                     <div className="h-1" style={{ backgroundColor: accentColor }} />
@@ -3559,7 +3559,7 @@ export function ProjectDetail() {
                       type="checkbox"
                       checked={montageStatus === 'te-plannen'}
                       onChange={(e) => setMontageStatus(e.target.checked ? 'te-plannen' : 'gepland')}
-                      className="h-3.5 w-3.5 rounded border-border accent-[#F15025]"
+                      className="h-3.5 w-3.5 rounded border-border accent-[#D24620]"
                     />
                     Te plannen
                   </label>

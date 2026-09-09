@@ -162,7 +162,7 @@ export function WerkbonnenLayout() {
     try {
       await deleteWerkbon(deleteTarget.id)
       setWerkbonnen((prev) => prev.filter((wb) => wb.id !== deleteTarget.id))
-      toast.success(<>Werkbon verwijderd<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Werkbon verwijderd<span style={{ color: '#D24620' }}>.</span></>)
     } catch (err) {
       logger.error('Delete werkbon failed:', err)
       toast.error('Fout bij verwijderen werkbon')
@@ -322,7 +322,7 @@ export function WerkbonnenLayout() {
           </div>
           <button
             onClick={() => navigate('/werkbonnen/nieuw')}
-            className="inline-flex items-center gap-2 bg-flame text-white px-3 md:pl-4 md:pr-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25),0_0_0_1px_rgba(241,80,37,0.1)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35),0_0_0_1px_rgba(241,80,37,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:bg-[#D03A18] transition-all duration-200"
+            className="inline-flex items-center gap-2 bg-flame text-white px-3 md:pl-4 md:pr-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(210, 70, 32,0.25),0_0_0_1px_rgba(210, 70, 32,0.1)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(210, 70, 32,0.35),0_0_0_1px_rgba(210, 70, 32,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:bg-[#D03A18] transition-all duration-200"
           >
             <Plus className="w-4 h-4 opacity-80" />
             <span className="hidden md:inline">Nieuwe werkbon</span>
@@ -333,7 +333,7 @@ export function WerkbonnenLayout() {
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {([
             { key: 'definitief' as FilterStatus, label: 'In uitvoering', sub: 'buiten bezig',  count: statusCounts['definitief'] || 0, Icon: Wrench,    pulse: true,  accent: '#3A5A9A' },
-            { key: 'vandaag'    as FilterStatus, label: 'Vandaag',       sub: 'ingepland vandaag',   count: vandaagCount,                    Icon: Sun,       pulse: false, accent: '#F15025' },
+            { key: 'vandaag'    as FilterStatus, label: 'Vandaag',       sub: 'ingepland vandaag',   count: vandaagCount,                    Icon: Sun,       pulse: false, accent: '#D24620' },
             { key: 'concept'    as FilterStatus, label: 'Open',          sub: 'wacht op uitvoering', count: statusCounts['concept'] || 0,    Icon: Clipboard, pulse: false, accent: '#5A5A55' },
             { key: 'afgerond'   as FilterStatus, label: 'Afgetekend',    sub: 'klaar',               count: statusCounts['afgerond'] || 0,   Icon: Flag,      pulse: false, accent: '#3A7D52' },
           ]).map((tile) => {
@@ -527,7 +527,7 @@ export function WerkbonnenLayout() {
                       key={wb.id}
                       className={cn(
                         'doen-row border-b border-border last:border-0 cursor-pointer transition-colors duration-200 group',
-                        attention && !selectedIds.has(wb.id) && 'bg-[rgba(241,80,37,0.025)]',
+                        attention && !selectedIds.has(wb.id) && 'bg-[rgba(210, 70, 32,0.025)]',
                         'hover:bg-[rgba(26,83,92,0.04)] dark:hover:bg-white/[0.03]',
                         selectedIds.has(wb.id) && 'bg-petrol/[0.05]',
                       )}

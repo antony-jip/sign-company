@@ -181,14 +181,14 @@ export function ForgieTab() {
 
   const handleSaveContext = useCallback(async () => {
     setSaving(true)
-    try { await updateSettings({ forgie_bedrijfscontext: bedrijfscontext }); toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>) }
+    try { await updateSettings({ forgie_bedrijfscontext: bedrijfscontext }); toast.success(<>Opgeslagen<span style={{ color: '#D24620' }}>.</span></>) }
     catch (err) { logger.error('Save bedrijfscontext:', err); toast.error('Opslaan mislukt') }
     finally { setSaving(false) }
   }, [bedrijfscontext, updateSettings, settings])
 
   const handleSaveTone = useCallback(async () => {
     setSavingTone(true)
-    try { await updateSettings({ ai_tone_of_voice: toneOfVoice }); toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>) }
+    try { await updateSettings({ ai_tone_of_voice: toneOfVoice }); toast.success(<>Opgeslagen<span style={{ color: '#D24620' }}>.</span></>) }
     catch (err) { logger.error('Save tone of voice:', err); toast.error('Opslaan mislukt') }
     finally { setSavingTone(false) }
   }, [toneOfVoice, updateSettings])
@@ -231,7 +231,7 @@ export function ForgieTab() {
   const handleVisSave = useCallback(async () => {
     if (!user?.id) return
     setVisSaving(true)
-    try { setVisInstellingen(await saveVisualizerInstellingen(user.id, visInstellingen)); toast.success(<>Opgeslagen<span style={{ color: '#F15025' }}>.</span></>) }
+    try { setVisInstellingen(await saveVisualizerInstellingen(user.id, visInstellingen)); toast.success(<>Opgeslagen<span style={{ color: '#D24620' }}>.</span></>) }
     catch (err) { logger.error('Save visualizer instellingen:', err); toast.error('Opslaan mislukt') }
     finally { setVisSaving(false) }
   }, [user?.id, visInstellingen])
@@ -959,7 +959,7 @@ function DaanKennisSectie() {
     if (!nieuw) { toast.error('Toevoegen mislukt'); return }
     setConventies(prev => [...prev, nieuw])
     setNieuweRegel('')
-    toast.success(<>Regel toegevoegd<span style={{ color: '#F15025' }}>.</span></>)
+    toast.success(<>Regel toegevoegd<span style={{ color: '#D24620' }}>.</span></>)
   }
 
   const handleConventieToggle = async (c: Conventie) => {
@@ -976,7 +976,7 @@ function DaanKennisSectie() {
     const ok = await deleteConventie(c.id)
     if (!ok) { toast.error('Verwijderen mislukt'); return }
     setConventies(prev => prev.filter(r => r.id !== c.id))
-    toast.success(<>Verwijderd<span style={{ color: '#F15025' }}>.</span></>)
+    toast.success(<>Verwijderd<span style={{ color: '#D24620' }}>.</span></>)
   }
 
   const handleLeertUitEmailToggle = async (aan: boolean) => {
@@ -984,8 +984,8 @@ function DaanKennisSectie() {
       await updateSettings({ daan_leert_uit_email: aan })
       toast.success(
         aan
-          ? <>Daan leert weer uit e-mail<span style={{ color: '#F15025' }}>.</span></>
-          : <>Uitgezet. Mail blijft buiten het geheugen<span style={{ color: '#F15025' }}>.</span></>
+          ? <>Daan leert weer uit e-mail<span style={{ color: '#D24620' }}>.</span></>
+          : <>Uitgezet. Mail blijft buiten het geheugen<span style={{ color: '#D24620' }}>.</span></>
       )
     } catch {
       toast.error('Opslaan mislukt')
@@ -996,14 +996,14 @@ function DaanKennisSectie() {
     const ok = await bevestigDaanGeheugen(r.id)
     if (!ok) { toast.error('Opslaan mislukt'); return }
     setAlgemeen(prev => prev.map(x => x.id === r.id ? { ...x, status: 'actief' } : x))
-    toast.success(<>Daan onthoudt dit voortaan<span style={{ color: '#F15025' }}>.</span></>)
+    toast.success(<>Daan onthoudt dit voortaan<span style={{ color: '#D24620' }}>.</span></>)
   }
 
   const handleAlgemeenWeggooien = async (r: DaanGeheugenRegel) => {
     const ok = await wijsDaanGeheugenAf(r.id)
     if (!ok) { toast.error('Weggooien mislukt'); return }
     setAlgemeen(prev => prev.filter(x => x.id !== r.id))
-    toast.success(<>Weggegooid<span style={{ color: '#F15025' }}>.</span></>)
+    toast.success(<>Weggegooid<span style={{ color: '#D24620' }}>.</span></>)
   }
 
   return (

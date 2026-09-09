@@ -39,7 +39,7 @@ export function PortaalKlantReactie({
     <div
       className="ml-6 rounded-r-lg py-3 px-4"
       style={{
-        borderLeft: '3px solid #F15025',
+        borderLeft: '3px solid #D24620',
         backgroundColor: 'hsl(var(--background))',
       }}
     >

@@ -293,7 +293,7 @@ export function BetaalPagina() {
           {companyProfile?.bedrijfsnaam && (
             <p className="text-sm font-medium text-[#6B6B66]">{companyProfile.bedrijfsnaam}</p>
           )}
-          <h1 className="text-2xl font-bold text-[#1A1A1A]" style={{ letterSpacing: '-0.3px' }}>Factuur betalen<span className="text-[#F15025]">.</span></h1>
+          <h1 className="text-2xl font-bold text-[#1A1A1A]" style={{ letterSpacing: '-0.3px' }}>Factuur betalen<span className="text-[#D24620]">.</span></h1>
           <p className="text-sm text-[#6B6B66] font-mono">
             {factuur.nummer}
           </p>
@@ -304,7 +304,7 @@ export function BetaalPagina() {
           <div className="flex items-center gap-3 bg-[#E8F2EC] rounded-xl p-4">
             <CheckCircle2 className="h-5 w-5 text-[#3A7D52] shrink-0" />
             <div>
-              <p className="font-medium text-[#3A7D52]">Deze factuur is betaald<span style={{ color: '#F15025' }}>.</span></p>
+              <p className="font-medium text-[#3A7D52]">Deze factuur is betaald<span style={{ color: '#D24620' }}>.</span></p>
               {factuur.betaaldatum && (
                 <p className="text-sm text-[#6B6B66]">Betaald op <span className="font-mono">{formatDate(factuur.betaaldatum)}</span></p>
               )}
@@ -316,7 +316,7 @@ export function BetaalPagina() {
           <div className="flex items-center gap-3 bg-[#FDE8E4] rounded-xl p-4">
             <AlertTriangle className="h-5 w-5 text-[#C0451A] shrink-0" />
             <div>
-              <p className="font-medium text-[#C0451A]">Deze factuur is vervallen<span style={{ color: '#F15025' }}>.</span></p>
+              <p className="font-medium text-[#C0451A]">Deze factuur is vervallen<span style={{ color: '#D24620' }}>.</span></p>
               <p className="text-sm text-[#6B6B66]">Vervaldatum was <span className="font-mono">{formatDate(factuur.vervaldatum)}</span></p>
             </div>
           </div>
@@ -331,7 +331,7 @@ export function BetaalPagina() {
                 className="text-sm font-semibold"
                 style={{ color: isBetaald ? '#3A7D52' : isVervallen ? '#C0451A' : '#3A5A9A' }}
               >
-                {isBetaald ? 'Betaald' : isVervallen ? 'Vervallen' : 'Openstaand'}<span style={{ color: '#F15025' }}>.</span>
+                {isBetaald ? 'Betaald' : isVervallen ? 'Vervallen' : 'Openstaand'}<span style={{ color: '#D24620' }}>.</span>
               </span>
             </div>
 
@@ -455,7 +455,7 @@ export function BetaalPagina() {
         {factuur.totaal < 0 && (
           <Card className="border-0 rounded-xl bg-[#FFFFFF] shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
             <CardContent className="p-6">
-              <h3 className="text-lg font-bold text-[#1A1A1A]" style={{ letterSpacing: '-0.3px' }}>Creditfactuur<span style={{ color: '#F15025' }}>.</span></h3>
+              <h3 className="text-lg font-bold text-[#1A1A1A]" style={{ letterSpacing: '-0.3px' }}>Creditfactuur<span style={{ color: '#D24620' }}>.</span></h3>
               <p className="text-sm text-[#6B6B66] mt-1">
                 Dit is een creditfactuur van {formatCurrency(factuur.totaal)}. Dit bedrag wordt verrekend met een openstaande factuur of teruggestort. U hoeft niets te betalen.
               </p>
@@ -474,7 +474,7 @@ export function BetaalPagina() {
               <Button
                 onClick={handleMolliePay}
                 disabled={mollieLoading}
-                className="w-full h-12 text-base font-semibold gap-2 bg-[#F15025] hover:bg-[#D9481F] text-white rounded-xl"
+                className="w-full h-12 text-base font-semibold gap-2 bg-[#D24620] hover:bg-[#D9481F] text-white rounded-xl"
                 size="lg"
               >
                 {mollieLoading ? (

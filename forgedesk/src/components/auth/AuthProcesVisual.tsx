@@ -21,7 +21,7 @@ import {
 
 const PETROL = '#1A535C'
 const PETROL_DARK = '#143F46'
-const FLAME = '#F15025'
+const FLAME = '#D24620'
 
 function Sparkle({ cx, cy, size }: { cx: number; cy: number; size: number }) {
   const s = size
@@ -248,7 +248,7 @@ function PortaalNode({
             minWidth: 56,
             borderRadius: 10,
             backgroundColor: FLAME,
-            boxShadow: '0 3px 10px rgba(241,80,37,0.35)',
+            boxShadow: '0 3px 10px rgba(210, 70, 32,0.35)',
             opacity: akkoordOpacity,
             scale: akkoordScale,
             rotate: akkoordRotate,
@@ -367,7 +367,7 @@ function MobileStep({ step, index, isLast }: { step: MobileStepData; index: numb
             boxShadow: isDark
               ? '0 6px 20px rgba(20,63,70,0.25)'
               : isPortaal
-              ? '0 4px 14px rgba(241,80,37,0.3)'
+              ? '0 4px 14px rgba(210, 70, 32,0.3)'
               : '0 2px 10px rgba(26,83,92,0.08), 0 6px 16px rgba(26,83,92,0.05)',
           }}
         >

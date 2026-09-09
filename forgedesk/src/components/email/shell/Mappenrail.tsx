@@ -53,7 +53,7 @@ export function Mappenrail({ actieveMap, tellers, onKies, onNieuw, labels, onLab
           onClick={onNieuw}
           title="Nieuw bericht (c)"
           className={cn(
-            'tap-press w-full h-10 rounded-[10px] flex items-center justify-center gap-2 text-[13px] font-semibold text-white bg-flame hover:bg-[#D8421F] shadow-[0_1px_3px_rgba(241,80,37,0.18)] active:scale-[0.98] transition-[background-color,transform] duration-200',
+            'tap-press w-full h-10 rounded-[10px] flex items-center justify-center gap-2 text-[13px] font-semibold text-white bg-flame hover:bg-[#D8421F] shadow-[0_1px_3px_rgba(210, 70, 32,0.18)] active:scale-[0.98] transition-[background-color,transform] duration-200',
           )}
         >
           <Pencil className="h-4 w-4" />

@@ -172,7 +172,7 @@ export function TopNav() {
             src="/logos/doen-logo-wit.svg"
             alt="doen."
             className="h-[22px] hidden dark:block"
-            style={{ filter: 'drop-shadow(0 0 16px rgba(241, 80, 37, 0.18))' }}
+            style={{ filter: 'drop-shadow(0 0 16px rgba(210, 70, 32, 0.18))' }}
           />
         </NavLink>
 
@@ -193,7 +193,7 @@ export function TopNav() {
             <span className="hidden sm:inline">Nieuw</span>
           </button>
           {quickAddOpen && (
-            <div className="absolute left-0 top-full mt-2 w-56 z-50 overflow-hidden rounded-[16px] bg-popover border border-border/70 shadow-[0_12px_40px_rgba(0,0,0,0.10),0_1px_2px_rgba(0,0,0,0.05)] dark:shadow-[0_12px_40px_-8px_rgba(0,0,0,0.55),0_0_24px_-6px_rgba(241,80,37,0.10)] p-1.5">
+            <div className="absolute left-0 top-full mt-2 w-56 z-50 overflow-hidden rounded-[16px] bg-popover border border-border/70 shadow-[0_12px_40px_rgba(0,0,0,0.10),0_1px_2px_rgba(0,0,0,0.05)] dark:shadow-[0_12px_40px_-8px_rgba(0,0,0,0.55),0_0_24px_-6px_rgba(210, 70, 32,0.10)] p-1.5">
               <div className="px-2.5 pt-1.5 pb-1">
                 <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Snel aanmaken</span>
               </div>
@@ -221,7 +221,7 @@ export function TopNav() {
             className="absolute top-1/2 -mt-[17px] left-0 h-[34px] rounded-[10px] bg-[hsl(38,20%,94%)] dark:bg-white/[0.07] transition-all duration-[280ms] ease-[cubic-bezier(0.32,0.72,0,1)]"
             style={{ opacity: 0 }}
           >
-            <span className="absolute left-[13px] right-[13px] -bottom-px h-[2px] rounded-[2px] bg-flame dark:shadow-[0_0_8px_1px_rgba(241,80,37,0.25)]" />
+            <span className="absolute left-[13px] right-[13px] -bottom-px h-[2px] rounded-[2px] bg-flame dark:shadow-[0_0_8px_1px_rgba(210, 70, 32,0.25)]" />
           </div>
 
           {primaryItems.map((item) => {
@@ -262,13 +262,13 @@ export function TopNav() {
               >
                 <span>Overig<span className={cn('transition-colors', overigActive ? 'text-flame' : 'text-transparent group-hover:text-flame')}>.</span></span>
                 {supportAttentie > 0 && (
-                  <span className="absolute top-1 right-1.5 rounded-full" style={{ width: 7, height: 7, backgroundColor: '#F15025' }} />
+                  <span className="absolute top-1 right-1.5 rounded-full" style={{ width: 7, height: 7, backgroundColor: '#D24620' }} />
                 )}
                 <ChevronDown className={cn('w-[13px] h-[13px] -ml-0.5 opacity-55 transition-transform duration-200', overigOpen && 'rotate-180')} />
               </button>
 
               {overigOpen && (
-                <div className="absolute left-0 top-full mt-2 w-56 z-50 overflow-hidden rounded-[16px] bg-popover border border-border/70 shadow-[0_12px_40px_rgba(0,0,0,0.10),0_1px_2px_rgba(0,0,0,0.05)] dark:shadow-[0_12px_40px_-8px_rgba(0,0,0,0.55),0_0_24px_-6px_rgba(241,80,37,0.10)] p-1.5">
+                <div className="absolute left-0 top-full mt-2 w-56 z-50 overflow-hidden rounded-[16px] bg-popover border border-border/70 shadow-[0_12px_40px_rgba(0,0,0,0.10),0_1px_2px_rgba(0,0,0,0.05)] dark:shadow-[0_12px_40px_-8px_rgba(0,0,0,0.55),0_0_24px_-6px_rgba(210, 70, 32,0.10)] p-1.5">
                   {overigItems.map((item) => {
                     const isActive = location.pathname.startsWith(item.path)
                     const Icon = item.icon
@@ -286,7 +286,7 @@ export function TopNav() {
                         <Icon className="w-4 h-4" style={{ color: isActive ? item.color : undefined, opacity: isActive ? 1 : 0.6 }} />
                         <span>{item.label}<span className={cn('transition-colors', isActive ? 'text-flame' : 'text-transparent group-hover:text-flame')}>.</span></span>
                         {item.path === '/support' && supportAttentie > 0 && (
-                          <span className="ml-auto inline-flex items-center justify-center text-white font-bold" style={{ minWidth: 16, height: 16, padding: '0 4px', fontSize: 10, borderRadius: 999, backgroundColor: '#F15025' }}>
+                          <span className="ml-auto inline-flex items-center justify-center text-white font-bold" style={{ minWidth: 16, height: 16, padding: '0 4px', fontSize: 10, borderRadius: 999, backgroundColor: '#D24620' }}>
                             {supportAttentie}
                           </span>
                         )}
@@ -395,7 +395,7 @@ export function TopNav() {
 
             {userMenuOpen && (
               <div
-                className="absolute right-0 top-full mt-2 w-60 z-50 overflow-hidden rounded-[16px] bg-popover border border-border/70 shadow-[0_12px_40px_rgba(0,0,0,0.10),0_1px_2px_rgba(0,0,0,0.05)] dark:shadow-[0_12px_40px_-8px_rgba(0,0,0,0.55),0_0_24px_-6px_rgba(241,80,37,0.10)] p-1.5"
+                className="absolute right-0 top-full mt-2 w-60 z-50 overflow-hidden rounded-[16px] bg-popover border border-border/70 shadow-[0_12px_40px_rgba(0,0,0,0.10),0_1px_2px_rgba(0,0,0,0.05)] dark:shadow-[0_12px_40px_-8px_rgba(0,0,0,0.55),0_0_24px_-6px_rgba(210, 70, 32,0.10)] p-1.5"
               >
                 <div className="flex items-center gap-2.5 px-2 py-2">
                   <span className="w-9 h-9 rounded-[9px] flex items-center justify-center bg-petrol text-white font-bold text-[14px] flex-shrink-0">{userInitial}</span>

@@ -240,7 +240,7 @@ export function MaatjeBeheer() {
             <button
               type="button"
               onClick={() => setKoppelOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-flame px-4 py-2 text-[13px] font-semibold text-white shadow-[0_2px_8px_rgba(241,80,37,0.3)]"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-flame px-4 py-2 text-[13px] font-semibold text-white shadow-[0_2px_8px_rgba(210, 70, 32,0.3)]"
             >
               <Link2 className="h-4 w-4" strokeWidth={2} />
               Koppel aan project

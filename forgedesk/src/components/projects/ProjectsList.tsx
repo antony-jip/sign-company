@@ -160,7 +160,7 @@ const STATUS_WORKFLOW: Record<string, string[]> = {
 const STATUS_HEX: Record<string, string> = {
   actief: '#2D6B48',
   gepland: '#2A5580',
-  'te-plannen': '#F15025',
+  'te-plannen': '#D24620',
   'in-review': '#5A5A55',
   afgerond: '#1A535C',
   'on-hold': '#5A5A55',
@@ -1073,7 +1073,7 @@ export function ProjectsList() {
                 </button>
                 <Link
                   to="/projecten/nieuw"
-                  className="inline-flex items-center gap-2 bg-flame text-white px-3 md:pl-4 md:pr-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25),0_0_0_1px_rgba(241,80,37,0.1)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35),0_0_0_1px_rgba(241,80,37,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:bg-[#D03A18] transition-all duration-200"
+                  className="inline-flex items-center gap-2 bg-flame text-white px-3 md:pl-4 md:pr-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(210, 70, 32,0.25),0_0_0_1px_rgba(210, 70, 32,0.1)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(210, 70, 32,0.35),0_0_0_1px_rgba(210, 70, 32,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:bg-[#D03A18] transition-all duration-200"
                 >
                   <Plus className="w-4 h-4 opacity-80" />
                   <span className="hidden md:inline">Nieuw project</span>
@@ -1096,7 +1096,7 @@ export function ProjectsList() {
             </button>
             <div className={cn('grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3', !cijfersOpen && 'hidden md:grid')}>
               {([
-                { key: 'met-aandacht',  label: 'Met aandacht',  sub: 'blijft te lang liggen',  count: stats.metAandacht,   Icon: AlertCircle, accent: '#F15025' },
+                { key: 'met-aandacht',  label: 'Met aandacht',  sub: 'blijft te lang liggen',  count: stats.metAandacht,   Icon: AlertCircle, accent: '#D24620' },
                 { key: 'actief',        label: 'Actief',        sub: 'hier wordt aan gewerkt',           count: stats.actief,        Icon: Activity,    accent: '#3A5A9A' },
                 { key: 'te-factureren', label: 'Te factureren', sub: 'mag gefactureerd',      count: stats.teFactureren,  Icon: Receipt,     accent: '#2D6B48' },
                 { key: 'afgerond',      label: 'Afgerond',      sub: 'klaar',                   count: stats.afgerond,      Icon: CheckCircle, accent: '#1A535C' },
@@ -1390,7 +1390,7 @@ export function ProjectsList() {
                 action={
                   <Link
                     to="/projecten/nieuw"
-                    className="inline-flex items-center gap-2 bg-flame text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:bg-[#E04520] hover:-translate-y-[1px] active:translate-y-0 transition-all mt-4"
+                    className="inline-flex items-center gap-2 bg-flame text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(210, 70, 32,0.25)] hover:bg-[#E04520] hover:-translate-y-[1px] active:translate-y-0 transition-all mt-4"
                   >
                     <Plus className="w-4 h-4 opacity-80" />
                     Nieuw project
@@ -1446,7 +1446,7 @@ export function ProjectsList() {
                           {(() => {
                             const dagen = getDagenOpen(project)
                             if (dagen === null) return null
-                            const color = dagen > 90 ? '#C03A18' : dagen > 30 ? '#F15025' : '#9B9B95'
+                            const color = dagen > 90 ? '#C03A18' : dagen > 30 ? '#D24620' : '#9B9B95'
                             return <span className="font-mono text-[11px] font-medium" style={{ color }}>{dagen}d</span>
                           })()}
                           {bedrag > 0 && (
@@ -1588,7 +1588,7 @@ export function ProjectsList() {
                         <tr
                           className={cn(
                             'doen-row border-b border-border last:border-0 cursor-pointer transition-colors duration-200 group',
-                            needsAttention(project) && !selectedIds.has(project.id) && 'bg-[rgba(241,80,37,0.025)]',
+                            needsAttention(project) && !selectedIds.has(project.id) && 'bg-[rgba(210, 70, 32,0.025)]',
                             'hover:bg-[rgba(26,83,92,0.04)] dark:hover:bg-white/[0.03]',
                             selectedIds.has(project.id) && 'bg-petrol/[0.05] dark:bg-white/[0.05]'
                           )}
@@ -1803,7 +1803,7 @@ export function ProjectsList() {
                                     // Eén maat voor de hele kolom: wisselende
                                     // lettergroottes lieten de cijferkolom
                                     // golven. Nadruk komt van gewicht en tint.
-                                    'font-mono tabular-nums text-[13px] rounded px-1 -mr-1 hover:bg-[rgba(241,80,37,0.08)] transition-colors',
+                                    'font-mono tabular-nums text-[13px] rounded px-1 -mr-1 hover:bg-[rgba(210, 70, 32,0.08)] transition-colors',
                                     bedrag >= 10000
                                       ? 'font-semibold text-[#1A4A52] dark:text-foreground'
                                       : 'text-[#1A4A52]/70 dark:text-muted-foreground'

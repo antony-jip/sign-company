@@ -14,7 +14,7 @@ export interface NieuwsbriefStijl {
 }
 
 export const STANDAARD_STIJL: NieuwsbriefStijl = {
-  accent: '#F15025',
+  accent: '#D24620',
   tekst: '#1A1A1A',
   secundair: '#57574F',
   kaart: '#FFFFFF',

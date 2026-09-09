@@ -168,7 +168,7 @@ export function ProjectPhotoGallery({
                 Situatiefoto's<span className="text-flame">.</span>
               </h3>
               {photos.length > 0 && (
-                <span className="font-mono text-[10px] font-semibold bg-[rgba(241,80,37,0.1)] text-flame rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums">
+                <span className="font-mono text-[10px] font-semibold bg-[rgba(210, 70, 32,0.1)] text-flame rounded-full px-1.5 py-0.5 min-w-[18px] text-center tabular-nums">
                   {photos.length}
                 </span>
               )}
@@ -249,7 +249,7 @@ export function ProjectPhotoGallery({
                 'flex-1 inline-flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed transition-all text-[13px] font-semibold',
                 isUploading
                   ? 'border-[rgba(26,83,92,0.18)] text-muted-foreground cursor-wait'
-                  : 'border-[rgba(241,80,37,0.28)] text-flame hover:border-[rgba(241,80,37,0.55)] hover:bg-[rgba(241,80,37,0.04)] cursor-pointer'
+                  : 'border-[rgba(210, 70, 32,0.28)] text-flame hover:border-[rgba(210, 70, 32,0.55)] hover:bg-[rgba(210, 70, 32,0.04)] cursor-pointer'
               )}
             >
               <Upload className="h-4 w-4" />

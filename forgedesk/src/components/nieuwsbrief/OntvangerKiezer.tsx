@@ -215,7 +215,7 @@ export function OntvangerKiezer({ selectie, onChange, onTelling, disabled }: Pro
         onClick={() => set({ type: soort })}
         className={cn(
           'flex items-start gap-3 rounded-2xl border-2 p-4 text-left transition-all',
-          actief ? 'border-flame bg-flame/[0.04] shadow-[0_0_0_3px_rgba(241,80,37,0.12)]' : 'border-border bg-card hover:border-petrol/40',
+          actief ? 'border-flame bg-flame/[0.04] shadow-[0_0_0_3px_rgba(210, 70, 32,0.12)]' : 'border-border bg-card hover:border-petrol/40',
           disabled && 'opacity-60',
         )}
       >

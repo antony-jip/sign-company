@@ -65,7 +65,7 @@ export const WerkbonDropZone = React.memo(function WerkbonDropZone({
           aria-hidden
           className="pointer-events-none absolute inset-0 rounded-xl"
           style={{
-            border: '2px dashed #F15025',
+            border: '2px dashed #D24620',
             backgroundColor: 'rgba(248, 247, 245, 0.5)',
           }}
         />

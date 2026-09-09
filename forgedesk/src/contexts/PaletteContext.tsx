@@ -46,7 +46,7 @@ export interface AccentPalette {
 
 export const ACCENT_PALETTES: AccentPalette[] = [
   { id: 'petrol', naam: 'Petrol', sidebarActive: '186 52% 23%', gradientStart: '#1A535C', gradientEnd: '#E2F0F0', ring: '186 52% 23%' },
-  { id: 'flame', naam: 'Flame', sidebarActive: '12 87% 57%', gradientStart: '#F15025', gradientEnd: '#FDE8E2', ring: '12 87% 57%' },
+  { id: 'flame', naam: 'Flame', sidebarActive: '12 87% 57%', gradientStart: '#D24620', gradientEnd: '#FDE8E2', ring: '12 87% 57%' },
   { id: 'sage', naam: 'Sage', sidebarActive: '145 22% 45%', gradientStart: '#2D6B48', gradientEnd: '#E4F0EA', ring: '145 22% 45%' },
   { id: 'ocean', naam: 'Ocean', sidebarActive: '210 40% 45%', gradientStart: '#3A6B8C', gradientEnd: '#E5ECF6', ring: '210 40% 45%' },
   { id: 'terracotta', naam: 'Terracotta', sidebarActive: '15 45% 50%', gradientStart: '#9A5A48', gradientEnd: '#F2E8E5', ring: '15 45% 50%' },

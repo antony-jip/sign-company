@@ -100,7 +100,7 @@ export function PdfPreviewDialog({ open, onOpenChange, title, generatePdf, refre
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl h-[92vh] flex flex-col p-0 gap-0 rounded-2xl border-none shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] dark:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.55),0_0_24px_-6px_rgba(241,80,37,0.10)] bg-background">
+      <DialogContent className="max-w-5xl h-[92vh] flex flex-col p-0 gap-0 rounded-2xl border-none shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] dark:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.55),0_0_24px_-6px_rgba(210, 70, 32,0.10)] bg-background">
         {/* Header */}
         <DialogHeader className="px-8 pt-6 pb-0 flex-shrink-0">
           <div className="flex items-center justify-between">

@@ -4,7 +4,7 @@
  * For Tailwind classes, use bg-mod-offertes-light, text-mod-facturen-text, etc.
  */
 export const MODULE_COLORS = {
-  offertes: { DEFAULT: '#F15025', light: '#FDE8E2', text: '#C03A18', border: '#F5C4B4' },
+  offertes: { DEFAULT: '#D24620', light: '#FDE8E2', text: '#C03A18', border: '#F5C4B4' },
   facturen: { DEFAULT: '#2D6B48', light: '#E4F0EA', text: '#2D6B48', border: '#C0DBCC' },
   klanten: { DEFAULT: '#3A6B8C', light: '#E5ECF6', text: '#2A5580', border: '#C0D0EA' },
   projecten: { DEFAULT: '#1A535C', light: '#E2F0F0', text: '#1A535C', border: '#B8D8DA' },

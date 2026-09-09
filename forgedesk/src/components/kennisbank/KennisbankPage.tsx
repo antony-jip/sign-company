@@ -25,9 +25,9 @@ interface KbArticle {
 }
 
 const CATEGORIES = [
-  { id: 'start', label: 'Aan de slag', icon: Zap, color: '#F15025' },
+  { id: 'start', label: 'Aan de slag', icon: Zap, color: '#D24620' },
   { id: 'projecten', label: 'Projecten', icon: FolderKanban, color: '#1A535C' },
-  { id: 'offertes', label: 'Offertes', icon: FileText, color: '#F15025' },
+  { id: 'offertes', label: 'Offertes', icon: FileText, color: '#D24620' },
   { id: 'klanten', label: 'Klanten', icon: Users, color: '#3A6B8C' },
   { id: 'financieel', label: 'Financieel', icon: PiggyBank, color: '#2D6B48' },
   { id: 'uitvoering', label: 'Uitvoering', icon: Wrench, color: '#1A535C' },
@@ -40,7 +40,7 @@ const ARTICLES: KbArticle[] = [
     id: 'welkom',
     category: 'start',
     icon: Zap,
-    iconColor: '#F15025',
+    iconColor: '#D24620',
     titel: 'Welkom bij Doen.',
     subtitel: 'Alles wat je nodig hebt, op één plek',
     inhoud: [
@@ -104,7 +104,7 @@ const ARTICLES: KbArticle[] = [
     id: 'offertes-maken',
     category: 'offertes',
     icon: FileText,
-    iconColor: '#F15025',
+    iconColor: '#D24620',
     titel: 'Offertes maken',
     subtitel: 'Professionele offerte in minuten',
     inhoud: [
@@ -123,7 +123,7 @@ const ARTICLES: KbArticle[] = [
     id: 'offerte-opvolging',
     category: 'offertes',
     icon: Bell,
-    iconColor: '#F15025',
+    iconColor: '#D24620',
     titel: 'Automatische opvolging',
     subtitel: 'Nooit meer een offerte vergeten',
     inhoud: [
@@ -200,7 +200,7 @@ const ARTICLES: KbArticle[] = [
     id: 'werkbonnen',
     category: 'uitvoering',
     icon: ClipboardCheck,
-    iconColor: '#F15025',
+    iconColor: '#D24620',
     titel: 'Werkbonnen',
     subtitel: 'Instructies voor je monteurs',
     inhoud: [
@@ -415,7 +415,7 @@ const ARTICLES: KbArticle[] = [
     id: 'offerte-vervolg',
     category: 'offertes',
     icon: ChevronRight,
-    iconColor: '#F15025',
+    iconColor: '#D24620',
     titel: 'Vervolg na de offerte',
     subtitel: 'Naar project, direct factureren of afgewezen met reden',
     inhoud: [
@@ -433,7 +433,7 @@ const ARTICLES: KbArticle[] = [
     id: 'offerte-condities-staffels',
     category: 'offertes',
     icon: FileText,
-    iconColor: '#F15025',
+    iconColor: '#D24620',
     titel: 'Condities, staffels en interne notities',
     subtitel: 'Standaard of Spoed in één keuze',
     inhoud: [
@@ -612,12 +612,12 @@ function renderBold(text: string): ReactNode {
 const FLOW_STEPS = [
   { icon: Users, label: 'Klant', desc: 'Leg je klant vast', color: '#3A6B8C', category: 'klanten', voordelen: ['Contactpersonen', 'Vestigingen', 'Volledige historie'] },
   { icon: FolderKanban, label: 'Project', desc: 'Start het traject', color: '#1A535C', category: 'projecten', voordelen: ['Taken toewijzen', 'Bestanden delen', 'Voortgang bijhouden'] },
-  { icon: FileText, label: 'Offerte', desc: 'Maak de deal', color: '#F15025', category: 'offertes', voordelen: ['PDF genereren', 'Direct versturen', 'Calculatie-templates'] },
+  { icon: FileText, label: 'Offerte', desc: 'Maak de deal', color: '#D24620', category: 'offertes', voordelen: ['PDF genereren', 'Direct versturen', 'Calculatie-templates'] },
   { icon: Globe, label: 'Portaal', desc: 'Deel met je klant', color: '#6A5A8A', category: 'klanten', voordelen: ['Tekeningen delen', 'Offertes goedkeuren', 'Berichten sturen'] },
   { icon: ClipboardCheck, label: 'Werkbon', desc: 'Geef de opdracht', color: '#9A5A48', category: 'uitvoering', voordelen: ['Neemt offerte over', 'Foto\'s uploaden', 'Klant handtekening'] },
   { icon: Calendar, label: 'Planning', desc: 'Plan de montage', color: '#1A535C', category: 'uitvoering', voordelen: ['Drag & drop', 'Weer integratie', 'Per monteur filteren'] },
   { icon: Receipt, label: 'Factuur', desc: 'Stuur de rekening', color: '#2D6B48', category: 'financieel', voordelen: ['Mollie betaallink', 'Auto herinneringen', 'PDF bijlage'] },
-  { icon: CheckCircle, label: 'Gedaan.', desc: 'Klant tevreden', color: '#F15025', category: 'start', voordelen: ['Transparant proces', 'Snelle oplevering', 'Professionele uitstraling'] },
+  { icon: CheckCircle, label: 'Gedaan.', desc: 'Klant tevreden', color: '#D24620', category: 'start', voordelen: ['Transparant proces', 'Snelle oplevering', 'Professionele uitstraling'] },
 ]
 
 // ── Component ──
@@ -728,7 +728,7 @@ export function KennisbankPage() {
           <button
             onClick={() => navigate(activeArticle.link!)}
             className="mt-8 inline-flex items-center gap-2 h-11 px-6 text-[14px] font-bold text-white rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
-            style={{ backgroundColor: '#F15025' }}
+            style={{ backgroundColor: '#D24620' }}
           >
             Bekijk in de app
             <ChevronRight className="h-4 w-4" />
@@ -750,8 +750,8 @@ export function KennisbankPage() {
         </div>
         {/* Pulsing heart glow · clipped */}
         <div className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
-          <div className="absolute top-[15%] right-[8%] w-[100px] h-[100px] rounded-full animate-pulse" style={{ backgroundColor: '#F15025', opacity: 0.06 }} />
-          <div className="absolute top-[18%] right-[9.5%] w-[60px] h-[60px] rounded-full animate-pulse" style={{ backgroundColor: '#F15025', opacity: 0.08, animationDelay: '0.5s' }} />
+          <div className="absolute top-[15%] right-[8%] w-[100px] h-[100px] rounded-full animate-pulse" style={{ backgroundColor: '#D24620', opacity: 0.06 }} />
+          <div className="absolute top-[18%] right-[9.5%] w-[60px] h-[60px] rounded-full animate-pulse" style={{ backgroundColor: '#D24620', opacity: 0.08, animationDelay: '0.5s' }} />
         </div>
 
         <div className="relative px-5 pt-8 pb-6 md:px-12 md:pt-12 md:pb-10">
@@ -759,7 +759,7 @@ export function KennisbankPage() {
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-10">
             <div className="max-w-2xl">
               <h1 className="font-heading text-[32px] md:text-[56px] font-bold tracking-[-2.5px] leading-[0.95] text-white mb-4">
-                Doen<span style={{ color: '#F15025' }}>.</span><br />
+                Doen<span style={{ color: '#D24620' }}>.</span><br />
                 <span className="text-white/40">de kracht achter</span><br />
                 doeners.
               </h1>
@@ -769,10 +769,10 @@ export function KennisbankPage() {
             </div>
             {/* The goal · visual anchor */}
             <div className="hidden md:flex flex-col items-center animate-stagger-item" style={{ animationDelay: '600ms' }}>
-              <div className="h-20 w-20 rounded-3xl flex items-center justify-center relative" style={{ backgroundColor: '#F15025', boxShadow: '0 8px 30px rgba(241,80,37,0.4)' }}>
+              <div className="h-20 w-20 rounded-3xl flex items-center justify-center relative" style={{ backgroundColor: '#D24620', boxShadow: '0 8px 30px rgba(210, 70, 32,0.4)' }}>
                 <CheckCircle className="h-9 w-9 text-white" />
               </div>
-              <span className="text-[15px] font-bold text-white mt-3">Gedaan<span style={{ color: '#F15025' }}>.</span></span>
+              <span className="text-[15px] font-bold text-white mt-3">Gedaan<span style={{ color: '#D24620' }}>.</span></span>
               <span className="text-[11px] text-white/35">Klant tevreden</span>
             </div>
           </div>
@@ -838,7 +838,7 @@ export function KennisbankPage() {
             </div>
 
             {/* Spectrum bar */}
-            <div className="h-1 rounded-full mt-4 mx-2" style={{ background: `linear-gradient(90deg, #3A6B8C, #1A535C, #F15025, #6A5A8A, #9A5A48, #1A535C, #2D6B48, #F15025)` }} />
+            <div className="h-1 rounded-full mt-4 mx-2" style={{ background: `linear-gradient(90deg, #3A6B8C, #1A535C, #D24620, #6A5A8A, #9A5A48, #1A535C, #2D6B48, #D24620)` }} />
           </div>
         </div>
       </div>
@@ -893,7 +893,7 @@ export function KennisbankPage() {
               {search && <> voor &ldquo;{search}&rdquo;</>}
               {activeCategory && !search && <> in <strong>{CATEGORIES.find(c => c.id === activeCategory)?.label}</strong></>}
             </p>
-            <button onClick={() => { setSearch(''); setActiveCategory(null) }} className="text-[12px] font-semibold" style={{ color: '#F15025' }}>
+            <button onClick={() => { setSearch(''); setActiveCategory(null) }} className="text-[12px] font-semibold" style={{ color: '#D24620' }}>
               Wis filter
             </button>
           </div>
@@ -905,7 +905,7 @@ export function KennisbankPage() {
             <Search className="h-10 w-10 mx-auto mb-4 opacity-15" style={{ color: 'hsl(var(--muted-foreground))' }} />
             <p className="text-[15px] font-semibold" style={{ color: 'hsl(var(--foreground))' }}>Geen artikelen gevonden</p>
             <p className="text-[13px] mt-1" style={{ color: 'hsl(var(--muted-foreground))' }}>Probeer een ander zoekwoord</p>
-            <button onClick={() => { setSearch(''); setActiveCategory(null) }} className="text-[13px] font-bold mt-3 inline-flex items-center gap-1" style={{ color: '#F15025' }}>
+            <button onClick={() => { setSearch(''); setActiveCategory(null) }} className="text-[13px] font-bold mt-3 inline-flex items-center gap-1" style={{ color: '#D24620' }}>
               Toon alles <ChevronRight className="h-3 w-3" />
             </button>
           </div>
@@ -957,7 +957,7 @@ export function KennisbankPage() {
         <div className="text-center mt-20 pb-10">
           <div className="h-px w-16 mx-auto mb-6" style={{ backgroundColor: '#E6E4E0' }} />
           <p className="text-[14px] font-heading font-bold tracking-tight" style={{ color: 'hsl(var(--foreground))' }}>
-            Doen<span style={{ color: '#F15025' }}>.</span>
+            Doen<span style={{ color: '#D24620' }}>.</span>
           </p>
           <p className="text-[12px] mt-1" style={{ color: 'hsl(var(--muted-foreground))' }}>
             Gebouwd voor creatieve maakbedrijven

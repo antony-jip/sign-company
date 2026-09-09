@@ -590,7 +590,7 @@ export function OffertePubliekPagina() {
             <div className="mx-auto w-20 h-20 rounded-full bg-[#E8F2EC] flex items-center justify-center">
               <CheckCircle2 className="h-10 w-10 text-[#3A7D52]" />
             </div>
-            <h3 className="text-xl font-bold text-[#1A1A1A]" style={{ letterSpacing: '-0.3px' }}>Offerte geaccepteerd<span className="text-[#F15025]">.</span></h3>
+            <h3 className="text-xl font-bold text-[#1A1A1A]" style={{ letterSpacing: '-0.3px' }}>Offerte geaccepteerd<span className="text-[#D24620]">.</span></h3>
             <p className="text-sm text-[#6B6B66]">
               Bedankt voor uw vertrouwen. We nemen snel contact met u op.
             </p>
@@ -642,7 +642,7 @@ export function OffertePubliekPagina() {
           <div className="bg-[#FDE8E4] rounded-xl p-4 flex items-start gap-3">
             <Clock className="h-5 w-5 text-[#C0451A] shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold text-[#C0451A]">Verlopen<span className="text-[#F15025]">.</span></p>
+              <p className="font-semibold text-[#C0451A]">Verlopen<span className="text-[#D24620]">.</span></p>
               <p className="text-sm text-[#6B6B66] mt-1">Deze offerte was geldig tot <span className="font-mono">{formatDate(offerte.geldig_tot)}</span>. Neem contact op voor een nieuwe offerte.</p>
             </div>
           </div>
@@ -653,7 +653,7 @@ export function OffertePubliekPagina() {
             <CheckCircle2 className="h-5 w-5 text-[#3A7D52] shrink-0 mt-0.5" />
             <div>
               <p className="font-semibold text-[#3A7D52]">
-                Geaccepteerd<span className="text-[#F15025]">.</span>
+                Geaccepteerd<span className="text-[#D24620]">.</span>
               </p>
               <p className="text-sm text-[#6B6B66] mt-1">
                 Op {formatDateTime(offerte.geaccepteerd_op || '')}
@@ -668,7 +668,7 @@ export function OffertePubliekPagina() {
             <Edit3 className="h-5 w-5 text-[#8A7A4A] shrink-0 mt-0.5" />
             <div>
               <p className="font-semibold text-[#8A7A4A]">
-                Wijziging aangevraagd<span className="text-[#F15025]">.</span>
+                Wijziging aangevraagd<span className="text-[#D24620]">.</span>
               </p>
               <p className="text-sm text-[#6B6B66] mt-1">Op {formatDateTime(offerte.wijziging_ingediend_op || '')}. We bekijken uw verzoek en komen bij u terug.</p>
             </div>
@@ -683,7 +683,7 @@ export function OffertePubliekPagina() {
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
               <div className="space-y-1">
                 <h1 className="text-xl md:text-2xl font-bold text-[#1A1A1A]" style={{ letterSpacing: '-0.3px' }}>
-                  {offerte.titel || `Offerte ${offerte.nummer}`}<span className="text-[#F15025]">.</span>
+                  {offerte.titel || `Offerte ${offerte.nummer}`}<span className="text-[#D24620]">.</span>
                 </h1>
                 <p className="text-sm text-[#6B6B66]">Offerte {offerte.nummer}</p>
               </div>
@@ -988,7 +988,7 @@ export function OffertePubliekPagina() {
           <div className="hidden md:flex gap-3">
             <Button
               onClick={() => setShowAcceptModal(true)}
-              className="flex-1 h-14 text-base font-semibold bg-[#F15025] hover:bg-[#D9481F] text-white rounded-xl"
+              className="flex-1 h-14 text-base font-semibold bg-[#D24620] hover:bg-[#D9481F] text-white rounded-xl"
             >
               <CheckCircle2 className="h-5 w-5 mr-2" />
               Offerte accepteren
@@ -1037,7 +1037,7 @@ export function OffertePubliekPagina() {
         <div className="fixed bottom-0 left-0 right-0 md:hidden bg-[#FFFFFF] border-t border-[#EBEBEB] p-4 flex gap-3 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] z-40">
           <Button
             onClick={() => setShowAcceptModal(true)}
-            className="flex-1 h-12 text-sm font-semibold bg-[#F15025] hover:bg-[#D9481F] text-white rounded-xl"
+            className="flex-1 h-12 text-sm font-semibold bg-[#D24620] hover:bg-[#D9481F] text-white rounded-xl"
           >
             <CheckCircle2 className="h-4 w-4 mr-1.5" />
             Accepteren
@@ -1135,7 +1135,7 @@ export function OffertePubliekPagina() {
               <Button
                 onClick={handleAccepteren}
                 disabled={acceptLoading || acceptNaam.trim().length < 2 || !acceptAkkoord || !acceptHandtekening}
-                className="w-full h-12 text-base font-semibold bg-[#F15025] hover:bg-[#D9481F] text-white rounded-xl disabled:opacity-40"
+                className="w-full h-12 text-base font-semibold bg-[#D24620] hover:bg-[#D9481F] text-white rounded-xl disabled:opacity-40"
               >
                 {acceptLoading ? (
                   <Loader2 className="h-5 w-5 animate-spin" />

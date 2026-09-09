@@ -155,18 +155,18 @@ export function getRowAccentClass(status: string): string {
     'ingepland':   'border-l-[#2A5580]',
 
     // Flame
-    'verstuurd':   'border-l-[#F15025]',
-    'verzonden':   'border-l-[#F15025]',
-    'open':        'border-l-[#F15025]',
-    'afgewezen':   'border-l-[#F15025]',
+    'verstuurd':   'border-l-[#D24620]',
+    'verzonden':   'border-l-[#D24620]',
+    'open':        'border-l-[#D24620]',
+    'afgewezen':   'border-l-[#D24620]',
     'verlopen':    'border-l-[#C03A18]',
     'vervallen':   'border-l-[#C03A18]',
     'te-laat':     'border-l-[#C03A18]',
     'geannuleerd': 'border-l-[#C03A18]',
-    'wijziging_gevraagd': 'border-l-[#F15025]',
+    'wijziging_gevraagd': 'border-l-[#D24620]',
 
     // Flame
-    'te-plannen':  'border-l-[#F15025]',
+    'te-plannen':  'border-l-[#D24620]',
 
     // Blauw
     'bezig':       'border-l-[#2A5580]',

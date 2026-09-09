@@ -220,7 +220,7 @@ async function mailSupportBerichtNaarBeheerder(orgNaam: string, tekst: string): 
   const preview = tekst.length > 500 ? tekst.slice(0, 497) + '…' : tekst
   const html = `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 15px; color: #1A1A1A; line-height: 1.6;">
     <p><strong>${escapeHtml(orgNaam)}</strong> heeft een bericht gestuurd naar support.</p>
-    <blockquote style="margin:12px 0; padding:10px 14px; border-left:3px solid #F15025; background:#FAFAF8; white-space:pre-wrap;">${escapeHtml(preview)}</blockquote>
+    <blockquote style="margin:12px 0; padding:10px 14px; border-left:3px solid #D24620; background:#FAFAF8; white-space:pre-wrap;">${escapeHtml(preview)}</blockquote>
     <p style="color:#6B6B66;">Open de Support-inbox in doen. om te reageren.</p>
   </div>`
   // Resend GOOIT NIET bij een API-fout, hij geeft { data, error } terug. De

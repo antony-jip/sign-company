@@ -318,7 +318,7 @@ export function CommandPalette() {
 
       {/* Modal */}
       <div
-        className="relative w-full max-w-xl mx-4 rounded-2xl shadow-[0_24px_80px_-12px_rgba(0,0,0,0.35),0_8px_24px_-8px_rgba(0,0,0,0.20)] dark:shadow-[0_24px_80px_-12px_rgba(0,0,0,0.65),0_0_32px_-8px_rgba(241,80,37,0.12)] border border-border/60 dark:border-white/10 overflow-hidden bg-card/85 supports-[backdrop-filter]:bg-card/80 dark:bg-popover/90 dark:supports-[backdrop-filter]:bg-popover/85 backdrop-blur-2xl backdrop-saturate-150"
+        className="relative w-full max-w-xl mx-4 rounded-2xl shadow-[0_24px_80px_-12px_rgba(0,0,0,0.35),0_8px_24px_-8px_rgba(0,0,0,0.20)] dark:shadow-[0_24px_80px_-12px_rgba(0,0,0,0.65),0_0_32px_-8px_rgba(210, 70, 32,0.12)] border border-border/60 dark:border-white/10 overflow-hidden bg-card/85 supports-[backdrop-filter]:bg-card/80 dark:bg-popover/90 dark:supports-[backdrop-filter]:bg-popover/85 backdrop-blur-2xl backdrop-saturate-150"
         style={{
           animation: 'commandPaletteSlideIn 150ms ease-out forwards',
         }}

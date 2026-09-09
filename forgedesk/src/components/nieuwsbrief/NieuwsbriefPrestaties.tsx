@@ -13,7 +13,7 @@ import {
 // Twee reeksen, beide een percentage, dus één as. De stappen zijn apart gekozen
 // voor licht en donker (niet omgeklapt) en gecontroleerd op kleurenblind-afstand.
 const SERIE_OPEN_LICHT = '#3A5A9A'
-const SERIE_KLIK_LICHT = '#F15025'
+const SERIE_KLIK_LICHT = '#D24620'
 const SERIE_OPEN_DONKER = '#5F8AD6'
 const SERIE_KLIK_DONKER = '#E8613A'
 

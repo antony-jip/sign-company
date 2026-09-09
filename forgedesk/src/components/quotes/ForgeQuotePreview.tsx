@@ -282,7 +282,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
         documentStyle
       )
       doc.save(`${fetchedOfferte.nummer}.pdf`)
-      toast.success(<>PDF gedownload<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>PDF gedownload<span style={{ color: '#D24620' }}>.</span></>)
     } catch (err) {
       logger.error('Failed to generate PDF:', err)
       toast.error('Kon PDF niet genereren')
@@ -538,7 +538,7 @@ export function ForgeQuotePreview({ offerte: propOfferte, items: propItems }: Fo
             {/* Status Badge */}
             {offerteData.status && (
               <Badge className={getStatusColor(offerteData.status)}>
-                {offerteData.status.charAt(0).toUpperCase() + offerteData.status.slice(1)}<span style={{ color: '#F15025' }}>.</span>
+                {offerteData.status.charAt(0).toUpperCase() + offerteData.status.slice(1)}<span style={{ color: '#D24620' }}>.</span>
               </Badge>
             )}
           </div>

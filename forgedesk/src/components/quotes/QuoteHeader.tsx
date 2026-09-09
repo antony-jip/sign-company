@@ -328,7 +328,7 @@ export function QuoteHeader({
             <button
               onClick={() => { hapticMedium(); handleVerstuurOfferte() }}
               disabled={isSaving}
-              className="inline-flex items-center justify-center gap-2 h-10 md:h-9 px-4 md:px-5 text-[13px] md:text-sm font-semibold rounded-l-xl bg-flame text-white hover:bg-[#E04520] shadow-[0_2px_8px_rgba(241,80,37,0.25)] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35)] hover:-translate-y-[1px] active:translate-y-0 transition-all disabled:opacity-50 disabled:hover:translate-y-0"
+              className="inline-flex items-center justify-center gap-2 h-10 md:h-9 px-4 md:px-5 text-[13px] md:text-sm font-semibold rounded-l-xl bg-flame text-white hover:bg-[#E04520] shadow-[0_2px_8px_rgba(210, 70, 32,0.25)] hover:shadow-[0_4px_16px_rgba(210, 70, 32,0.35)] hover:-translate-y-[1px] active:translate-y-0 transition-all disabled:opacity-50 disabled:hover:translate-y-0"
             >
               <Send className="h-4 w-4" strokeWidth={1.75} />
               <span>Verstuur</span>
@@ -336,7 +336,7 @@ export function QuoteHeader({
             <button
               onClick={() => { hapticLight(); email.setShowVerstuurKeuze(!email.showVerstuurKeuze) }}
               disabled={isSaving}
-              className="inline-flex items-center h-10 md:h-9 px-2 md:px-2 text-sm rounded-r-xl bg-[#E04520] text-white hover:bg-[#D03A18] transition-colors disabled:opacity-50 border-l border-white/25 shadow-[0_2px_8px_rgba(241,80,37,0.25)]"
+              className="inline-flex items-center h-10 md:h-9 px-2 md:px-2 text-sm rounded-r-xl bg-[#E04520] text-white hover:bg-[#D03A18] transition-colors disabled:opacity-50 border-l border-white/25 shadow-[0_2px_8px_rgba(210, 70, 32,0.25)]"
               aria-label="Versturen via…"
             >
               <ChevronDown className="h-4 w-4 md:h-3.5 md:w-3.5" />
@@ -374,7 +374,7 @@ export function QuoteHeader({
                     className="w-full text-left px-4 py-3 hover:bg-[hsl(38,20%,95.5%)] dark:hover:bg-white/[0.06] transition-colors"
                   >
                     <div className="flex items-start gap-3">
-                      <div className="h-9 w-9 rounded-lg bg-flame flex items-center justify-center flex-shrink-0 shadow-[0_2px_6px_rgba(241,80,37,0.25)]">
+                      <div className="h-9 w-9 rounded-lg bg-flame flex items-center justify-center flex-shrink-0 shadow-[0_2px_6px_rgba(210, 70, 32,0.25)]">
                         <Mail className="h-4 w-4" strokeWidth={1.75} color="#FFFFFF" />
                       </div>
                       <div className="min-w-0 flex-1">

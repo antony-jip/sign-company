@@ -20,7 +20,7 @@ interface ChangelogEntry {
 }
 
 const LABEL_STYLE: Record<string, { bg: string; text: string }> = {
-  Nieuw: { bg: '#F15025', text: '#FFFFFF' },
+  Nieuw: { bg: '#D24620', text: '#FFFFFF' },
   Verbeterd: { bg: '#1A535C', text: '#FFFFFF' },
   Fix: { bg: '#2D6B48', text: '#FFFFFF' },
 }
@@ -30,20 +30,20 @@ const LABEL_STYLE: Record<string, { bg: string; text: string }> = {
 const APP_FEATURES = [
   { naam: 'Dashboard', desc: 'Omzet, taken, planning en activiteit in één overzicht. Widgets verplaatsen en resizen.', kleur: '#1A535C' },
   { naam: 'Projecten', desc: 'Cockpit per project met briefing, taken, offertes, montage en bestanden.', kleur: '#1A535C' },
-  { naam: 'Offertes', desc: 'Professionele offertes met calculatie, PDF, autosave en versioning.', kleur: '#F15025' },
+  { naam: 'Offertes', desc: 'Professionele offertes met calculatie, PDF, autosave en versioning.', kleur: '#D24620' },
   { naam: 'Facturen', desc: 'Factureren op basis van offertes. Mollie betaallink, automatische herinneringen.', kleur: '#2D6B48' },
   { naam: 'Klantenbeheer', desc: 'Contactpersonen, vestigingen, complete klanthistorie.', kleur: '#3A6B8C' },
   { naam: 'Klantportaal', desc: 'Deel tekeningen, offertes en updates. Klant keurt goed met één klik.', kleur: '#6A5A8A' },
-  { naam: 'Werkbonnen', desc: 'Opdracht voor de monteur. Neemt offerte over, foto\'s, klanthandtekening.', kleur: '#F15025' },
+  { naam: 'Werkbonnen', desc: 'Opdracht voor de monteur. Neemt offerte over, foto\'s, klanthandtekening.', kleur: '#D24620' },
   { naam: 'Montageplanning', desc: 'Weekoverzicht met drag-and-drop. Weerbericht, conflict-detectie.', kleur: '#1A535C' },
   { naam: 'Takenbeheer', desc: 'Taken toewijzen met deadlines en prioriteiten. Weekplanning met tijdlijn.', kleur: '#5A5A55' },
   { naam: 'Email', desc: 'Gesprekken, toetsenbord, bedenktijd en snooze. Gekoppeld aan klant, project en offerte.', kleur: '#6A5A8A' },
   { naam: 'AI Visualizer', desc: 'Upload een foto, laat AI het eindresultaat visualiseren voor je klant.', kleur: '#9A5A48' },
   { naam: 'Financieel', desc: 'Omzet, openstaand, cashflow. Grootboek, BTW-codes, exporteer naar CSV.', kleur: '#2D6B48' },
   { naam: 'Kennisbank', desc: 'Handleidingen en procedures. Alles over Doen. op één plek.', kleur: '#1A535C' },
-  { naam: 'Calculatie-templates', desc: 'Sla veelgebruikte producten op als template voor snellere offertes.', kleur: '#F15025' },
+  { naam: 'Calculatie-templates', desc: 'Sla veelgebruikte producten op als template voor snellere offertes.', kleur: '#D24620' },
   { naam: 'Document stijl', desc: 'Logo, kleuren en lettertype. Alle documenten automatisch in jouw huisstijl.', kleur: '#9A5A48' },
-  { naam: 'Automatische opvolging', desc: 'Herinneringen voor openstaande offertes. Nooit meer een deal missen.', kleur: '#F15025' },
+  { naam: 'Automatische opvolging', desc: 'Herinneringen voor openstaande offertes. Nooit meer een deal missen.', kleur: '#D24620' },
   { naam: 'Bestelbonnen', desc: 'Materiaal bestellen bij leveranciers, gekoppeld aan projecten.', kleur: '#1A535C' },
   { naam: 'Importeren', desc: 'Klanten, producten en data importeren vanuit CSV.', kleur: '#3A6B8C' },
 ]
@@ -220,7 +220,7 @@ export function ChangelogPage() {
           </div>
           <div>
             <h1 className="font-heading text-[28px] font-bold tracking-tight" style={{ color: 'hsl(var(--foreground))' }}>
-              What's new<span style={{ color: '#F15025' }}>.</span>
+              What's new<span style={{ color: '#D24620' }}>.</span>
             </h1>
             <p className="text-[14px]" style={{ color: 'hsl(var(--muted-foreground))' }}>Alles wat we bouwen, in één overzicht</p>
           </div>
@@ -344,7 +344,7 @@ export function ChangelogPage() {
       {/* Footer */}
       <div className="text-center mt-10 pb-8">
         <p className="text-[14px] font-heading font-bold tracking-tight" style={{ color: 'hsl(var(--foreground))' }}>
-          Doen<span style={{ color: '#F15025' }}>.</span>
+          Doen<span style={{ color: '#D24620' }}>.</span>
         </p>
         <p className="text-[12px] mt-1" style={{ color: 'hsl(var(--muted-foreground))' }}>
           Gebouwd voor creatieve maakbedrijven

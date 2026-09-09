@@ -134,7 +134,7 @@ function getOfferteStatusDotColor(status: string): string {
 
 const OFFERTE_STATUS_HEX: Record<string, string> = {
   concept: '#5A5A55',
-  verzonden: '#F15025',
+  verzonden: '#D24620',
   bekeken: '#6A5A8A',
   goedgekeurd: '#1A535C',
   afgewezen: '#C03A18',
@@ -214,7 +214,7 @@ function relativeDate(dateStr: string): string {
 }
 
 /** Klant initialen avatar kleuren */
-const AVATAR_COLORS = ['#1A535C', '#F15025', '#2D6B48', '#3A6B8C', '#9A5A48']
+const AVATAR_COLORS = ['#1A535C', '#D24620', '#2D6B48', '#3A6B8C', '#9A5A48']
 function avatarColor(name: string): string {
   const code = (name || 'O').charCodeAt(0)
   return AVATAR_COLORS[code % AVATAR_COLORS.length]
@@ -932,7 +932,7 @@ export function QuotesPipeline() {
               </div>
               <Link
                 to="/offertes/nieuw"
-                className="inline-flex items-center gap-2 bg-flame text-white px-3 md:pl-4 md:pr-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.25),0_0_0_1px_rgba(241,80,37,0.1)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(241,80,37,0.35),0_0_0_1px_rgba(241,80,37,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:bg-[#D03A18] transition-all duration-200"
+                className="inline-flex items-center gap-2 bg-flame text-white px-3 md:pl-4 md:pr-5 py-2.5 rounded-xl text-sm font-semibold shadow-[0_2px_8px_rgba(210, 70, 32,0.25),0_0_0_1px_rgba(210, 70, 32,0.1)] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(210, 70, 32,0.35),0_0_0_1px_rgba(210, 70, 32,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:bg-[#D03A18] transition-all duration-200"
               >
                 <Plus className="w-4 h-4 opacity-80" />
                 <span className="hidden md:inline">Nieuwe offerte</span>
@@ -942,7 +942,7 @@ export function QuotesPipeline() {
             {/* KPI tiles · clickable status-filter shortcuts */}
             <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-3">
               {([
-                { key: 'wacht_op_reactie', label: 'Opvolgen',  sub: 'wacht op reactie',         count: offerteKpis.opvolgen, Icon: Timer,     accent: '#F15025' },
+                { key: 'wacht_op_reactie', label: 'Opvolgen',  sub: 'wacht op reactie',         count: offerteKpis.opvolgen, Icon: Timer,     accent: '#D24620' },
                 { key: 'concept',          label: 'Concept',   sub: 'nog niet verstuurd',       count: offerteKpis.concept,  Icon: PenLine,   accent: '#5A5A55' },
                 { key: 'goedgekeurd',      label: 'Akkoord',   sub: 'klaar om te factureren',   count: offerteKpis.akkoord,  Icon: Heart,     accent: '#2D6B48' },
                 { key: 'verlopen',         label: 'Verlopen',  sub: 'te lang blijven liggen',      count: offerteKpis.verlopen, Icon: Hourglass, accent: '#1A535C' },
@@ -1120,7 +1120,7 @@ export function QuotesPipeline() {
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                 {([
                   { key: 'concept' as const, label: 'Concept', dot: '#5A5A55', text: '#5A5A55', bg: '#F8F7F5' },
-                  { key: 'verzonden' as const, label: 'Verstuurd', dot: '#F15025', text: '#C03A18', bg: '#FDE8E2' },
+                  { key: 'verzonden' as const, label: 'Verstuurd', dot: '#D24620', text: '#C03A18', bg: '#FDE8E2' },
                   { key: 'bekeken' as const, label: 'Bekeken', dot: '#6A5A8A', text: '#5A4A78', bg: '#EEE8F5' },
                   { key: 'goedgekeurd' as const, label: 'Akkoord', dot: '#1A535C', text: '#1A535C', bg: '#E2F0F0' },
                   { key: 'verlopen' as const, label: 'Verlopen', dot: '#9B9B95', text: '#6B6B66', bg: '#F0EFEC' },
@@ -1494,7 +1494,7 @@ export function QuotesPipeline() {
                                 key={offerte.id}
                                 className={cn(
                                   'doen-row border-b border-border last:border-0 cursor-pointer transition-colors duration-200 group',
-                                  attention && !selectedIds.has(offerte.id) && 'bg-[rgba(241,80,37,0.025)]',
+                                  attention && !selectedIds.has(offerte.id) && 'bg-[rgba(210, 70, 32,0.025)]',
                                   'hover:bg-[rgba(26,83,92,0.04)] dark:hover:bg-white/[0.03]',
                                   selectedIds.has(offerte.id) && 'bg-petrol/[0.05] dark:bg-white/[0.05]',
                                 )}

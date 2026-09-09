@@ -164,7 +164,7 @@ export function CustomerSelector({
             >
               <ArrowLeft className="h-4 w-4" style={{ color: 'hsl(var(--muted-foreground))' }} />
             </button>
-            <div className="h-12 w-12 rounded-2xl flex items-center justify-center shadow-sm" style={{ backgroundColor: '#F15025' }}>
+            <div className="h-12 w-12 rounded-2xl flex items-center justify-center shadow-sm" style={{ backgroundColor: '#D24620' }}>
               <Receipt className="h-5 w-5 text-white" />
             </div>
             <div>
@@ -176,9 +176,9 @@ export function CustomerSelector({
         <div className="space-y-4">
           {/* Step 1: Klant + Contactpersoon · merged */}
           <div className="rounded-xl" style={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}>
-            <div className="h-[3px] rounded-t-xl" style={{ background: 'linear-gradient(90deg, #F15025, #F1502560)' }} />
+            <div className="h-[3px] rounded-t-xl" style={{ background: 'linear-gradient(90deg, #D24620, #D2462060)' }} />
             <div className="flex items-center gap-3 px-5 pt-4 pb-1">
-              <div className="flex items-center justify-center h-7 w-7 rounded-lg text-white text-[11px] font-bold" style={{ backgroundColor: '#F15025' }}>1</div>
+              <div className="flex items-center justify-center h-7 w-7 rounded-lg text-white text-[11px] font-bold" style={{ backgroundColor: '#D24620' }}>1</div>
               <div>
                 <span className="text-[13px] font-semibold" style={{ color: 'hsl(var(--foreground))' }}>Klant & contactpersoon</span>
                 <p className="text-[11px]" style={{ color: 'hsl(var(--muted-foreground))' }}>Wie is de opdrachtgever?</p>
@@ -381,7 +381,7 @@ export function CustomerSelector({
               onClick={() => { hapticMedium(); handleStartEditing() }}
               disabled={!canStartEditing}
               className="tap-press w-full md:w-auto h-11 md:h-10 px-6 text-[14px] font-bold text-white rounded-lg shadow-sm transition-all hover:opacity-90 disabled:opacity-40 flex items-center justify-center gap-2 whitespace-nowrap"
-              style={{ backgroundColor: '#F15025' }}
+              style={{ backgroundColor: '#D24620' }}
             >
               Items toevoegen
               <ArrowRight className="h-4 w-4" />

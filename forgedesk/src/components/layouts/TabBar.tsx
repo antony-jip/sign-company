@@ -39,7 +39,7 @@ function TabItem({
       {canClose && (
         <span
           className={cn(
-            'flex-shrink-0 flex items-center justify-center w-[17px] h-[17px] rounded-[5px] text-petrol/40 transition-all hover:bg-[rgba(241,80,37,0.13)] hover:text-flame',
+            'flex-shrink-0 flex items-center justify-center w-[17px] h-[17px] rounded-[5px] text-petrol/40 transition-all hover:bg-[rgba(210, 70, 32,0.13)] hover:text-flame',
             isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
           )}
           onClick={onClose}

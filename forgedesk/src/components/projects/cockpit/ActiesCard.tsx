@@ -26,7 +26,7 @@ interface ActieTile {
 
 export function ActiesCard({ onOfferte, onWerkbon, onMontage, onFactuur, onPakbon, onBevestiging, onTePlannen, isTePlannen }: ActiesCardProps) {
   const tiles: ActieTile[] = [
-    { key: 'offerte',  label: 'Offerte',  sublabel: 'Stuur een prijsopgave', icon: Receipt,       color: '#F15025', onClick: onOfferte },
+    { key: 'offerte',  label: 'Offerte',  sublabel: 'Stuur een prijsopgave', icon: Receipt,       color: '#D24620', onClick: onOfferte },
     { key: 'werkbon',  label: 'Werkbon',  sublabel: 'Voor de monteur',       icon: ClipboardList, color: '#1A535C', onClick: onWerkbon },
     { key: 'montage',  label: 'Montage',  sublabel: 'Plan de uitvoering',    icon: Wrench,        color: '#1A535C', onClick: onMontage },
     { key: 'factuur',  label: 'Factuur',  sublabel: 'Verstuur de rekening',  icon: CreditCard,    color: '#2D6B48', onClick: onFactuur },
@@ -109,11 +109,11 @@ export function ActiesCard({ onOfferte, onWerkbon, onMontage, onFactuur, onPakbo
           className={cn(
             'group inline-flex items-center justify-center gap-1.5 text-[12px] font-medium transition-colors px-2 py-1.5 rounded-lg whitespace-nowrap',
             isTePlannen
-              ? 'text-flame bg-[rgba(241,80,37,0.08)]'
-              : 'text-foreground/70 hover:text-flame hover:bg-[rgba(241,80,37,0.06)]',
+              ? 'text-flame bg-[rgba(210, 70, 32,0.08)]'
+              : 'text-foreground/70 hover:text-flame hover:bg-[rgba(210, 70, 32,0.06)]',
           )}
         >
-          <CalendarClock className="h-3.5 w-3.5 flex-shrink-0" strokeWidth={1.75} style={{ color: '#F15025' }} />
+          <CalendarClock className="h-3.5 w-3.5 flex-shrink-0" strokeWidth={1.75} style={{ color: '#D24620' }} />
           Te plannen{isTePlannen && <span className="text-flame">.</span>}
         </button>
       </div>

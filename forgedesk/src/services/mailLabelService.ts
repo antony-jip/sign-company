@@ -17,7 +17,7 @@ export interface MailLabel {
 
 /** Acht tinten uit het doen.-palet: petrol, flame en de statuskleuren. */
 export const LABEL_KLEUREN = [
-  '#1A535C', '#F15025', '#3A5A9A', '#3A7D52',
+  '#1A535C', '#D24620', '#3A5A9A', '#3A7D52',
   '#8A7A4A', '#C0451A', '#6A5A8A', '#9A5A48',
 ] as const
 

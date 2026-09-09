@@ -207,9 +207,9 @@ export function ProjectCreate() {
 
         {/* Section 1: Project + Planning · merged */}
         <div className="rounded-xl" style={{ backgroundColor: '#FFFFFE', border: '0.5px solid #E6E4E0' }}>
-          <div className="h-[3px] rounded-t-xl" style={{ background: 'linear-gradient(90deg, #F15025, #F1502560)' }} />
+          <div className="h-[3px] rounded-t-xl" style={{ background: 'linear-gradient(90deg, #D24620, #D2462060)' }} />
           <div className="flex items-center gap-3 px-4 md:px-5 pt-4 pb-1">
-            <div className="flex items-center justify-center h-7 w-7 rounded-lg text-white text-[11px] font-bold" style={{ backgroundColor: '#F15025' }}>1</div>
+            <div className="flex items-center justify-center h-7 w-7 rounded-lg text-white text-[11px] font-bold" style={{ backgroundColor: '#D24620' }}>1</div>
             <div>
               <span className="text-[13px] font-semibold" style={{ color: 'hsl(var(--foreground))' }}>Projectgegevens</span>
               <p className="text-[11px]" style={{ color: '#A0A098' }}>Naam, planning en status</p>

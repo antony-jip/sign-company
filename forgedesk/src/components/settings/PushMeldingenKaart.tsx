@@ -38,7 +38,7 @@ export function PushMeldingenKaart() {
           return
         }
         await updateUserProfile({ push_nieuwe_mail: true })
-        toast.success(<>Meldingen staan aan<span style={{ color: '#F15025' }}>.</span></>)
+        toast.success(<>Meldingen staan aan<span style={{ color: '#D24620' }}>.</span></>)
       } else {
         await zetPushUit()
         await updateUserProfile({ push_nieuwe_mail: false })
@@ -64,7 +64,7 @@ export function PushMeldingenKaart() {
       const uitkomst = await respons.json().catch(() => ({}))
       if (!respons.ok) throw new Error(uitkomst?.error || 'Versturen mislukt')
       if (!uitkomst.bezorgd) toast.error('Geen toestel bereikt. Staat de schakelaar op dit apparaat aan?')
-      else toast.success(<>Testmelding verstuurd<span style={{ color: '#F15025' }}>.</span></>)
+      else toast.success(<>Testmelding verstuurd<span style={{ color: '#D24620' }}>.</span></>)
     } catch (err) {
       logger.error(err)
       toast.error(err instanceof Error ? err.message : 'Kon testmelding niet versturen')

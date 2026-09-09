@@ -332,13 +332,13 @@ export function AbonnementTab() {
 
       {/* Pricing card */}
       <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid hsl(var(--border))' }}>
-        <div className="h-1.5" style={{ background: 'linear-gradient(90deg, #F15025, #1A535C)' }} />
+        <div className="h-1.5" style={{ background: 'linear-gradient(90deg, #D24620, #1A535C)' }} />
         <div className="p-8">
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-8">
             {/* Left: pricing */}
             <div>
               <h3 className="font-heading text-[22px] font-bold tracking-tight text-foreground">
-                Gewoon doen<span style={{ color: '#F15025' }}>.</span>
+                Gewoon doen<span style={{ color: '#D24620' }}>.</span>
               </h3>
 
               <div className="flex items-baseline gap-1.5 mt-3">
@@ -370,7 +370,7 @@ export function AbonnementTab() {
                   onClick={handleActivate}
                   disabled={isLoading}
                   className="mt-6 h-12 px-8 text-[15px] font-bold text-white rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 inline-flex items-center gap-2"
-                  style={{ backgroundColor: '#F15025' }}
+                  style={{ backgroundColor: '#D24620' }}
                 >
                   {loadingAction === 'activate' && <Loader2 className="h-4 w-4 animate-spin" />}
                   Abonnement activeren

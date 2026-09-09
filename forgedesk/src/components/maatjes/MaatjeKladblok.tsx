@@ -351,7 +351,7 @@ export function MaatjeKladblok() {
           <button
             type="button"
             onClick={() => { laatsteBronRef.current = 'camera'; cameraInputRef.current?.click() }}
-            className="order-first inline-flex items-center gap-2 rounded-lg bg-flame px-4 py-2.5 text-[13px] font-semibold text-white shadow-[0_2px_8px_rgba(241,80,37,0.3)] transition-transform active:scale-[0.97] md:order-none"
+            className="order-first inline-flex items-center gap-2 rounded-lg bg-flame px-4 py-2.5 text-[13px] font-semibold text-white shadow-[0_2px_8px_rgba(210, 70, 32,0.3)] transition-transform active:scale-[0.97] md:order-none"
           >
             <Camera className="h-4 w-4" strokeWidth={2} />
             Foto maken

@@ -468,7 +468,7 @@ export function LeveranciersLayout() {
                     <button
                       type="button"
                       onClick={() => { setEditingContactId(null); setContactForm({ ...EMPTY_CONTACT }); setContactFormOpen(true) }}
-                      className="text-sm text-[#F15025] hover:underline"
+                      className="text-sm text-[#D24620] hover:underline"
                     >
                       + Contactpersoon
                     </button>

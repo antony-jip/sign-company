@@ -245,7 +245,7 @@ function FORGEdeskDashboardInner() {
                   {verb}
                 </span>
                 {userName ? `, ${userName}` : ''}
-                <span style={{ color: '#F15025' }}>.</span>
+                <span style={{ color: '#D24620' }}>.</span>
               </h1>
               {/* Blijft staan in plaats van na vijf tellen te verdwijnen: als
                   subregel onder de kop hoort deze zin er gewoon bij. */}

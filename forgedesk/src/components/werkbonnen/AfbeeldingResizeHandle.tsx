@@ -89,8 +89,8 @@ export function AfbeeldingResizeHandle({
     onSchaalChange(reset)
   }, [onSchaalChange])
 
-  const bg = isDragging ? 'rgba(241, 80, 37, 0.85)' : undefined
-  const borderColor = isDragging ? '#F15025' : '#9B9B95'
+  const bg = isDragging ? 'rgba(210, 70, 32, 0.85)' : undefined
+  const borderColor = isDragging ? '#D24620' : '#9B9B95'
 
   return (
     <div

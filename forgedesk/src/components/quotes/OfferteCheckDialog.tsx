@@ -39,7 +39,7 @@ export function OfferteCheckDialog({ open, onOpenChange, offerteId, offerteNumme
     setBezig(true)
     try {
       const result = await vraagOfferteCheck(offerteId, gekozen.user_id, notitie.trim() || undefined)
-      toast.success(<>Check gevraagd aan {gekozen.naam}<span style={{ color: '#F15025' }}>.</span></>)
+      toast.success(<>Check gevraagd aan {gekozen.naam}<span style={{ color: '#D24620' }}>.</span></>)
       onGevraagd({
         aanUserId: gekozen.user_id,
         aanNaam: gekozen.naam,
@@ -109,7 +109,7 @@ export function OfferteCheckDialog({ open, onOpenChange, offerteId, offerteNumme
             type="button"
             onClick={handleVragen}
             disabled={bezig || !gekozen}
-            className="inline-flex items-center justify-center gap-2 h-9 px-4 text-[13px] font-semibold rounded-xl bg-flame text-white hover:bg-[#E04520] shadow-[0_2px_8px_rgba(241,80,37,0.25)] transition-all disabled:opacity-50"
+            className="inline-flex items-center justify-center gap-2 h-9 px-4 text-[13px] font-semibold rounded-xl bg-flame text-white hover:bg-[#E04520] shadow-[0_2px_8px_rgba(210, 70, 32,0.25)] transition-all disabled:opacity-50"
           >
             {bezig ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserCheck className="h-3.5 w-3.5" strokeWidth={1.75} />}
             {bezig ? 'Versturen…' : 'Vraag check aan'}

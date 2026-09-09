@@ -66,7 +66,7 @@ interface OnboardingEmailParams {
 function buildOnboardingHtml(p: OnboardingEmailParams): string {
   const ctaBlock = p.ctaUrl
     ? `<tr><td style="padding: 24px 0 0 0;" align="center">
-        <a href="${escapeHtml(p.ctaUrl)}" target="_blank" style="display: inline-block; background-color: #F15025; color: #FFFFFF; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 15px; font-weight: 600; text-decoration: none; padding: 14px 32px; border-radius: 8px; line-height: 1;">
+        <a href="${escapeHtml(p.ctaUrl)}" target="_blank" style="display: inline-block; background-color: #D24620; color: #FFFFFF; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 15px; font-weight: 600; text-decoration: none; padding: 14px 32px; border-radius: 8px; line-height: 1;">
           ${escapeHtml(p.ctaLabel || "Open doen.")}
         </a>
       </td></tr>`
@@ -82,7 +82,7 @@ function buildOnboardingHtml(p: OnboardingEmailParams): string {
 
         <!-- Logo -->
         <tr><td style="padding: 0 0 24px 0; text-align: center;">
-          <span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 28px; font-weight: 800; color: #2b535c; letter-spacing: -0.5px;">doen</span><span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 28px; font-weight: 800; color: #df5c36;">.</span>
+          <span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 28px; font-weight: 800; color: #2b535c; letter-spacing: -0.5px;">doen</span><span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 28px; font-weight: 800; color: #D24620;">.</span>
           <br/><span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 13px; font-weight: 400; color: #8aacb1; letter-spacing: -0.2px;">slim gedaan.</span>
         </td></tr>
 
@@ -111,9 +111,9 @@ function buildOnboardingHtml(p: OnboardingEmailParams): string {
 
         <!-- Footer: spectrum bar + tagline -->
         <tr><td style="padding: 24px 0 0 0; text-align: center;">
-          <div style="height: 3px; border-radius: 2px; background: linear-gradient(90deg, #1A535C, #F15025); margin-bottom: 16px;"></div>
+          <div style="height: 3px; border-radius: 2px; background: linear-gradient(90deg, #1A535C, #D24620); margin-bottom: 16px;"></div>
           <span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 12px; color: #9B9B95;">
-            <span style="font-weight: 700; color: #2b535c;">doen</span><span style="color: #df5c36; font-weight: 700;">.</span> <span style="color: #8aacb1;">slim gedaan.</span>
+            <span style="font-weight: 700; color: #2b535c;">doen</span><span style="color: #D24620; font-weight: 700;">.</span> <span style="color: #8aacb1;">slim gedaan.</span>
           </span>
         </td></tr>
 
@@ -202,25 +202,25 @@ function buildDaanEmail(name: string): OnboardingEmailParams {
       </p>
       <table cellpadding="0" cellspacing="0" style="margin: 0 0 16px 0;">
         <tr>
-          <td style="padding: 0 10px 8px 0; vertical-align: top; color: #F15025; font-weight: bold;">&bull;</td>
+          <td style="padding: 0 10px 8px 0; vertical-align: top; color: #D24620; font-weight: bold;">&bull;</td>
           <td style="padding: 0 0 8px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 15px; color: #1A1A1A; line-height: 1.6;">
             Offerteteksten schrijven op basis van je projectgegevens
           </td>
         </tr>
         <tr>
-          <td style="padding: 0 10px 8px 0; vertical-align: top; color: #F15025; font-weight: bold;">&bull;</td>
+          <td style="padding: 0 10px 8px 0; vertical-align: top; color: #D24620; font-weight: bold;">&bull;</td>
           <td style="padding: 0 0 8px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 15px; color: #1A1A1A; line-height: 1.6;">
             E-mails opstellen voor klanten
           </td>
         </tr>
         <tr>
-          <td style="padding: 0 10px 8px 0; vertical-align: top; color: #F15025; font-weight: bold;">&bull;</td>
+          <td style="padding: 0 10px 8px 0; vertical-align: top; color: #D24620; font-weight: bold;">&bull;</td>
           <td style="padding: 0 0 8px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 15px; color: #1A1A1A; line-height: 1.6;">
             Vragen beantwoorden over hoe doen. werkt
           </td>
         </tr>
         <tr>
-          <td style="padding: 0 10px 8px 0; vertical-align: top; color: #F15025; font-weight: bold;">&bull;</td>
+          <td style="padding: 0 10px 8px 0; vertical-align: top; color: #D24620; font-weight: bold;">&bull;</td>
           <td style="padding: 0 0 8px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 15px; color: #1A1A1A; line-height: 1.6;">
             Samenvatten wat er in een project speelt
           </td>
