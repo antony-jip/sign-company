@@ -392,15 +392,20 @@
     padding:14px 30px; font-size:30px; font-weight:600; color:var(--ink);
     white-space:nowrap; box-shadow:0 2px 10px rgba(19,62,69,0.10);
   }
+  .dark .pil{ border-color:transparent; box-shadow:0 6px 24px rgba(0,0,0,0.28); }
+  /* Het midden is geen logo maar de lezer zelf: alle zeven lijnen komen bij
+     hem uit. Een flame-schijf, want dit is het punt waar het schuurt. */
   .midden{
     position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
-    background:var(--petrol-deep); border-radius:20px; padding:44px 64px;
-    box-shadow:0 16px 60px rgba(13,52,60,0.30); text-align:center;
+    width:296px; height:296px; border-radius:999px; background:var(--flame);
+    box-shadow:0 24px 80px rgba(241,80,37,0.34); text-align:center;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
   }
-  .midden img{ height:52px; width:auto; display:block; }
-  .midden span{ display:block; font-family:'Spline Sans Mono',monospace; font-size:20px;
-                letter-spacing:0.14em; text-transform:uppercase;
-                color:var(--on-dark-soft); margin-top:16px; }
+  .midden .ik{ display:block; font-family:'Instrument Sans',sans-serif; font-weight:700;
+               font-size:92px; line-height:1; letter-spacing:-0.04em; color:#fff; }
+  .midden .rol{ display:block; font-family:'Spline Sans Mono',monospace; font-size:22px;
+                letter-spacing:0.16em; text-transform:uppercase;
+                color:rgba(255,255,255,0.82); margin-top:14px; }
 
   /* Stap in de route. Op een staand scherm passen vier stappen onder elkaar,
      precies waar het gedrukte magazine er een dubbele pagina voor nodig had. */
@@ -495,7 +500,59 @@
   </div>
 </div>
 
-<!-- ══════════ 03 · DE DINSDAG ══════════ -->
+<!-- ══════════ 03 · DE KOPPELING ══════════ -->
+<div class="page dark">
+  <div class="glow"></div>
+  <div class="pad">
+    <p class="kicker">Zeven programma&rsquo;s, en wat ertussen moet</p>
+    <h2 class="kop" style="color:#fff">De koppeling<br>ben jij<span class="dot">.</span></h2>
+
+    <div class="kaart-vlak">
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
+        <g stroke="rgba(226,240,241,0.34)" stroke-width="0.24" stroke-dasharray="1.2 1.4" vector-effect="non-scaling-stroke">
+          <line x1="18" y1="8" x2="41.0" y2="38.2" />
+          <line x1="76" y1="7" x2="57.6" y2="37.4" />
+          <line x1="9" y1="31" x2="35.9" y2="43.5" />
+          <line x1="88" y1="33" x2="64.2" y2="43.6" />
+          <line x1="13" y1="69" x2="36.2" y2="57.1" />
+          <line x1="84" y1="71" x2="63.1" y2="58.1" />
+          <line x1="48" y1="94" x2="49.3" y2="64.3" />
+        </g>
+      </svg>
+      <div class="pil" style="left:18%; top:8%">Offertes</div>
+      <div class="pil" style="left:76%; top:7%">Tekeningen</div>
+      <div class="pil" style="left:9%;  top:31%">Planning</div>
+      <div class="pil" style="left:88%; top:33%">Mail</div>
+      <div class="pil" style="left:13%; top:69%">Uren</div>
+      <div class="pil" style="left:84%; top:71%">Facturen</div>
+      <div class="pil" style="left:48%; top:94%">Boekhouding</div>
+      <div class="midden">
+        <span class="ik">JIJ</span>
+        <span class="rol">handmatig</span>
+      </div>
+    </div>
+
+    <p style="font-size:36px; line-height:1.4; color:rgba(226,240,241,0.92); margin-top:44px">
+      Zeven programma&rsquo;s die elkaar niet kennen. Alles wat er tussenin moet, doe jij.
+      Elke maat, elk adres, elk uur, met de hand van het ene naar het andere.
+    </p>
+
+    <p class="quote" style="margin-top:36px; font-size:46px; color:#fff">
+      In doen. zit die koppeling in het systeem<span class="dot">.</span>
+    </p>
+    <p style="font-size:30px; line-height:1.4; color:rgba(226,240,241,0.84); margin-top:18px">
+      Je boekhouding blijft waar hij is. Facturen gaan naar Exact, de afgeletterde
+      betaalstand komt elke dag terug.
+    </p>
+
+    <div class="foot vast">
+      <img class="logo-foot" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iTGFhZ18xIiBkYXRhLW5hbWU9IkxhYWcgMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSI4MiAxODggMzkwIDEzNSI+CiAgPGRlZnM+CiAgICA8c3R5bGU+CiAgICAgIC5jbHMtMSB7CiAgICAgICAgZmlsbDogI2RmNWMzNjsKICAgICAgfQoKICAgICAgLmNscy0yIHsKICAgICAgICBmaWxsOiAjZmZmZmZmOwogICAgICB9CiAgICA8L3N0eWxlPgogIDwvZGVmcz4KICA8Zz4KICAgIDxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTE3MC4wMywxOTguNzZ2OTAuNzZjMCw3LjI4LDAsMTQuNjUuMTUsMjEuOTdoLTIxLjI4Yy0uNDQtMi40LS44Ny02LjUzLTEuMDEtOC4zNS0zLjg2LDYuMjktMTAuNzQsMTAuMi0yMi42OCwxMC4yLTIwLjIxLDAtMzMuMDctMTYuMjMtMzMuMDctNDEuMTdzMTMuNjctNDIuNDgsMzYuMzEtNDIuNDhjMTEuNSwwLDE3LjY4LDQuMDYsMTkuNDUsNy42NHYtMzguNThoMjIuMTNaTTExNC44NywyNzEuNmMwLDE1LjU4LDYuMDcsMjQuMDIsMTYuOSwyNC4wMiwxNS4yMiwwLDE2Ljk3LTEyLjY5LDE2Ljk3LTI0LjE4LDAtMTMuNjctMS45My0yNC4wMS0xNi40LTI0LjAxLTExLjYyLDAtMTcuNDgsOS4wNy0xNy40OCwyNC4xN1oiLz4KICAgIDxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTI1Ni4xNiwyNzEuMzdjMCwyNC4xOS0xNC40Nyw0MS45OC0zOS44LDQxLjk4cy0zOS4yNi0xNy42OS0zOS4yNi00MS41NSwxNC45Mi00Mi4wOSw0MC4zLTQyLjA5YzIzLjUzLDAsMzguNzUsMTYuNiwzOC43NSw0MS42N1pNMTk5LjU2LDI3MS41MmMwLDE1LjM5LDYuNjIsMjQuNSwxNy4yOCwyNC41czE2Ljg1LTkuMTIsMTYuODUtMjQuMzdjMC0xNi43My02LjE0LTI0LjY0LTE3LjE2LTI0LjY0LTEwLjI2LDAtMTYuOTcsNy42LTE2Ljk3LDI0LjVaIi8+CiAgICA8cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0yODIuMDEsMjc2LjI2Yy4wMiwxMCw1LjAzLDE5Ljc3LDE2LjA1LDE5Ljc3LDkuMjEsMCwxMS44NS0zLjcsMTMuOTUtOC41M2gyMi4xNWMtMi44NCw5Ljc4LTExLjU2LDI1Ljg1LTM2LjY4LDI1Ljg1cy0zNy43NS0xOS42OS0zNy43NS00MC42NmMwLTI1LjA3LDEyLjg3LTQyLjk4LDM4LjU0LTQyLjk4LDI3LjQ1LDAsMzYuNzksMTkuODYsMzYuNzksMzkuODEsMCwyLjcxLDAsNC40Ni0uMjksNi43NGgtNTIuNzVaTTMxMi44OCwyNjIuNjZjLS4xNS05LjMxLTMuODctMTcuMTQtMTQuNjYtMTcuMTRzLTE0Ljg3LDcuMzEtMTUuNzUsMTcuMTRoMzAuNDFaIi8+CiAgICA8cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0zNDIuODQsMjUxLjY5YzAtNi43OSwwLTE0LjIzLS4xNS0yMC4xNGgyMS40M2MuNDQsMi4wNi43NCw3LjYxLjg1LDEwLjE4LDIuNzItNS4wMiw5LjE5LTEyLjA0LDIzLjE5LTEyLjA0LDE2LjA2LDAsMjYuNDksMTAuODUsMjYuNDksMzAuOTR2NTAuODVoLTIyLjEzdi00OC4zOWMwLTguOTktMy0xNS41LTEyLjc2LTE1LjVzLTE0Ljc4LDUuMjMtMTQuNzgsMTkuMzR2NDQuNTVoLTIyLjEzdi01OS44WiIvPgogIDwvZz4KICA8Y2lyY2xlIGNsYXNzPSJjbHMtMSIgY3g9IjQ0NC45NyIgY3k9IjI5NC4wOCIgcj0iMTguMDMiLz4KPC9zdmc+Cg==" alt="doen.">
+      <span class="nr">03 / 11</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ 04 · DE DINSDAG ══════════ -->
 <div class="page soft">
   <div class="pad">
     <p class="kicker">Zeven gereedschappen, &eacute;&eacute;n koppeling</p>
@@ -533,51 +590,6 @@
     </p>
 
     <div class="foot vast">
-      <img class="logo-foot" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iTGFhZ18xIiBkYXRhLW5hbWU9IkxhYWcgMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSI4MiAxODggMzkwIDEzNSI+CiAgPGRlZnM+CiAgICA8c3R5bGU+CiAgICAgIC5jbHMtMSB7CiAgICAgICAgZmlsbDogI2RmNWMzNjsKICAgICAgfQoKICAgICAgLmNscy0yIHsKICAgICAgICBmaWxsOiAjMmI1MzVjOwogICAgICB9CiAgICA8L3N0eWxlPgogIDwvZGVmcz4KICA8Zz4KICAgIDxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTE3MC4wMywxOTguNzZ2OTAuNzZjMCw3LjI4LDAsMTQuNjUuMTUsMjEuOTdoLTIxLjI4Yy0uNDQtMi40LS44Ny02LjUzLTEuMDEtOC4zNS0zLjg2LDYuMjktMTAuNzQsMTAuMi0yMi42OCwxMC4yLTIwLjIxLDAtMzMuMDctMTYuMjMtMzMuMDctNDEuMTdzMTMuNjctNDIuNDgsMzYuMzEtNDIuNDhjMTEuNSwwLDE3LjY4LDQuMDYsMTkuNDUsNy42NHYtMzguNThoMjIuMTNaTTExNC44NywyNzEuNmMwLDE1LjU4LDYuMDcsMjQuMDIsMTYuOSwyNC4wMiwxNS4yMiwwLDE2Ljk3LTEyLjY5LDE2Ljk3LTI0LjE4LDAtMTMuNjctMS45My0yNC4wMS0xNi40LTI0LjAxLTExLjYyLDAtMTcuNDgsOS4wNy0xNy40OCwyNC4xN1oiLz4KICAgIDxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTI1Ni4xNiwyNzEuMzdjMCwyNC4xOS0xNC40Nyw0MS45OC0zOS44LDQxLjk4cy0zOS4yNi0xNy42OS0zOS4yNi00MS41NSwxNC45Mi00Mi4wOSw0MC4zLTQyLjA5YzIzLjUzLDAsMzguNzUsMTYuNiwzOC43NSw0MS42N1pNMTk5LjU2LDI3MS41MmMwLDE1LjM5LDYuNjIsMjQuNSwxNy4yOCwyNC41czE2Ljg1LTkuMTIsMTYuODUtMjQuMzdjMC0xNi43My02LjE0LTI0LjY0LTE3LjE2LTI0LjY0LTEwLjI2LDAtMTYuOTcsNy42LTE2Ljk3LDI0LjVaIi8+CiAgICA8cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0yODIuMDEsMjc2LjI2Yy4wMiwxMCw1LjAzLDE5Ljc3LDE2LjA1LDE5Ljc3LDkuMjEsMCwxMS44NS0zLjcsMTMuOTUtOC41M2gyMi4xNWMtMi44NCw5Ljc4LTExLjU2LDI1Ljg1LTM2LjY4LDI1Ljg1cy0zNy43NS0xOS42OS0zNy43NS00MC42NmMwLTI1LjA3LDEyLjg3LTQyLjk4LDM4LjU0LTQyLjk4LDI3LjQ1LDAsMzYuNzksMTkuODYsMzYuNzksMzkuODEsMCwyLjcxLDAsNC40Ni0uMjksNi43NGgtNTIuNzVaTTMxMi44OCwyNjIuNjZjLS4xNS05LjMxLTMuODctMTcuMTQtMTQuNjYtMTcuMTRzLTE0Ljg3LDcuMzEtMTUuNzUsMTcuMTRoMzAuNDFaIi8+CiAgICA8cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0zNDIuODQsMjUxLjY5YzAtNi43OSwwLTE0LjIzLS4xNS0yMC4xNGgyMS40M2MuNDQsMi4wNi43NCw3LjYxLjg1LDEwLjE4LDIuNzItNS4wMiw5LjE5LTEyLjA0LDIzLjE5LTEyLjA0LDE2LjA2LDAsMjYuNDksMTAuODUsMjYuNDksMzAuOTR2NTAuODVoLTIyLjEzdi00OC4zOWMwLTguOTktMy0xNS41LTEyLjc2LTE1LjVzLTE0Ljc4LDUuMjMtMTQuNzgsMTkuMzR2NDQuNTVoLTIyLjEzdi01OS44WiIvPgogIDwvZz4KICA8Y2lyY2xlIGNsYXNzPSJjbHMtMSIgY3g9IjQ0NC45NyIgY3k9IjI5NC4wOCIgcj0iMTguMDMiLz4KPC9zdmc+" alt="doen.">
-      <span class="nr">03 / 11</span>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════ 04 · DE KAART ══════════ -->
-<div class="page">
-  <div class="pad">
-    <p class="kicker">Waar de koppeling zit</p>
-    <h2 class="kop">Alles trekt naar<br>&eacute;&eacute;n plek<span class="dot">.</span></h2>
-
-    <div class="kaart-vlak">
-      <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
-        <g stroke="rgba(26,83,92,0.30)" stroke-width="0.22" stroke-dasharray="1.1 1.1" vector-effect="non-scaling-stroke">
-          <line x1="16" y1="6"  x2="46" y2="43" />
-          <line x1="78" y1="9"  x2="55" y2="43" />
-          <line x1="8"  y1="30" x2="42" y2="47" />
-          <line x1="90" y1="33" x2="59" y2="48" />
-          <line x1="10" y1="72" x2="43" y2="56" />
-          <line x1="88" y1="70" x2="58" y2="55" />
-          <line x1="26" y1="94" x2="47" y2="60" />
-          <line x1="74" y1="95" x2="54" y2="60" />
-        </g>
-      </svg>
-      <div class="pil" style="left:16%; top:6%">Offertes</div>
-      <div class="pil" style="left:78%; top:9%">Tekeningen</div>
-      <div class="pil" style="left:8%;  top:30%">Planning</div>
-      <div class="pil" style="left:90%; top:33%">Mail</div>
-      <div class="pil" style="left:10%; top:72%">Uren</div>
-      <div class="pil" style="left:88%; top:70%">Werkbonnen</div>
-      <div class="pil" style="left:26%; top:94%">Facturen</div>
-      <div class="pil" style="left:74%; top:95%">Boekhouding</div>
-      <div class="midden">
-        <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iTGFhZ18xIiBkYXRhLW5hbWU9IkxhYWcgMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSI4MiAxODggMzkwIDEzNSI+CiAgPGRlZnM+CiAgICA8c3R5bGU+CiAgICAgIC5jbHMtMSB7CiAgICAgICAgZmlsbDogI2RmNWMzNjsKICAgICAgfQoKICAgICAgLmNscy0yIHsKICAgICAgICBmaWxsOiAjZmZmZmZmOwogICAgICB9CiAgICA8L3N0eWxlPgogIDwvZGVmcz4KICA8Zz4KICAgIDxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTE3MC4wMywxOTguNzZ2OTAuNzZjMCw3LjI4LDAsMTQuNjUuMTUsMjEuOTdoLTIxLjI4Yy0uNDQtMi40LS44Ny02LjUzLTEuMDEtOC4zNS0zLjg2LDYuMjktMTAuNzQsMTAuMi0yMi42OCwxMC4yLTIwLjIxLDAtMzMuMDctMTYuMjMtMzMuMDctNDEuMTdzMTMuNjctNDIuNDgsMzYuMzEtNDIuNDhjMTEuNSwwLDE3LjY4LDQuMDYsMTkuNDUsNy42NHYtMzguNThoMjIuMTNaTTExNC44NywyNzEuNmMwLDE1LjU4LDYuMDcsMjQuMDIsMTYuOSwyNC4wMiwxNS4yMiwwLDE2Ljk3LTEyLjY5LDE2Ljk3LTI0LjE4LDAtMTMuNjctMS45My0yNC4wMS0xNi40LTI0LjAxLTExLjYyLDAtMTcuNDgsOS4wNy0xNy40OCwyNC4xN1oiLz4KICAgIDxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTI1Ni4xNiwyNzEuMzdjMCwyNC4xOS0xNC40Nyw0MS45OC0zOS44LDQxLjk4cy0zOS4yNi0xNy42OS0zOS4yNi00MS41NSwxNC45Mi00Mi4wOSw0MC4zLTQyLjA5YzIzLjUzLDAsMzguNzUsMTYuNiwzOC43NSw0MS42N1pNMTk5LjU2LDI3MS41MmMwLDE1LjM5LDYuNjIsMjQuNSwxNy4yOCwyNC41czE2Ljg1LTkuMTIsMTYuODUtMjQuMzdjMC0xNi43My02LjE0LTI0LjY0LTE3LjE2LTI0LjY0LTEwLjI2LDAtMTYuOTcsNy42LTE2Ljk3LDI0LjVaIi8+CiAgICA8cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0yODIuMDEsMjc2LjI2Yy4wMiwxMCw1LjAzLDE5Ljc3LDE2LjA1LDE5Ljc3LDkuMjEsMCwxMS44NS0zLjcsMTMuOTUtOC41M2gyMi4xNWMtMi44NCw5Ljc4LTExLjU2LDI1Ljg1LTM2LjY4LDI1Ljg1cy0zNy43NS0xOS42OS0zNy43NS00MC42NmMwLTI1LjA3LDEyLjg3LTQyLjk4LDM4LjU0LTQyLjk4LDI3LjQ1LDAsMzYuNzksMTkuODYsMzYuNzksMzkuODEsMCwyLjcxLDAsNC40Ni0uMjksNi43NGgtNTIuNzVaTTMxMi44OCwyNjIuNjZjLS4xNS05LjMxLTMuODctMTcuMTQtMTQuNjYtMTcuMTRzLTE0Ljg3LDcuMzEtMTUuNzUsMTcuMTRoMzAuNDFaIi8+CiAgICA8cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0zNDIuODQsMjUxLjY5YzAtNi43OSwwLTE0LjIzLS4xNS0yMC4xNGgyMS40M2MuNDQsMi4wNi43NCw3LjYxLjg1LDEwLjE4LDIuNzItNS4wMiw5LjE5LTEyLjA0LDIzLjE5LTEyLjA0LDE2LjA2LDAsMjYuNDksMTAuODUsMjYuNDksMzAuOTR2NTAuODVoLTIyLjEzdi00OC4zOWMwLTguOTktMy0xNS41LTEyLjc2LTE1LjVzLTE0Ljc4LDUuMjMtMTQuNzgsMTkuMzR2NDQuNTVoLTIyLjEzdi01OS44WiIvPgogIDwvZz4KICA8Y2lyY2xlIGNsYXNzPSJjbHMtMSIgY3g9IjQ0NC45NyIgY3k9IjI5NC4wOCIgcj0iMTguMDMiLz4KPC9zdmc+Cg==" alt="doen.">
-        <span>&eacute;&eacute;n systeem</span>
-      </div>
-    </div>
-
-    <p class="lead" style="margin-top:52px; color:var(--ink)">
-      Wat je bij de aanvraag invoert, staat op de factuur nog steeds goed.
-      Niemand hoeft er tussendoor iets over te typen.
-    </p>
-
-    <div class="foot">
       <img class="logo-foot" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iTGFhZ18xIiBkYXRhLW5hbWU9IkxhYWcgMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSI4MiAxODggMzkwIDEzNSI+CiAgPGRlZnM+CiAgICA8c3R5bGU+CiAgICAgIC5jbHMtMSB7CiAgICAgICAgZmlsbDogI2RmNWMzNjsKICAgICAgfQoKICAgICAgLmNscy0yIHsKICAgICAgICBmaWxsOiAjMmI1MzVjOwogICAgICB9CiAgICA8L3N0eWxlPgogIDwvZGVmcz4KICA8Zz4KICAgIDxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTE3MC4wMywxOTguNzZ2OTAuNzZjMCw3LjI4LDAsMTQuNjUuMTUsMjEuOTdoLTIxLjI4Yy0uNDQtMi40LS44Ny02LjUzLTEuMDEtOC4zNS0zLjg2LDYuMjktMTAuNzQsMTAuMi0yMi42OCwxMC4yLTIwLjIxLDAtMzMuMDctMTYuMjMtMzMuMDctNDEuMTdzMTMuNjctNDIuNDgsMzYuMzEtNDIuNDhjMTEuNSwwLDE3LjY4LDQuMDYsMTkuNDUsNy42NHYtMzguNThoMjIuMTNaTTExNC44NywyNzEuNmMwLDE1LjU4LDYuMDcsMjQuMDIsMTYuOSwyNC4wMiwxNS4yMiwwLDE2Ljk3LTEyLjY5LDE2Ljk3LTI0LjE4LDAtMTMuNjctMS45My0yNC4wMS0xNi40LTI0LjAxLTExLjYyLDAtMTcuNDgsOS4wNy0xNy40OCwyNC4xN1oiLz4KICAgIDxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTI1Ni4xNiwyNzEuMzdjMCwyNC4xOS0xNC40Nyw0MS45OC0zOS44LDQxLjk4cy0zOS4yNi0xNy42OS0zOS4yNi00MS41NSwxNC45Mi00Mi4wOSw0MC4zLTQyLjA5YzIzLjUzLDAsMzguNzUsMTYuNiwzOC43NSw0MS42N1pNMTk5LjU2LDI3MS41MmMwLDE1LjM5LDYuNjIsMjQuNSwxNy4yOCwyNC41czE2Ljg1LTkuMTIsMTYuODUtMjQuMzdjMC0xNi43My02LjE0LTI0LjY0LTE3LjE2LTI0LjY0LTEwLjI2LDAtMTYuOTcsNy42LTE2Ljk3LDI0LjVaIi8+CiAgICA8cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0yODIuMDEsMjc2LjI2Yy4wMiwxMCw1LjAzLDE5Ljc3LDE2LjA1LDE5Ljc3LDkuMjEsMCwxMS44NS0zLjcsMTMuOTUtOC41M2gyMi4xNWMtMi44NCw5Ljc4LTExLjU2LDI1Ljg1LTM2LjY4LDI1Ljg1cy0zNy43NS0xOS42OS0zNy43NS00MC42NmMwLTI1LjA3LDEyLjg3LTQyLjk4LDM4LjU0LTQyLjk4LDI3LjQ1LDAsMzYuNzksMTkuODYsMzYuNzksMzkuODEsMCwyLjcxLDAsNC40Ni0uMjksNi43NGgtNTIuNzVaTTMxMi44OCwyNjIuNjZjLS4xNS05LjMxLTMuODctMTcuMTQtMTQuNjYtMTcuMTRzLTE0Ljg3LDcuMzEtMTUuNzUsMTcuMTRoMzAuNDFaIi8+CiAgICA8cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0zNDIuODQsMjUxLjY5YzAtNi43OSwwLTE0LjIzLS4xNS0yMC4xNGgyMS40M2MuNDQsMi4wNi43NCw3LjYxLjg1LDEwLjE4LDIuNzItNS4wMiw5LjE5LTEyLjA0LDIzLjE5LTEyLjA0LDE2LjA2LDAsMjYuNDksMTAuODUsMjYuNDksMzAuOTR2NTAuODVoLTIyLjEzdi00OC4zOWMwLTguOTktMy0xNS41LTEyLjc2LTE1LjVzLTE0Ljc4LDUuMjMtMTQuNzgsMTkuMzR2NDQuNTVoLTIyLjEzdi01OS44WiIvPgogIDwvZz4KICA8Y2lyY2xlIGNsYXNzPSJjbHMtMSIgY3g9IjQ0NC45NyIgY3k9IjI5NC4wOCIgcj0iMTguMDMiLz4KPC9zdmc+" alt="doen.">
       <span class="nr">04 / 11</span>
     </div>
@@ -671,7 +683,8 @@
         <div>
           <h3>Betaald krijgen<span class="dot">.</span></h3>
           <p>De factuur staat er al, opgebouwd uit de offerte plus wat er onderweg
-             bij kwam. E&eacute;n klik naar je boekhouding, en de betaalstand komt terug.</p>
+             bij kwam. E&eacute;n klik en hij staat in Exact, en de afgeletterde betaalstand
+             komt elke dag vanzelf terug.</p>
         </div>
       </div>
     </div>
