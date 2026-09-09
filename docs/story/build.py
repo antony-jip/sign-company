@@ -31,8 +31,10 @@ BEELDEN = {
     'LOGO_WIT': 'public/logos/doen-logo-wit.svg',
     'FOTO_GEVEL': 'public/images/fotos/hoogwerker-aan-de-gevel.webp',
     'FOTO_ANTONY': 'public/images/maker/antony-en-jos.webp',
+    'FOTO_PRIJS': 'public/images/fotos/prijs-uitrekenen.webp',
     'FOTO_HOOGWERKER': 'public/images/fotos/boren-in-de-gevel.webp',
     'STAP_OFFERTES': 'docs/magazine/beeld/stap-offertes.jpg',
+    'STAP_DAAN': 'docs/magazine/beeld/stap-daan.jpg',
 }
 
 

@@ -199,4 +199,26 @@
   .regel{ display:flex; justify-content:space-between; align-items:baseline;
           padding:16px 0; border-bottom:1px solid var(--hair-dark); }
   .regel:last-child{ border-bottom:0; padding-bottom:0; }
+
+  /* ── korte regels ── */
+  /* Drie feiten onder elkaar, elk één regel. Kwam in de plaats van drie
+     kopjes met een alinea eronder: dat las als een folder, dit als een lijst
+     die je in één blik pakt. */
+  .punten{ margin-top:44px; }
+  .punt{ display:flex; gap:26px; align-items:flex-start; padding:26px 0; border-top:1px solid var(--hair); }
+  .dark .punt{ border-color:var(--hair-dark); }
+  .punt:last-child{ border-bottom:1px solid var(--hair); }
+  .dark .punt:last-child{ border-bottom-color:var(--hair-dark); }
+  .punt .bol{ width:16px; height:16px; border-radius:999px; background:var(--flame); flex:none; margin-top:16px; }
+  .punt .w{ font-size:40px; font-weight:600; line-height:1.25; }
+  /* Op een pagina met weinig anders mogen de regels groter: dan vult het
+     cijferwerk het scherm in plaats van bovenin te blijven hangen. */
+  .punten.groot .punt{ padding:34px 0; }
+  .punten.groot .punt .w{ font-size:50px; }
+  .punten.groot .punt .bol{ width:20px; height:20px; margin-top:20px; }
+  .dark .punt .w{ color:#fff; }
+
+  /* Een cijfer dat het werk doet, met één regel eronder. */
+  .knal{ font-family:'Instrument Sans',sans-serif; font-weight:700; letter-spacing:-0.045em;
+         line-height:0.92; font-size:150px; }
 </style>
