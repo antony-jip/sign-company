@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import Navbar from '@/components/Navbar'
 import Hero from '@/components/home/Hero'
-import DitZitErin from '@/components/home/DitZitErin'
 import Demo from '@/components/home/Demo'
 import DaanSpotlight from '@/components/home/DaanSpotlight'
 import { EigenGebruikBewijs } from '@/components/EigenGebruik'
@@ -23,17 +22,23 @@ export default function Home() {
       <JsonLd data={softwareApplicationSchema} />
       <Navbar theme="dark" />
       <main id="main-content">
-        {/* Volgorde na de kit.com-analyse en de conversie-doorlichting van
-            september. Eerst zien wat erin zit, dan het bewijs met de knop
-            eronder, dan Daan, dan de app zelf, dan prijs en bezwaren.
+        {/* Zeven blokken: belofte, bewijs, Daan, de app, prijs, bezwaren,
+            knop. Elk blok heeft één taak en die staat maar op één plek.
 
-            Eraf: Manifest, Werkwoorden en Modules. Werkwoorden vertelde de
-            vier stappen die DitZitErin nu als kopjes gebruikt en was met
-            1969px de langste sectie; Modules was na DitZitErin volledig
-            dubbel; Manifest is merkverhaal zonder knop en hoort op /over. De
-            componenten staan er nog, alleen niet meer in deze pagina. */}
+            DitZitErin is er in september af gegaan. Dat blok gaf een
+            inventaris van negen modules in vier kaarten, precies nadat de
+            hero belooft dat wij de rest regelen. Een merk dat zegt dat het
+            geregeld is moet geen boodschappenlijst overhandigen om dat te
+            bewijzen, en DESIGN.md schrijft al voor dat modules uitleggen op
+            /features hoort. De telefoon uit dat blok staat nu bij Demo, waar
+            de rest van de app ook staat.
+
+            Eerder eraf: Manifest, Werkwoorden en Modules. Werkwoorden was met
+            1969px de langste sectie en vertelde de vier stappen dubbel;
+            Modules overlapte volledig; Manifest is merkverhaal zonder knop en
+            hoort op /over. Alle componenten staan er nog, alleen niet meer in
+            deze pagina. */}
         <Hero />
-        <DitZitErin />
         <EigenGebruikBewijs />
         <DaanSpotlight />
         <Demo />

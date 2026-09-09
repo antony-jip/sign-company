@@ -56,81 +56,87 @@ export function EigenGebruikNotitie({ className = '' }: { className?: string }) 
    haal dan de twee blend-lagen weg. */
 export function EigenGebruikBewijs() {
   return (
-    <section className="tegel tegel-licht">
-      <div className="container-site">
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.05fr] gap-8 lg:gap-16 items-center">
-          <figure className="w-full max-w-[420px]">
-            <div className="productbeeld relative isolate aspect-[4/5] w-full overflow-hidden rounded-card bg-petrol-deep">
-              <Image
-                src="/images/maker/antony-en-jos.webp"
-                alt="Antony en Jos Bootsma bij de open zijdeur van de bestelbus voor de werkplaats van Sign Company"
-                fill
-                sizes="(max-width: 1024px) 100vw, 420px"
-                className="object-cover saturate-[0.6] contrast-[1.04] brightness-[1.02]"
-              />
-              {/* Geen duotoon meer: dat maakte er grijswaarden van en dan zie
-                  je twee mensen in zwart-wit in plaats van twee mensen. Nu
-                  blijft de foto in kleur, half ontzadigd, met een petrol-waas
-                  eroverheen. `color` verschuift de kleurtoon en laat de
-                  helderheid staan, `multiply` zet de schaduwen naar petrol.
-                  isolate op de wrapper is nodig: zonder eigen stapelcontext
-                  blenden deze lagen met de pagina in plaats van met de foto. */}
-              <span aria-hidden className="absolute inset-0 bg-petrol/[0.28] mix-blend-color" />
-              <span aria-hidden className="absolute inset-0 bg-petrol-deep/[0.10] mix-blend-multiply" />
-            </div>
-            <figcaption className="mt-4 tekst-fijn text-muted">
-              Antony en Jos Bootsma · Sign Company, sinds 1983
-            </figcaption>
-          </figure>
+    <section className="tegel-licht">
+      {/* Halve pagina beeld, halve pagina tekst, en het beeld loopt links de
+          rand uit. De foto stond eerder in een kolom van 420px met een
+          bijschrift eronder, en dan is het een illustratie bij een verhaal.
+          Dit blok claimt dat het geen demo-verhaal is; dan moeten die twee
+          mensen ook echt op ware grootte in beeld staan.
 
-          <div>
-            <h2
-              className="font-heading font-bold text-petrol leading-[1.04]"
-              style={{ fontSize: 'clamp(26px, 3.4vw, 42px)', letterSpacing: '-0.03em', textWrap: 'balance' }}
-            >
-              Geen demo-verhaal<span className="text-flame">.</span> Ons eigen bedrijf draait erop<span className="text-flame">.</span>
-            </h2>
-            <p className="mt-5 tekst-body text-ink max-w-xl">
-              Sign Company zet sinds 1983 namen op panden. Al {EIGEN_GEBRUIK_DUUR} loopt
-              het complete werk van dat bedrijf door doen.: elke aanvraag, elke offerte,
-              elke werkbon, elke factuur. Wat ons irriteerde, is eruit gesloopt voordat
-              jij het zag.
-            </p>
+          Geen tegel-padding op de sectie zelf: de foto raakt boven en onder
+          de rand, de tekstkolom houdt zijn eigen lucht. */}
+      <div className="grid grid-cols-1 items-stretch lg:grid-cols-2">
+        <div className="productbeeld relative isolate min-h-[380px] lg:min-h-[620px]">
+          <Image
+            src="/images/maker/antony-en-jos.webp"
+            alt="Antony en Jos Bootsma bij de open zijdeur van de bestelbus voor de werkplaats van Sign Company"
+            fill
+            sizes="(max-width: 1024px) 100vw, 50vw"
+            className="object-cover object-[50%_28%] saturate-[0.88] contrast-[1.03]"
+          />
+          {/* Half ontzadigd met een petrol-waas, geen duotoon: anders zie je
+              twee mensen in zwart-wit in plaats van twee mensen. `color`
+              verschuift de kleurtoon en laat de helderheid staan. isolate is
+              nodig, anders blendt deze laag met de pagina in plaats van met
+              de foto. */}
+          <span aria-hidden className="absolute inset-0 bg-petrol/[0.12] mix-blend-color" />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-28"
+            style={{ background: 'linear-gradient(to top, rgba(13,52,60,0.72) 0%, rgba(13,52,60,0) 100%)' }}
+          />
+          <p className="absolute bottom-0 left-0 right-0 p-5 tekst-fijn text-white">
+            Antony en Jos Bootsma · Sign Company, sinds 1983
+          </p>
+        </div>
 
-            <dl className="mt-7 grid grid-cols-3 gap-x-6 border-t border-petrol/10 pt-5">
-              {[
-                { cijfer: '½ jaar', label: 'dagelijks in gebruik' },
-                { cijfer: '1983', label: 'signbedrijf sinds' },
-                { cijfer: String(modules.length), label: 'modules, één systeem' },
-              ].map((s) => (
-                <div key={s.label}>
-                  <dt className="font-heading text-[22px] md:text-[26px] font-bold text-petrol leading-none">
-                    {s.cijfer}
-                    <span className="text-flame">.</span>
-                  </dt>
-                  <dd className="mt-2 tekst-caption text-muted">{s.label}</dd>
-                </div>
-              ))}
-            </dl>
+        <div className="flex flex-col justify-center px-6 py-14 md:px-12 md:py-20 lg:px-16">
+          <h2
+            className="font-heading font-bold text-petrol leading-[1.02] max-w-xl"
+            style={{ fontSize: 'clamp(28px, 3.6vw, 46px)', letterSpacing: '-0.03em', textWrap: 'balance' }}
+          >
+            Geen demo-verhaal<span className="text-flame">.</span> Ons eigen bedrijf draait erop<span className="text-flame">.</span>
+          </h2>
+          <p className="mt-5 tekst-body text-ink max-w-xl">
+            Sign Company zet sinds 1983 namen op panden. Al {EIGEN_GEBRUIK_DUUR} loopt
+            het complete werk van dat bedrijf door doen.: elke aanvraag, elke offerte,
+            elke werkbon, elke factuur. Wat ons irriteerde, is eruit gesloopt voordat
+            jij het zag.
+          </p>
 
-            {/* De knop hoort hier. Tussen de hero-knop en de volgende CTA lag
-                zes schermen niets, en dit is het punt waarop de lezer het
-                warmst is: hij heeft net gelezen dat het bedrijf er zelf op
-                draait. */}
-            <div className="mt-7 flex flex-wrap items-center gap-4">
-              <a href="https://app.doen.team/register" className="knop knop-groot knop-flame group">
-                <span>Start gratis</span>
-                <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={2.5} />
-              </a>
-              <Link href="/over" className="knop knop-groot knop-lijn group">
-                <span>Lees waarom we het bouwden</span>
-                <span aria-hidden className="text-flame transition-transform duration-300 group-hover:translate-x-1">
-                  →
-                </span>
-              </Link>
-            </div>
-            <p className="mt-4 tekst-fijn text-muted">{ZEKERHEID_REGEL}</p>
+          <dl className="mt-8 grid max-w-xl grid-cols-3 gap-x-6 border-t border-petrol/10 pt-6">
+            {[
+              { cijfer: '½ jaar', label: 'dagelijks in gebruik' },
+              { cijfer: '1983', label: 'signbedrijf sinds' },
+              { cijfer: String(modules.length), label: 'modules, één systeem' },
+            ].map((s) => (
+              <div key={s.label}>
+                <dt className="font-heading text-[24px] md:text-[30px] font-bold text-petrol leading-none">
+                  {s.cijfer}
+                  <span className="text-flame">.</span>
+                </dt>
+                <dd className="mt-2 tekst-caption text-muted">{s.label}</dd>
+              </div>
+            ))}
+          </dl>
+
+          {/* De knop hoort hier. Tussen de hero-knop en de volgende CTA lag
+              zes schermen niets, en dit is het punt waarop de lezer het
+              warmst is: hij heeft net gelezen dat het bedrijf er zelf op
+              draait. */}
+          <div className="mt-8 flex flex-wrap items-center gap-4">
+            <a href="https://app.doen.team/register" className="knop knop-groot knop-flame group">
+              <span>Start gratis</span>
+              <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={2.5} />
+            </a>
+            <Link href="/over" className="knop knop-groot knop-lijn group">
+              <span>Lees waarom we het bouwden</span>
+              <span aria-hidden className="text-flame transition-transform duration-300 group-hover:translate-x-1">
+                →
+              </span>
+            </Link>
           </div>
+          <p className="mt-4 tekst-fijn text-muted">{ZEKERHEID_REGEL}</p>
         </div>
       </div>
     </section>

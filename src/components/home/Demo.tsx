@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import AppShowcase from '@/components/home/AppShowcase'
+import TelefoonMetDoen from '@/components/home/TelefoonMetDoen'
 
 /* De demo is de pitch. Desktop: de klikbare app. Mobiel: een video-loop,
    want de geschaalde desktop-app is op een telefoon niet prettig klikbaar. */
@@ -76,6 +77,30 @@ export default function Demo() {
       {/* Desktop: de klikbare app */}
       <div className="hidden md:block">
         <AppShowcase />
+      </div>
+
+      {/* En hetzelfde systeem in de bus. Stond eerder in DitZitErin naast een
+          lijst modules; hij hoort hier, want dit is het blok dat laat zien
+          hoe de app werkt. */}
+      <div className="container-site hidden md:block">
+        <div className="mt-16 flex items-center gap-12 border-t border-petrol/10 pt-14 lg:gap-20">
+          <div className="shrink-0">
+            <TelefoonMetDoen />
+          </div>
+          <div className="max-w-md">
+            <h3
+              className="font-heading font-bold text-petrol leading-[1.04]"
+              style={{ fontSize: 'clamp(24px, 2.6vw, 34px)', letterSpacing: '-0.03em' }}
+            >
+              En net zo goed vanuit de bus<span className="text-flame">.</span>
+            </h3>
+            <p className="mt-4 tekst-body text-muted">
+              Dezelfde offerte, dezelfde werkbon, dezelfde planning. Tik de
+              menubalk op de telefoon hiernaast aan, dan loop je er zelf
+              doorheen.
+            </p>
+          </div>
+        </div>
       </div>
     </section>
   )
