@@ -35,7 +35,7 @@ export function OnboardingSectie() {
           >
             Wij zetten je op weg<span className="text-flame">.</span>
           </h2>
-          <p className="text-[15px] md:text-[16px] text-muted max-w-xs leading-[1.55]">
+          <p className="tekst-body text-muted max-w-xs">
             Je hoeft niet zelf uit te puzzelen hoe doen. werkt.
           </p>
         </div>
@@ -66,7 +66,7 @@ export function OnboardingSectie() {
           })}
         </div>
 
-        <p className="mt-10 md:mt-14 text-[15px] md:text-[16px] text-ink">
+        <p className="mt-10 md:mt-14 tekst-body text-ink">
           Binnen een week live.{' '}
           <Link href="#aanmelden" className="font-semibold text-petrol hover:text-flame transition-colors">
             Begin vandaag →

@@ -157,7 +157,7 @@ export default function ContactFormulier({
           {formState === 'error' && errorMsg && (
             <p
               role="alert"
-              className="text-[14px] leading-snug px-4 py-3 rounded-[6px] border border-flame/25 bg-flame/5"
+              className="tekst-caption px-4 py-3 rounded-util border border-flame/25 bg-flame/5"
               style={{ color: '#A03318' }}
             >
               {errorMsg}
@@ -167,7 +167,7 @@ export default function ContactFormulier({
           <button
             type="submit"
             disabled={formState === 'loading'}
-            className="group w-full inline-flex items-center justify-center gap-2.5 text-[15px] font-semibold text-white bg-flame h-[54px] rounded-[6px] transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
+            className="knop knop-groot knop-flame group w-full disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {formState === 'loading' ? (
               <>
@@ -223,7 +223,7 @@ function Field({
   autoComplete?: string
 }) {
   const commonClasses =
-    'w-full px-4 rounded-[6px] bg-bg text-ink text-[16px] border border-petrol/15 outline-none transition-[border-color,box-shadow] duration-200 focus:border-flame focus:ring-[3px] focus:ring-flame/15'
+    'w-full px-4 rounded-util bg-bg text-ink text-[17px] tracking-apple border border-petrol/15 outline-none transition-[border-color,box-shadow] duration-200 focus:border-flame focus:ring-[3px] focus:ring-flame/15'
 
   return (
     <div>

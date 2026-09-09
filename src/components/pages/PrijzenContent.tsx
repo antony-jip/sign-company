@@ -99,10 +99,10 @@ function PriceHero() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 md:gap-6">
           {/* doen., aanbevolen */}
           <div
-            className="hero-fade relative flex flex-col rounded-[12px] border border-petrol/15 bg-white p-7 md:p-10"
+            className="kaart hero-fade relative flex flex-col p-7 md:p-10"
             style={{ animationDelay: '0.25s' }}
           >
-            <span className="absolute top-6 right-6 md:top-7 md:right-7 text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-[3px] bg-flame text-white">
+            <span className="absolute top-6 right-6 md:top-7 md:right-7 text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-full bg-flame text-white">
               Alles inbegrepen
             </span>
 
@@ -141,7 +141,7 @@ function PriceHero() {
             <div className="flex flex-wrap items-center gap-x-7 gap-y-4">
               <a
                 href="https://app.doen.team/register"
-                className="group inline-flex items-center gap-2.5 text-[15px] font-semibold text-white px-7 h-[54px] rounded-[6px] bg-flame transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                className="knop knop-groot knop-flame group"
               >
                 <span>Start gratis</span>
                 <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={2.5} />
@@ -158,7 +158,7 @@ function PriceHero() {
 
           {/* Wat je nu betaalt */}
           <div
-            className="hero-fade relative flex flex-col overflow-hidden rounded-[12px] bg-petrol-deep p-7 md:p-10"
+            className="hero-fade relative flex flex-col overflow-hidden rounded-card bg-petrol-deep p-7 md:p-10"
             style={{ animationDelay: '0.4s' }}
           >
             <div
@@ -269,7 +269,7 @@ function PrijzenFaq() {
                     aria-controls={`prijzen-faq-${i}`}
                     className="w-full flex items-center justify-between gap-6 py-5 text-left group"
                   >
-                    <span className="text-[16px] md:text-[17px] font-semibold text-ink group-hover:text-petrol transition-colors">
+                    <span className="tekst-body font-semibold text-ink group-hover:text-petrol transition-colors">
                       {faq.q}
                     </span>
                     <Plus

@@ -20,7 +20,7 @@ export default function Demo() {
   }, [])
 
   return (
-    <section className="pt-14 md:pt-28">
+    <section className="tegel tegel-tint pb-0 md:pb-0">
       <div className="container-site">
         <div className="flex flex-wrap items-baseline justify-between gap-x-10 gap-y-3 max-w-5xl">
           <h2
@@ -31,17 +31,21 @@ export default function Demo() {
             <span className="hidden md:inline">Klik maar door.</span>
           </h2>
           <div className="max-w-sm">
-            <p className="text-[15px] md:text-[16px] text-muted leading-[1.55]">
+            <p className="tekst-body text-muted">
               <span className="md:hidden">Geen mockup, de echte app. Op desktop klik je er zelf doorheen.</span>
               <span className="hidden md:inline">Geen mockup, de echte app. Zo ziet je dag eruit als alles gewoon klopt.</span>
             </p>
+            {/* Bewust geen pil: dit is een zijpad naast de subkop, geen
+                keuze naast de hoofdactie. Alleen wat een echte actie is
+                krijgt de pilvorm, anders raakt die vorm zijn betekenis
+                kwijt. */}
             <Link
               href="/demo"
-              className="group inline-flex items-center gap-2 mt-3 text-[15px] font-semibold text-petrol"
+              className="group mt-3 inline-flex items-center gap-2 text-[15px] font-semibold text-petrol"
             >
               <span className="relative">
                 Liever kijken? Bekijk de demo
-                <span className="absolute left-0 -bottom-1 h-px w-full origin-left transition-transform duration-300 group-hover:scale-x-0 bg-petrol/30" />
+                <span className="absolute left-0 -bottom-1 h-px w-full origin-left bg-petrol/30 transition-transform duration-300 group-hover:scale-x-0" />
               </span>
               <span aria-hidden className="text-flame transition-transform duration-300 group-hover:translate-x-1">→</span>
             </Link>
@@ -49,8 +53,8 @@ export default function Demo() {
         </div>
 
         {/* Mobiel: video-loop van de project-cockpit */}
-        <div className="md:hidden mt-6 pb-14">
-          <div className="rounded-[10px] overflow-hidden border border-petrol/10 shadow-[0_1px_2px_rgba(20,40,40,0.04),0_20px_48px_-28px_rgba(13,52,60,0.35)]">
+        <div className="md:hidden mt-8">
+          <div className="productbeeld rounded-card overflow-hidden">
             <video
               ref={videoRef}
               src="/videos/module-projecten.mp4"

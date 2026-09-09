@@ -99,7 +99,7 @@ function Tabel() {
               <ul>
                 {groep.rijen.map((rij) => (
                   <li key={rij.label} className={`${RIJ_GRID} gap-y-3 py-4 md:py-5 border-b border-petrol/10 items-start`}>
-                    <p className="col-span-3 md:col-span-1 text-[15px] md:text-[16px] font-medium text-ink leading-[1.45]">
+                    <p className="col-span-3 md:col-span-1 tekst-body font-medium text-ink">
                       {rij.label}
                     </p>
                     <CelWaarde cel={rij.doen} />
@@ -187,7 +187,7 @@ function Kosten() {
           >
             Wat het kost<span className="text-flame">.</span>
           </h2>
-          <p className="text-[15px] md:text-[16px] text-muted max-w-xs leading-[1.55]">
+          <p className="tekst-body text-muted max-w-xs">
             Peildatum {PEILDATUM}, alles ex btw.
           </p>
         </div>
@@ -261,13 +261,13 @@ function Afsluiter() {
             >
               Zelf naast elkaar leggen<span className="text-flame">?</span>
             </h2>
-            <p className="text-[15px] md:text-[16px] leading-[1.6]" style={{ color: 'rgba(226,240,241,0.82)' }}>
+            <p className="tekst-body" style={{ color: 'rgba(226,240,241,0.82)' }}>
               Kom je van Gripp of James Pro? Wij zetten je gegevens erover.
             </p>
           </div>
           <a
             href="https://app.doen.team/register"
-            className="group inline-flex items-center gap-2.5 shrink-0 self-start md:self-auto text-[15px] font-semibold text-white px-7 h-[54px] rounded-[6px] bg-flame transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98]"
+            className="knop knop-groot knop-flame group shrink-0 self-start md:self-auto"
           >
             <span>Probeer doen. 30 dagen gratis</span>
             <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={2.5} />

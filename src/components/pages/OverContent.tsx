@@ -135,7 +135,7 @@ export default function OverContent() {
                 <span className="block">Eén maker<span className="text-flame">.</span></span>
               </h2>
 
-              <div className="space-y-5 text-[16px] md:text-[17px] leading-[1.65] max-w-xl text-ink">
+              <div className="space-y-5 tekst-body max-w-xl text-ink">
                 <p>
                   Ik ben <strong>Antony Bootsma</strong>. Wij zijn een
                   familiebedrijf. Sign Company bestaat sinds 1983. Mijn vader heeft
@@ -159,7 +159,7 @@ export default function OverContent() {
                 <span className="text-flame">.</span>
               </blockquote>
 
-              <div className="space-y-5 text-[16px] md:text-[17px] leading-[1.65] max-w-xl text-ink">
+              <div className="space-y-5 tekst-body max-w-xl text-ink">
                 <p>
                   Ik zocht software die paste bij ruim 40 jaar vakmanschap en de
                   manier waarop wij werken. Die er niet was. Dus heb ik het zelf

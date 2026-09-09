@@ -26,7 +26,7 @@ export const EIGEN_GEBRUIK_DUUR = 'een half jaar'
 
 export function EigenGebruikRegel({ className = '' }: { className?: string }) {
   return (
-    <p className={`text-[15px] text-muted ${className}`}>
+    <p className={`tekst-body text-muted ${className}`}>
       <span className="font-semibold text-petrol">Wij draaien er zelf op.</span> Sign Company
       doet al {EIGEN_GEBRUIK_DUUR} zijn hele werk in doen., van offerte tot factuur.
     </p>
@@ -35,7 +35,7 @@ export function EigenGebruikRegel({ className = '' }: { className?: string }) {
 
 export function EigenGebruikNotitie({ className = '' }: { className?: string }) {
   return (
-    <p className={`text-[14px] leading-[1.6] text-muted ${className}`}>
+    <p className={`tekst-caption text-muted ${className}`}>
       Geen demo-verhaal: ons eigen signbedrijf werkt hier al {EIGEN_GEBRUIK_DUUR} mee.
     </p>
   )
@@ -56,11 +56,11 @@ export function EigenGebruikNotitie({ className = '' }: { className?: string }) 
    haal dan de twee blend-lagen weg. */
 export function EigenGebruikBewijs() {
   return (
-    <section className="bg-white">
-      <div className="container-site py-14 md:py-24">
+    <section className="tegel tegel-licht">
+      <div className="container-site">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.05fr] gap-8 lg:gap-16 items-center">
           <figure className="w-full max-w-[420px]">
-            <div className="relative isolate aspect-[4/5] w-full overflow-hidden rounded-[10px] bg-petrol-deep">
+            <div className="productbeeld relative isolate aspect-[4/5] w-full overflow-hidden rounded-card bg-petrol-deep">
               <Image
                 src="/images/maker/antony-en-jos.webp"
                 alt="Antony en Jos Bootsma bij de open zijdeur van de bestelbus voor de werkplaats van Sign Company"
@@ -78,7 +78,7 @@ export function EigenGebruikBewijs() {
               <span aria-hidden className="absolute inset-0 bg-petrol/[0.28] mix-blend-color" />
               <span aria-hidden className="absolute inset-0 bg-petrol-deep/[0.10] mix-blend-multiply" />
             </div>
-            <figcaption className="mt-3 text-[13px] text-muted">
+            <figcaption className="mt-4 tekst-fijn text-muted">
               Antony en Jos Bootsma · Sign Company, sinds 1983
             </figcaption>
           </figure>
@@ -90,7 +90,7 @@ export function EigenGebruikBewijs() {
             >
               Geen demo-verhaal<span className="text-flame">.</span> Ons eigen bedrijf draait erop<span className="text-flame">.</span>
             </h2>
-            <p className="mt-5 text-[16px] md:text-[17px] leading-[1.65] text-ink max-w-xl">
+            <p className="mt-5 tekst-body text-ink max-w-xl">
               Sign Company zet sinds 1983 namen op panden. Al {EIGEN_GEBRUIK_DUUR} loopt
               het complete werk van dat bedrijf door doen.: elke aanvraag, elke offerte,
               elke werkbon, elke factuur. Wat ons irriteerde, is eruit gesloopt voordat
@@ -108,7 +108,7 @@ export function EigenGebruikBewijs() {
                     {s.cijfer}
                     <span className="text-flame">.</span>
                   </dt>
-                  <dd className="mt-2 text-[13px] leading-[1.45] text-muted">{s.label}</dd>
+                  <dd className="mt-2 tekst-caption text-muted">{s.label}</dd>
                 </div>
               ))}
             </dl>
@@ -117,28 +117,19 @@ export function EigenGebruikBewijs() {
                 zes schermen niets, en dit is het punt waarop de lezer het
                 warmst is: hij heeft net gelezen dat het bedrijf er zelf op
                 draait. */}
-            <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-4">
-              <a
-                href="https://app.doen.team/register"
-                className="group inline-flex h-[54px] items-center gap-2.5 rounded-[6px] bg-flame px-7 text-[15px] font-semibold text-white transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98]"
-              >
+            <div className="mt-7 flex flex-wrap items-center gap-4">
+              <a href="https://app.doen.team/register" className="knop knop-groot knop-flame group">
                 <span>Start gratis</span>
                 <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={2.5} />
               </a>
-              <Link
-                href="/over"
-                className="group inline-flex items-center gap-2 text-[15px] font-semibold text-petrol"
-              >
-                <span className="relative">
-                  Lees waarom we het bouwden
-                  <span className="absolute left-0 -bottom-1 h-px w-full origin-left transition-transform duration-300 group-hover:scale-x-0 bg-petrol/30" />
-                </span>
+              <Link href="/over" className="knop knop-groot knop-lijn group">
+                <span>Lees waarom we het bouwden</span>
                 <span aria-hidden className="text-flame transition-transform duration-300 group-hover:translate-x-1">
                   →
                 </span>
               </Link>
             </div>
-            <p className="mt-4 text-[14px] text-muted">{ZEKERHEID_REGEL}</p>
+            <p className="mt-4 tekst-fijn text-muted">{ZEKERHEID_REGEL}</p>
           </div>
         </div>
       </div>
@@ -158,7 +149,7 @@ export function EigenGebruikBand() {
             'radial-gradient(ellipse 70% 90% at 15% 0%, rgba(42,111,122,0.45) 0%, rgba(42,111,122,0) 60%)',
         }}
       />
-      <div className="container-site relative py-14 md:py-20">
+      <div className="container-site relative tegel">
         <div className="grid grid-cols-1 lg:grid-cols-[1.15fr_1fr] gap-10 lg:gap-16 items-center">
           <div>
             <h2
@@ -167,7 +158,7 @@ export function EigenGebruikBand() {
             >
               Wij draaien er zelf op<span className="text-flame">.</span> Elke dag, elke klus<span className="text-flame">.</span>
             </h2>
-            <p className="text-[16px] md:text-[17px] leading-[1.65]" style={{ color: 'rgba(226,240,241,0.82)' }}>
+            <p className="tekst-body" style={{ color: 'rgba(226,240,241,0.82)' }}>
               doen. is niet bedacht in een vergaderzaal. Het is gebouwd omdat wij het zelf
               nodig hadden, tussen de montages door. Al {EIGEN_GEBRUIK_DUUR} loopt het complete
               werk van Sign Company erdoorheen: elke aanvraag, elke offerte, elke werkbon,
@@ -199,7 +190,7 @@ export function EigenGebruikBand() {
                   {s.cijfer}
                   <span className="text-flame">.</span>
                 </dt>
-                <dd className="mt-2 text-[13px] leading-[1.45]" style={{ color: 'rgba(226,240,241,0.65)' }}>
+                <dd className="mt-2 tekst-caption" style={{ color: 'rgba(226,240,241,0.65)' }}>
                   {s.label}
                 </dd>
               </div>

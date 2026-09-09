@@ -16,7 +16,7 @@ export function AanmeldKaart({ veldId = 'aanmeld-email' }: { veldId?: string }) 
     <form
       action="https://app.doen.team/register"
       method="get"
-      className="rounded-[12px] bg-white border border-petrol/10 p-7 md:p-9 shadow-[0_1px_2px_rgba(20,40,40,0.04),0_24px_56px_-32px_rgba(13,52,60,0.35)]"
+      className="kaart p-7 md:p-9"
     >
       <h3 className="font-heading text-[26px] md:text-[28px] font-bold text-petrol leading-none">
         Aan de slag<span className="text-flame">.</span>
@@ -31,12 +31,12 @@ export function AanmeldKaart({ veldId = 'aanmeld-email' }: { veldId?: string }) 
         required
         autoComplete="email"
         placeholder="naam@bedrijf.nl"
-        className="mt-2 w-full h-[52px] px-4 rounded-[6px] bg-bg text-ink text-[16px] border border-petrol/15 outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-muted/60 focus:border-flame focus:ring-[3px] focus:ring-flame/15"
+        className="mt-2 w-full h-[52px] px-4 rounded-util bg-bg text-ink text-[17px] tracking-apple border border-petrol/15 outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-muted/60 focus:border-flame focus:ring-[3px] focus:ring-flame/15"
       />
 
       <button
         type="submit"
-        className="group mt-5 w-full inline-flex items-center justify-center gap-2.5 text-[15px] font-semibold text-white bg-flame h-[54px] rounded-[6px] transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98]"
+        className="knop knop-groot knop-flame group mt-5 w-full"
       >
         <span>Start gratis</span>
         <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={2.5} />
@@ -70,7 +70,7 @@ export default function AanmeldSectie({
               {kop}
               <span className="text-flame">.</span>
             </h2>
-            <p className="text-[16px] md:text-[17px] text-muted leading-[1.6] max-w-md mb-8">{intro}</p>
+            <p className="tekst-body text-muted max-w-md mb-8">{intro}</p>
 
             <ol className="border-t border-petrol/10">
               {STAPPEN.map((stap, i) => (

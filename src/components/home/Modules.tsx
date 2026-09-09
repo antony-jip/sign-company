@@ -20,7 +20,7 @@ export default function Modules() {
             <br />
             Eén systeem<span className="text-flame">.</span>
           </h2>
-          <p className="text-[15px] md:text-[16px] text-muted max-w-sm leading-[1.55]">
+          <p className="tekst-body text-muted max-w-sm">
             De vier stappen hierboven draaien hierop. Alles kent elkaar,
             alles zit in dezelfde prijs. Klik door naar wat je nu nodig hebt.
           </p>
@@ -40,7 +40,7 @@ export default function Modules() {
                     <span className="text-flame">.</span>
                   </span>
                   {isStudio && (
-                    <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-[3px] border border-flame/60 text-flame shrink-0">
+                    <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-full border border-flame/60 text-flame shrink-0">
                       Beta
                     </span>
                   )}

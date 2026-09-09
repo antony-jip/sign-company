@@ -47,7 +47,7 @@ export default function DemoPage() {
             >
               Eén klus, van eerste mail tot betaling<span className="text-flame">.</span>
             </h1>
-            <p className="mt-4 text-[16px] md:text-[18px] text-muted max-w-2xl leading-[1.6]">
+            <p className="mt-4 tekst-lead text-muted max-w-2xl">
               Twee minuten. Je ziet de aanvraag binnenkomen, het project ontstaan,
               de offerte met marge en uren, de drukproef, het klantportaal, de montageplanning
               en de factuur die eruit rolt.
@@ -77,7 +77,7 @@ export default function DemoPage() {
                 <h2 className="font-heading text-[20px] md:text-[22px] font-bold text-petrol">
                   Gebouwd in ons eigen signbedrijf<span className="text-flame">.</span>
                 </h2>
-                <p className="mt-2 text-[15px] md:text-[16px] text-muted leading-[1.6]">
+                <p className="mt-2 tekst-body text-muted">
                   Ik ben Antony Bootsma van Sign Company, familiebedrijf sinds 1983.
                   We liepen vast in onze oude software. Dus bouwde ik zelf wat ik
                   miste; wat je hierboven ziet is waar wij elke dag mee draaien.
@@ -115,14 +115,14 @@ export default function DemoPage() {
                 >
                   Vandaag nog aan de slag<span className="text-flame">.</span>
                 </h2>
-                <p className="mt-4 text-[15px] md:text-[16px] text-muted max-w-md leading-[1.6]">
+                <p className="mt-4 tekst-body text-muted max-w-md">
                   Vul je e-mailadres in, kies in de app een wachtwoord en je staat live.
                   Geen creditcard nodig.
                 </p>
                 <OnboardingRegel className="mt-4 max-w-md" />
                 <ul className="mt-6 flex flex-wrap items-center gap-x-8 gap-y-3">
                   {ZEKERHEDEN.map((punt) => (
-                    <li key={punt} className="flex items-center gap-2.5 text-[15px] md:text-[16px] font-semibold text-petrol">
+                    <li key={punt} className="flex items-center gap-2.5 tekst-body font-semibold text-petrol">
                       <span aria-hidden className="text-flame">✓</span>
                       <span>
                         {punt}
@@ -151,7 +151,7 @@ export default function DemoPage() {
               {GEZIEN.map((item) => (
                 <div
                   key={item.title}
-                  className="rounded-[10px] border border-petrol/10 bg-white p-6 shadow-[0_1px_2px_rgba(20,40,40,0.04)]"
+                  className="kaart p-6"
                 >
                   <h3 className="font-heading text-[18px] md:text-[19px] font-bold text-petrol">
                     {item.title}
@@ -162,7 +162,7 @@ export default function DemoPage() {
               ))}
             </div>
 
-            <p className="mt-10 md:mt-14 text-[16px] md:text-[18px] text-petrol font-semibold">
+            <p className="mt-10 md:mt-14 tekst-lead text-petrol font-semibold">
               vanaf € 129 per maand ex btw · all-in, niet per seat · {STAFFEL_ZIN} ·{' '}
               <a href="/prijzen" className="underline decoration-flame decoration-2 underline-offset-4 hover:text-flame transition-colors">
                 bekijk wat je krijgt
@@ -183,7 +183,7 @@ export default function DemoPage() {
               >
                 Klik zelf door de app<span className="text-flame">.</span>
               </h2>
-              <p className="md:col-span-5 self-end text-[16px] md:text-[17px] leading-[1.6] text-muted">
+              <p className="md:col-span-5 self-end tekst-body text-muted">
                 Tien schermen uit doen., precies zoals ze eruitzien als je inlogt. Geen
                 video, geen plaatje. Klik links door de modules.
               </p>
@@ -234,7 +234,7 @@ export default function DemoPage() {
               <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
                 <a
                   href="https://app.doen.team/register"
-                  className="group inline-flex items-center gap-2.5 text-[16px] font-semibold text-flame bg-white px-8 h-[58px] rounded-[6px] transition-transform duration-300 hover:scale-[1.03] active:scale-[0.97]"
+                  className="knop knop-groot knop-wit group"
                 >
                   <span>Start gratis</span>
                   <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={2.5} />

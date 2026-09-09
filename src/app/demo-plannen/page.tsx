@@ -46,7 +46,7 @@ export default function DemoPlannenPage() {
                   Een half uur<span className="text-flame">.</span> Jouw klus, ons scherm
                   <span className="text-flame">.</span>
                 </h1>
-                <p className="mt-4 max-w-xl text-[16px] md:text-[18px] leading-[1.6] text-muted">
+                <p className="mt-4 max-w-xl tekst-lead text-muted">
                   Geen verkooppraatje en geen slides. We pakken een klus zoals jij ze draait en
                   laten hem van eerste mail tot betaalde factuur door doen. lopen. Jij onderbreekt
                   waar het bij jou anders gaat.

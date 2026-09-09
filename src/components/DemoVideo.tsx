@@ -84,7 +84,7 @@ export default function DemoVideo({
           className="absolute inset-0 flex items-center justify-center group cursor-pointer"
           aria-label="Speel de demofilm af"
         >
-          <span className="inline-flex items-center gap-3 rounded-full bg-flame text-white pl-5 pr-6 py-3 text-[15px] md:text-[16px] font-semibold shadow-[0_2px_8px_rgba(241,80,37,0.35)] transition-transform duration-150 group-hover:scale-[1.04]">
+          <span className="knop knop-flame pl-5 pr-6">
             <span aria-hidden className="text-[13px]">▶</span>
             Bekijk de demo · 2 min
           </span>
@@ -97,7 +97,7 @@ export default function DemoVideo({
           <button
             type="button"
             onClick={geluidAan}
-            className="pointer-events-auto inline-flex items-center gap-2.5 rounded-full bg-petrol/90 text-white px-6 py-3 text-[14px] md:text-[15px] font-semibold shadow-[0_4px_16px_rgba(13,52,60,0.35)] backdrop-blur transition-transform duration-150 hover:scale-[1.04]"
+            className="knop pointer-events-auto bg-petrol/90 text-white backdrop-blur"
           >
             <span aria-hidden>🔊</span>
             Zet het geluid aan
@@ -110,7 +110,7 @@ export default function DemoVideo({
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-5 bg-petrol/70 backdrop-blur-[2px]">
           <a
             href={ctaHref}
-            className="group inline-flex items-center gap-2.5 text-[16px] md:text-[17px] font-semibold text-white bg-flame px-9 h-[60px] rounded-[8px] shadow-[0_4px_16px_rgba(241,80,37,0.4)] transition-transform duration-300 hover:scale-[1.04] active:scale-[0.97]"
+            className="knop knop-groot knop-flame group"
           >
             <span>{ctaLabel}</span>
             <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={2.5} />

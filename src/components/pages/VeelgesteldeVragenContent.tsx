@@ -31,7 +31,7 @@ function CategoryBlock({ id, label }: { id: CategoryId; label: string }) {
                 aria-expanded={isOpen}
                 className="w-full flex items-center justify-between gap-6 py-5 text-left group"
               >
-                <span className="text-[16px] md:text-[17px] font-semibold text-ink group-hover:text-petrol transition-colors">
+                <span className="tekst-body font-semibold text-ink group-hover:text-petrol transition-colors">
                   {item.q}
                 </span>
                 <Plus
@@ -67,7 +67,7 @@ export default function VeelgesteldeVragenContent() {
           >
             Veelgestelde vragen<span className="text-flame">.</span>
           </h1>
-          <p className="text-[16px] md:text-[18px] text-muted max-w-xl leading-[1.6]">
+          <p className="tekst-lead text-muted max-w-xl">
             Alles wat signmakers ons vragen voordat ze beginnen, op één plek: over de prijs, het
             product, security, support en techniek.
           </p>

@@ -34,14 +34,14 @@ export default function VerticalContent({ vertical }: { vertical: Vertical }) {
               </span>
             </h1>
 
-            <p className="hero-fade text-[16px] md:text-[17px] leading-[1.6] text-ink max-w-2xl mb-6 md:mb-9" style={{ animationDelay: '0.35s' }}>
+            <p className="hero-fade tekst-body text-ink max-w-2xl mb-6 md:mb-9" style={{ animationDelay: '0.35s' }}>
               {vertical.intro}
             </p>
 
             <div className="hero-fade flex flex-wrap items-center gap-5 md:gap-7" style={{ animationDelay: '0.45s' }}>
               <a
                 href="https://app.doen.team/register"
-                className="group inline-flex items-center gap-2 text-[15px] font-semibold text-white bg-flame px-7 h-[54px] rounded-[6px] transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                className="knop knop-groot knop-flame group"
               >
                 <span>Start gratis</span>
                 <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={2.5} />
@@ -98,7 +98,7 @@ function PainSection({ vertical }: { vertical: Vertical }) {
           >
             Herkenbaar<span className="text-flame">?</span>
           </h2>
-          <p className="text-[15px] md:text-[16px] text-muted max-w-sm leading-[1.55]">
+          <p className="tekst-body text-muted max-w-sm">
             Dit horen we van elk signbedrijf dat overstapt.
           </p>
         </div>
@@ -113,7 +113,7 @@ function PainSection({ vertical }: { vertical: Vertical }) {
                 {pain.title}
                 <span className="text-flame">.</span>
               </h3>
-              <p className="text-[15px] md:text-[16px] leading-[1.6] text-muted max-w-2xl">
+              <p className="tekst-body text-muted max-w-2xl">
                 {pain.body}
               </p>
             </li>
@@ -135,7 +135,7 @@ function HighlightSection({ vertical }: { vertical: Vertical }) {
           >
             Wat doen<span className="text-flame">.</span> daarvoor regelt
           </h2>
-          <p className="text-[15px] md:text-[16px] text-muted max-w-sm leading-[1.55]">
+          <p className="tekst-body text-muted max-w-sm">
             Vier modules die dit werk dragen. De rest zit er gewoon bij.
           </p>
         </div>
@@ -157,7 +157,7 @@ function HighlightSection({ vertical }: { vertical: Vertical }) {
                     {mod.label}
                     <span className="text-flame">.</span>
                   </span>
-                  <span className="text-[15px] md:text-[16px] leading-[1.6] text-muted max-w-2xl transition-colors duration-200 group-hover:text-ink">
+                  <span className="tekst-body text-muted max-w-2xl transition-colors duration-200 group-hover:text-ink">
                     {highlight.blurb}
                   </span>
                   <span

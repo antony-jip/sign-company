@@ -27,14 +27,14 @@ export default function NotFound() {
                 </span>
               </span>
             </h1>
-            <p className="hero-fade text-[16px] md:text-[17px] leading-[1.6] text-muted max-w-xl mb-9" style={{ animationDelay: '0.35s' }}>
+            <p className="hero-fade tekst-body text-muted max-w-xl mb-9" style={{ animationDelay: '0.35s' }}>
               Foutcode 404 · de pagina bestaat niet of is verplaatst. We brengen
               je weer op weg.
             </p>
             <div className="hero-fade flex flex-wrap items-center gap-5 md:gap-7" style={{ animationDelay: '0.45s' }}>
               <Link
                 href="/"
-                className="group inline-flex items-center gap-2 text-[15px] font-semibold text-white bg-flame px-7 h-[54px] rounded-[6px] transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                className="knop knop-groot knop-flame group"
               >
                 <span>Terug naar home</span>
                 <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={2.5} />

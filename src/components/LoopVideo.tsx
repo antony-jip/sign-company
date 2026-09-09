@@ -31,7 +31,7 @@ export default function LoopVideo({
 
   return (
     <div
-      className={`rounded-[10px] overflow-hidden border border-petrol/10 shadow-[0_1px_2px_rgba(20,40,40,0.04),0_20px_48px_-28px_rgba(13,52,60,0.35)] ${className}`}
+      className={`productbeeld rounded-card overflow-hidden ${className}`}
     >
       <video
         ref={videoRef}

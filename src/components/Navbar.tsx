@@ -90,13 +90,20 @@ export default function Navbar({ theme = 'light' }: { theme?: 'light' | 'dark' }
       <header
         className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
         style={{
-          backgroundColor: isScrolled ? 'rgba(244,247,247,0.92)' : 'transparent',
-          backdropFilter: isScrolled ? 'blur(12px)' : 'none',
-          WebkitBackdropFilter: isScrolled ? 'blur(12px)' : 'none',
+          /* Matglas in plaats van een dekkende balk: 80% dekking plus
+             saturate, zodat de kleur van de sectie eronder er doorheen
+             blijft schijnen. Dat is wat de balk laat zweven zonder dat er
+             een schaduw onder hoeft. */
+          backgroundColor: isScrolled ? 'rgba(244,247,247,0.8)' : 'transparent',
+          backdropFilter: isScrolled ? 'saturate(180%) blur(20px)' : 'none',
+          WebkitBackdropFilter: isScrolled ? 'saturate(180%) blur(20px)' : 'none',
           borderBottom: isScrolled ? '1px solid rgba(26,83,92,0.08)' : '1px solid transparent',
         }}
       >
-        <nav className={`transition-all duration-300 ${isScrolled ? 'py-3.5' : 'py-6'}`}>
+        {/* Gescrold komt de balk uit op 44px: 24px logo plus 2x10px lucht.
+            Dat is de kleinste hoogte waarop de balk nog leest en de grootste
+            waarop hij nog wegvalt. */}
+        <nav className={`transition-all duration-300 ${isScrolled ? 'py-2.5' : 'py-5'}`}>
           <div className="container-site flex items-center justify-between gap-6">
 
             {/* Wordmark */}
@@ -215,7 +222,7 @@ export default function Navbar({ theme = 'light' }: { theme?: 'light' | 'dark' }
               </Link>
               <a
                 href="https://app.doen.team/register"
-                className="group inline-flex items-center gap-1.5 text-[14px] font-semibold text-white px-5 h-[42px] rounded-[6px] bg-flame transition-transform duration-300 hover:scale-[1.03] active:scale-[0.97] whitespace-nowrap"
+                className="knop knop-klein knop-flame group"
               >
                 <span>Start gratis</span>
                 <svg width="12" height="12" viewBox="0 0 11 11" fill="none" className="transition-transform duration-300 group-hover:translate-x-0.5">
@@ -373,7 +380,7 @@ export default function Navbar({ theme = 'light' }: { theme?: 'light' | 'dark' }
                 <a
                   href="https://app.doen.team/register"
                   onClick={() => setIsMobileOpen(false)}
-                  className="flex items-center justify-between text-[16px] font-semibold text-white px-6 h-[56px] rounded-[6px] bg-flame"
+                  className="knop knop-groot knop-flame w-full justify-between"
                 >
                   <span>Start gratis</span>
                   <span aria-hidden>→</span>
@@ -381,7 +388,7 @@ export default function Navbar({ theme = 'light' }: { theme?: 'light' | 'dark' }
                 <Link
                   href={RONDLEIDING_HREF}
                   onClick={() => setIsMobileOpen(false)}
-                  className="flex items-center justify-between text-[16px] font-semibold text-petrol px-6 h-[56px] rounded-[6px] border border-petrol/20"
+                  className="knop knop-groot knop-lijn w-full justify-between"
                 >
                   <span>{RONDLEIDING_LABEL}</span>
                   <span aria-hidden className="text-flame">→</span>
@@ -411,8 +418,7 @@ function ProductMenu({ pathname, sluit }: { pathname: string; sluit: () => void 
   return (
     <div className="absolute left-0 top-full pt-3 w-[660px]" role="group" aria-label="Modules">
       <div
-        className="rounded-[10px] border border-petrol/10 bg-white p-4"
-        style={{ boxShadow: '0 1px 2px rgba(20,40,40,0.04), 0 18px 44px -20px rgba(19,62,69,0.35)' }}
+        className="kaart p-4"
       >
         <div className="grid grid-cols-3 gap-x-4 gap-y-4">
           {modulesPerGroep.map((groep) => (
@@ -428,7 +434,7 @@ function ProductMenu({ pathname, sluit }: { pathname: string; sluit: () => void 
                       <Link
                         href={mod.href}
                         onClick={sluit}
-                        className={`group flex flex-col gap-0.5 rounded-[7px] px-2 py-1.5 transition-colors duration-150 ${
+                        className={`group flex flex-col gap-0.5 rounded-util px-2 py-1.5 transition-colors duration-150 ${
                           modActief ? 'bg-petrol/[0.07]' : 'hover:bg-petrol/[0.05]'
                         }`}
                       >
@@ -450,7 +456,7 @@ function ProductMenu({ pathname, sluit }: { pathname: string; sluit: () => void 
           <Link
             href="/features"
             onClick={sluit}
-            className="flex-1 flex items-center justify-between rounded-[7px] px-2 py-2 text-[13px] font-semibold text-petrol hover:bg-petrol/[0.05] transition-colors"
+            className="flex-1 flex items-center justify-between rounded-util px-2 py-2 text-[13px] font-semibold text-petrol hover:bg-petrol/[0.05] transition-colors"
           >
             Alle modules op een rij
             <span aria-hidden className="text-flame">→</span>
@@ -458,7 +464,7 @@ function ProductMenu({ pathname, sluit }: { pathname: string; sluit: () => void 
           <Link
             href="/demo"
             onClick={sluit}
-            className="flex-1 flex items-center justify-between rounded-[7px] px-2 py-2 text-[13px] font-semibold text-petrol hover:bg-petrol/[0.05] transition-colors"
+            className="flex-1 flex items-center justify-between rounded-util px-2 py-2 text-[13px] font-semibold text-petrol hover:bg-petrol/[0.05] transition-colors"
           >
             Bekijk de demo
             <span aria-hidden className="text-flame">→</span>
@@ -474,8 +480,7 @@ function VoorWieMenu({ pathname, sluit }: { pathname: string; sluit: () => void 
   return (
     <div className="absolute left-0 top-full pt-3 w-[320px]" role="group" aria-label="Voor wie">
       <div
-        className="rounded-[10px] border border-petrol/10 bg-white p-2.5"
-        style={{ boxShadow: '0 1px 2px rgba(20,40,40,0.04), 0 18px 44px -20px rgba(19,62,69,0.35)' }}
+        className="kaart p-2.5"
       >
         <ul>
           {menuVerticals.map((v) => {
@@ -486,7 +491,7 @@ function VoorWieMenu({ pathname, sluit }: { pathname: string; sluit: () => void 
                 <Link
                   href={href}
                   onClick={sluit}
-                  className={`group flex flex-col gap-0.5 rounded-[7px] px-3 py-2 transition-colors duration-150 ${
+                  className={`group flex flex-col gap-0.5 rounded-util px-3 py-2 transition-colors duration-150 ${
                     actief ? 'bg-petrol/[0.07]' : 'hover:bg-petrol/[0.05]'
                   }`}
                 >
@@ -510,8 +515,7 @@ function KennisMenu({ pathname, sluit }: { pathname: string; sluit: () => void }
   return (
     <div className="absolute left-0 top-full pt-3 w-[320px]" role="group" aria-label="Kennis">
       <div
-        className="rounded-[10px] border border-petrol/10 bg-white p-2.5"
-        style={{ boxShadow: '0 1px 2px rgba(20,40,40,0.04), 0 18px 44px -20px rgba(19,62,69,0.35)' }}
+        className="kaart p-2.5"
       >
         <ul>
           {KENNIS_LINKS.map((k) => {
@@ -521,7 +525,7 @@ function KennisMenu({ pathname, sluit }: { pathname: string; sluit: () => void }
                 <Link
                   href={k.href}
                   onClick={sluit}
-                  className={`group flex flex-col gap-0.5 rounded-[7px] px-3 py-2 transition-colors duration-150 ${
+                  className={`group flex flex-col gap-0.5 rounded-util px-3 py-2 transition-colors duration-150 ${
                     actief ? 'bg-petrol/[0.07]' : 'hover:bg-petrol/[0.05]'
                   }`}
                 >

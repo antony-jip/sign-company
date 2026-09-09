@@ -36,7 +36,7 @@ export default function KennisbankPage() {
                 Per module uitgelegd<span className="text-flame">.</span>
               </span>
             </h1>
-            <p className="text-[16px] md:text-[17px] leading-[1.6] text-ink max-w-2xl">
+            <p className="tekst-body text-ink max-w-2xl">
               Zoek je een antwoord? Begin hier. Per module de belangrijkste
               uitleg, praktijkvoorbeelden en tips uit het vak.
             </p>
@@ -55,12 +55,12 @@ export default function KennisbankPage() {
 
           {/* Afsluiter */}
           <div className="mt-14 md:mt-24 pt-8 md:pt-12 border-t border-petrol/10 flex flex-col md:flex-row md:items-center justify-between gap-5 md:gap-6">
-            <p className="text-[15px] md:text-[16px] text-muted">
+            <p className="tekst-body text-muted">
               Niet gevonden wat je zoekt? We helpen je persoonlijk.
             </p>
             <Link
               href="/contact"
-              className="group inline-flex items-center gap-2 self-start text-[15px] font-semibold text-white bg-flame px-7 h-[54px] rounded-[6px] transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98]"
+              className="knop knop-groot knop-flame group self-start"
             >
               <span>Neem contact op</span>
               <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={2.5} />

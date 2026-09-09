@@ -28,8 +28,8 @@ export default function FaqSection() {
   )
 
   return (
-    <section className="bg-white">
-      <div className="container-site py-16 md:py-32">
+    <section className="tegel tegel-licht">
+      <div className="container-site">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.6fr] gap-12 lg:gap-20">
           <div>
             <h2
@@ -38,7 +38,7 @@ export default function FaqSection() {
             >
               Nog vragen<span className="text-flame">?</span>
             </h2>
-            <p className="text-[15px] text-muted leading-[1.6] max-w-xs mb-3">
+            <p className="tekst-body text-muted max-w-xs mb-3">
               <Link href="/veelgestelde-vragen" className="font-semibold text-petrol hover:text-flame transition-colors">
                 Bekijk alle vragen
               </Link>
@@ -60,7 +60,7 @@ export default function FaqSection() {
                     aria-expanded={isOpen}
                     className="w-full flex items-center justify-between gap-6 py-5 text-left group"
                   >
-                    <span className="text-[16px] md:text-[17px] font-semibold text-ink group-hover:text-petrol transition-colors">
+                    <span className="tekst-body font-semibold text-ink group-hover:text-petrol transition-colors">
                       {item.q}
                     </span>
                     <Plus

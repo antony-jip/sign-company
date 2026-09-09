@@ -61,7 +61,7 @@ export default function StudioProef() {
               <br />
               op de gevel<span className="text-flame">.</span>
             </h2>
-            <p className="text-[15px] md:text-[16px] leading-[1.6] text-muted mb-8 max-w-md">
+            <p className="tekst-body text-muted mb-8 max-w-md">
               Dit is Studio, zoals het in doen. zit. Vul je bedrijfsnaam in, kies
               een pand en kijk wat eruit komt. Geen account nodig.
             </p>
@@ -77,7 +77,7 @@ export default function StudioProef() {
                   onChange={(e) => setNaam(e.target.value)}
                   maxLength={28}
                   placeholder="Van Dijk Signing"
-                  className="w-full h-[52px] px-4 rounded-[6px] border border-petrol/20 bg-bg text-[16px] text-ink placeholder:text-muted/70 focus:outline-none focus:border-petrol/50 focus:ring-2 focus:ring-petrol/15 transition-shadow"
+                  className="w-full h-[52px] px-4 rounded-util border border-petrol/20 bg-bg text-[17px] tracking-apple text-ink placeholder:text-muted/70 focus:outline-none focus:border-petrol/50 focus:ring-2 focus:ring-petrol/15 transition-shadow"
                 />
               </div>
 
@@ -106,7 +106,7 @@ export default function StudioProef() {
               <button
                 type="submit"
                 disabled={!magVersturen}
-                className="group inline-flex items-center gap-2.5 text-[15px] font-semibold text-white px-7 h-[54px] rounded-[6px] bg-flame transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40 disabled:hover:scale-100"
+                className="knop knop-groot knop-flame group disabled:opacity-40"
               >
                 {bezig ? (
                   <>

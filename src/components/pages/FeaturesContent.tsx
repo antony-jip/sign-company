@@ -356,7 +356,7 @@ function FlameDot() {
 function StudioBadges() {
   return (
     <span className="inline-flex items-center shrink-0">
-      <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-[3px] border border-flame text-flame">
+      <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full border border-flame text-flame">
         Beta
       </span>
     </span>
@@ -387,7 +387,7 @@ function PortaalDemo() {
             >
               Zo ziet je klant het<FlameDot />
             </h2>
-            <p className="mt-5 text-[15px] md:text-[16px] text-muted leading-[1.6] max-w-md">
+            <p className="mt-5 tekst-body text-muted max-w-md">
               Je klant opent de link en ziet alles in chronologische volgorde: tekeningen,
               offertes, opdrachtbevestigingen, facturen en foto&apos;s. Reageren kan direct.
               Geen inlog, geen app, geen gedoe.
@@ -395,7 +395,7 @@ function PortaalDemo() {
           </Reveal>
 
           <Reveal delay={0.1}>
-            <div className="bg-white rounded-xl border border-petrol/10 shadow-[0_24px_56px_-30px_rgba(19,62,69,0.35)] overflow-hidden max-w-[420px] mx-auto">
+            <div className="productbeeld bg-white rounded-card overflow-hidden max-w-[420px] mx-auto">
               <div className="px-5 py-3 flex items-center justify-between bg-petrol-deep">
                 <span className="text-white text-[13px] font-bold tracking-tight">De Vries Reclame</span>
                 <span className="font-mono text-[9px] text-white/50">Geldig tot 15 mei 2026</span>
@@ -508,7 +508,7 @@ function WerktekeningDemo() {
             >
               Upload je tekening<FlameDot /> doen<FlameDot /> doet de rest<FlameDot />
             </h2>
-            <p className="mt-5 text-[15px] md:text-[16px] text-muted leading-[1.6] max-w-md">
+            <p className="mt-5 tekst-body text-muted max-w-md">
               Sleep je werktekening in de offerte. De omschrijving van de offerteregel wordt
               automatisch overgenomen als titel. Je klant ziet een professionele tekening met
               uitleg, zonder dat jij Illustrator opent.
@@ -548,7 +548,7 @@ function WerktekeningDemo() {
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.3, ease: easing }}
                 >
-                  <div className="bg-white rounded-xl p-5 md:p-6 border border-petrol/10 shadow-[0_24px_56px_-30px_rgba(19,62,69,0.35)]">
+                  <div className="kaart p-5 md:p-6">
                     <div className="flex items-center justify-between pb-4 border-b border-petrol/10">
                       <div className="flex items-center gap-3">
                         <span className="w-6 h-6 rounded-full bg-flame text-white text-[11px] font-bold flex items-center justify-center">1</span>
@@ -582,7 +582,7 @@ function WerktekeningDemo() {
                   exit={{ opacity: 0, x: 20 }}
                   transition={{ duration: 0.3, ease: easing }}
                 >
-                  <div className="bg-white rounded-xl border border-petrol/10 shadow-[0_24px_56px_-30px_rgba(19,62,69,0.35)] overflow-hidden">
+                  <div className="productbeeld bg-white rounded-card overflow-hidden">
                     <div className="px-5 md:px-6 pt-5 pb-4 border-b border-petrol/10">
                       <div className="flex items-center justify-between">
                         <span className="text-[12px] font-bold text-ink tracking-tight">sign company</span>
@@ -656,7 +656,7 @@ function VisualizerFlow() {
           >
             Foto erin<FlameDot /> Visualisatie eruit<FlameDot />
           </h2>
-          <p className="text-[15px] md:text-[16px] text-muted max-w-sm leading-[1.55]">
+          <p className="tekst-body text-muted max-w-sm">
             Geen prompt-kennis nodig. Drie stappen en je klant ziet het eindresultaat.
           </p>
         </div>
@@ -701,7 +701,7 @@ function FeaturesOverview() {
             </span>
           </h1>
           <p
-            className="hero-fade mt-4 md:mt-6 text-[16px] md:text-[18px] text-muted leading-[1.6] max-w-xl"
+            className="hero-fade mt-4 md:mt-6 tekst-lead text-muted max-w-xl"
             style={{ animationDelay: '0.3s' }}
           >
             Alles van eerste klantvraag tot betaalde factuur zit erin, en alles werkt samen.
@@ -868,7 +868,7 @@ function ModuleVideo({ slug }: { slug: string }) {
   if (!video) return null
   return (
     <>
-      <div className="rounded-[12px] overflow-hidden border border-petrol/10 shadow-[0_1px_2px_rgba(20,40,40,0.04),0_24px_60px_-32px_rgba(13,52,60,0.35)]">
+      <div className="productbeeld rounded-card overflow-hidden">
         <video
           ref={videoRef}
           poster={video.poster}
@@ -1065,7 +1065,7 @@ const MODULE_FOTO: Record<string, { src: string; alt: string }> = {
             </span>
           </h1>
           <p
-            className="hero-fade mt-4 md:mt-6 text-[16px] md:text-[18px] text-muted leading-[1.6] max-w-xl"
+            className="hero-fade mt-4 md:mt-6 tekst-lead text-muted max-w-xl"
             style={{ animationDelay: '0.3s' }}
           >
             {detail.sub}
@@ -1135,7 +1135,7 @@ const MODULE_FOTO: Record<string, { src: string; alt: string }> = {
         <div className="container-site py-8 md:py-10 flex items-center justify-between gap-6">
           <Link href={`/features/${prev.slug}`} className="group">
             <span className="block text-[13px] text-muted mb-1">Vorige</span>
-            <span className="font-heading text-[16px] md:text-[18px] font-bold text-petrol transition-colors duration-200 group-hover:text-flame">
+            <span className="font-heading tekst-lead font-bold text-petrol transition-colors duration-200 group-hover:text-flame">
               <span aria-hidden className="inline-block mr-1.5 transition-transform duration-200 group-hover:-translate-x-0.5">←</span>
               {prev.name}
             </span>
@@ -1145,7 +1145,7 @@ const MODULE_FOTO: Record<string, { src: string; alt: string }> = {
           </Link>
           <Link href={`/features/${next.slug}`} className="group text-right">
             <span className="block text-[13px] text-muted mb-1">Volgende</span>
-            <span className="font-heading text-[16px] md:text-[18px] font-bold text-petrol transition-colors duration-200 group-hover:text-flame">
+            <span className="font-heading tekst-lead font-bold text-petrol transition-colors duration-200 group-hover:text-flame">
               {next.name}
               <span aria-hidden className="inline-block ml-1.5 transition-transform duration-200 group-hover:translate-x-0.5">→</span>
             </span>

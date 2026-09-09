@@ -76,7 +76,7 @@ export default function Werkwoorden() {
           >
             Van eerste mail tot betaalde factuur<span className="text-flame">.</span>
           </h2>
-          <p className="text-[15px] md:text-[16px] text-muted max-w-sm leading-[1.55]">
+          <p className="tekst-body text-muted max-w-sm">
             Vier stappen. Eén systeem eronder, zodat je niets overtypt en niets
             twee keer bedenkt.
           </p>
@@ -99,7 +99,7 @@ export default function Werkwoorden() {
                   {w.kop}
                   <span className="text-flame">.</span>
                 </h3>
-                <p className="mt-4 text-[16px] md:text-[17px] leading-[1.65] text-muted max-w-xl">
+                <p className="mt-4 tekst-body text-muted max-w-xl">
                   {w.belofte}
                 </p>
                 <p className="mt-5 text-[14px] font-semibold text-petrol">{w.regel}</p>

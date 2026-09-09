@@ -25,7 +25,7 @@ export default function PricingSection() {
             'radial-gradient(ellipse 70% 80% at 88% 100%, rgba(42,111,122,0.45) 0%, rgba(42,111,122,0) 60%)',
         }}
       />
-      <div className="container-site relative py-16 md:py-32">
+      <div className="container-site relative tegel">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-20 items-center">
           <div>
             <h2
@@ -41,34 +41,28 @@ export default function PricingSection() {
               >
                 €{PRICE_PER_MONTH}
               </span>
-              <span className="text-[16px]" style={{ color: 'rgba(226,240,241,0.7)' }}>
+              <span className="tekst-body" style={{ color: 'rgba(226,240,241,0.7)' }}>
                 per maand, ex btw
               </span>
             </div>
-            <p className="text-[15px] mb-3" style={{ color: 'rgba(226,240,241,0.7)' }}>
+            <p className="tekst-body mb-3" style={{ color: 'rgba(226,240,241,0.7)' }}>
               Alles erin, tot 10 gebruikers. Geen pakketten, geen prijs per seat, geen
               verrassingen. De onboarding zit erbij.
             </p>
-            <p className="text-[15px] mb-10" style={{ color: 'rgba(226,240,241,0.7)' }}>
+            <p className="tekst-body mb-10" style={{ color: 'rgba(226,240,241,0.7)' }}>
               Groter team? {STAFFEL_ZIN}, allebei ex btw. Alle modules zitten in elke maat.{' '}
               <Link href="/prijzen" className="underline underline-offset-4 decoration-white/30 hover:decoration-white transition-colors">
                 Zo zit het AI-budget erin
               </Link>
               .
             </p>
-            <div className="flex flex-wrap items-center gap-x-7 gap-y-4">
-              <a
-                href="https://app.doen.team/register"
-                className="group inline-flex items-center gap-2.5 text-[15px] font-semibold text-white px-7 h-[54px] rounded-[6px] bg-flame transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98]"
-              >
+            <div className="flex flex-wrap items-center gap-4">
+              <a href="https://app.doen.team/register" className="knop knop-groot knop-flame group">
                 <span>Start gratis</span>
                 <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={2.5} />
               </a>
-              <Link href="/prijzen" className="group inline-flex items-center gap-2 text-[15px] font-semibold text-white">
-                <span className="relative">
-                  Reken het na
-                  <span className="absolute left-0 -bottom-1 h-px w-full origin-left transition-transform duration-300 group-hover:scale-x-0" style={{ backgroundColor: 'rgba(255,255,255,0.4)' }} />
-                </span>
+              <Link href="/prijzen" className="knop knop-groot knop-lijn-wit group">
+                <span>Reken het na</span>
                 <span aria-hidden className="transition-transform duration-300 group-hover:translate-x-1">→</span>
               </Link>
             </div>
@@ -78,7 +72,7 @@ export default function PricingSection() {
             {INCLUDED.map((item) => (
               <li key={item} className="flex items-center gap-3">
                 <Check className="w-4 h-4 shrink-0 text-flame" strokeWidth={3} />
-                <span className="text-[15px] font-medium text-white">{item}</span>
+                <span className="tekst-body font-medium text-white">{item}</span>
               </li>
             ))}
           </ul>

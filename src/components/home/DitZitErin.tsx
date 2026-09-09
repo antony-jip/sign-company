@@ -29,8 +29,8 @@ export default function DitZitErin() {
   const aantal = telwoord(getoond)
 
   return (
-    <section>
-      <div className="container-site py-14 md:py-24">
+    <section className="tegel tegel-tint">
+      <div className="container-site">
         <div className="flex max-w-5xl flex-wrap items-baseline justify-between gap-x-10 gap-y-3">
           <h2
             className="font-heading font-bold leading-[1.0] text-petrol"
@@ -42,7 +42,7 @@ export default function DitZitErin() {
           >
             Dit zit erin<span className="text-flame">.</span>
           </h2>
-          <p className="max-w-sm text-[15px] leading-[1.55] text-muted md:text-[16px]">
+          <p className="tekst-body max-w-sm text-muted">
             {aantal.charAt(0).toUpperCase() + aantal.slice(1)} modules onder vier stappen, in
             één systeem. Van de eerste aanvraag tot de betaalde factuur.</p>
         </div>
@@ -55,10 +55,7 @@ export default function DitZitErin() {
             {groepen.map((groep, i) => (
               <article
                 key={groep.groep}
-                className="flex flex-col overflow-hidden rounded-[12px] border border-petrol/10 bg-white"
-                style={{
-                  boxShadow: '0 1px 2px rgba(20,40,40,0.04), 0 18px 44px -30px rgba(19,62,69,0.35)',
-                }}
+                className="kaart flex flex-col overflow-hidden"
               >
                 <div className="flex flex-1 flex-col p-5">
                   <h3 className="flex items-baseline gap-2 font-heading text-[19px] font-bold text-petrol">
@@ -105,7 +102,7 @@ export default function DitZitErin() {
 
         <div className="mt-10 flex flex-wrap items-baseline gap-x-8 gap-y-3">
           {daan && (
-            <p className="text-[15px] leading-[1.6] text-muted">
+            <p className="tekst-body text-muted">
               Door alle vier heen loopt <span className="font-semibold text-petrol">Daan</span>:{' '}
               {daan.items.map((m) => m.label.toLowerCase()).join(' en ')}.{' '}
               <Link
@@ -117,7 +114,7 @@ export default function DitZitErin() {
               .
             </p>
           )}
-          <p className="text-[15px] leading-[1.6] text-muted">
+          <p className="tekst-body text-muted">
             En het werkt net zo goed vanuit de bus. Tik de menubalk op de telefoon aan, dan loop je er zelf
             doorheen.
           </p>

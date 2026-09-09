@@ -26,7 +26,7 @@ function ArtikelBlok({ artikel }: { artikel: Artikel }) {
             <span className="text-[13px] font-semibold text-muted pt-[3px] tabular-nums">
               {artikel.nr}.{i + 1}
             </span>
-            <p className="text-[15px] md:text-[16px] leading-[1.65] text-ink">{lid}</p>
+            <p className="tekst-body text-ink">{lid}</p>
           </li>
         ))}
       </ol>
@@ -80,7 +80,7 @@ export default function VoorwaardenContent() {
           >
             Algemene voorwaarden<span className="text-flame">.</span>
           </h1>
-          <p className="text-[16px] md:text-[18px] leading-[1.6] text-muted max-w-xl">
+          <p className="tekst-lead text-muted max-w-xl">
             Versie {VOORWAARDEN_VERSIE}, geldig vanaf {VOORWAARDEN_DATUM}. Deze voorwaarden gelden
             voor elk gebruik van doen. en je aanvaardt ze bij het aanmaken van een account.
           </p>
@@ -158,7 +158,7 @@ export default function VoorwaardenContent() {
               >
                 Bijlage A · Verwerkersovereenkomst<span className="text-flame">.</span>
               </h2>
-              <p className="text-[15px] md:text-[16px] leading-[1.65] text-muted mb-2">
+              <p className="tekst-body text-muted mb-2">
                 Dit is de verwerkersovereenkomst zoals bedoeld in artikel 28 lid 3 AVG. Hij hoort bij
                 deze voorwaarden en geldt zodra je een account aanmaakt.
               </p>
@@ -175,7 +175,7 @@ export default function VoorwaardenContent() {
               >
                 Bijlage B · Sub-verwerkers<span className="text-flame">.</span>
               </h2>
-              <p className="text-[15px] md:text-[16px] leading-[1.65] text-muted">
+              <p className="tekst-body text-muted">
                 Deze partijen verwerken gegevens namens ons om doen. te kunnen leveren. Voegen wij er
                 een toe of vervangen wij er een, dan melden wij dat 30 dagen van tevoren.
               </p>

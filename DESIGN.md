@@ -60,3 +60,58 @@ Op petrol-deep mag maximaal één zachte radial-lichtval (`petrol-light`, opacit
 - Eén boodschap staat op precies één plek: modules uitleggen doet /features, rekenen doet /prijzen, de flow van aanvraag tot factuur staat op /hoe-het-werkt, het verhaal op /over, en de onboarding staat op /prijzen#onboarding. Elders alleen de losse regel (`OnboardingRegel`), zoals `EigenGebruikRegel` dat ook doet.
 - Officieel e-mailadres: antony@signcompany.nl. `hello@doen.team` bestaat niet meer, zet dat nergens op de site.
 - Pay-off: "Slim gedaan." Labels actief formuleren.
+
+## De Apple-laag (september 2026)
+
+Bovenop het bovenstaande ligt sinds september een tweede laag: de structuur en
+maatvoering uit Apple's eigen design-systeem, overgenomen uit
+`docs/design/apple-DESIGN.md` (de complete bronanalyse staat daar, ongewijzigd).
+Wat we overnemen is het vakwerk, niet het merk. Kleur blijft petrol en flame,
+de fonts blijven Instrument Sans en Hanken Grotesk. Wat verandert is hoe de
+pagina is opgebouwd.
+
+De vier regels, in volgorde van belang:
+
+**1. De kleurwissel is de scheiding.** Een sectie is een tegel: hij draagt zijn
+eigen achtergrond over de volle breedte en raakt de tegel eronder. Geen randen,
+geen lijnen, geen decoratie ertussen. Gebruik `.tegel` voor het ritme (56px
+mobiel, 80px desktop) plus `.tegel-licht`, `.tegel-tint` of `.tegel-donker`.
+Twee tegels van dezelfde soort achter elkaar krijgen geen rand maar een
+micro-stap in helderheid (`.tegel-donker-2`). Zet nooit meer `py-16 md:py-32`
+op een sectie: dat stapelde bodempadding op koppadding en gaf gaten van bijna
+een schermhoogte.
+
+**2. Precies één schaduw op de hele site.** `.productbeeld`
+(`3px 5px 30px rgba(0,0,0,0.22)`) hoort onder beeld dat op een vlak rust: een
+app-mockup, de telefoon, een browserframe, een foto. Kaarten krijgen een
+haarlijn en verder niets. Een kaart die zweeft trekt de aandacht naar de kaart,
+en wij willen aandacht op wat erin staat. Hiërarchie maak je met een
+vlakwissel, niet met diepte.
+
+**3. Alles wat een actie is, is een pil.** `.knop` plus een van
+`.knop-flame` (primair), `.knop-wit` (op een flame-vlak), `.knop-lijn` /
+`.knop-lijn-wit` (het tweede spoor ernaast). Minstens 44px hoog, want dat is de
+kleinste maat die een duim betrouwbaar raakt. De indruk zit in de indrukstand
+(`scale(0.95)`), niet in hover-groei. Twee pillen naast elkaar is de vorm
+waarin je een tweede keuze aanbiedt: de tekstlink-met-onderstreep uit de vorige
+ronde leest naast een vlak knop als een voetnoot in plaats van als een keuze.
+Die tekstlink blijft wel bestaan, maar alleen voor een zijpad dat géén keuze
+is (zie `Demo.tsx`, "Liever kijken?").
+
+**4. Bodytekst is 17px.** `.tekst-body` (17/1.47/-0.011em), `.tekst-lead`
+(19px, 21px op desktop), `.tekst-caption` (14px), `.tekst-fijn` (13px, zonder
+tracking, want kleine tekst wordt van tracking alleen maar moeilijker). Die ene
+pixel boven 16 is het verschil tussen scannen en lezen. Gebruik geen
+`text-[15px]` of `text-[16px]` meer voor lopende tekst.
+
+**Radius-grammatica**, en niets ertussen: `rounded-full` voor pillen, chips en
+badges, `rounded-util` (8px) voor compacte werkknoppen en invoervelden,
+`rounded-card` (18px) voor kaarten en beeldframes, `0` voor tegels.
+
+**De balk boven** is matglas: 80% dekking met `saturate(180%) blur(20px)`,
+zodat de kleur van de sectie eronder erdoorheen schijnt. Gescrold komt hij uit
+op 44px.
+
+Wat we bewust NIET overnemen uit Apple's systeem: Action Blue (#0066cc) en de
+hele SF Pro-ladder. Eén accentkleur hebben we al, dat is flame, en de fonts
+horen bij de app.

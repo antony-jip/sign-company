@@ -37,7 +37,7 @@ export default function Manifest() {
               bouwplaats, de naam op het stadion. Allemaal gemaakt door mensen
               zoals jij. Signmakers maken bedrijven zichtbaar.
             </p>
-            <p className="mt-5 text-[16px] md:text-[17px] leading-[1.65] text-muted max-w-xl">
+            <p className="mt-5 tekst-body text-muted max-w-xl">
               Daar mag je trots op zijn. En daar hoort gereedschap bij dat net zo
               goed is als je werk. Daarom bestaat doen.
             </p>
@@ -55,7 +55,7 @@ export default function Manifest() {
                       {o.kop}
                       <span className="text-flame">.</span>
                     </h3>
-                    <p className="mt-2 text-[15px] md:text-[16px] leading-[1.6] text-muted">{o.regel}</p>
+                    <p className="mt-2 tekst-body text-muted">{o.regel}</p>
                   </div>
                 </div>
               </li>

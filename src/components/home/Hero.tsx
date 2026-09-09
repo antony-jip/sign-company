@@ -71,7 +71,7 @@ export default function Hero() {
         </h1>
 
         <p
-          className="hero-fade text-[17px] md:text-[20px] leading-[1.6] max-w-xl mb-10"
+          className="hero-fade tekst-lead max-w-xl mb-10"
           style={{ color: 'rgba(226,240,241,0.82)', animationDelay: '0.35s' }}
         >
           Elke gevel, elke bus, elke winkelnaam: daar stond een signmaker
@@ -80,10 +80,10 @@ export default function Hero() {
           waar je goed in bent: maken.
         </p>
 
-        <div className="hero-fade flex flex-wrap items-center gap-x-7 gap-y-5" style={{ animationDelay: '0.45s' }}>
+        <div className="hero-fade flex flex-wrap items-center gap-4" style={{ animationDelay: '0.45s' }}>
           <a
             href="https://app.doen.team/register"
-            className="group inline-flex items-center gap-2.5 text-[15px] font-semibold text-white px-7 h-[54px] rounded-[6px] bg-flame transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98]"
+            className="knop knop-groot knop-flame group"
           >
             <span>Start gratis</span>
             <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={2.5} />
@@ -91,22 +91,13 @@ export default function Hero() {
           {/* Tweede spoor naast de proef. Een eigenaar die om drie uur op een
               steiger staat begint niet aan een proefaccount; die wil dertig
               minuten schermdelen. */}
-          <Link
-            href={RONDLEIDING_HREF}
-            className="group inline-flex items-center gap-2 text-[15px] font-semibold text-white"
-          >
-            <span className="relative">
-              Plan een rondleiding
-              <span
-                className="absolute left-0 -bottom-1 h-px w-full origin-left transition-transform duration-300 group-hover:scale-x-0"
-                style={{ backgroundColor: 'rgba(255,255,255,0.4)' }}
-              />
-            </span>
+          <Link href={RONDLEIDING_HREF} className="knop knop-groot knop-lijn-wit group">
+            <span>Plan een rondleiding</span>
             <span aria-hidden className="transition-transform duration-300 group-hover:translate-x-1">→</span>
           </Link>
         </div>
 
-        <p className="hero-fade text-[13px] mt-8" style={{ color: 'rgba(226,240,241,0.68)', animationDelay: '0.55s' }}>
+        <p className="hero-fade tekst-fijn mt-8" style={{ color: 'rgba(226,240,241,0.68)', animationDelay: '0.55s' }}>
           30 dagen gratis · geen creditcard · wij zetten je gegevens erover
         </p>
       </div>

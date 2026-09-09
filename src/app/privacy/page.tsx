@@ -25,7 +25,7 @@ export default function PrivacyPage() {
             >
               Privacyverklaring<span className="text-flame">.</span>
             </h1>
-            <p className="text-[16px] md:text-[18px] leading-[1.6] text-muted max-w-xl">
+            <p className="tekst-lead text-muted max-w-xl">
               Versie {PRIVACY_VERSIE}, geldig vanaf {PRIVACY_DATUM}. Wat wij van jou verwerken,
               waarom, en hoe lang.
             </p>
@@ -63,7 +63,7 @@ export default function PrivacyPage() {
                         <span className="text-[13px] font-semibold text-muted pt-[3px] tabular-nums">
                           {blok.nr}.{i + 1}
                         </span>
-                        <p className="text-[15px] md:text-[16px] leading-[1.65] text-ink">{lid}</p>
+                        <p className="tekst-body text-ink">{lid}</p>
                       </li>
                     ))}
                   </ol>

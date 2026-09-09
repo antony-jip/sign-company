@@ -164,3 +164,193 @@ summary:focus-visible {
   outline: 2px solid #1a535c;
   outline-offset: 2px;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   APPLE-LAAG
+   ═══════════════════════════════════════════════════════════════════════
+   Structuur en maatvoering overgenomen uit docs/design/apple-DESIGN.md,
+   kleur en font blijven doen. Wat we overnemen is het vakwerk, niet het
+   merk: tegels die elkaar raken met de kleurwissel als scheiding, één
+   knopgrammatica, één schaduw, leestempo op 17px.
+
+   Vier regels die alles hier verklaren:
+   1. De kleurwissel is de scheiding. Geen randen, geen lijnen tussen
+      secties, geen decoratie ertussen.
+   2. Precies één schaduw op de hele site, en die hoort onder productbeeld.
+      Kaarten krijgen een haarlijn, geen schaduw.
+   3. Alles wat je aan kunt klikken is een pil. Alles wat je niet aan kunt
+      klikken is dat niet.
+   4. Bodytekst is 17px. Niet 15, niet 16. Die pixel is het verschil tussen
+      scannen en lezen.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ─── Tegels ───
+   Een sectie is een tegel: hij draagt zijn eigen achtergrond over de volle
+   breedte, heeft 80px lucht binnenin en raakt de tegel eronder. Mobiel
+   compacter, want daar telt elke schermhoogte. */
+.tegel {
+  padding-top: 56px;
+  padding-bottom: 56px;
+}
+@media (min-width: 768px) {
+  .tegel {
+    padding-top: 80px;
+    padding-bottom: 80px;
+  }
+}
+/* Twee tegels van dezelfde soort achter elkaar: geen lijn ertussen maar een
+   micro-stap in helderheid, zoals Apple's tile-1 / tile-2. Je ziet de knip
+   zonder dat er een rand staat. */
+.tegel-licht { background-color: #ffffff; }
+.tegel-tint  { background-color: #f4f7f7; }
+.tegel-donker { background-color: #0d343c; }
+.tegel-donker-2 { background-color: #103d46; }
+
+/* ─── Leestempo ───
+   17px met leading 1.47. De negatieve tracking hoort vanaf 14px, daaronder
+   niet: kleine tekst wordt er alleen maar moeilijker van. */
+.tekst-body {
+  font-size: 17px;
+  line-height: 1.47;
+  letter-spacing: -0.011em;
+}
+.tekst-lead {
+  font-size: 19px;
+  line-height: 1.45;
+  letter-spacing: -0.011em;
+}
+@media (min-width: 768px) {
+  .tekst-lead {
+    font-size: 21px;
+    line-height: 1.4;
+  }
+}
+.tekst-caption {
+  font-size: 14px;
+  line-height: 1.43;
+  letter-spacing: -0.016em;
+}
+/* Voetnoten en juridische regels. Hier geen tracking, dat leest slechter. */
+.tekst-fijn {
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+/* ─── Knopgrammatica ───
+   Eén vorm voor alles wat een actie is: een pil van minstens 44px hoog,
+   want dat is de kleinste maat die een duim betrouwbaar raakt. Geen
+   hover-groei meer; de indruk zit in de indrukstand, precies zoals een
+   fysieke knop. */
+.knop {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 11px 22px;
+  border-radius: 9999px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.011em;
+  white-space: nowrap;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease,
+    opacity 0.2s ease;
+}
+@media (min-width: 768px) {
+  .knop {
+    font-size: 16px;
+  }
+}
+.knop:active {
+  transform: scale(0.95);
+}
+.knop-groot {
+  min-height: 52px;
+  padding: 14px 28px;
+  font-size: 17px;
+}
+/* Primair: het flame-vlak. Eén per scherm, hij is het antwoord op de kop. */
+.knop-flame {
+  background-color: #f15025;
+  color: #ffffff;
+}
+/* Op een flame-vlak keert hij om, anders verdwijnt de knop in de band. */
+.knop-wit {
+  background-color: #ffffff;
+  color: #f15025;
+}
+/* Spookpil: dezelfde vorm, alleen de lijn. Voor het tweede spoor naast de
+   primaire knop op een licht vlak. */
+.knop-lijn {
+  background-color: transparent;
+  color: #1a535c;
+  box-shadow: inset 0 0 0 1px rgba(26, 83, 92, 0.35);
+}
+.knop-lijn-wit {
+  background-color: transparent;
+  color: #ffffff;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
+}
+/* Compacte werkknop, de enige plek waar een rechthoek mag: de balk boven,
+   waar een pil naast de menu-items te veel gewicht krijgt. */
+.knop-util {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 8px 15px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.016em;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+}
+.knop-util:active {
+  transform: scale(0.95);
+}
+
+/* ─── Kaarten ───
+   Haarlijn, 18px radius, geen schaduw. Een kaart die zweeft trekt aandacht
+   naar de kaart; wij willen aandacht op wat erin staat. */
+.kaart {
+  background-color: #ffffff;
+  border: 1px solid rgba(13, 52, 60, 0.08);
+  border-radius: 18px;
+}
+.kaart-donker {
+  background-color: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+}
+
+/* ─── Productbeeld ───
+   De enige schaduw. Alleen onder een app-mockup, telefoon of browserframe
+   dat op een vlak rust. */
+.productbeeld {
+  box-shadow: 3px 5px 30px rgba(0, 0, 0, 0.22);
+}
+
+/* ─── Focus ───
+   2px, ruim eromheen, en op een pil volgt de outline de vorm. */
+a:focus-visible,
+button:focus-visible,
+summary:focus-visible {
+  outline-offset: 3px;
+}
+.knop:focus-visible {
+  outline: 2px solid #f15025;
+  outline-offset: 3px;
+  border-radius: 9999px;
+}
+/* Compacte pil voor de balk boven, waar de gewone maat te veel gewicht
+   krijgt naast de menu-items. */
+.knop-klein {
+  min-height: 40px;
+  padding: 9px 18px;
+  font-size: 14px;
+}
+@media (min-width: 768px) {
+  .knop-klein {
+    font-size: 14px;
+  }
+}

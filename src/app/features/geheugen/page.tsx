@@ -124,7 +124,7 @@ const vragen = [
 /* App-mockup van de ochtendlijst. Mono mag hier: het is data ín de app. */
 function OchtendlijstMock() {
   return (
-    <div className="rounded-[12px] overflow-hidden border border-petrol/10 bg-white shadow-[0_1px_2px_rgba(20,40,40,0.04),0_24px_60px_-32px_rgba(13,52,60,0.35)]">
+    <div className="productbeeld rounded-card overflow-hidden bg-white">
       <div className="bg-petrol-deep px-5 py-4">
         <p className="text-[14px] font-semibold text-white leading-tight">Vannacht geleerd</p>
         <p className="font-mono text-[11px] mt-1" style={{ color: 'rgba(226,240,241,0.55)' }}>
@@ -140,10 +140,10 @@ function OchtendlijstMock() {
           <p className="text-[14px] text-ink leading-snug">{v.tekst}</p>
           <p className="font-mono text-[11px] text-muted mt-1">{v.bron}</p>
           <div className="flex gap-2 mt-3" aria-hidden>
-            <span className="text-[12px] font-semibold text-white bg-flame px-3.5 py-1.5 rounded-[6px]">
+            <span className="text-[12px] font-semibold text-white bg-flame px-3.5 py-1.5 rounded-full">
               Aannemen
             </span>
-            <span className="text-[12px] font-medium text-muted border border-petrol/15 px-3.5 py-1.5 rounded-[6px]">
+            <span className="text-[12px] font-medium text-muted border border-petrol/15 px-3.5 py-1.5 rounded-full">
               Afwijzen
             </span>
           </div>
@@ -170,7 +170,7 @@ export default function GeheugenPage() {
           />
           <div className="container-site relative pt-28 md:pt-44 pb-14 md:pb-24">
             <div className="hero-fade inline-flex items-center gap-2 mb-6">
-              <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-[3px] border border-flame text-flame">
+              <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full border border-flame text-flame">
                 Nieuw
               </span>
               <span className="text-[13px] font-medium" style={{ color: 'rgba(226,240,241,0.82)' }}>
@@ -184,7 +184,7 @@ export default function GeheugenPage() {
               Daan vergeet niks<span className="text-flame">.</span>
             </h1>
             <p
-              className="hero-fade mt-6 text-[16px] md:text-[17px] leading-[1.6] max-w-xl"
+              className="hero-fade mt-6 tekst-body max-w-xl"
               style={{ color: 'rgba(226,240,241,0.82)' }}
             >
               Het PO-nummer van de aannemer, de hoogwerker bij dat ene pand, montage alleen op
@@ -194,7 +194,7 @@ export default function GeheugenPage() {
             <div className="hero-fade mt-9 flex flex-wrap items-center gap-6">
               <a
                 href="https://app.doen.team/register"
-                className="group inline-flex items-center gap-2.5 text-[15px] font-semibold text-white bg-flame px-7 h-[54px] rounded-[6px] transition-transform duration-300 hover:scale-[1.02] active:scale-[0.97]"
+                className="knop knop-groot knop-flame group"
               >
                 <span>Probeer doen. gratis</span>
                 <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={2.5} />
@@ -277,7 +277,7 @@ export default function GeheugenPage() {
                   key={v.regel}
                   className="grid md:grid-cols-2 gap-2 md:gap-10 py-5 border-t border-petrol/10 last:border-b last:border-petrol/10"
                 >
-                  <p className="text-[16px] md:text-[17px] font-medium text-ink leading-snug">
+                  <p className="tekst-body font-medium text-ink">
                     &ldquo;{v.regel}&rdquo;
                   </p>
                   <p className="text-[15px] text-muted leading-[1.6]">{v.gevolg}</p>
@@ -298,12 +298,12 @@ export default function GeheugenPage() {
                 >
                   Elke ochtend één lijstje<span className="text-flame">.</span>
                 </h2>
-                <p className="mt-5 text-[15px] md:text-[16px] text-muted leading-[1.65] max-w-lg">
+                <p className="mt-5 tekst-body text-muted max-w-lg">
                   Daan onderbreekt je nooit tussendoor. Wat hij leert, verzamelt hij en leg je
                   &rsquo;s ochtends in één keer voor: aannemen of afwijzen, klaar in dertig seconden.
                   Bij elk voorstel staat waar het vandaan komt.
                 </p>
-                <p className="mt-4 text-[15px] md:text-[16px] text-muted leading-[1.65] max-w-lg">
+                <p className="mt-4 tekst-body text-muted max-w-lg">
                   Dat lijstje kost je dertig seconden. Eén vergeten hoogwerker kost je een ochtend,
                   een monteur en een klant die zijn opening zonder gevelbak doet.
                 </p>
