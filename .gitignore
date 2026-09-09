@@ -23,3 +23,6 @@ tsconfig.tsbuildinfo
 forgedesk/.trigger/
 scratch/
 public/_review/
+
+# Gegenereerde filmtest-output (video/beeld, hoort niet in git)
+forgedesk/video/filmtest/out/

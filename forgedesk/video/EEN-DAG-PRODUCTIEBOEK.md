@@ -635,6 +635,31 @@ bewijzen (3C en 9C) is het geen alternatief.
 
 ---
 
+### Generatieve filmtest
+
+`video/filmtest/filmtest.mjs` bestelt drie shots (1A, 6A, 10A) als echte
+video bij fal, om te weten of het generatieve pad leeft voordat er 22
+shots besteld worden. Die drie leunen alle drie op licht en sfeer en niet
+op handeling; haalt een model die niet, dan haalt het de rest ook niet.
+Kosten ongeveer $1,86. Zonder `--ja` rekent het script alleen.
+
+Het patroon komt uit kunstdoekje `scripts/lib/falvideo.mjs`, met twee
+afwijkingen die in het script zelf staan uitgelegd. De belangrijkste: daar
+staat het negatief camerabeweging en handheld shake af omdat de wand stil
+moet staan om een doek terug te plakken, en deze film vraagt juist lichte
+handheld.
+
+Wat de test niet dekt: de 27 schermshots. Een videomodel verzint UI, en
+het brief verbiedt dat expliciet. Die blijven schermopname uit de echte
+app, ook als de test slaagt.
+
+Het kind in scene 10 blijft bewust buiten de test. Voor een commerciele
+film een synthetisch kind laten genereren is een pad dat je niet inloopt
+als je het ook gewoon kunt draaien; 10A test het avondlicht, en dat kan
+zonder.
+
+---
+
 ## 13. Productie
 
 **Locaties.** Drie: woonhuis (slaapkamer, gang, keuken, eettafel),
