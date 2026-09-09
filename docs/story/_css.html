@@ -247,4 +247,57 @@
   .veld .l{ font-family:'Spline Sans Mono',monospace; font-size:24px; color:var(--on-dark-soft);
             width:210px; flex:none; padding-top:6px; letter-spacing:0.06em; }
   .veld .v{ font-size:32px; color:#fff; font-weight:600; }
+
+  /* ── de app in je hand ── */
+  /* Een uitleg van een scherm werkt pas als je het scherm ziet. Deze telefoon
+     is geen screenshot maar nagebouwd: dan kan er demodata in, blijft hij scherp
+     op 1080 px, en kunnen de bijschriften precies wijzen waar het om gaat. */
+  .hand{ position:relative; display:flex; justify-content:center; }
+  .telefoon{
+    width:470px; background:#0B1416; border-radius:52px; padding:13px;
+    box-shadow:0 30px 90px rgba(13,52,60,0.34), 0 0 0 1px rgba(255,255,255,0.06) inset;
+  }
+  .telefoon .scherm{ background:#F8F7F5; border-radius:40px; overflow:hidden; position:relative; }
+  .telefoon .balk{ height:34px; display:flex; align-items:center; justify-content:center; }
+  .telefoon .balk i{ display:block; width:104px; height:8px; border-radius:99px; background:rgba(19,62,69,0.18); }
+
+  .app-kop{ display:flex; align-items:center; justify-content:space-between;
+            padding:10px 22px 16px; border-bottom:1px solid var(--hair); }
+  .app-kop .titel{ font-family:'Instrument Sans',sans-serif; font-weight:700; font-size:26px; letter-spacing:-0.03em; }
+  .app-kop .mono{ font-size:17px; color:var(--muted); }
+
+  .app-vak{ padding:20px 22px; }
+  .app-van{ font-size:19px; color:var(--muted); }
+  .app-onderwerp{ font-size:25px; font-weight:600; line-height:1.2; margin-top:6px; }
+  .app-tekst{ font-size:20px; color:var(--muted); line-height:1.45; margin-top:10px; }
+  .app-chip{ display:inline-flex; align-items:center; gap:8px; margin-top:14px; font-family:'Spline Sans Mono',monospace;
+             font-size:17px; color:var(--petrol); background:rgba(26,83,92,0.09); border-radius:99px; padding:7px 16px; }
+  .app-knop{ display:block; text-align:center; background:var(--flame); color:#fff; font-weight:600;
+             font-size:24px; border-radius:16px; padding:18px; margin:20px 22px 22px; letter-spacing:-0.01em; }
+  .app-knop.petrol{ background:var(--petrol); }
+  .app-regel{ display:flex; align-items:center; justify-content:space-between; gap:14px;
+              padding:16px 22px; border-bottom:1px solid var(--hair); }
+  .app-regel .w{ font-size:22px; font-weight:600; }
+  .app-regel .s{ font-size:17px; color:var(--muted); margin-top:3px; }
+  .app-regel .st{ font-family:'Spline Sans Mono',monospace; font-size:16px; color:var(--muted); flex:none; }
+  .app-regel .st.ok{ color:#3E8C63; }
+  .app-band{ background:var(--petrol-deep); color:#fff; padding:18px 22px; display:flex;
+             align-items:center; justify-content:space-between; }
+  .app-band img{ height:22px; width:auto; display:block; }
+  .app-band span{ font-size:17px; color:rgba(255,255,255,0.68); }
+  .app-bedrag{ padding:20px 22px 4px; }
+  .app-bedrag .l{ font-family:'Spline Sans Mono',monospace; font-size:16px; letter-spacing:0.12em;
+                  text-transform:uppercase; color:var(--muted); }
+  .app-bedrag .b{ font-family:'Instrument Sans',sans-serif; font-weight:700; font-size:44px;
+                  letter-spacing:-0.04em; margin-top:4px; }
+
+  /* Bijschrift naast de telefoon, met een streepje dat wijst. */
+  .wijs{ position:absolute; width:270px; }
+  .wijs .t{ font-size:26px; font-weight:600; line-height:1.25; }
+  .dark .wijs .t{ color:#fff; }
+  .wijs .streepje{ height:2px; background:var(--flame); }
+  .wijs.links{ right:calc(50% + 258px); text-align:right; }
+  .wijs.links .streepje{ margin-left:auto; margin-top:12px; }
+  .wijs.rechts{ left:calc(50% + 258px); }
+  .wijs.rechts .streepje{ margin-top:12px; }
 </style>

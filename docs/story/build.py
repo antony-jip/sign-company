@@ -31,7 +31,6 @@ BEELDEN = {
     'LOGO_WIT': 'public/logos/doen-logo-wit.svg',
     'FOTO_GEVEL': 'public/images/fotos/hoogwerker-aan-de-gevel.webp',
     'FOTO_HOOGWERKER': 'public/images/fotos/boren-in-de-gevel.webp',
-    'FOTO_PORTAAL': 'public/images/fotos/p-portaal-zien.webp',
 }
 
 
