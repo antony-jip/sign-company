@@ -249,6 +249,15 @@ ronde leest naast een vlak knop als een voetnoot in plaats van als een keuze.
 Die tekstlink blijft wel bestaan, maar alleen voor een zijpad dat géén keuze
 is (zie `Demo.tsx`, "Liever kijken?").
 
+**De hero is de canon.** De belofte staat op een stil petrol-vlak, de foto
+staat er los ónder over de volle breedte, in volle kleur en zonder scrim. Niet
+erachter met een verloop eroverheen: dat verloop moest links dicht genoeg zijn
+om witte letters te dragen, en dan zie je van de montage nog geen halve foto.
+Bij Apple draagt het product het verhaal en mag de kop "iPhone 17 Pro" zijn.
+Software fotografeert niet zo, dus hier valt die last op twee dingen: de kop
+moet in één zin duidelijk maken wát doen. is, en de foto laat zien voor wie.
+Het product op de foto is niet het scherm maar de gevel.
+
 **4. Bodytekst is 17px.** `.tekst-body` (17/1.47/-0.011em), `.tekst-lead`
 (19px, 21px op desktop), `.tekst-caption` (14px), `.tekst-fijn` (13px, zonder
 tracking, want kleine tekst wordt van tracking alleen maar moeilijker). Die ene
