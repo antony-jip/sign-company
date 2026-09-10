@@ -17,12 +17,14 @@ type Props = {
 }
 
 // Statuswoord als stationsbord: de bovenste helft van het oude woord klapt
-// naar beneden en onthult het nieuwe woord. De Flame-punt blijft staan.
+// naar beneden en onthult het nieuwe woord (13 f, curve move). De Flame-punt
+// staat los van de flap en blijft stil; halverwege de flip springt hij naar de
+// breedte van het nieuwe woord.
 export const SplitFlap: React.FC<Props> = ({
   t, op, van, naar, kleurVan = merk.tekstSec, kleurNaar = merk.petrol,
-  hoogte = 64, fontSize = 44, duurMs = 420, achtergrond = merk.wit,
+  hoogte = 64, fontSize = 44, duurMs = 433, achtergrond = merk.wit,
 }) => {
-  const p = vlak(t, op, op + duurMs, ease.inUit)
+  const p = vlak(t, op, op + duurMs, ease.move)
   const hoek = p * -180
   const helft = hoogte / 2
   const woordStijl = (kleur: string): React.CSSProperties => ({
@@ -32,7 +34,7 @@ export const SplitFlap: React.FC<Props> = ({
   const Helft: React.FC<{ boven: boolean; tekst: string; kleur: string; stijl?: React.CSSProperties }> = ({ boven, tekst, kleur, stijl }) => (
     <div style={{ position: 'absolute', left: 0, right: 0, height: helft, overflow: 'hidden', top: boven ? 0 : helft, backgroundColor: achtergrond, ...stijl }}>
       <div style={{ ...woordStijl(kleur), transform: boven ? undefined : `translateY(-${helft}px)` }}>
-        {tekst}<FlameDot />
+        {tekst}
       </div>
     </div>
   )
@@ -50,6 +52,9 @@ export const SplitFlap: React.FC<Props> = ({
         </div>
       </div>
       <div style={{ position: 'absolute', left: 0, right: 0, top: helft - 1, height: 1, backgroundColor: 'rgba(0,0,0,0.08)' }} />
+      <div style={{ ...woordStijl(kleurNaar), position: 'absolute', left: 0, top: 0 }}>
+        <span style={{ visibility: 'hidden' }}>{t >= op + duurMs / 2 ? naar : van}</span><FlameDot />
+      </div>
     </div>
   )
 }

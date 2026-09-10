@@ -1,17 +1,20 @@
 // Alle tekst van de film op één plek. FilmV2 leest hieruit.
-// Regels: één kernwoord per belofte, uitleg maximaal 9 woorden, geen em-dashes.
+// Regels: één kernwoord per belofte dat letterlijk in tekst staat, maximaal 34 tekens
+// per regel, uitleg maximaal 9 woorden met de labels uit de app, geen em-dashes.
+// Belofte.tsx zet de Flame-punt alleen als het kernwoord de regel sluit of direct
+// door een punt gevolgd wordt; daarom staat het kernwoord bijna overal achteraan.
 export type Regel = { tekst: string; kernwoord: string; uitleg?: string }
 
 export const COPY = {
-  opening: { tekst: 'Alles wat een signmaker nodig heeft. In één app', kernwoord: 'één app' },
-  mail: { tekst: 'Je mail is je werkvoorraad', kernwoord: 'werkvoorraad', uitleg: 'Daan herkent de aanvraag, de klant staat klaar.' },
-  project: { tekst: 'Eén klik. Het project staat', kernwoord: 'staat', uitleg: 'Klant, briefing en bijlage staan er al in.' },
-  offerte: { tekst: 'Je marge zie je vóór je verstuurt', kernwoord: 'marge', uitleg: 'Calculatie per regel, verzenden via het portaal.' },
-  portaal: { tekst: 'Je klant tekent. Jij ziet het meteen', kernwoord: 'tekent', uitleg: 'Eén link, geen inlog, akkoord met handtekening.' },
-  montage: { tekst: 'Eén sleep. De montage staat', kernwoord: 'staat', uitleg: 'Planning is alleen montage, de rest zijn taken.' },
-  werkbon: { tekst: "Uren en foto's. Op locatie", kernwoord: 'locatie', uitleg: 'Inklokken, foto maken, het staat in het project.' },
-  mailUitProject: { tekst: 'Mail uit het project. Tekening erbij', kernwoord: 'Tekening', uitleg: 'Bijlage uit het project, opvolgen aan.' },
-  factuur: { tekst: 'Factuur eruit. Betaald', kernwoord: 'Betaald', uitleg: 'Betaald via Mollie, je ziet het meteen.' },
-  alles: { tekst: 'Eén project. Alles erin', kernwoord: 'Alles' },
-  eindkaart: { regel: 'Alles wat een signmaker nodig heeft. In één app.', url: 'app.doen.team' },
+  opening: { tekst: 'Van mail tot betaald. In één app', kernwoord: 'één app' },
+  mail: { tekst: 'Je mail is je werkvoorraad', kernwoord: 'werkvoorraad', uitleg: 'Daan herkent de aanvraag, de klantkaart vult zich.' },
+  project: { tekst: 'Eén klik. Het project staat', kernwoord: 'staat', uitleg: 'Klant, briefing en bijlage hangen al aan het project.' },
+  offerte: { tekst: 'Je marge zie je vóór je verstuurt', kernwoord: 'marge', uitleg: 'Inkoop, Verkoop, Marge per regel, dan Verstuur via portaal.' },
+  portaal: { tekst: 'Klant tekent. Jij ziet het meteen', kernwoord: 'tekent', uitleg: 'Geen inlog. Naam, handtekening, Bevestigen. Project op Akkoord klant.' },
+  montage: { tekst: 'Eén sleep. De montage staat', kernwoord: 'staat', uitleg: 'De kaart landt op donderdag, project springt naar Ingepland.' },
+  werkbon: { tekst: "Uren en foto's. Niets overtypen", kernwoord: 'Niets overtypen', uitleg: 'Inklokken, de klok loopt. Foto staat in het project.' },
+  mailUitProject: { tekst: 'Tekening erbij. Zonder zoeken', kernwoord: 'Zonder zoeken', uitleg: 'Uit project pakt de tekening, Opvolgen staat aan.' },
+  factuur: { tekst: 'Factuur eruit. Betaald', kernwoord: 'Betaald', uitleg: 'Versturen, klant klikt Betaal nu, factuur springt op betaald.' },
+  alles: { tekst: 'Eén project. Alles erin', kernwoord: 'Alles erin' },
+  eindkaart: { regel: 'Van mail tot betaald. In één app.', url: 'app.doen.team', sub: '30 dagen gratis, maandelijks opzegbaar' },
 } as const

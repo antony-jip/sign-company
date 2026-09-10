@@ -2,7 +2,7 @@ import { Easing } from 'remotion'
 import { Mail, FileSpreadsheet, MessageCircle, CalendarDays, ClipboardList, Calculator, Camera, StickyNote, Phone } from 'lucide-react'
 import { fonts } from '../fonts'
 import { merk } from '../brand'
-import { vlak, veer, ease, lerp } from '../tijd'
+import { vlak, veer, ease, lerp, WOORD_MS, WOORD_STAP_MS } from '../tijd'
 import { Wordmark } from '../kern/Wordmark'
 import { useFormaat } from './formaat'
 import { B0 } from './beats'
@@ -25,6 +25,11 @@ const TOOLS: Tool[] = [
   { label: 'Telefoon', sub: '3 gemiste oproepen', Icon: Phone, kleur: '#1A535C', x: 0.86, y: 0.86, rot: 5, fase: 0.4 },
 ]
 
+// Groep van 9: versnellende stagger (MOTION.md), eerste kaart op toolsOp, de
+// laatste 1300 ms later, daarna staat alles 15 f stil voor de trek begint.
+const STAGGER = [0, 260, 480, 670, 835, 975, 1095, 1205, 1300]
+const POP_MS = 400
+
 const lcg = (seed: number) => { let s = seed; return () => { s = (s * 1664525 + 1013904223) % 4294967296; return s / 4294967296 } }
 const DEELTJES = (() => {
   const rnd = lcg(97); const kleuren = [merk.petrol, merk.flame, merk.wit, merk.petrol, merk.flame]
@@ -36,6 +41,8 @@ export const Opening: React.FC<{ t: number }> = ({ t }) => {
   const midden = { x: F.middenX, y: F.middenY }
   const kaartB = F.naam === '4:3' ? 250 : 270
   const ontsteking = vlak(t, B0.ontstekingOp, B0.ontstekingOp + 500, ease.uit)
+  // Secundaire laag: de gloed van de punt komt 3 f na de punt zelf.
+  const ontstekingGloed = vlak(t, B0.ontstekingOp + 100, B0.ontstekingOp + 600, ease.uit)
   const naInslag = t >= B0.inslagOp
   const puntZicht = vlak(t, B0.puntOp, B0.puntOp + 150)
   const puntP = veer(t, B0.puntOp, { demping: 12, duurMs: 800 })
@@ -49,20 +56,22 @@ export const Opening: React.FC<{ t: number }> = ({ t }) => {
       <div style={{ position: 'absolute', left: midden.x - 700, top: midden.y - 700, width: 1400, height: 1400, borderRadius: '50%', background: `radial-gradient(circle, ${merk.petrol}33 0%, ${merk.petrol}10 40%, transparent 68%)`, opacity: 0.5 + ontsteking * 0.5, transform: `scale(${0.6 + ontsteking * 0.4})` }} />
 
       {!naInslag && TOOLS.map((k, i) => {
-        const popP = veer(t, B0.toolsOp + i * 110, { demping: 13, duurMs: 700 })
-        const popZicht = vlak(t, B0.toolsOp + i * 110, B0.toolsOp + i * 110 + 120)
-        const zweef = Math.sin((t / 1000) * 1.3 + k.fase * Math.PI * 2) * 12
-        const zweefRot = Math.sin((t / 1000) * 0.9 + k.fase * 7) * 2.5
+        const popOp = B0.toolsOp + STAGGER[i]
+        const popP = vlak(t, popOp, popOp + POP_MS, ease.enter)
+        // Ambient: zweven op 2,4 tot 3,3 s per cyclus, nooit stil.
+        const zweef = Math.sin((t / 1000) * 2.1 + k.fase * Math.PI * 2) * 10
+        const zweefX = Math.cos((t / 1000) * 1.6 + k.fase * 5) * 5
+        const zweefRot = Math.sin((t / 1000) * 1.9 + k.fase * 7) * 2
         const trekStart = B0.trekVan + k.fase * 800
         const trek = vlak(t, trekStart, B0.inslagOp, Easing.in(Easing.cubic))
-        const x = lerp(k.x * F.b, midden.x, trek)
-        const y = lerp(k.y * F.h + zweef * (1 - trek), midden.y, trek)
+        const x = lerp(k.x * F.b + zweefX * (1 - trek), midden.x, trek)
+        const y = lerp(k.y * F.h + zweef * (1 - trek) + (1 - popP) * 14, midden.y, trek)
         const rot = lerp(k.rot + zweefRot * (1 - trek), 0, trek)
-        const schaal = lerp(1, 0.3, trek) * (0.7 + popP * 0.3)
+        const schaal = lerp(1, 0.3, trek) * (0.96 + popP * 0.04)
         return (
           <div key={k.label} style={{
             position: 'absolute', left: x - kaartB / 2, top: y - kaartB * 0.36, width: kaartB, height: kaartB * 0.72,
-            opacity: popZicht, transform: `rotate(${rot}deg) scale(${schaal})`,
+            opacity: popP, transform: `rotate(${rot}deg) scale(${schaal})`,
             borderRadius: 22, backgroundColor: merk.wit, boxShadow: '0 2px 4px rgba(70,55,40,.04), 0 24px 48px -12px rgba(120,90,50,.22), 0 60px 90px -40px rgba(120,90,50,.28), 0 0 0 1px rgba(255,255,255,.6) inset',
             display: 'flex', alignItems: 'center', gap: 16, padding: '0 22px',
           }}>
@@ -78,7 +87,10 @@ export const Opening: React.FC<{ t: number }> = ({ t }) => {
       })}
 
       {t >= B0.ontstekingOp && t < B0.puntOp && (
-        <div style={{ position: 'absolute', left: midden.x - 22, top: midden.y - 22, width: 44, height: 44, borderRadius: '50%', backgroundColor: merk.flame, opacity: naInslag ? 1 - vlak(t, B0.inslagOp, B0.inslagOp + 300) : ontsteking, transform: `scale(${0.3 + ontsteking * 0.7 + (naInslag ? 0 : Math.sin(t / 140) * 0.06)})`, boxShadow: `0 0 ${40 + ontsteking * 80}px ${merk.flame}AA` }} />
+        <>
+          <div style={{ position: 'absolute', left: midden.x - 90, top: midden.y - 90, width: 180, height: 180, borderRadius: '50%', background: `radial-gradient(circle, ${merk.flame}AA 0%, ${merk.flame}40 40%, transparent 70%)`, opacity: naInslag ? 1 - vlak(t, B0.inslagOp, B0.inslagOp + 300) : ontstekingGloed, transform: `scale(${0.4 + ontstekingGloed * 0.6 + (naInslag ? 0 : Math.sin(t / 220) * 0.05)})`, filter: 'blur(6px)' }} />
+          <div style={{ position: 'absolute', left: midden.x - 22, top: midden.y - 22, width: 44, height: 44, borderRadius: '50%', backgroundColor: merk.flame, opacity: naInslag ? 1 - vlak(t, B0.inslagOp, B0.inslagOp + 300) : ontsteking, transform: `scale(${0.3 + ontsteking * 0.7 + (naInslag ? 0 : Math.sin(t / 140) * 0.06)})` }} />
+        </>
       )}
 
       {naInslag && (
@@ -97,8 +109,9 @@ export const Opening: React.FC<{ t: number }> = ({ t }) => {
         <div style={{ position: 'absolute', inset: 0, opacity: zicht, transform: `translateY(${-wegP * 260}px) scale(${1 - wegP * 0.35})`, transformOrigin: `${midden.x}px ${midden.y}px` }}>
           <Wordmark y={midden.y} centrumX={midden.x} size={F.wordmarkSize} kleur={merk.petrol} stand={(i) => {
             if (i === 4) return { op: puntZicht, dy: (1 - puntP) * -260, schaal: 1 + pulse * 0.45 }
-            const p = veer(t, B0.lettersOp + i * 280, { demping: 14, duurMs: 800 })
-            return { op: vlak(t, B0.lettersOp + i * 280, B0.lettersOp + i * 280 + 150), dy: (1 - p) * 140 }
+            // Letter-reveal met blur: 10 f per letter, 60 procent overlap.
+            const p = vlak(t, B0.lettersOp + i * WOORD_STAP_MS, B0.lettersOp + i * WOORD_STAP_MS + WOORD_MS, ease.enter)
+            return { op: p, dy: (1 - p) * 24, blur: (1 - p) * 6 }
           }} />
         </div>
       )}

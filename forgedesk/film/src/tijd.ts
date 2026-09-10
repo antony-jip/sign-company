@@ -20,7 +20,21 @@ export const ease = {
   inUit: Easing.bezier(0.5, 0, 0.2, 1),
   veer: Easing.bezier(0.34, 1.56, 0.64, 1),
   glad: Easing.bezier(0.25, 0.46, 0.45, 0.94),
+  // MOTION.md: entree, kleine UI-feedback, verplaatsing, verdwijnen, camera.
+  enter: Easing.bezier(0.16, 1, 0.3, 1),
+  uiUit: Easing.bezier(0.23, 1, 0.32, 1),
+  move: Easing.bezier(0.65, 0, 0.35, 1),
+  exit: Easing.bezier(0.7, 0, 0.84, 0),
+  camera: Easing.bezier(0.22, 0.61, 0.36, 1),
 } as const
+
+// Woord-reveal (MOTION.md): 10 f per woord, 60 procent overlap, dus elk volgend
+// woord start 4 f later. Opacity 0..1, translateY 12..0 px, blur 4..0 px.
+export const WOORD_MS = 333
+export const WOORD_STAP_MS = 133
+export const woordStijl = (p: number, y = 12, blur = 4): React.CSSProperties => ({
+  opacity: p, transform: `translateY(${(1 - p) * y}px)`, filter: p < 1 ? `blur(${(1 - p) * blur}px)` : undefined,
+})
 
 // Voortgang 0..1 van t binnen [van, tot], geklemd, met easing.
 export const vlak = (t: number, van: number, tot: number, e: (x: number) => number = ease.uit) =>

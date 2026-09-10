@@ -24,8 +24,8 @@ type Props = {
   centrumX?: number
   size?: number
   kleur?: string
-  // Per letter: opacity + translateY. Index 4 = de punt.
-  stand: (i: number) => { op: number; dy: number; schaal?: number }
+  // Per letter: opacity + translateY (+ blur voor de reveal). Index 4 = de punt.
+  stand: (i: number) => { op: number; dy: number; schaal?: number; blur?: number }
 }
 
 export const Wordmark: React.FC<Props> = ({ y, centrumX = 540, size = WORD_SIZE, kleur = merk.wit, stand }) => {
@@ -43,6 +43,7 @@ export const Wordmark: React.FC<Props> = ({ y, centrumX = 540, size = WORD_SIZE,
               fontFamily: fonts.kop, fontWeight: 700, fontSize: size, lineHeight: 1.1, letterSpacing: '-0.04em',
               color: isPunt ? merk.flame : kleur,
               opacity: s.op, transform: `translateY(${s.dy}px) scale(${s.schaal ?? 1})`, transformOrigin: isPunt ? '50% 78%' : '50% 60%',
+              filter: s.blur ? `blur(${s.blur}px)` : undefined,
             }}
           >
             {p.teken}

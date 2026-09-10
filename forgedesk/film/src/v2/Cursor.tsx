@@ -1,14 +1,47 @@
-import { useLayoutEffect, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
+import { continueRender, delayRender } from 'remotion'
 import { merk } from '../brand'
 import { ease, vlak, lerp } from '../tijd'
 import { useFormaat } from './formaat'
 
 // De grote Flame-pijl. Doelen zijn data-doel-attributen in de schermen: de
 // cursor meet ze elke frame in de DOM, inclusief cameratransform, dus de
-// positie klopt altijd, ook tijdens een pan. Beweging: premium ease, 8% overshoot.
+// positie klopt altijd, ook tijdens een pan.
+// Timing (MOTION.md): een klik landt op ms + 780, de aankomst 7 f eerder
+// (hover, scale 1,10), druk 4 f op 0,9, dubbele ripple. De reisduur schaalt
+// met sqrt(afstand) tussen 600 en 1000 ms; het vertrek volgt uit de aankomst.
 export type CursorStap = { ms: number; doel: string | { x: number; y: number }; klik?: boolean; dx?: number; dy?: number }
 
 type Positie = { x: number; y: number }
+
+const SVG = 64
+const SCHAAL = SVG / 24
+// Hotspot: de punt van de pijl in de 24-viewBox.
+const TIP = { x: 4, y: 3 }
+const AANKOMST_MS = 700
+const HOVER_MS = 233
+const DRUK_MS = 133
+const KLIK_NA_MS = AANKOMST_MS + 80
+
+// Tijdens een verborgen renderpass van Remotion staat de root op breedte 0 en
+// valt er niets te meten. Deze hook plant dan een nieuwe meting op het volgende
+// animatieframe en houdt de render zolang vast.
+export const useHermeet = () => {
+  const [, zetPoging] = useState(0)
+  const pogingen = useRef(0)
+  return () => {
+    if (pogingen.current > 120) return
+    pogingen.current++
+    const h = delayRender('meet doel')
+    requestAnimationFrame(() => { zetPoging((p) => p + 1); continueRender(h) })
+  }
+}
+
+export const rootMeetbaar = () => {
+  if (typeof document === 'undefined') return false
+  const f = document.querySelector('[data-film-root]')?.getBoundingClientRect()
+  return !!f && f.width > 0
+}
 
 const meet = (doel: string | Positie, dx = 0, dy = 0, filmB = 1080): Positie | null => {
   if (typeof doel !== 'string') return { x: doel.x + dx, y: doel.y + dy }
@@ -30,46 +63,70 @@ const meet = (doel: string | Positie, dx = 0, dy = 0, filmB = 1080): Positie | n
   if (!el || !root) return null
   const r = el.getBoundingClientRect()
   const f = root.getBoundingClientRect()
+  // Tijdens een verborgen renderpass van Remotion staat de root op breedte 0: dan is er niets te meten.
+  if (!(f.width > 0)) return null
   const s = f.width / filmB
   return { x: (r.left + r.width / 2 - f.left) / s + dx, y: (r.top + r.height / 2 - f.top) / s + dy }
 }
 
+// Wanneer een stap klaar is met bewegen: na de druk, of bij aankomst.
+const klaarOp = (stap: CursorStap) => (stap.klik ? stap.ms + KLIK_NA_MS + DRUK_MS : stap.ms + AANKOMST_MS)
+
 export const Cursor: React.FC<{ t: number; stappen: CursorStap[]; zichtVan?: number; zichtTot?: number }> = ({ t, stappen, zichtVan = 0, zichtTot = Infinity }) => {
   const [pos, setPos] = useState<Positie | null>(null)
   const formaat = useFormaat()
-  // Welke twee stappen zijn relevant
+  const hermeet = useHermeet()
   let i = 0
   for (let k = 0; k < stappen.length; k++) if (t >= stappen[k].ms) i = k
   const van = stappen[Math.max(0, i - 1)]
   const naar = stappen[i]
-  const reisDuur = 700
-  const p = i === 0 ? 1 : vlak(t, naar.ms, naar.ms + reisDuur, ease.uit)
+  const aankomst = naar.klik ? naar.ms + KLIK_NA_MS - HOVER_MS : naar.ms + AANKOMST_MS
   useLayoutEffect(() => {
+    if (!rootMeetbaar()) { hermeet(); return }
     const a = meet(van.doel, van.dx, van.dy, formaat.b)
     const b = meet(naar.doel, naar.dx, naar.dy, formaat.b)
     if (!b) { setPos((prev) => (prev === null ? prev : null)); return }
-    const start = a ?? b
-    // Lichte boog en 8% overshoot in de richting van de reis.
-    const over = Math.sin(Math.min(1, p) * Math.PI) * (p > 0.6 ? 0.08 : 0)
-    const x = lerp(start.x, b.x, p) + (b.x - start.x) * over
-    const y = lerp(start.y, b.y, p) + (b.y - start.y) * over - Math.sin(p * Math.PI) * 30
+    const start = i === 0 ? b : (a ?? b)
+    const dxr = b.x - start.x, dyr = b.y - start.y
+    const afstand = Math.hypot(dxr, dyr)
+    // Reisduur uit de afstand, maar nooit eerder vertrekken dan de vorige stap klaar is.
+    const ruimte = i === 0 ? 0 : aankomst - klaarOp(van) - 60
+    const duur = Math.max(200, Math.min(ruimte, Math.max(600, Math.min(1000, 600 * Math.sqrt(afstand / 300)))))
+    const p = i === 0 ? 1 : vlak(t, aankomst - duur, aankomst, ease.move)
+    // Arc-pad: kwadratische bezier, controlepunt loodrecht op de reis, boog omhoog.
+    const boog = Math.min(afstand * 0.16, 80)
+    let px = afstand > 0 ? -dyr / afstand : 0, py = afstand > 0 ? dxr / afstand : 0
+    if (py > 0 || (py === 0 && px < 0)) { px = -px; py = -py }
+    const cx = start.x + dxr / 2 + px * boog, cy = start.y + dyr / 2 + py * boog
+    const q = 1 - p
+    const x = q * q * start.x + 2 * q * p * cx + p * p * b.x
+    const y = q * q * start.y + 2 * q * p * cy + p * p * b.y
     // Alleen bijwerken als de positie echt anders is, anders blijft React lussen.
     setPos((prev) => (prev && Math.abs(prev.x - x) < 0.05 && Math.abs(prev.y - y) < 0.05 ? prev : { x, y }))
   })
-  const zicht = Math.min(vlak(t, zichtVan, zichtVan + 250), Number.isFinite(zichtTot) ? 1 - vlak(t, zichtTot - 250, zichtTot) : 1)
+  const zicht = Math.min(vlak(t, zichtVan, zichtVan + 250), Number.isFinite(zichtTot) ? 1 - vlak(t, zichtTot - 133, zichtTot, ease.exit) : 1)
   if (!pos || zicht <= 0) return null
-  const klikOp = naar.klik ? naar.ms + reisDuur + 80 : -1
-  const klikP = klikOp > 0 ? vlak(t, klikOp, klikOp + 500, ease.uit) : 1
-  const drukt = klikOp > 0 && t >= klikOp && t < klikOp + 140
+  const klikOp = naar.klik ? naar.ms + KLIK_NA_MS : -1
+  // Hover 1,10 bij aankomst, druk 0,9 gedurende 4 f, dan terug naar 1.
+  let schaal = 1
+  if (klikOp > 0) {
+    const hover = vlak(t, aankomst, aankomst + 100, ease.uiUit)
+    const druk = t >= klikOp && t < klikOp + DRUK_MS ? 1 : 0
+    const los = vlak(t, klikOp + DRUK_MS, klikOp + DRUK_MS + 167, ease.uiUit)
+    schaal = t < klikOp ? lerp(1, 1.1, hover) : druk ? 0.9 : lerp(0.9, 1, los)
+  }
+  // Dubbele ripple: 10 f van 0,3 naar 1,9, de tweede 2 f later en kleiner.
+  const rip1 = klikOp > 0 ? vlak(t, klikOp, klikOp + 333, ease.uiUit) : 1
+  const rip2 = klikOp > 0 ? vlak(t, klikOp + 67, klikOp + 400, ease.uiUit) : 1
+  const ring = (p: number, basis: number, sterkte: number, dikte: number) => {
+    const s = lerp(0.3, 1.9, p) * basis
+    return <div style={{ position: 'absolute', left: -s / 2, top: -s / 2, width: s, height: s, borderRadius: '50%', border: `${dikte}px solid ${merk.flame}`, opacity: (1 - p) * sterkte }} />
+  }
   return (
     <div style={{ position: 'absolute', left: pos.x, top: pos.y, width: 0, height: 0, zIndex: 80, pointerEvents: 'none', opacity: zicht }}>
-      {klikOp > 0 && t >= klikOp && klikP < 1 && (
-        <>
-          <div style={{ position: 'absolute', left: -(10 + klikP * 70), top: -(10 + klikP * 70), width: 20 + klikP * 140, height: 20 + klikP * 140, borderRadius: '50%', border: `${4 - klikP * 3}px solid ${merk.flame}`, opacity: 1 - klikP }} />
-          <div style={{ position: 'absolute', left: -(6 + klikP * 40), top: -(6 + klikP * 40), width: 12 + klikP * 80, height: 12 + klikP * 80, borderRadius: '50%', border: `2px solid ${merk.flame}`, opacity: (1 - klikP) * 0.6 }} />
-        </>
-      )}
-      <svg width={64} height={64} viewBox="0 0 24 24" style={{ position: 'absolute', left: -6, top: -4, transform: `scale(${drukt ? 0.88 : 1})`, transformOrigin: '6px 4px', filter: 'drop-shadow(0 10px 16px rgba(0,0,0,0.28))' }}>
+      {klikOp > 0 && t >= klikOp && rip1 < 1 && ring(rip1, 56, 1, 4 - rip1 * 2.5)}
+      {klikOp > 0 && t >= klikOp + 67 && rip2 < 1 && ring(rip2, 40, 0.6, 2)}
+      <svg width={SVG} height={SVG} viewBox="0 0 24 24" style={{ position: 'absolute', left: -TIP.x * SCHAAL, top: -TIP.y * SCHAAL, transform: `scale(${schaal})`, transformOrigin: `${TIP.x * SCHAAL}px ${TIP.y * SCHAAL}px`, filter: 'drop-shadow(0 10px 16px rgba(0,0,0,0.28))' }}>
         <path d="M5 3l14 9-6.5 1.4L16 20l-3 1.4-3.5-6.6L5 19z" fill={merk.flame} stroke="#fff" strokeWidth={1.6} strokeLinejoin="round" />
       </svg>
     </div>
