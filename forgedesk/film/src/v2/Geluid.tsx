@@ -10,7 +10,7 @@ export const Geluid: React.FC<{ klanken: Klank[]; muziek?: boolean; muziekVolume
   <>
     {muziek && (
       <Sequence from={0} durationInFrames={msNaarFrames(totMs)} name="muziek">
-        <Audio src={staticFile('audio/muziek-hoofd.mp3')} volume={(f) => {
+        <Audio src={staticFile('audio/muziek-a.mp3')} volume={(f) => {
           // Zacht in, zacht uit aan het eind van de film.
           const tot = msNaarFrames(totMs)
           const inP = Math.min(1, f / 30)

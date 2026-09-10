@@ -12,7 +12,7 @@ export const COPY = {
   offerte: { tekst: 'Je marge zie je vóór je verstuurt', kernwoord: 'marge', uitleg: 'Inkoop, Verkoop, Marge per regel, dan Verstuur via portaal.' },
   portaal: { tekst: 'Klant tekent. Jij ziet het meteen', kernwoord: 'tekent', uitleg: 'Geen inlog. Naam, handtekening, Bevestigen. Project op Akkoord klant.' },
   montage: { tekst: 'Eén sleep. De montage staat', kernwoord: 'staat', uitleg: 'De kaart landt op donderdag, project springt naar Ingepland.' },
-  werkbon: { tekst: "Uren en foto's. Niets overtypen", kernwoord: 'Niets overtypen', uitleg: 'Inklokken, de klok loopt. Foto staat in het project.' },
+  werkbon: { tekst: 'Werkbon op locatie. Niets overtypen', kernwoord: 'Niets overtypen', uitleg: 'Foto en handtekening, meteen in het project.' },
   mailUitProject: { tekst: 'Tekening erbij. Zonder zoeken', kernwoord: 'Zonder zoeken', uitleg: 'Uit project pakt de tekening, Opvolgen staat aan.' },
   factuur: { tekst: 'Factuur eruit. Betaald', kernwoord: 'Betaald', uitleg: 'Versturen, klant klikt Betaal nu, factuur springt op betaald.' },
   alles: { tekst: 'Eén project. Alles erin', kernwoord: 'Alles erin' },

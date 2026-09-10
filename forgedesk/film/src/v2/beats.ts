@@ -19,29 +19,34 @@ export const B = {
   // Offerte: regels, calculatie open en overnemen, verstuur via portaal
   klikOfferteMaken: 24100, editorCamOp: klik(24100) + 200, editorOp: 25100, regelsOp: 25400, offerteBelofteOp: 25500,
   klikCalculatie: 27400, calculatieOp: klik(27400) + 200, klikCalculatieSluiten: 29300, calculatieDichtOp: klik(29300),
-  klikVerstuur: 30400, keuzeOp: klik(30400) + 180, klikPortaal: 31400, flapOp: klik(31400) + 220, offerteBelofteUit: 32100,
-  terugCockpit1: 32400, cockpitLand1: 33500, inReviewOp: 33600, portaalCamOp: 34600,
+  // Collega-check: acties-menu, Laten checken, Check vragen, melding bij Sanne, akkoord
+  klikMenu: 29800, menuOp: klik(29800) + 120, klikLatenChecken: 30500, checkOp: klik(30500) + 150,
+  klikCheckVragen: 31600, checkVraagOp: klik(31600) + 150, meldingSanneOp: 32200, checkAkkoordOp: 33300, meldingAkkoordOp: 33400,
+  klikVerstuur: 33800, keuzeOp: klik(33800) + 180, klikPortaal: 34800, flapOp: klik(34800) + 220, offerteBelofteUit: 35500,
+  terugCockpit1: 35800, cockpitLand1: 36900, inReviewOp: 37000, portaalCamOp: 38000,
   // Portaal
-  portaalBelofteOp: 35100, klikBekijken: 35800, publiekOp: klik(35800) + 250, naamOp: klik(35800) + 700,
-  tekenOp: 37400, vinkOp: 38900, klikBevestig: 39300, geaccepteerdOp: klik(39300) + 340, portaalBelofteUit: 40300,
-  stipOp: 40200, terugCockpit2: 40500, cockpitLand2: 41600, toastAkkoordOp: 41700, akkoordKlantOp: 42100,
-  proefEind: 43700,
+  portaalBelofteOp: 38500, klikBekijken: 39200, publiekOp: klik(39200) + 250, naamOp: klik(39200) + 700,
+  tekenOp: 40800, vinkOp: 42300, klikBevestig: 42700, geaccepteerdOp: klik(42700) + 340, portaalBelofteUit: 43700,
+  stipOp: 43600, terugCockpit2: 43900, cockpitLand2: 45000, toastAkkoordOp: 45100, akkoordKlantOp: 45500,
+  proefEind: 47100,
 } as const
 
 // Tweede helft: montage, klokken en werkbon, mail uit het project, factuur,
 // pull-back, end card.
 export const B2 = {
-  klikMontage: 44300, planningCamOp: klik(44300) + 250, sleepOp: 46200, landOp: 47100, montageBelofteOp: 45500, montageBelofteUit: 48200,
-  terugCockpit3: 48100, cockpitLand3: 49200, ingeplandOp: 49300,
-  klikInklokken: 49900, ingekloktOp: klik(49900), telefoonCamOp: 50800, klikNaFoto: 52400, fotoOp: klik(52400) + 450,
-  werkbonBelofteOp: 51400, werkbonBelofteUit: 54900, terugCockpit4: 54600, cockpitLand4: 55700, fotoPortaalOp: 55800,
-  klikMailContact: 56300, composerOp: klik(56300) + 150, typOp: 57300, klikUitProject: 59300, bijlageOp: klik(59300) + 300,
-  opvolgenOp: 60200, klikVerzenden: 60600, verzondenOp: klik(60600) + 200, mailBelofteOp: 57100, mailBelofteUit: 61400, composerDichtOp: 61600,
-  klikFinancieel: 62000, financieelOp: klik(62000) + 200, klikFactuurMaken: 62900, factuurOp: klik(62900) + 350,
-  klikFactuurVerstuur: 64200, factuurVerstuurdOp: klik(64200) + 220, toastBetaaldOp: 65600, betaaldOp: 66000, teFacturerenOp: 66200,
-  factuurBelofteOp: 63400, factuurBelofteUit: 67300,
+  klikMontage: 47700, planningCamOp: klik(47700) + 250, sleepOp: 49600, landOp: 50500, montageBelofteOp: 48900, montageBelofteUit: 51600,
+  terugCockpit3: 51500, cockpitLand3: 52600, ingeplandOp: 52700, 
+  // Werkbon vanuit het project: Acties, Werkbon maken, dialoog, aangemaakt
+  klikWerkbon: 53300, werkbonDialoogOp: klik(53300) + 150, klikWerkbonMaken: 54800, werkbonKlaarOp: klik(54800) + 200,
+  telefoonCamOp: 56000, klikNaFoto: 57600, fotoOp: klik(57600) + 450,
+  werkbonBelofteOp: 56600, werkbonBelofteUit: 60100, terugCockpit4: 59800, cockpitLand4: 60900, fotoPortaalOp: 61000,
+  klikMailContact: 61500, composerOp: klik(61500) + 150, typOp: 62500, klikUitProject: 64500, kiezerOp: klik(64500) + 150, klikKiesTekening: 65500, kiesOp: klik(65500), bijlageOp: klik(65500) + 450,
+  opvolgenOp: 66400, klikVerzenden: 66800, verzondenOp: klik(66800) + 200, mailBelofteOp: 62300, mailBelofteUit: 67600, composerDichtOp: 67800,
+  klikFinancieel: 68200, financieelOp: klik(68200) + 200, klikFactuurMaken: 69100, factuurOp: klik(69100) + 350,
+  klikFactuurVerstuur: 70400, factuurVerstuurdOp: klik(70400) + 220, toastBetaaldOp: 71800, betaaldOp: 72200, teFacturerenOp: 72400,
+  factuurBelofteOp: 69600, factuurBelofteUit: 73500,
   // Pull-back naar alle schermen, de gevel brandt, slotregel, end card
-  pullbackOp: 67500, constellatieOp: 68900, allesBelofteOp: 69700, gevelBrandtOp: 70500, allesBelofteUit: 72900,
-  eindkaartOp: 72700, lettersOp: 73000, puntOp: 74300, pulseOp: 75100, regelOp: 75500, urlOp: 76300,
-  eind: 79600,
+  pullbackOp: 73700, constellatieOp: 75100, gevelBrandtOp: 76300, logoOp: 78000, allesBelofteOp: 78600, allesBelofteUit: 81600,
+  eindkaartOp: 81400, lettersOp: 81700, puntOp: 82600, pulseOp: 83400, regelOp: 83800, urlOp: 84600,
+  eind: 88000,
 } as const

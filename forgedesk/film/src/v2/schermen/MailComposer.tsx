@@ -1,14 +1,16 @@
-import { ExternalLink, X, Bold, Italic, Underline, List, Link as LinkIcon, Paperclip, FileText, Plus, ChevronDown, Send, Check } from 'lucide-react'
-import { project, klant, contact, portaalBedrijf } from '../../mockData'
+import { ExternalLink, X, Bold, Italic, Underline, List, Link as LinkIcon, Paperclip, FileText, Image as ImageIcon, Receipt, Plus, ChevronDown, Send, Check } from 'lucide-react'
+import { project, klant, contact, offerte, portaalBedrijf } from '../../mockData'
 import { typ } from '../../kern/Typ'
-import { vlak, veer } from '../../tijd'
+import { vlak, veer, ease } from '../../tijd'
 
 // Het zijpaneel "Nieuw bericht" dat in de app over het projectenbord schuift
 // (ProjectMailDialog + ProjectMailComposer, variant paneel). Die hangen aan
 // de mailstore en Supabase, vandaar deze nabouw met dezelfde klassen.
 export type ComposerStand = {
   typOp: number        // ms waarop de tekst begint te tikken
-  bijlageOp: number    // ms waarop de tekening als bijlage hangt
+  kiezerOp?: number    // ms waarop de keuzelijst "Uit project" opent
+  kiesOp?: number      // ms waarop de tekening in de lijst gekozen wordt
+  bijlageOp: number    // ms waarop de tekening als bijlage hangt (einde van de vlucht)
   opvolgenOp: number   // ms waarop Opvolgen aan gaat
   verzendOp: number    // ms waarop de mail verzonden is
 }
@@ -20,6 +22,25 @@ const BERICHT = 'Beste Pieter,\n\nDonderdag 24 sep om 08:00 komen we monteren. D
 
 const opmaakKnop = 'h-7 w-7 rounded-md flex items-center justify-center text-foreground/70'
 const chipKnop = 'flex items-center gap-1.5 h-8 pl-2.5 pr-2 rounded-lg text-[11px] font-semibold border bg-white text-petrol border-petrol/30'
+const chipKnopOpen = 'flex items-center gap-1.5 h-8 pl-2.5 pr-2 rounded-lg text-[11px] font-semibold border bg-petrol text-white border-petrol shadow-[0_2px_8px_rgba(26,83,92,0.25)]'
+
+// De keuzelijst van ProjectMailComposer (cats): alleen de groepen die op dit
+// moment in het project iets bevatten. Bestanden eerst, zoals in de app.
+const KIES_GROEPEN: { label: string; items: { naam: string; icoon: React.ReactNode; doel?: string }[] }[] = [
+  { label: 'Bestanden', items: [
+    { naam: 'Tekening gevel.pdf', icoon: <FileText className="h-3.5 w-3.5 text-[#C03A18]" />, doel: 'uit-project-tekening' },
+    { naam: 'gevel-showroom.jpg', icoon: <ImageIcon className="h-3.5 w-3.5 text-[#3A6B8C]" /> },
+  ] },
+  { label: 'Offertes', items: [{ naam: `Offerte ${offerte.nummer}`, icoon: <Receipt className="h-3.5 w-3.5" style={{ color: '#3A6B8C' }} /> }] },
+  { label: 'Opdrachtbevestigingen', items: [{ naam: `Opdrachtbevestiging ${offerte.nummer}`, icoon: <Receipt className="h-3.5 w-3.5" style={{ color: '#C03A18' }} /> }] },
+]
+
+// Vlucht van de chip: van het lijstitem (in de popover boven de knop Uit
+// project) naar zijn plek in de bijlagerij. Vaste offsets, want beide staan
+// in verschillende containers; gemeten op de stills.
+const VLUCHT_MS = 400
+const VLUCHT_DX = 288
+const VLUCHT_DY = -162
 
 export const MailComposer: React.FC<{ t: number; stand: ComposerStand }> = ({ t, stand }) => {
   const tekst = typ(BERICHT, t, stand.typOp)
@@ -29,6 +50,34 @@ export const MailComposer: React.FC<{ t: number; stand: ComposerStand }> = ({ t,
   const verzonden = t >= stand.verzendOp
   const bijlagePop = veer(t, stand.bijlageOp, { demping: 16, duurMs: 600 })
   const bijlageZicht = vlak(t, stand.bijlageOp, stand.bijlageOp + 180)
+
+  // Keuzelijst: open met een veer vanaf de knop, dicht kort na de keuze.
+  const metKiezer = stand.kiezerOp !== undefined && stand.kiesOp !== undefined
+  const kiezerOp = stand.kiezerOp ?? Infinity
+  const kiesOp = stand.kiesOp ?? Infinity
+  const kiezerDichtOp = kiesOp + 120
+  const kiezerOpen = metKiezer && t >= kiezerOp && t < kiezerDichtOp + 220
+  const kiezerPop = veer(t, kiezerOp, { demping: 15, duurMs: 500 })
+  const kiezerIn = vlak(t, kiezerOp, kiezerOp + 150)
+  const kiezerUit = vlak(t, kiezerDichtOp, kiezerDichtOp + 220, ease.in)
+  const kiezerZicht = kiezerIn * (1 - kiezerUit)
+  const gekozen = metKiezer && t >= kiesOp
+  const gekozenFlits = vlak(t, kiesOp, kiesOp + 300)
+  const knopActief = metKiezer && t >= kiezerOp && t < kiezerDichtOp
+
+  // Vlucht van de chip; de schaduw komt 2 frames later aan.
+  const vluchtVan = stand.bijlageOp - VLUCHT_MS
+  const vlucht = metKiezer && t >= vluchtVan && t < stand.bijlageOp
+  const vluchtP = vlak(t, vluchtVan, stand.bijlageOp)
+  const schaduwP = vlak(t, vluchtVan + 67, stand.bijlageOp + 67)
+  const schaduw = 1 - schaduwP
+  const chipRij = metKiezer ? t >= kiezerOp : bijlage
+  const chipZichtbaar = metKiezer ? t >= vluchtVan : bijlage
+  const chipStijl: React.CSSProperties = metKiezer
+    ? vlucht
+      ? { transform: `translate(${VLUCHT_DX * (1 - vluchtP)}px, ${VLUCHT_DY * (1 - vluchtP)}px) scale(${0.94 + vluchtP * 0.06})`, transformOrigin: 'left center', position: 'relative', zIndex: 60 }
+      : { boxShadow: schaduw > 0.01 ? `0 ${10 * schaduw}px ${28 * schaduw}px rgba(13,52,60,${0.22 * schaduw})` : undefined, position: 'relative', zIndex: 60 }
+    : { opacity: bijlageZicht, transform: `scale(${0.92 + bijlagePop * 0.08})`, transformOrigin: 'left center' }
   return (
     <div className="bg-card text-foreground flex flex-col border-l border-border shadow-[-12px_0_32px_rgba(13,52,60,0.10)]" style={{ width: PANEEL_B, height: '100%', fontFamily: 'Inter, sans-serif', overflow: 'hidden' }}>
       {/* Kop, ProjectMailDialog */}
@@ -84,14 +133,16 @@ export const MailComposer: React.FC<{ t: number; stand: ComposerStand }> = ({ t,
           </div>
         </div>
 
-        {bijlage && (
-          <div className="flex flex-wrap gap-1.5 px-3 pt-2 pb-1" style={{ opacity: bijlageZicht, transform: `scale(${0.92 + bijlagePop * 0.08})`, transformOrigin: 'left center' }}>
-            <span className="inline-flex items-center gap-1.5 pl-1.5 pr-1 py-1 rounded-lg border max-w-full" style={{ borderColor: 'rgba(26,83,92,0.25)', backgroundColor: 'rgba(26,83,92,0.05)' }}>
-              <FileText className="h-3.5 w-3.5 text-[#C03A18] flex-shrink-0" />
-              <span className="text-[11px] font-medium text-foreground truncate">Tekening gevel.pdf</span>
-              <span className="text-[9px] font-mono tabular-nums text-muted-foreground">· 1,2 MB</span>
-              <span className="h-4 w-4 rounded flex items-center justify-center text-muted-foreground"><X className="h-3 w-3" /></span>
-            </span>
+        {chipRij && (
+          <div className="flex flex-wrap gap-1.5 px-3 pt-2 pb-1" style={{ minHeight: 37, ...(metKiezer ? {} : chipStijl) }}>
+            {chipZichtbaar && (
+              <span className="inline-flex items-center gap-1.5 pl-1.5 pr-1 py-1 rounded-lg border max-w-full" style={{ borderColor: 'rgba(26,83,92,0.25)', backgroundColor: vlucht ? '#F4F7F7' : 'rgba(26,83,92,0.05)', ...(metKiezer ? chipStijl : {}) }}>
+                <FileText className="h-3.5 w-3.5 text-[#C03A18] flex-shrink-0" />
+                <span className="text-[11px] font-medium text-foreground truncate">Tekening gevel.pdf</span>
+                <span className="text-[9px] font-mono tabular-nums text-muted-foreground">· 1,2 MB</span>
+                <span className="h-4 w-4 rounded flex items-center justify-center text-muted-foreground"><X className="h-3 w-3" /></span>
+              </span>
+            )}
           </div>
         )}
       </div>
@@ -110,7 +161,37 @@ export const MailComposer: React.FC<{ t: number; stand: ComposerStand }> = ({ t,
             <span className={opmaakKnop}><Paperclip className="h-3.5 w-3.5" /></span>
           </div>
           <span className={chipKnop}><FileText className="h-3.5 w-3.5" /><span className="whitespace-nowrap">Template</span><ChevronDown className="h-3 w-3" /></span>
-          <span data-doel="uit-project" className={chipKnop}><Plus className="h-3.5 w-3.5" /><span className="whitespace-nowrap">Uit project</span><ChevronDown className="h-3 w-3" /></span>
+          <div className="relative">
+            <span data-doel="uit-project" className={knopActief ? chipKnopOpen : chipKnop}><Plus className="h-3.5 w-3.5" /><span className="whitespace-nowrap">Uit project</span><ChevronDown className="h-3 w-3" style={{ transform: knopActief ? 'rotate(180deg)' : undefined }} /></span>
+            {kiezerOpen && (
+              <div className="absolute bottom-full mb-2 left-0 z-50 w-[320px] rounded-2xl border border-border bg-white shadow-[0_12px_40px_rgba(0,0,0,0.16)] overflow-hidden" style={{ opacity: kiezerZicht, transform: `translateY(${(1 - kiezerPop) * 6}px) scale(${0.96 + kiezerPop * 0.04 - kiezerUit * 0.02})`, transformOrigin: 'left bottom' }}>
+                <div className="px-3 py-2 border-b border-border/60 bg-gradient-to-b from-petrol/[0.05] to-transparent">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-petrol">Toevoegen vanuit project</span>
+                </div>
+                <div className="py-1">
+                  {KIES_GROEPEN.map((g) => (
+                    <div key={g.label}>
+                      <div className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground bg-white/95">{g.label}</div>
+                      {g.items.map((it) => {
+                        const dit = gekozen && it.doel === 'uit-project-tekening'
+                        return (
+                          <div key={it.naam} data-doel={it.doel} className="w-full flex items-center gap-2.5 px-3 py-1.5 text-left" style={{ backgroundColor: dit ? `rgba(26,83,92,${0.05 + (1 - gekozenFlits) * 0.11})` : undefined }}>
+                            <span className="h-7 w-7 rounded-md border border-border bg-white flex items-center justify-center flex-shrink-0">{it.icoon}</span>
+                            <span className="flex-1 min-w-0 text-[12px] text-foreground truncate">{it.naam}</span>
+                            {dit ? (
+                              <span className="h-5 w-5 rounded-full bg-petrol flex items-center justify-center flex-shrink-0"><Check className="h-3 w-3 text-white" /></span>
+                            ) : (
+                              <span className="h-5 w-5 rounded-full border border-border flex items-center justify-center flex-shrink-0 text-muted-foreground"><Plus className="h-3 w-3" /></span>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-2 w-full justify-between pt-2 border-t border-border/60">
           <span className={`inline-flex items-center gap-2 h-8 px-2.5 rounded-lg text-[12px] font-medium border ${opvolgen ? 'bg-petrol/[0.06] text-petrol border-petrol/25' : 'text-foreground/70 border-transparent'}`}>

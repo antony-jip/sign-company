@@ -9,7 +9,7 @@ import { TeamCard } from '@/components/projects/cockpit/TeamCard'
 import { ActiesCard } from '@/components/projects/cockpit/ActiesCard'
 import type { ActivityEvent } from '@/components/projects/cockpit/ActiviteitFeed'
 import { AppVenster } from './DesktopChrome'
-import { project, klant, contact, offerte, montage, medewerkers, portaalItemOfferte, portaalItemFoto, portaalItemFactuur } from '../mockData'
+import { project, klant, contact, offerte, offerteItems, montage, medewerkers, portaalItemOfferte, portaalItemFoto, portaalItemFactuur, werkbonNummer } from '../mockData'
 import { euro } from '../kern/Typ'
 import { vlak, veer, ease } from '../tijd'
 import { MailComposer, PANEEL_B } from './schermen/MailComposer'
@@ -28,7 +28,8 @@ export type CockpitStand = {
   tab?: 'Overzicht' | 'Werkbon' | 'Financieel' | 'E-mail' | 'Notities'
   bestanden?: string[]
   meldingen?: number
-  composer?: { op: number; dichtOp: number; typOp: number; bijlageOp: number; opvolgenOp: number; verzendOp: number }
+  composer?: { op: number; dichtOp: number; typOp: number; bijlageOp: number; opvolgenOp: number; verzendOp: number; kiezerOp?: number; kiesOp?: number }
+  werkbon?: { dialoogOp: number; klaarOp: number }
   // Blokken die nog niet zichtbaar zijn (openvouwen), ms waarop elk opkomt.
   blokOp?: Partial<Record<'kop' | 'fase' | 'briefing' | 'grid' | 'portaal' | 'tijd' | 'klant' | 'team' | 'acties', number>>
 }
@@ -104,8 +105,41 @@ export const Cockpit: React.FC<{ t: number; stand: CockpitStand }> = ({ t, stand
           const x = (1 - inP) * PANEEL_B + uitP * PANEEL_B
           return (
             <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: PANEEL_B, zIndex: 30, transform: `translateX(${x}px)`, boxShadow: '-24px 0 60px -20px rgba(26,83,92,0.25)' }}>
-              <MailComposer t={t} stand={{ typOp: c.typOp, bijlageOp: c.bijlageOp, opvolgenOp: c.opvolgenOp, verzendOp: c.verzendOp }} />
+              <MailComposer t={t} stand={{ typOp: c.typOp, bijlageOp: c.bijlageOp, opvolgenOp: c.opvolgenOp, verzendOp: c.verzendOp, kiezerOp: c.kiezerOp, kiesOp: c.kiesOp }} />
             </div>
+          )
+        })()}
+        {stand.werkbon && t >= stand.werkbon.dialoogOp && t < stand.werkbon.klaarOp + 2600 && (() => {
+          const w = stand.werkbon
+          const open = t < w.klaarOp
+          const inP = veer(t, w.dialoogOp, { demping: 16, duurMs: 600 })
+          const zicht = open ? vlak(t, w.dialoogOp, w.dialoogOp + 200) : 1 - vlak(t, w.klaarOp, w.klaarOp + 250)
+          const toastP = veer(t, w.klaarOp + 200, { demping: 16, duurMs: 600 })
+          return (
+            <>
+              {open || t < w.klaarOp + 250 ? (
+                <div style={{ position: 'absolute', inset: 0, zIndex: 40, backgroundColor: 'rgba(0,0,0,0.30)', backdropFilter: 'blur(3px)', opacity: zicht, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div className="bg-card rounded-modal shadow-elevation-lg w-[560px] p-6" style={{ transform: `translateY(${(1 - inP) * 24}px) scale(${0.96 + inP * 0.04})` }}>
+                    <h2 className="font-heading text-[18px] font-bold text-foreground">Werkbon maken</h2>
+                    <p className="text-[13px] text-muted-foreground mt-1">Werkbon voor montage "{montage.titel}"</p>
+                    <div className="mt-4 rounded-lg border border-border px-3 py-2 flex items-center justify-between text-[13px]"><span className="text-foreground">{offerte.nummer} · {offerte.titel}</span><ChevronDown className="h-4 w-4 text-muted-foreground" /></div>
+                    <label className="mt-4 flex items-center gap-2.5 text-sm font-medium text-foreground"><span className="h-4 w-4 rounded border border-petrol bg-petrol flex items-center justify-center"><ClipboardCheck className="h-3 w-3 text-white" /></span>Alles selecteren (3 items)</label>
+                    <div className="mt-2 divide-y divide-border rounded-lg border border-border">
+                      {offerteItems.map((r) => <div key={r.id} className="px-3 py-2 flex items-center gap-2.5 text-[13px] text-foreground"><span className="h-4 w-4 rounded border border-petrol bg-petrol flex items-center justify-center"><ClipboardCheck className="h-3 w-3 text-white" /></span>{r.beschrijving}</div>)}
+                    </div>
+                    <div className="mt-5 flex items-center justify-end gap-2">
+                      <span className="h-9 px-4 rounded-lg border border-border text-[13px] font-medium text-foreground inline-flex items-center">Terug</span>
+                      <span data-doel="werkbon-maken" className="h-9 px-4 rounded-lg bg-flame text-white text-[13px] font-semibold inline-flex items-center gap-1.5"><ClipboardCheck className="h-3.5 w-3.5" />Werkbon maken (3)</span>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+              {t >= w.klaarOp + 200 && (
+                <div className="absolute z-40 rounded-xl bg-card px-4 py-3 text-[13px] font-medium text-foreground shadow-[0_12px_32px_rgba(120,90,50,0.16)] flex items-center gap-2" style={{ left: '50%', bottom: 28, transform: `translateX(-50%) translateY(${(1 - toastP) * 20}px)`, opacity: vlak(t, w.klaarOp + 200, w.klaarOp + 400) * (1 - vlak(t, w.klaarOp + 2200, w.klaarOp + 2600)), border: '0.5px solid hsl(var(--border))' }}>
+                  <ClipboardCheck className="h-4 w-4" style={{ color: '#3A7D52' }} />Werkbon {werkbonNummer} aangemaakt met 3 items
+                </div>
+              )}
+            </>
           )
         })()}
         {/* Kop */}
@@ -223,7 +257,12 @@ export const Cockpit: React.FC<{ t: number; stand: CockpitStand }> = ({ t, stand
               <KlantCard klant={klant} project={{ ...project, contactpersoon_id: contact.id }} contactpersonen={[contact]} onContactpersoonChange={noop} onContactpersoonAdd={noop} onMail={() => {}} />
             </Blok>
             <Blok t={t} op={op.team}><TeamCard teamLeden={['mw-2']} medewerkers={medewerkers} onChange={noop} /></Blok>
-            <Blok t={t} op={op.acties}><ActiesCard onOfferte={() => {}} onWerkbon={() => {}} onMontage={() => {}} onFactuur={() => {}} onPakbon={() => {}} onBevestiging={() => {}} onTePlannen={() => {}} /></Blok>
+            <Blok t={t} op={op.acties}>
+              <div style={{ position: 'relative' }}>
+                <ActiesCard onOfferte={() => {}} onWerkbon={() => {}} onMontage={() => {}} onFactuur={() => {}} onPakbon={() => {}} onBevestiging={() => {}} onTePlannen={() => {}} />
+                <span data-doel="acties-werkbon" style={{ position: 'absolute', left: '74%', top: '38%', width: 1, height: 1 }} />
+              </div>
+            </Blok>
           </div>
         </div>
       </div>

@@ -3,20 +3,66 @@
   "model_sfx": "fal-ai/elevenlabs/sound-effects/v2",
   "muziek": [
     {
-      "id": "muziek-hoofd",
-      "bestand": "muziek-hoofd.mp3",
-      "omschrijving": "Onderlaag voor de hele film. Rustig, premium, warm, licht tempo. Geen zang.",
-      "prompt": "Calm premium tech product film underscore, warm and confident, soft felt piano with a gentle pulsing synth bass and light percussion, 100 bpm, minimal, uplifting but restrained, builds subtly toward a satisfying final chord, no vocals, instrumental"
+      "id": "muziek-a",
+      "bestand": "muziek-a.mp3",
+      "omschrijving": "Vlot en zelfverzekerd, indie-electronic, 118 bpm.",
+      "prompt": "Upbeat modern indie-electronic product film track, 118 bpm, bright plucked guitar riff, warm synth bass, crisp driving drums with claps, optimistic and confident, builds energy every 8 bars, clean modern mix like a tech launch video, no vocals, instrumental"
+    },
+    {
+      "id": "muziek-b",
+      "bestand": "muziek-b.mp3",
+      "omschrijving": "Punchy, moderne pop-tech, 124 bpm, meer drive.",
+      "prompt": "Punchy energetic pop-tech instrumental for a fast product demo, 124 bpm, four-on-the-floor kick, snappy claps, bright arpeggiated synths, funky bass, big confident feel, satisfying final hit, no vocals, instrumental"
     }
   ],
   "sfx": [
-    { "id": "klik", "bestand": "klik.mp3", "duur": 0.6, "prompt": "Soft single UI click, gentle mechanical mouse click, clean, dry, no reverb" },
-    { "id": "zwiep", "bestand": "zwiep.mp3", "duur": 1.0, "prompt": "Smooth soft cinematic whoosh, air swish for a camera move, subtle, low, short tail" },
-    { "id": "flap", "bestand": "flap.mp3", "duur": 0.6, "prompt": "Single split-flap display tile flipping, one crisp mechanical flip, close-miked" },
-    { "id": "ding", "bestand": "ding.mp3", "duur": 1.2, "prompt": "Soft notification chime, two warm marimba notes rising, gentle, short" },
-    { "id": "typ", "bestand": "typ.mp3", "duur": 2.5, "prompt": "Fast quiet keyboard typing on a laptop, soft keys, steady rhythm" },
-    { "id": "pen", "bestand": "pen.mp3", "duur": 2.0, "prompt": "Pen signing on paper, quick handwritten signature stroke, close-miked, soft" },
-    { "id": "inslag", "bestand": "inslag.mp3", "duur": 1.5, "prompt": "Deep soft cinematic impact with a warm bloom, low thud, premium, short tail" },
-    { "id": "landing", "bestand": "landing.mp3", "duur": 1.2, "prompt": "Small object landing on a wooden desk with a satisfying soft thud, close-miked" }
+    {
+      "id": "klik",
+      "bestand": "klik.mp3",
+      "duur": 0.6,
+      "prompt": "Soft single UI click, gentle mechanical mouse click, clean, dry, no reverb"
+    },
+    {
+      "id": "zwiep",
+      "bestand": "zwiep.mp3",
+      "duur": 1.0,
+      "prompt": "Smooth soft cinematic whoosh, air swish for a camera move, subtle, low, short tail"
+    },
+    {
+      "id": "flap",
+      "bestand": "flap.mp3",
+      "duur": 0.6,
+      "prompt": "Single split-flap display tile flipping, one crisp mechanical flip, close-miked"
+    },
+    {
+      "id": "ding",
+      "bestand": "ding.mp3",
+      "duur": 1.2,
+      "prompt": "Soft notification chime, two warm marimba notes rising, gentle, short"
+    },
+    {
+      "id": "typ",
+      "bestand": "typ.mp3",
+      "duur": 2.5,
+      "prompt": "Fast quiet keyboard typing on a laptop, soft keys, steady rhythm"
+    },
+    {
+      "id": "pen",
+      "bestand": "pen.mp3",
+      "duur": 2.0,
+      "prompt": "Pen signing on paper, quick handwritten signature stroke, close-miked, soft"
+    },
+    {
+      "id": "inslag",
+      "bestand": "inslag.mp3",
+      "duur": 1.5,
+      "prompt": "Deep soft cinematic impact with a warm bloom, low thud, premium, short tail"
+    },
+    {
+      "id": "landing",
+      "bestand": "landing.mp3",
+      "duur": 1.2,
+      "prompt": "Small object landing on a wooden desk with a satisfying soft thud, close-miked"
+    }
   ]
 }

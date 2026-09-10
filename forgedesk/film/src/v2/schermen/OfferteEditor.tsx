@@ -1,6 +1,7 @@
-import { ArrowLeft, Save, Send, ChevronDown, ChevronUp, Globe, Mail, Plus, GripVertical, Calculator, Clock, Wrench, Download, ToggleLeft, Copy, Trash2, X, Minus } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Save, Send, ChevronDown, ChevronUp, Globe, Mail, Plus, GripVertical, Calculator, Clock, Wrench, Download, ToggleLeft, Copy, Trash2, X, Minus, MoreHorizontal, UserCheck, Building2, MailCheck, ClipboardList, FileCheck, History } from 'lucide-react'
 import { AppVenster } from '../DesktopChrome'
-import { offerte, offerteItems, klant, contact, project } from '../../mockData'
+import { offerte, offerteItems, klant, contact, project, medewerkers } from '../../mockData'
+import { getAvatarStyle } from '@/utils/medewerkerAvatar'
 import { typ, tel, euro } from '../../kern/Typ'
 import { SplitFlap } from '../../kern/SplitFlap'
 import { veer, vlak } from '../../tijd'
@@ -10,7 +11,10 @@ import { veer, vlak } from '../../tijd'
 // met de Calculator achter de stuksprijs), zijbalk uit QuoteSidebar en de
 // calculatie als CalculatieModal-overlay. De echte editor hangt aan twintig
 // hooks; dit zijn dezelfde klassen zonder state.
-export type EditorStand = { regelsOp: number; calculatieOp?: number; calculatieDichtOp?: number; verstuurTikOp: number; keuzeOp: number; keuzeTikOp: number; flapOp: number }
+// Interne check (optioneel): menuOp opent het acties-menu, checkOp het dialoog
+// "Laten checken", checkVraagOp sluit het en zet de pil "Ter controle",
+// checkAkkoordOp maakt er "Gecheckt" van.
+export type EditorStand = { regelsOp: number; calculatieOp?: number; calculatieDichtOp?: number; verstuurTikOp: number; keuzeOp: number; keuzeTikOp: number; flapOp: number; menuOp?: number; checkOp?: number; checkVraagOp?: number; checkAkkoordOp?: number }
 
 type CalcRegel = { product: string; aantal: number; eenheid: string; inkoop: number; verkoop: number; urenveld?: string }
 
@@ -37,6 +41,20 @@ const DETAILS: [string, string][] = [
   ['Montage', 'Op afstandhouders aan de gevel'],
 ]
 const UREN_VELDEN = ['Productie', 'Montage'] as const
+
+// Acties-menu uit QuoteHeader (isEditMode), in de volgorde van de app.
+const ACTIES = [
+  { Icoon: Copy, label: 'Dupliceer offerte' },
+  { Icoon: ArrowRight, label: 'Kopieer naar andere klant' },
+  { Icoon: Clock, label: 'Nieuwe versie (v1)' },
+  { Icoon: Building2, label: 'Klant wijzigen' },
+  { Icoon: UserCheck, label: 'Laten checken', doel: 'laten-checken' },
+  { Icoon: MailCheck, label: 'Markeer als verzonden' },
+  { Icoon: ClipboardList, label: 'Werkbon maken' },
+  { Icoon: FileCheck, label: 'Opdrachtbevestiging' },
+  { Icoon: History, label: 'Geschiedenis' },
+]
+const CHECK_NOTITIE = 'Kijk je even mee naar de marge?'
 
 // getMargeColorSidebar uit QuoteCreation: markup t.o.v. inkoop.
 const margeKleur = (pct: number) =>
@@ -81,6 +99,24 @@ export const OfferteEditor: React.FC<{ t: number; stand: EditorStand }> = ({ t, 
   const calcInkoop = CALCULATIE.reduce((s, r) => s + r.inkoop * r.aantal, 0)
   const calcMarge = markup(calcInkoop, calcVerkoop)
 
+  // Interne check: menu, dialoog (OfferteCheckDialog) en status-pil in de kop.
+  const collega = medewerkers.find((m) => m.naam === 'Sanne') ?? medewerkers[1]
+  const menuP = stand.menuOp !== undefined ? veer(t, stand.menuOp, { demping: 16, duurMs: 500 }) : 0
+  const menuZicht = stand.menuOp !== undefined && t >= stand.menuOp
+    ? Math.min(vlak(t, stand.menuOp, stand.menuOp + 150), stand.checkOp !== undefined ? 1 - vlak(t, stand.checkOp + 120, stand.checkOp + 240) : 1)
+    : 0
+  const checkOpen = stand.checkOp !== undefined && t >= stand.checkOp && (stand.checkVraagOp === undefined || t < stand.checkVraagOp + 220)
+  const checkP = stand.checkOp !== undefined ? veer(t, stand.checkOp, { demping: 15, duurMs: 520 }) : 0
+  const checkDicht = stand.checkVraagOp !== undefined ? vlak(t, stand.checkVraagOp, stand.checkVraagOp + 220) : 0
+  const checkZicht = Math.min(vlak(t, stand.checkOp ?? 0, (stand.checkOp ?? 0) + 160), 1 - checkDicht)
+  const notitie = stand.checkOp !== undefined ? typ(CHECK_NOTITIE, t, stand.checkOp + 500, 22) : ''
+  const notitieTypt = stand.checkOp !== undefined && t >= stand.checkOp + 400 && notitie.length < CHECK_NOTITIE.length
+  const checkStatus: 'open' | 'akkoord' | null =
+    stand.checkAkkoordOp !== undefined && t >= stand.checkAkkoordOp ? 'akkoord'
+    : stand.checkVraagOp !== undefined && t >= stand.checkVraagOp ? 'open'
+    : null
+  const pilP = checkStatus === 'akkoord' ? veer(t, stand.checkAkkoordOp ?? 0, { demping: 12, duurMs: 550 }) : checkStatus === 'open' ? veer(t, stand.checkVraagOp ?? 0, { demping: 12, duurMs: 550 }) : 0
+
   const eerste = regels[0]
   const eersteMarge = markup(ITEMS[0].inkoop, offerteItems[0].totaal)
   const eersteKleur = margeKleur(eersteMarge)
@@ -102,6 +138,13 @@ export const OfferteEditor: React.FC<{ t: number; stand: EditorStand }> = ({ t, 
                 <div style={{ transform: 'translateY(2px)' }}>
                   <SplitFlap t={t} op={stand.flapOp} van="concept" naar="verstuurd" kleurVan="#5A5A55" kleurNaar="#3A5A9A" hoogte={26} fontSize={15} achtergrond="hsl(var(--background))" />
                 </div>
+                {/* Interne check-status, QuoteHeader */}
+                {checkStatus && (
+                  <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-md border ${checkStatus === 'akkoord' ? 'text-[#2D6B48] bg-[hsl(var(--status-green-bg))] border-[#2D6B48]/20' : 'text-[#8A6A2A] bg-[hsl(var(--status-amber-bg))] border-[#8A6A2A]/15'}`} style={{ opacity: Math.min(1, pilP * 2), transform: `scale(${0.7 + 0.3 * pilP})`, transformOrigin: 'left center' }}>
+                    <UserCheck className="h-3 w-3" strokeWidth={1.75} />
+                    {checkStatus === 'akkoord' ? 'Gecheckt' : 'Ter controle'} · {collega.naam}
+                  </span>
+                )}
               </div>
               <p className="text-[13px] text-muted-foreground mt-2">{klant.bedrijfsnaam} · project {project.project_nummer} · geldig tot 14 okt</p>
             </div>
@@ -126,6 +169,20 @@ export const OfferteEditor: React.FC<{ t: number; stand: EditorStand }> = ({ t, 
                     </div>
                   </div>
                 </div>
+              </div>
+              {/* Acties-menu (drie puntjes), QuoteHeader */}
+              <div className="relative">
+                <span data-doel="acties-menu" className="inline-flex items-center justify-center h-9 w-9 rounded-xl border border-[rgba(26,83,92,0.12)] bg-card text-foreground shadow-elevation-xs" style={{ transform: stand.menuOp !== undefined && tik(stand.menuOp) ? 'scale(0.94)' : undefined }}><MoreHorizontal className="h-4 w-4" /></span>
+                {menuZicht > 0 && (
+                  <div className="absolute right-0 top-full mt-1 z-50 doen-slate-surface rounded-[16px] shadow-[0_12px_40px_rgba(0,0,0,0.10),0_1px_2px_rgba(0,0,0,0.05)] py-1 w-52" style={{ opacity: menuZicht, transform: `translateY(${(1 - menuP) * -8}px)` }}>
+                    {ACTIES.map(({ Icoon, label, doel }) => (
+                      <div key={label} data-doel={doel} className="w-full text-left px-3 py-2 text-[13px] flex items-center gap-2 text-foreground" style={{ backgroundColor: doel && stand.checkOp !== undefined && tik(stand.checkOp) ? 'hsl(38,20%,95.5%)' : undefined }}>
+                        <Icoon className="h-3.5 w-3.5 text-muted-foreground" />
+                        {label}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -348,6 +405,40 @@ export const OfferteEditor: React.FC<{ t: number; stand: EditorStand }> = ({ t, 
               <div className="flex justify-end gap-3 pt-1">
                 <span className="inline-flex items-center justify-center h-10 px-4 rounded-lg border border-border-subtle bg-card text-sm font-medium text-foreground shadow-elevation-xs">Annuleren</span>
                 <span data-doel="calculatie-sluiten" className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-lg text-sm font-medium text-white" style={{ background: 'linear-gradient(135deg,#D24620 0%,#D4453A 100%)', boxShadow: '0 2px 8px rgba(210,70,32,0.3)', transform: stand.calculatieDichtOp !== undefined && tik(stand.calculatieDichtOp) ? 'scale(0.96)' : undefined }}><Save className="h-4 w-4" />Calculatie overnemen</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* OfferteCheckDialog als overlay in het venster */}
+        {checkOpen && (
+          <div className="absolute inset-0 z-[60] flex items-center justify-center" style={{ backgroundColor: `rgba(0,0,0,${0.3 * checkZicht})`, backdropFilter: `blur(${4 * checkZicht}px)` }}>
+            <div className="relative w-full max-w-md border border-border bg-card text-card-foreground p-6 shadow-elevation-lg rounded-modal grid gap-4" style={{ opacity: checkZicht, transform: `scale(${0.95 + 0.05 * checkP})` }}>
+              <span className="absolute right-3 top-3 h-7 w-7 rounded-lg flex items-center justify-center text-muted-foreground"><X className="h-3.5 w-3.5" /></span>
+              <div className="flex flex-col space-y-1.5">
+                <h2 className="text-lg font-semibold leading-none tracking-tight text-foreground">Laten checken<span className="text-flame">.</span></h2>
+                <p className="text-sm text-muted-foreground">Je collega krijgt een melding en een mail, en kan de offerte {offerte.nummer} goedkeuren of zelf versturen.</p>
+              </div>
+              <div className="space-y-4 py-1">
+                <div className="space-y-1.5">
+                  <label className="block text-[11px] font-medium leading-none text-foreground/70 mb-[5px]">Collega</label>
+                  {/* MedewerkerSelector, trigger="input", collega al gekozen */}
+                  <div className="h-9 w-full flex items-center gap-2 justify-between rounded-md border border-border bg-background px-3 text-[13px] text-foreground">
+                    <span className="h-4 w-4 rounded-full flex items-center justify-center text-[8px] font-bold shrink-0" style={getAvatarStyle(collega.id)}>{collega.naam[0]}</span>
+                    <span className="truncate max-w-[120px]">{collega.naam}</span>
+                    <ChevronDown className="h-3 w-3 text-muted-foreground shrink-0 ml-auto" />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="block text-[11px] font-medium leading-none text-foreground/70 mb-[5px]">Notitie <span className="text-muted-foreground font-normal">(optioneel)</span></label>
+                  <div className={`min-h-[80px] w-full rounded-md border bg-background px-3.5 py-2.5 text-[13px] text-foreground ${notitieTypt ? 'border-petrol shadow-[0_0_0_2px_rgba(26,83,92,0.12)]' : 'border-border'}`}>
+                    {notitie || <span className="text-text-placeholder">Waar moet je collega op letten?</span>}<span className="text-flame" style={{ opacity: notitieTypt ? 1 : 0 }}>|</span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-row justify-end gap-2.5">
+                <span className="inline-flex items-center justify-center h-9 px-4 text-[13px] font-medium rounded-xl border border-[rgba(26,83,92,0.12)] text-foreground/70">Annuleren</span>
+                <span data-doel="check-vragen" className="inline-flex items-center justify-center gap-2 h-9 px-4 text-[13px] font-semibold rounded-xl bg-flame text-white shadow-[0_2px_8px_rgba(210,70,32,0.25)]" style={{ transform: stand.checkVraagOp !== undefined && tik(stand.checkVraagOp) ? 'scale(0.96)' : undefined }}><UserCheck className="h-3.5 w-3.5" strokeWidth={1.75} />Vraag check aan</span>
               </div>
             </div>
           </div>

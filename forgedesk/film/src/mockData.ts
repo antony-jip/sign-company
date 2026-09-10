@@ -94,3 +94,13 @@ export const portaalItemFoto = {
 }
 
 export const portaalBedrijf = { naam: 'Sign Company', logo_url: '', telefoon: '0341 41 22 60', email: 'info@signcompany.nl', website: 'signcompany.nl' }
+
+export const notificatieCheckGevraagd: Notificatie = {
+  id: 'n-3', type: 'offerte_check_gevraagd', titel: 'Antony vraagt je een offerte te checken',
+  bericht: `${offerte.nummer} · ${offerte.titel} · "Even kijken naar de montage-uren?"`, link: '/offertes/o-1/bewerken', gelezen: false, created_at: nu,
+}
+
+export const notificatieCheckAkkoord: Notificatie = {
+  id: 'n-4', type: 'offerte_check_afgehandeld', titel: 'Sanne heeft je offerte gecheckt: akkoord',
+  bericht: `${offerte.nummer} · ${offerte.titel}`, link: '/offertes/o-1/bewerken', gelezen: false, created_at: nu,
+}

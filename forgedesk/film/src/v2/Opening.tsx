@@ -3,7 +3,7 @@ import { Mail, FileSpreadsheet, MessageCircle, CalendarDays, ClipboardList, Calc
 import { fonts } from '../fonts'
 import { merk } from '../brand'
 import { vlak, veer, ease, lerp, WOORD_MS, WOORD_STAP_MS } from '../tijd'
-import { Wordmark } from '../kern/Wordmark'
+import { LogoDoen } from '../kern/LogoDoen'
 import { useFormaat } from './formaat'
 import { B0 } from './beats'
 
@@ -107,7 +107,7 @@ export const Opening: React.FC<{ t: number }> = ({ t }) => {
 
       {t >= B0.lettersOp && (
         <div style={{ position: 'absolute', inset: 0, opacity: zicht, transform: `translateY(${-wegP * 260}px) scale(${1 - wegP * 0.35})`, transformOrigin: `${midden.x}px ${midden.y}px` }}>
-          <Wordmark y={midden.y} centrumX={midden.x} size={F.wordmarkSize} kleur={merk.petrol} stand={(i) => {
+          <LogoDoen breedte={F.wordmarkSize * 2.3} x={midden.x} y={midden.y} kleur={merk.petrol} stand={(i) => {
             if (i === 4) return { op: puntZicht, dy: (1 - puntP) * -260, schaal: 1 + pulse * 0.45 }
             // Letter-reveal met blur: 10 f per letter, 60 procent overlap.
             const p = vlak(t, B0.lettersOp + i * WOORD_STAP_MS, B0.lettersOp + i * WOORD_STAP_MS + WOORD_MS, ease.enter)

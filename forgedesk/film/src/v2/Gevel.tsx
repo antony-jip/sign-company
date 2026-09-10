@@ -24,7 +24,7 @@ export const Gevel: React.FC<Props> = ({ t, x, y, stand, standSinds, zicht, blur
   const schaduw = stand === 'gemonteerd' || stand === 'brandt' ? 0.55 * (stand === 'gemonteerd' ? veerP : 1) : 0
   return (
     <div style={{ position: 'absolute', left: x - breedte / 2, top: y - hoogte / 2, width: breedte, height: hoogte, opacity: zicht, filter: `blur(${blur}px)`, pointerEvents: 'none' }}>
-      <Img src={staticFile('sfeer/gevel-avond.jpg')} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+      <Img src={staticFile('sfeer/gevel-avond-scherp.jpg')} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
       {/* Lichtbak brandt mee */}
       <div style={{ position: 'absolute', left: '17%', right: '17%', top: '42.6%', height: '4.2%', background: `radial-gradient(ellipse at center, ${merk.wit} 0%, ${merk.wit}CC 55%, transparent 100%)`, opacity: 0.25 + gloed * 0.75, filter: `blur(${6 + gloed * 26}px)` }} />
       <svg viewBox="0 0 1080 400" style={{ position: 'absolute', left: 0, width: '100%', top: '22%', height: 'auto', overflow: 'visible' }}>

@@ -18,14 +18,16 @@ import { FinancieelTab } from './schermen/FinancieelTab'
 import { Toast } from '../kern/Toast'
 import { FaseBalkFilm } from '../kern/FaseBalkFilm'
 import { Sfeer } from '../kern/Sfeer'
-import { Wordmark, letterPosities } from '../kern/Wordmark'
+import { LogoDoen, logoPuntPositie } from '../kern/LogoDoen'
 import { B0, B, B2 } from './beats'
 import { Opening } from './Opening'
 import { Gevel, type GevelStand } from './Gevel'
 import { COPY } from './copy'
+import { ALLE_MODULES } from '@/lib/navigatie'
+import { MessageSquare } from 'lucide-react'
 import { Dashboard } from './schermen/Dashboard'
 import { Geluid, type Klank } from './Geluid'
-import { notificatieAkkoord, notificatieBetaald } from '../mockData'
+import { notificatieAkkoord, notificatieBetaald, notificatieCheckGevraagd, notificatieCheckAkkoord } from '../mockData'
 
 // Versie 2: één klus, één cockpit, één camera. Alles op absolute ms uit beats.ts.
 export const FILM2_DUUR_MS = B2.eind
@@ -67,7 +69,9 @@ const STOPS: CameraStop[] = [
   { ms: B.klikCalculatie - 1200, ...lokaal(PLEK.editor, 560, 520), zoom: 2.4, duurMs: 800 },
   { ms: B.calculatieOp, ...lokaal(PLEK.editor, 752, 500), zoom: 2.2, duurMs: 800 },
   // Beats laten hier 700 ms tussen twee kliks: de camera landt 40 ms na de klik op Verstuur.
-  { ms: B.klikCalculatieSluiten, ...lokaal(PLEK.editor, 1180, 300), zoom: 2.6, duurMs: 800 },
+  { ms: B.klikCalculatieSluiten, ...lokaal(PLEK.editor, 1180, 260), zoom: 2.4, duurMs: 800 },
+  { ms: B.checkOp, ...lokaal(PLEK.editor, 720, 520), zoom: 1.9, duurMs: 800 },
+  { ms: B.checkVraagOp + 200, ...lokaal(PLEK.editor, 1180, 300), zoom: 2.6, duurMs: 800 },
   { ms: B.terugCockpit1, ...lokaal(PLEK.cockpit, 520, 470), zoom: 2.2, duurMs: 1100 },
   { ms: B.portaalCamOp, ...lokaal(PLEK.portaal, 520, 430), zoom: 2.3, duurMs: 900, maxMs: 900 },
   { ms: B.publiekOp, ...lokaal(PLEK.portaal, 1180, 490), zoom: 2.6, duurMs: 900 },
@@ -76,9 +80,11 @@ const STOPS: CameraStop[] = [
   { ms: B2.klikMontage - 900, ...lokaal(PLEK.cockpit, 420, 840), zoom: 2.4, duurMs: 800 },
   { ms: B2.planningCamOp, ...lokaal(PLEK.planning, 880, 600), zoom: 1.7, duurMs: 1100 },
   { ms: B2.sleepOp, ...lokaal(PLEK.planning, 940, 620), zoom: 1.9, duurMs: 1900 },
-  // Terug in één kader met Voortgang én Inklokken: geen aparte reframe vóór de klik.
+  // Terug in één kader met Voortgang: geen aparte reframe vóór de klik.
   { ms: B2.terugCockpit3, ...lokaal(PLEK.cockpit, 820, 450), zoom: 2.1, duurMs: 1100 },
   // Klokken en telefoon
+  { ms: B2.klikWerkbon - 1200, ...lokaal(PLEK.cockpit, 1160, 930), zoom: 2.3, duurMs: 800 },
+  { ms: B2.werkbonDialoogOp, ...lokaal(PLEK.cockpit, 720, 520), zoom: 2.2, duurMs: 800 },
   { ms: B2.telefoonCamOp, ...telefoonLokaal(209, 540), zoom: 2.9, duurMs: 900, maxMs: 900 },
   // Kader met portaalkaart én Mail contactpersoon; 1200 ms zodat de foto op een stil beeld landt.
   { ms: B2.terugCockpit4, ...lokaal(PLEK.cockpit, 820, 705), zoom: 2.0, duurMs: 900, maxMs: 900 },
@@ -104,6 +110,9 @@ const CURSOR: CursorStap[] = [
   { ms: B.editorOp, doel: { x: 900, y: 1500 } },
   { ms: B.klikCalculatie - 700, doel: 'calculatie', klik: true },
   { ms: B.klikCalculatieSluiten - 700, doel: 'calculatie-sluiten', klik: true },
+  { ms: B.klikMenu - 700, doel: 'acties-menu', klik: true },
+  { ms: B.klikLatenChecken - 700, doel: 'laten-checken', klik: true },
+  { ms: B.klikCheckVragen - 700, doel: 'check-vragen', klik: true },
   { ms: B.klikVerstuur - 700, doel: 'verstuur', klik: true },
   { ms: B.klikPortaal - 700, doel: 'via-portaal', klik: true },
   { ms: B.terugCockpit1, doel: { x: 950, y: 1500 } },
@@ -116,13 +125,15 @@ const CURSOR: CursorStap[] = [
   { ms: B2.sleepOp - 700, doel: 'planning-kaart', klik: false },
   { ms: B2.sleepOp, doel: 'planning-donderdag', klik: false },
   { ms: B2.landOp + 300, doel: { x: 950, y: 1500 } },
-  { ms: B2.klikInklokken - 700, doel: 'inklokken', klik: true },
+  { ms: B2.klikWerkbon - 700, doel: 'acties-werkbon', klik: true },
+  { ms: B2.klikWerkbonMaken - 700, doel: 'werkbon-maken', klik: true },
   { ms: B2.telefoonCamOp + 300, doel: { x: 900, y: 1520 } },
   { ms: B2.klikNaFoto - 700, doel: 'na-foto', klik: true },
   { ms: B2.terugCockpit4, doel: { x: 950, y: 1520 } },
   { ms: B2.klikMailContact - 700, doel: 'tekst:Mail contactpersoon', klik: true },
   { ms: B2.composerOp + 400, doel: { x: 940, y: 1500 } },
   { ms: B2.klikUitProject - 700, doel: 'uit-project', klik: true },
+  { ms: B2.klikKiesTekening - 700, doel: 'uit-project-tekening', klik: true },
   { ms: B2.klikVerzenden - 700, doel: 'verzenden', klik: true },
   { ms: B2.composerDichtOp, doel: { x: 950, y: 1520 } },
   { ms: B2.klikFinancieel - 700, doel: 'tekst:Financieel', klik: true },
@@ -133,8 +144,8 @@ const CURSOR: CursorStap[] = [
 ]
 
 // Geluid op de beats.
-const KLIKS = [B0.klikEmail, B.mailKlikLijst, B.mailKlikProject, B.mailKlikBijlage, B.klikOfferteMaken, B.klikCalculatie, B.klikCalculatieSluiten, B.klikVerstuur, B.klikPortaal, B.klikBekijken, B.klikBevestig,
-  B2.klikMontage, B2.klikInklokken, B2.klikNaFoto, B2.klikMailContact, B2.klikUitProject, B2.klikVerzenden, B2.klikFinancieel, B2.klikFactuurMaken, B2.klikFactuurVerstuur]
+const KLIKS = [B0.klikEmail, B.mailKlikLijst, B.mailKlikProject, B.mailKlikBijlage, B.klikOfferteMaken, B.klikCalculatie, B.klikCalculatieSluiten, B.klikMenu, B.klikLatenChecken, B.klikCheckVragen, B.klikVerstuur, B.klikPortaal, B.klikBekijken, B.klikBevestig,
+  B2.klikMontage, B2.klikWerkbon, B2.klikWerkbonMaken, B2.klikNaFoto, B2.klikMailContact, B2.klikUitProject, B2.klikKiesTekening, B2.klikVerzenden, B2.klikFinancieel, B2.klikFactuurMaken, B2.klikFactuurVerstuur]
 const ZWIEPEN = [B.mailCamOp, B.cockpitCamOp, B.editorCamOp, B.terugCockpit1, B.portaalCamOp, B.terugCockpit2, B2.planningCamOp, B2.terugCockpit3, B2.telefoonCamOp, B2.terugCockpit4, B2.pullbackOp, B2.constellatieOp]
 const KLANKEN: Klank[] = [
   ...KLIKS.map((ms) => ({ ms: ms + 80, bestand: 'klik' as const, volume: 0.55 })),
@@ -142,7 +153,7 @@ const KLANKEN: Klank[] = [
   { ms: B.flapOp, bestand: 'flap', volume: 0.6 }, { ms: B2.factuurVerstuurdOp, bestand: 'flap', volume: 0.6 },
   { ms: B.regelsOp, bestand: 'typ', volume: 0.35, duurMs: 2600 }, { ms: B.naamOp, bestand: 'typ', volume: 0.3, duurMs: 1200 }, { ms: B2.typOp, bestand: 'typ', volume: 0.35, duurMs: 2400 },
   { ms: B.tekenOp, bestand: 'pen', volume: 0.5 },
-  { ms: B.toastAkkoordOp, bestand: 'ding', volume: 0.6 }, { ms: B2.toastBetaaldOp, bestand: 'ding', volume: 0.6 },
+  { ms: B.toastAkkoordOp, bestand: 'ding', volume: 0.6 }, { ms: B2.toastBetaaldOp, bestand: 'ding', volume: 0.6 }, { ms: B.meldingSanneOp, bestand: 'ding', volume: 0.5 }, { ms: B.meldingAkkoordOp, bestand: 'ding', volume: 0.5 },
   { ms: B.cockpitLandOp, bestand: 'landing', volume: 0.4 }, { ms: B2.landOp, bestand: 'landing', volume: 0.4 },
   { ms: B0.inslagOp, bestand: 'inslag', volume: 0.8 }, { ms: B0.puntOp + 600, bestand: 'landing', volume: 0.5 }, { ms: B2.puntOp + 600, bestand: 'landing', volume: 0.5 },
 ]
@@ -240,13 +251,9 @@ const FilmV2Binnen: React.FC = () => {
   const gevelSinds = t >= B2.gevelBrandtOp ? B2.gevelBrandtOp : t >= B2.ingeplandOp ? B2.ingeplandOp : t >= B.akkoordKlantOp ? B.akkoordKlantOp : t >= B.flapOp ? B.flapOp : B.cockpitOp
   const gevelReveal = vlak(t, B2.pullbackOp, B2.constellatieOp + 900, ease.inUit)
   const zwenk = t < B2.pullbackOp ? Math.sin(Math.min(1, Math.max(0, schermStand(t).wisselP)) * Math.PI) : 0
-  const gevelZicht = t < B0.dashboardOp ? 0 : Math.min(1, 0.22 + 0.22 * zwenk + gevelReveal * 0.78)
-  const gevelBlur = (10 - 5 * zwenk) * (1 - gevelReveal)
-  // De klok loopt door na Inklokken, bovenin de film, tot de factuur betaald is.
-  const klokIn = vlak(t, B2.ingekloktOp + 900, B2.ingekloktOp + 1100, ease.uiUit)
-  const klokUit = vlak(t, B2.factuurVerstuurdOp, B2.factuurVerstuurdOp + 140, ease.exit)
-  const klokZicht = t >= B2.ingekloktOp && t < B2.factuurVerstuurdOp + 140 ? Math.min(klokIn, 1 - klokUit) : 0
-  const klokSec = Math.max(0, Math.floor((t - B2.ingekloktOp) / 1000))
+  const logoP = vlak(t, B2.logoOp, B2.logoOp + 900, ease.inUit)
+  const gevelZicht = t < B0.dashboardOp ? 0 : Math.min(1, 0.22 + 0.22 * zwenk + gevelReveal * 0.78) * (1 - logoP * 0.55)
+  const gevelBlur = (10 - 5 * zwenk) * (1 - gevelReveal) + logoP * 8
   // Welke kant van de tafel: jij of je klant.
   const bijKlant = (t >= B.portaalCamOp && t < B.terugCockpit2) 
   const kantWissel = bijKlant ? B.portaalCamOp : B.terugCockpit2
@@ -260,26 +267,27 @@ const FilmV2Binnen: React.FC = () => {
     status: status as 'gepland' | 'in-review' | 'akkoord-klant' | 'ingepland' | 'te-factureren',
     offerteStatus: t >= B.akkoordKlantOp ? 'goedgekeurd' as const : t >= B.inReviewOp ? 'verzonden' as const : null,
     montage: t >= B2.ingeplandOp,
-    ingekloktSinds: t >= B2.ingekloktOp ? B2.ingekloktOp : null,
     portaal: [...(t >= B.inReviewOp ? ['offerte' as const] : [])],
     portaalReactie: t >= B.akkoordKlantOp,
     activiteiten: t >= B2.fotoPortaalOp ? [{ id: 'a-foto', tekst: 'Na-foto toegevoegd aan werkbon WB-2026-0097', datum: '2026-09-24T10:12:00.000Z', type: 'foto' as const, medewerker: 'Kees' }] : [],
     meldingen,
-    composer: { op: B2.composerOp, dichtOp: B2.composerDichtOp, typOp: B2.typOp, bijlageOp: B2.bijlageOp, opvolgenOp: B2.opvolgenOp, verzendOp: B2.verzondenOp },
+    composer: { op: B2.composerOp, dichtOp: B2.composerDichtOp, typOp: B2.typOp, bijlageOp: B2.bijlageOp, opvolgenOp: B2.opvolgenOp, verzendOp: B2.verzondenOp, kiezerOp: B2.kiezerOp, kiesOp: B2.kiesOp },
+    werkbon: { dialoogOp: B2.werkbonDialoogOp, klaarOp: B2.werkbonKlaarOp },
     blokOp: { kop: B.cockpitOp, fase: B.cockpitOp + 150, briefing: B.cockpitOp + 300, grid: B.cockpitOp + 450, portaal: B.cockpitOp + 600, tijd: B.cockpitOp + 250, klant: B.cockpitOp + 400, team: B.cockpitOp + 550, acties: B.cockpitOp + 700 },
   }
   const inFinancieel = t >= B2.financieelOp && t < B2.pullbackOp + 600
   const financieelP = vlak(t, B2.financieelOp, B2.financieelOp + 300)
 
   const plekVan = (p: { x: number; y: number }) => p
-  const wereldZicht = 1 - vlak(t, B2.eindkaartOp, B2.eindkaartOp + 600)
+  const wereldZicht = (1 - vlak(t, B2.eindkaartOp, B2.eindkaartOp + 600)) * (1 - logoP * 0.35)
   const eindGrond = vlak(t, B2.eindkaartOp, B2.eindkaartOp + 700, ease.inUit)
 
   // Letters
   const puntZicht = vlak(t, B2.puntOp, B2.puntOp + 150)
   const puntP = veer(t, B2.puntOp, { demping: 12, duurMs: 800 })
   const pulse = Math.sin(vlak(t, B2.pulseOp, B2.pulseOp + 600, ease.inUit) * Math.PI)
-  const puntPos = letterPosities(F.wordmarkSize, MIDDEN_X).find((p) => p.teken === '.')!
+  const logoBreedte = F.wordmarkSize * 0.86 * 2.3
+  const puntXY = logoPuntPositie(logoBreedte, MIDDEN_X, MIDDEN_Y)
   const regelP = veer(t, B2.regelOp, { demping: 18, duurMs: 800 })
   const urlP = veer(t, B2.urlOp, { demping: 18, duurMs: 800 })
 
@@ -329,7 +337,7 @@ const FilmV2Binnen: React.FC = () => {
         )}
         {inEditor && (
           <Scherm id="editor" x={plekVan(PLEK.editor).x} y={plekVan(PLEK.editor).y} {...laag('editor', -5)}>
-            <OfferteEditor t={t} stand={{ regelsOp: B.regelsOp, calculatieOp: B.calculatieOp, calculatieDichtOp: B.calculatieDichtOp, verstuurTikOp: B.klikVerstuur + 80, keuzeOp: B.keuzeOp, keuzeTikOp: B.klikPortaal + 80, flapOp: B.flapOp }} />
+            <OfferteEditor t={t} stand={{ regelsOp: B.regelsOp, calculatieOp: B.calculatieOp, calculatieDichtOp: B.calculatieDichtOp, menuOp: B.menuOp, checkOp: B.checkOp, checkVraagOp: B.checkVraagOp, checkAkkoordOp: B.checkAkkoordOp, verstuurTikOp: B.klikVerstuur + 80, keuzeOp: B.keuzeOp, keuzeTikOp: B.klikPortaal + 80, flapOp: B.flapOp }} />
           </Scherm>
         )}
         {inPortaal && (
@@ -367,38 +375,61 @@ const FilmV2Binnen: React.FC = () => {
       <Belofte t={t} op={B2.factuurBelofteOp} uit={B2.factuurBelofteUit} {...COPY.factuur} positie="onder" />
       <Belofte t={t} op={B2.allesBelofteOp} uit={B2.allesBelofteUit} {...COPY.alles} positie="boven" licht />
 
-      {klokZicht > 0 && (
-        <div style={{ position: 'absolute', right: 48, ...(F.naam === '4:3' ? { bottom: 40 } : { top: 40 }), zIndex: 55, opacity: klokZicht, transform: `translate(${(1 - klokIn) * 12 + klokUit * 8}px, ${(1 - klokIn) * (F.naam === '4:3' ? 8 : -8)}px) scale(${0.94 + 0.06 * klokIn - klokUit * 0.03})`, transformOrigin: F.naam === '4:3' ? 'bottom right' : 'top right', display: 'flex', alignItems: 'center', gap: 14, padding: '12px 22px', borderRadius: 999, backgroundColor: merk.wit, boxShadow: '0 12px 32px rgba(120,90,50,0.16)', fontFamily: fonts.mono, fontSize: 30, color: merk.ink }}>
-          <span style={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: merk.flame, opacity: 0.6 + 0.4 * Math.abs(Math.sin(t / 500)) }} />
-          {`${Math.floor(klokSec / 3600)}:${String(Math.floor((klokSec % 3600) / 60)).padStart(2, '0')}:${String(klokSec % 60).padStart(2, '0')}`}
-          <span style={{ fontFamily: fonts.body, fontSize: 22, color: merk.tekstSec }}>ingeklokt</span>
-        </div>
-      )}
       {kantZicht > 0 && (
         <div style={{ position: 'absolute', left: 48, top: 40, zIndex: 55, opacity: kantZicht, transform: `translateX(${(1 - kantIn) * -16 - kantUit * 8}px) scale(${0.96 + 0.04 * kantIn})`, transformOrigin: 'left center', padding: '12px 26px', borderRadius: 999, backgroundColor: bijKlant ? merk.wit : merk.petrol, color: bijKlant ? merk.petrol : merk.wit, fontFamily: fonts.kop, fontWeight: 700, fontSize: 30, letterSpacing: '-0.01em', boxShadow: '0 12px 32px rgba(120,90,50,0.16)' }}>
           {bijKlant ? 'je klant ziet' : 'jij ziet'}<span style={{ color: merk.flame }}>.</span>
         </div>
       )}
+      {t >= B.meldingSanneOp && t < B.meldingSanneOp + 1500 && (
+        <div style={{ position: 'absolute', left: 48, top: 40, zIndex: 55, opacity: Math.min(vlak(t, B.meldingSanneOp, B.meldingSanneOp + 250), 1 - vlak(t, B.meldingSanneOp + 1200, B.meldingSanneOp + 1500)), padding: '12px 26px', borderRadius: 999, backgroundColor: merk.wit, color: merk.petrol, fontFamily: fonts.kop, fontWeight: 700, fontSize: 30, letterSpacing: '-0.01em', boxShadow: '0 12px 32px rgba(120,90,50,0.16)' }}>
+          Sanne ziet<span style={{ color: merk.flame }}>.</span>
+        </div>
+      )}
+      <MeldingFilm t={t} op={B.meldingSanneOp} notificatie={notificatieCheckGevraagd} duurMs={1300} />
+      <MeldingFilm t={t} op={B.meldingAkkoordOp} notificatie={notificatieCheckAkkoord} duurMs={1900} />
       <MeldingFilm t={t} op={B.toastAkkoordOp} notificatie={notificatieAkkoord} />
       <MeldingFilm t={t} op={B2.toastBetaaldOp} notificatie={notificatieBetaald} duurMs={1900} />
 
       <Geluid klanken={KLANKEN} totMs={FILM2_DUUR_MS} />
       {t < B2.constellatieOp && <Cursor t={t} stappen={CURSOR} zichtVan={B0.dashboardMailOp} zichtTot={B2.pullbackOp + 400} />}
       {t >= B2.eindkaartOp && <Cursor t={t} stappen={CURSOR} zichtVan={B2.eindkaartOp + 100} zichtTot={B2.puntOp + 140} />}
-      <span data-doel="wordmark-punt" style={{ position: 'absolute', left: puntPos.x + puntPos.b / 2, top: MIDDEN_Y + F.wordmarkSize * 0.28, width: 1, height: 1 }} />
+      <span data-doel="wordmark-punt" style={{ position: 'absolute', left: puntXY.x, top: puntXY.y, width: 1, height: 1 }} />
       <FaseStip t={t} op={B.stipOp} vanDoel="bevestigen" naarFase={2} />
       {t >= B.cockpitOp && t < B2.eindkaartOp && <FaseBalkFilm fase={faseIdx} sindsWissel={t - Math.max(faseWissel, faseLabelWissel)} label={faseLabel} donker={false} bottom={F.faseBottom} zijkant={F.faseZijkant} schaal={F.faseSchaal} zicht={Math.min(vlak(t, B.cockpitOp, B.cockpitOp + 500), 1 - vlak(t, B2.constellatieOp, B2.constellatieOp + 600))} />}
 
+      {/* Constellatie: het logo van doen. met alles wat erin zit eromheen */}
+      {t >= B2.logoOp && (() => {
+        const inP = veer(t, B2.logoOp, { demping: 16, duurMs: 900 })
+        const zichtW = vlak(t, B2.logoOp, B2.logoOp + 250)
+        const chips = [...ALLE_MODULES.filter((m) => ['Projecten', 'Offertes', 'Klanten', 'Werkbonnen', 'Planning', 'Taken', 'Email', 'Portaal', 'Facturen', 'Maatjes'].includes(m.label)).map((m) => ({ label: m.label, Icon: m.icon, kleur: m.color })), { label: 'Daan', Icon: MessageSquare, kleur: merk.petrol }]
+        const straal = F.naam === '4:3' ? 400 : 430
+        const chipZicht = 1 - vlak(t, B2.eindkaartOp, B2.eindkaartOp + 400)
+        return (
+          <div style={{ position: 'absolute', inset: 0, zIndex: 12, pointerEvents: 'none' }}>
+            <div style={{ position: 'absolute', left: MIDDEN_X - 520, top: MIDDEN_Y - 520, width: 1040, height: 1040, borderRadius: '50%', background: `radial-gradient(circle, ${merk.petrol}E6 0%, ${merk.petrol}99 35%, transparent 70%)`, opacity: zichtW * 0.9 * chipZicht, filter: 'blur(10px)' }} />
+            <div style={{ position: 'absolute', inset: 0, opacity: zichtW, transform: `scale(${0.7 + inP * 0.3})`, transformOrigin: `${MIDDEN_X}px ${MIDDEN_Y}px` }}>
+              <LogoDoen breedte={logoBreedte} x={MIDDEN_X} y={MIDDEN_Y} kleur={merk.wit} stand={(i) => (i === 4 ? { op: 1, dy: 0, schaal: 1 + pulse * 0.45 } : { op: 1, dy: 0 })} />
+            </div>
+            {chips.map((c, i) => {
+              const hoek = -Math.PI / 2 + (i / chips.length) * Math.PI * 2
+              const op = B2.logoOp + 500 + i * 70
+              const p = veer(t, op, { demping: 14, duurMs: 700 })
+              const z = vlak(t, op, op + 150) * chipZicht
+              const x = MIDDEN_X + Math.cos(hoek) * straal, y = MIDDEN_Y + Math.sin(hoek) * straal * 0.78
+              return (
+                <div key={c.label} style={{ position: 'absolute', left: x, top: y, transform: `translate(-50%, -50%) scale(${0.8 + p * 0.2})`, opacity: z, display: 'flex', alignItems: 'center', gap: 12, padding: '12px 22px 12px 14px', borderRadius: 999, backgroundColor: merk.wit, boxShadow: '0 16px 40px -12px rgba(0,0,0,0.45)', fontFamily: fonts.kop, fontWeight: 700, fontSize: 26, letterSpacing: '-0.02em', color: merk.ink, whiteSpace: 'nowrap' }}>
+                  <span style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: `${c.kleur}1A`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><c.Icon size={22} color={c.kleur} strokeWidth={2} /></span>
+                  {c.label.toLowerCase()}{c.label === 'Daan' && <span style={{ color: merk.flame }}>.</span>}
+                </div>
+              )
+            })}
+          </div>
+        )
+      })()}
       {/* End card */}
       <AbsoluteFill style={{ backgroundColor: merk.petrol, opacity: eindGrond, zIndex: 5 }} />
       {t >= B2.lettersOp && (
         <div style={{ position: 'relative', zIndex: 10 }}>
-          <Wordmark y={MIDDEN_Y} centrumX={MIDDEN_X} size={F.wordmarkSize} kleur={merk.wit} stand={(i) => {
-            if (i === 4) return { op: puntZicht, dy: (1 - puntP) * -260, schaal: 1 + pulse * 0.45 }
-            const p = vlak(t, B2.lettersOp + i * WOORD_STAP_MS, B2.lettersOp + i * WOORD_STAP_MS + WOORD_MS, ease.enter)
-            return { op: p, dy: (1 - p) * 24, blur: (1 - p) * 6 }
-          }} />
-          {t >= B2.pulseOp && pulse > 0 && <div style={{ position: 'absolute', left: puntPos.x + puntPos.b / 2 - 40, top: MIDDEN_Y + F.wordmarkSize * 0.28 - 40, width: 80, height: 80, borderRadius: '50%', border: `4px solid ${merk.flame}`, opacity: 1 - vlak(t, B2.pulseOp, B2.pulseOp + 700), transform: `scale(${1 + vlak(t, B2.pulseOp, B2.pulseOp + 700, ease.uit) * 3})` }} />}
           <div style={{ position: 'absolute', left: 90, right: 90, top: MIDDEN_Y + F.wordmarkSize * 0.88, textAlign: 'center', fontFamily: fonts.kop, fontWeight: 600, fontSize: F.naam === '4:3' ? 44 : 52, lineHeight: 1.2, letterSpacing: '-0.02em', color: merk.wit, opacity: vlak(t, B2.regelOp, B2.regelOp + 250), transform: `translateY(${(1 - regelP) * 30}px)`, textWrap: 'balance' as never }}>
             {COPY.eindkaart.regel}
           </div>
