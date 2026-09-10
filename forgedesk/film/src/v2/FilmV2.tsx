@@ -22,6 +22,7 @@ import { LogoDoen, logoPuntPositie } from '../kern/LogoDoen'
 import { B0, B, B2 } from './beats'
 import { Opening } from './Opening'
 import { Gevel, type GevelStand } from './Gevel'
+import { Lichtlek } from './Lichtlek'
 import { COPY } from './copy'
 import { FlameDot } from '../kern/FlameDot'
 import { ALLE_MODULES } from '@/lib/navigatie'
@@ -277,6 +278,9 @@ export const FilmV2: React.FC<{ formaat?: Formaat['naam'] }> = ({ formaat = '4:3
 const FilmV2Binnen: React.FC = () => {
   const t = useSceneTijd(true)
   const cam = useCamera(t, STOPS)
+  // Camerasnelheid in film-px per frame, genormaliseerd op 40 (HIGHEND 9).
+  const camVorig = useCamera(t - 33, STOPS)
+  const snelheid = Math.min(1, (Math.hypot(cam.x - camVorig.x, cam.y - camVorig.y) * cam.zoom * 0.72 + Math.abs(Math.log(cam.zoom / camVorig.zoom)) * 900) / 40)
   const F = useFormaat()
   const MIDDEN_Y = F.middenY
   const MIDDEN_X = F.middenX
@@ -306,7 +310,13 @@ const FilmV2Binnen: React.FC = () => {
   // Secundaire laag: de slagschaduw volgt de kantel 2,5 f later.
   const schaduwKantelVan = (naam: string, rust: number) => rust * diepteOp(naam, t - 83)
   const gloedVan = (naam: string) => 0.8 * (1 - diepte(naam))
-  const laag = (naam: string, rust: number) => ({ t, diepte: diepte(naam), kantel: kantelVan(naam, rust), schaduwKantel: schaduwKantelVan(naam, rust), gloed: gloedVan(naam) })
+  // Landingen per scherm: daar loopt de glint over de rand.
+  const GLINT: Record<string, number[]> = {
+    dashboard: [B0.dashboardOp + 500], mail: [B.mailCamOp + 1100], cockpit: [B.cockpitLandOp, B.terugCockpit1 + 1100, B.terugCockpit2 + 1100, B2.terugCockpit3 + 1100, B2.terugCockpit4 + 1100],
+    editor: [B.editorOp], portaal: [B.portaalCamOp + 1100], planning: [B2.planningCamOp + 1000], telefoon: [B2.telefoonCamOp + 1100],
+  }
+  const PULS: Record<string, number[]> = { cockpit: [B.inReviewOp, B.akkoordKlantOp, B2.ingeplandOp, B2.betaaldOp] }
+  const laag = (naam: string, rust: number) => ({ t, diepte: diepte(naam), kantel: kantelVan(naam, rust), schaduwKantel: schaduwKantelVan(naam, rust), gloed: gloedVan(naam), snelheid, glintOp: GLINT[naam], pulsOp: PULS[naam] })
 
   // Fase-hartslag
   const status = t >= B2.betaaldOp ? 'te-factureren' : t >= B2.ingeplandOp ? 'ingepland' : t >= B.akkoordKlantOp ? 'akkoord-klant' : 'gepland'
@@ -341,6 +351,7 @@ const FilmV2Binnen: React.FC = () => {
     composer: { op: B2.composerOp, dichtOp: B2.composerDichtOp, typOp: B2.typOp, bijlageOp: B2.bijlageOp, opvolgenOp: B2.opvolgenOp, verzendOp: B2.verzondenOp, kiezerOp: B2.kiezerOp, kiesOp: B2.kiesOp },
     werkbon: { dialoogOp: B2.werkbonDialoogOp, klaarOp: B2.werkbonKlaarOp },
     taak: { dialoogOp: B.taakDialoogOp, typOp: B.taakTypOp, kiesOp: B.taakKiesOp, klaarOp: B.taakKlaarOp },
+    klikOp: { offerteMaken: B.klikOfferteMaken + 80, factuurMaken: B2.klikFactuurMaken + 80 },
     blokOp: { kop: B.cockpitOp, fase: B.cockpitOp + 150, briefing: B.cockpitOp + 300, grid: B.cockpitOp + 450, portaal: B.cockpitOp + 600, tijd: B.cockpitOp + 250, klant: B.cockpitOp + 400, team: B.cockpitOp + 550, acties: B.cockpitOp + 700 },
   }
   const inFinancieel = t >= B2.financieelOp && t < B2.pullbackOp + 600
@@ -494,25 +505,49 @@ const FilmV2Binnen: React.FC = () => {
       {t >= B2.logoOp && (() => {
         const inP = veer(t, B2.logoOp, { demping: 16, duurMs: 900 })
         const zichtW = vlak(t, B2.logoOp, B2.logoOp + 250)
-        const chips = [...ALLE_MODULES.filter((m) => ['Projecten', 'Offertes', 'Klanten', 'Werkbonnen', 'Planning', 'Taken', 'Email', 'Portaal', 'Facturen', 'Maatjes'].includes(m.label)).map((m) => ({ label: m.label, Icon: m.icon, kleur: m.color })), { label: 'Daan', Icon: MessageSquare, kleur: merk.petrol }]
-        const straal = F.naam === '4:3' ? 500 : 430
         const chipZicht = 1 - vlak(t, B2.eindkaartOp, B2.eindkaartOp + 400)
+        // Bento (HIGHEND 11): kaarten in een asymmetrisch raster rond het logo, per formaat
+        // met de hand gelegd zodat het logo (en linksonder de belofte) vrij blijft.
+        type Maat = 'groot' | 'middel' | 'klein'
+        const MAAT: Record<Maat, { b: number; h: number }> = F.naam === '4:3'
+          ? { groot: { b: 340, h: 170 }, middel: { b: 300, h: 140 }, klein: { b: 260, h: 84 } }
+          : { groot: { b: 320, h: 184 }, middel: { b: 220, h: 156 }, klein: { b: 260, h: 84 } }
+        const RASTER: [string, Maat, number, number][] = F.naam === '4:3'
+          ? [['Projecten', 'groot', 370, 120], ['Offertes', 'groot', 730, 120], ['Planning', 'middel', 80, 400], ['Werkbonnen', 'middel', 1060, 400], ['Portaal', 'middel', 420, 650], ['Facturen', 'middel', 740, 650], ['Klanten', 'klein', 80, 206], ['Taken', 'klein', 1100, 206], ['Email', 'klein', 80, 650], ['Maatjes', 'klein', 1100, 650], ['Daan', 'klein', 1100, 754]]
+          : [['Projecten', 'groot', 70, 250], ['Offertes', 'groot', 410, 250], ['Planning', 'middel', 70, 460], ['Werkbonnen', 'middel', 310, 460], ['Portaal', 'middel', 550, 460], ['Facturen', 'middel', 790, 460], ['Klanten', 'klein', 750, 250], ['Taken', 'klein', 750, 350], ['Email', 'klein', 125, 1040], ['Maatjes', 'klein', 410, 1040], ['Daan', 'klein', 695, 1040]]
+        const REGEL: Record<string, string> = { Offertes: 'Marge zichtbaar vóór verzenden', Planning: 'Montage met één sleep', Werkbonnen: 'Foto en handtekening op locatie', Portaal: 'Klant tekent online', Facturen: 'Van akkoord naar betaald', Taken: 'Wie doet wat', Email: 'Mail wordt project', Projecten: 'Alles op één plek', Klanten: 'Historie per klant', Maatjes: 'Team en rollen', Daan: 'Helpt met tekst en cijfers' }
+        const navKleur = (label: string) => ALLE_MODULES.find((m) => m.label === label)?.color ?? merk.petrol
+        // Geen paars en geen css-variabelen als tint: email, portaal, taken en de extra's krijgen een merkkleur.
+        const TINT: Record<string, string> = { Email: merk.petrol, Portaal: navKleur('Klanten'), Taken: merk.tekstSec, Maatjes: merk.petrol, Daan: merk.petrol }
+        const kaarten = RASTER.map(([label, maat, x, y]) => ({ label, maat, x, y, ...MAAT[maat], Icon: label === 'Daan' ? MessageSquare : (ALLE_MODULES.find((m) => m.label === label)?.icon ?? MessageSquare), kleur: TINT[label] ?? navKleur(label), regel: REGEL[label] }))
         return (
           <div style={{ position: 'absolute', inset: 0, zIndex: 12, pointerEvents: 'none' }}>
             <div style={{ position: 'absolute', left: MIDDEN_X - 520, top: MIDDEN_Y - 520, width: 1040, height: 1040, borderRadius: '50%', background: `radial-gradient(circle, ${merk.wit}22 0%, ${merk.wit}0A 40%, transparent 70%)`, opacity: zichtW * chipZicht, filter: 'blur(10px)' }} />
             <div style={{ position: 'absolute', inset: 0, opacity: zichtW, transform: `scale(${0.7 + inP * 0.3})`, transformOrigin: `${MIDDEN_X}px ${MIDDEN_Y}px` }}>
               <LogoDoen breedte={logoBreedte} x={MIDDEN_X} y={MIDDEN_Y} kleur={merk.wit} stand={(i) => (i === 4 ? { op: 1, dy: 0, schaal: 1 + pulse * 0.45 } : { op: 1, dy: 0 })} />
             </div>
-            {chips.map((c, i) => {
-              const hoek = -Math.PI / 2 + ((i + 0.5) / chips.length) * Math.PI * 2
+            {kaarten.map((k, i) => {
               const op = B2.logoOp + 500 + i * 70
-              const p = veer(t, op, { demping: 14, duurMs: 700 })
-              const z = vlak(t, op, op + 150) * chipZicht
-              const x = MIDDEN_X + Math.cos(hoek) * straal, y = MIDDEN_Y + Math.sin(hoek) * straal * 0.72
+              const p = vlak(t, op, op + 450, ease.enter)
+              const z = vlak(t, op, op + 250, ease.enter) * chipZicht
+              // Elke kaart komt uit zijn eigen richting: 24 px van de kern af, dan naar zijn slot.
+              const dx = k.x + k.b / 2 - MIDDEN_X, dy = k.y + k.h / 2 - MIDDEN_Y
+              const len = Math.hypot(dx, dy) || 1
+              const schuif = (1 - p) * 24
+              const klein = k.maat === 'klein'
+              const iconBox = k.maat === 'groot' ? 48 : k.maat === 'middel' ? 42 : 38
+              const iconMaat = k.maat === 'groot' ? 26 : k.maat === 'middel' ? 23 : 20
+              const labelMaat = k.maat === 'groot' ? 30 : k.maat === 'middel' ? 25 : 22
+              const regelMaat = k.maat === 'groot' ? 18 : k.maat === 'middel' ? 17 : 15
+              const radius = k.maat === 'groot' ? 24 : k.maat === 'middel' ? 22 : 20
+              const pad = k.maat === 'groot' ? '22px 24px' : k.maat === 'middel' ? '18px 20px' : '0 16px'
               return (
-                <div key={c.label} style={{ position: 'absolute', left: x, top: y, transform: `translate(-50%, -50%) scale(${0.8 + p * 0.2})`, opacity: z, display: 'flex', alignItems: 'center', gap: 12, padding: '12px 22px 12px 14px', borderRadius: 999, backgroundColor: merk.wit, boxShadow: '0 16px 40px -12px rgba(0,0,0,0.45)', fontFamily: fonts.kop, fontWeight: 700, fontSize: 26, letterSpacing: '-0.02em', color: merk.ink, whiteSpace: 'nowrap' }}>
-                  <span style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: `${c.kleur}1A`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><c.Icon size={22} color={c.kleur} strokeWidth={2} /></span>
-                  {c.label.toLowerCase()}{c.label === 'Daan' && <span style={{ color: merk.flame }}>.</span>}
+                <div key={k.label} style={{ position: 'absolute', left: k.x, top: k.y, width: k.b, height: k.h, boxSizing: 'border-box', padding: pad, borderRadius: radius, backgroundColor: merk.wit, boxShadow: '0 0 0 1px rgba(255,255,255,0.5), 0 24px 56px -22px rgba(0,0,0,0.45), 0 6px 18px -8px rgba(0,0,0,0.18)', opacity: z, transform: `translate(${(schuif * dx) / len}px, ${(schuif * dy) / len}px) scale(${0.96 + 0.04 * p})`, display: 'flex', flexDirection: klein ? 'row' : 'column', alignItems: klein ? 'center' : 'flex-start', justifyContent: klein ? 'flex-start' : 'space-between', gap: klein ? 12 : 0, overflow: 'hidden' }}>
+                  <span style={{ flex: 'none', width: iconBox, height: iconBox, borderRadius: iconBox * 0.3, backgroundColor: `${k.kleur}1A`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><k.Icon size={iconMaat} color={k.kleur} strokeWidth={2} /></span>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontFamily: fonts.kop, fontWeight: 700, fontSize: labelMaat, lineHeight: 1.1, letterSpacing: '-0.02em', color: merk.ink, whiteSpace: 'nowrap' }}>{k.label.toLowerCase()}{k.label === 'Daan' && <span style={{ color: merk.flame }}>.</span>}</div>
+                    <div style={{ marginTop: klein ? 2 : 5, fontFamily: fonts.body, fontWeight: 500, fontSize: regelMaat, lineHeight: 1.25, letterSpacing: '-0.005em', color: merk.tekstSec }}>{k.regel}</div>
+                  </div>
                 </div>
               )
             })}
@@ -528,6 +563,12 @@ const FilmV2Binnen: React.FC = () => {
           <div style={{ position: 'absolute', left: 200 + F.b * 0.55 - 500, top: 200 + F.h * 0.05 - 500 + Math.sin(t / 7000) * 60, width: 1000, height: 1000, borderRadius: '50%', background: `radial-gradient(circle, ${merk.zand}44 0%, ${merk.zand}00 66%)` }} />
         </div>
       </AbsoluteFill>
+      <Lichtlek t={t} op={B0.inslagOp - 100} />
+      <Lichtlek t={t} op={B2.pullbackOp} sterkte={0.45} />
+      <Lichtlek t={t} op={B2.eindkaartOp} sterkte={0.5} />
+      {t >= B2.puntOp && (
+        <div style={{ position: 'absolute', left: puntXY.x - 60, top: puntXY.y - 60, width: 120, height: 120, borderRadius: '50%', zIndex: 9, background: `radial-gradient(circle, ${merk.flame}AA 0%, ${merk.flame}00 70%)`, filter: 'blur(14px)', opacity: puntZicht * (0.45 + 0.25 * Math.sin((t / 2600) * Math.PI * 2)) }} />
+      )}
       {t >= B2.lettersOp && (
         <div style={{ position: 'relative', zIndex: 10 }}>
           <div style={{ position: 'absolute', left: 90, right: 90, top: MIDDEN_Y + F.wordmarkSize * 0.88, textAlign: 'center', fontFamily: fonts.kop, fontWeight: 600, fontSize: F.naam === '4:3' ? 64 : 72, lineHeight: 1.2, letterSpacing: '-0.02em', color: merk.wit, opacity: vlak(t, B2.regelOp, B2.regelOp + 250), transform: `translateY(${(1 - regelP) * 30}px)`, textWrap: 'balance' as never }}>

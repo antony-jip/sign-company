@@ -72,37 +72,62 @@ const meet = (doel: string | Positie, dx = 0, dy = 0, filmB = 1080): Positie | n
 // Wanneer een stap klaar is met bewegen: na de druk, of bij aankomst.
 const klaarOp = (stap: CursorStap) => (stap.klik ? stap.ms + KLIK_NA_MS + DRUK_MS : stap.ms + AANKOMST_MS)
 
-export const Cursor: React.FC<{ t: number; stappen: CursorStap[]; zichtVan?: number; zichtTot?: number }> = ({ t, stappen, zichtVan = 0, zichtTot = Infinity }) => {
-  const [pos, setPos] = useState<Positie | null>(null)
-  const formaat = useFormaat()
-  const hermeet = useHermeet()
+const stapIndex = (t: number, stappen: CursorStap[]) => {
   let i = 0
   for (let k = 0; k < stappen.length; k++) if (t >= stappen[k].ms) i = k
+  return i
+}
+
+// Positie van de punt op tijd t: DOM-gemeten doelen, reisduur uit de afstand, arc-pad.
+// Puur in t, zodat dezelfde functie ook de schimmen op t-33/66/99 kan leveren.
+const positieOp = (t: number, stappen: CursorStap[], filmB: number): Positie | null => {
+  const i = stapIndex(t, stappen)
   const van = stappen[Math.max(0, i - 1)]
+  const naar = stappen[i]
+  const aankomst = naar.klik ? naar.ms + KLIK_NA_MS - HOVER_MS : naar.ms + AANKOMST_MS
+  const a = meet(van.doel, van.dx, van.dy, filmB)
+  const b = meet(naar.doel, naar.dx, naar.dy, filmB)
+  if (!b) return null
+  const start = i === 0 ? b : (a ?? b)
+  const dxr = b.x - start.x, dyr = b.y - start.y
+  const afstand = Math.hypot(dxr, dyr)
+  // Reisduur uit de afstand, maar nooit eerder vertrekken dan de vorige stap klaar is.
+  const ruimte = i === 0 ? 0 : aankomst - klaarOp(van) - 60
+  const duur = Math.max(200, Math.min(ruimte, Math.max(600, Math.min(1000, 600 * Math.sqrt(afstand / 300)))))
+  const p = i === 0 ? 1 : vlak(t, aankomst - duur, aankomst, ease.move)
+  // Arc-pad: kwadratische bezier, controlepunt loodrecht op de reis, boog omhoog.
+  const boog = Math.min(afstand * 0.16, 80)
+  let px = afstand > 0 ? -dyr / afstand : 0, py = afstand > 0 ? dxr / afstand : 0
+  if (py > 0 || (py === 0 && px < 0)) { px = -px; py = -py }
+  const cx = start.x + dxr / 2 + px * boog, cy = start.y + dyr / 2 + py * boog
+  const q = 1 - p
+  return { x: q * q * start.x + 2 * q * p * cx + p * p * b.x, y: q * q * start.y + 2 * q * p * cy + p * p * b.y }
+}
+
+// Motion-trail (HIGHEND 14): drie schimmen op t-33, t-66, t-99 ms, alleen bij snelheid > 600 px/s.
+const SPOOR_MS = [33, 66, 99]
+const SPOOR_OPACITY = [0.35, 0.2, 0.1]
+const SPOOR_SNELHEID = 600
+
+type Stand = { x: number; y: number; spoor: Positie[] }
+const zelfdePunt = (a: Positie, b: Positie) => Math.abs(a.x - b.x) < 0.05 && Math.abs(a.y - b.y) < 0.05
+
+export const Cursor: React.FC<{ t: number; stappen: CursorStap[]; zichtVan?: number; zichtTot?: number }> = ({ t, stappen, zichtVan = 0, zichtTot = Infinity }) => {
+  const [pos, setPos] = useState<Stand | null>(null)
+  const formaat = useFormaat()
+  const hermeet = useHermeet()
+  const i = stapIndex(t, stappen)
   const naar = stappen[i]
   const aankomst = naar.klik ? naar.ms + KLIK_NA_MS - HOVER_MS : naar.ms + AANKOMST_MS
   useLayoutEffect(() => {
     if (!rootMeetbaar()) { hermeet(); return }
-    const a = meet(van.doel, van.dx, van.dy, formaat.b)
-    const b = meet(naar.doel, naar.dx, naar.dy, formaat.b)
-    if (!b) { setPos((prev) => (prev === null ? prev : null)); return }
-    const start = i === 0 ? b : (a ?? b)
-    const dxr = b.x - start.x, dyr = b.y - start.y
-    const afstand = Math.hypot(dxr, dyr)
-    // Reisduur uit de afstand, maar nooit eerder vertrekken dan de vorige stap klaar is.
-    const ruimte = i === 0 ? 0 : aankomst - klaarOp(van) - 60
-    const duur = Math.max(200, Math.min(ruimte, Math.max(600, Math.min(1000, 600 * Math.sqrt(afstand / 300)))))
-    const p = i === 0 ? 1 : vlak(t, aankomst - duur, aankomst, ease.move)
-    // Arc-pad: kwadratische bezier, controlepunt loodrecht op de reis, boog omhoog.
-    const boog = Math.min(afstand * 0.16, 80)
-    let px = afstand > 0 ? -dyr / afstand : 0, py = afstand > 0 ? dxr / afstand : 0
-    if (py > 0 || (py === 0 && px < 0)) { px = -px; py = -py }
-    const cx = start.x + dxr / 2 + px * boog, cy = start.y + dyr / 2 + py * boog
-    const q = 1 - p
-    const x = q * q * start.x + 2 * q * p * cx + p * p * b.x
-    const y = q * q * start.y + 2 * q * p * cy + p * p * b.y
+    const nu = positieOp(t, stappen, formaat.b)
+    if (!nu) { setPos((prev) => (prev === null ? prev : null)); return }
+    const vorige = positieOp(t - SPOOR_MS[0], stappen, formaat.b)
+    const snelheid = vorige ? (Math.hypot(nu.x - vorige.x, nu.y - vorige.y) / SPOOR_MS[0]) * 1000 : 0
+    const spoor = snelheid > SPOOR_SNELHEID ? SPOOR_MS.map((ms) => positieOp(t - ms, stappen, formaat.b)).filter((s): s is Positie => !!s) : []
     // Alleen bijwerken als de positie echt anders is, anders blijft React lussen.
-    setPos((prev) => (prev && Math.abs(prev.x - x) < 0.05 && Math.abs(prev.y - y) < 0.05 ? prev : { x, y }))
+    setPos((prev) => (prev && zelfdePunt(prev, nu) && prev.spoor.length === spoor.length && prev.spoor.every((s, k) => zelfdePunt(s, spoor[k])) ? prev : { x: nu.x, y: nu.y, spoor }))
   })
   const zicht = Math.min(vlak(t, zichtVan, zichtVan + 250), Number.isFinite(zichtTot) ? 1 - vlak(t, zichtTot - 133, zichtTot, ease.exit) : 1)
   if (!pos || zicht <= 0) return null
@@ -126,6 +151,11 @@ export const Cursor: React.FC<{ t: number; stappen: CursorStap[]; zichtVan?: num
     <div style={{ position: 'absolute', left: pos.x, top: pos.y, width: 0, height: 0, zIndex: 80, pointerEvents: 'none', opacity: zicht }}>
       {klikOp > 0 && t >= klikOp && rip1 < 1 && ring(rip1, 56, 1, 4 - rip1 * 2.5)}
       {klikOp > 0 && t >= klikOp + 67 && rip2 < 1 && ring(rip2, 40, 0.6, 2)}
+      {pos.spoor.map((s, k) => (
+        <svg key={k} width={SVG} height={SVG} viewBox="0 0 24 24" style={{ position: 'absolute', left: s.x - pos.x - TIP.x * SCHAAL, top: s.y - pos.y - TIP.y * SCHAAL, opacity: SPOOR_OPACITY[k], transform: `scale(${schaal})`, transformOrigin: `${TIP.x * SCHAAL}px ${TIP.y * SCHAAL}px` }}>
+          <path d="M5 3l14 9-6.5 1.4L16 20l-3 1.4-3.5-6.6L5 19z" fill={merk.flame} stroke="#fff" strokeWidth={1.6} strokeLinejoin="round" />
+        </svg>
+      ))}
       <svg width={SVG} height={SVG} viewBox="0 0 24 24" style={{ position: 'absolute', left: -TIP.x * SCHAAL, top: -TIP.y * SCHAAL, transform: `scale(${schaal})`, transformOrigin: `${TIP.x * SCHAAL}px ${TIP.y * SCHAAL}px`, filter: 'drop-shadow(0 10px 16px rgba(0,0,0,0.28))' }}>
         <path d="M5 3l14 9-6.5 1.4L16 20l-3 1.4-3.5-6.6L5 19z" fill={merk.flame} stroke="#fff" strokeWidth={1.6} strokeLinejoin="round" />
       </svg>

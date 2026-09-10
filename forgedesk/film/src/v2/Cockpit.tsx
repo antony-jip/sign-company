@@ -34,15 +34,60 @@ export type CockpitStand = {
   taak?: { dialoogOp: number; typOp: number; kiesOp: number; klaarOp: number }
   // Blokken die nog niet zichtbaar zijn (openvouwen), ms waarop elk opkomt.
   blokOp?: Partial<Record<'kop' | 'fase' | 'briefing' | 'grid' | 'portaal' | 'tijd' | 'klant' | 'team' | 'acties', number>>
+  // Ms waarop een knop ingedrukt wordt (klik-landing, dus klikX + 80). Wat hier
+  // ontbreekt wordt uit werkbon/taak afgeleid; de rest doet zonder waarde niets.
+  klikOp?: Partial<Record<'offerteMaken' | 'factuurMaken' | 'werkbonMaken' | 'taakToevoegen' | 'taakSanne' | 'inklokken', number>>
 }
 
 const noop = async () => {}
 
-const Blok: React.FC<{ t: number; op?: number; children: React.ReactNode; className?: string }> = ({ t, op, children, className }) => {
-  const zicht = op === undefined ? 1 : vlak(t, op, op + 260)
-  const dy = op === undefined ? 0 : (1 - vlak(t, op, op + 420)) * 26
-  return <div className={className} style={{ opacity: zicht, transform: `translateY(${dy}px)` }}>{children}</div>
+// Geist-cascade per blok (HIGHEND 6, 8): paneel 300 ms, kop 200 ms na 50,
+// inhoud 200 ms na 100, knoppen 150 ms na 150. De kop/inhoud/knop-lagen gaan
+// als css-variabelen mee naar de app-componenten in het blok (zie CASCADE_CSS);
+// in eigen markup worden ze via `laag()` direct gezet. Alles uit t, geen transitions.
+type Cascade = { paneel: React.CSSProperties; vars: React.CSSProperties; laag: (naam: 'kop' | 'inhoud' | 'knop') => React.CSSProperties }
+const geenLaag: React.CSSProperties = {}
+const cascade = (t: number, op?: number): Cascade => {
+  if (op === undefined || t >= op + 300) return { paneel: geenLaag, vars: geenLaag, laag: () => geenLaag }
+  const p = vlak(t, op, op + 300, ease.enter)
+  const kop = vlak(t, op + 50, op + 250, ease.uiUit)
+  const inhoud = vlak(t, op + 100, op + 300, ease.uiUit)
+  const knop = vlak(t, op + 150, op + 300, ease.uiUit)
+  const stijl = (q: number, y: number): React.CSSProperties => q >= 1 ? geenLaag : { opacity: q, transform: `translateY(${(1 - q) * y}px)` }
+  const lagen = { kop: stijl(kop, 6), inhoud: stijl(inhoud, 6), knop: stijl(knop, 4) }
+  const vars = {
+    '--ck': kop, '--ckt': kop >= 1 ? 'none' : `translateY(${(1 - kop) * 6}px)`,
+    '--ci': inhoud, '--cit': inhoud >= 1 ? 'none' : `translateY(${(1 - inhoud) * 6}px)`,
+    '--cb': knop, '--cbt': knop >= 1 ? 'none' : `translateY(${(1 - knop) * 4}px)`,
+  } as React.CSSProperties
+  return {
+    paneel: { opacity: p, transform: `translateY(${(1 - p) * 10}px) scale(${0.96 + p * 0.04})`, transformOrigin: '50% 0' },
+    vars,
+    laag: (naam) => lagen[naam],
+  }
 }
+// Kop = eerste kind van een app-paneel (de titelrij), inhoud = de rest, knoppen = button.
+// De variabelen staan alleen tijdens de cascade op het blok; daarna is er geen stijl.
+const CASCADE_CSS = `
+[data-cascade] .doen-slate-surface > :first-child { opacity: var(--ck, 1); transform: var(--ckt, none); }
+[data-cascade] .doen-slate-surface > :not(:first-child) { opacity: var(--ci, 1); transform: var(--cit, none); }
+[data-cascade] button { opacity: var(--cb, 1); transform: var(--cbt, none); }
+`
+
+const Blok: React.FC<{ t: number; op?: number; children: React.ReactNode; className?: string }> = ({ t, op, children, className }) => {
+  const c = cascade(t, op)
+  const bezig = op !== undefined && t < op + 300
+  return <div className={className} data-cascade={bezig ? '' : undefined} style={{ ...c.paneel, ...c.vars }}>{children}</div>
+}
+
+// Drukfeedback op een klik (HIGHEND 13): scale 0,97 in 120 ms, terug in 170 ms.
+const druk = (t: number, klikMs?: number, diepte = 0.03) => {
+  if (klikMs === undefined || t < klikMs || t >= klikMs + 290) return 1
+  const heen = vlak(t, klikMs, klikMs + 120, ease.uiUit)
+  const terug = vlak(t, klikMs + 120, klikMs + 290, ease.uiUit)
+  return 1 - diepte * heen * (1 - terug)
+}
+const drukStijl = (s: number): React.CSSProperties => s >= 1 ? geenLaag : { transform: `scale(${s})`, transformOrigin: 'center' }
 
 const formatKlok = (s: number) => `${Math.floor(s / 3600)}:${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
 
@@ -97,8 +142,19 @@ export const Cockpit: React.FC<{ t: number; stand: CockpitStand }> = ({ t, stand
   const sec = stand.ingekloktSinds != null ? Math.max(0, Math.floor((t - stand.ingekloktSinds) / 1000)) : null
   const heeftOfferte = offertes.length > 0
   const factureerFase = ['afgerond', 'te-factureren', 'gefactureerd'].includes(stand.status)
+  // Klik-landingen: werkbon/taak leveren klaarOp = klik + 200, kiesOp = klik.
+  const klik = stand.klikOp ?? {}
+  const drukWerkbon = druk(t, klik.werkbonMaken ?? (stand.werkbon ? stand.werkbon.klaarOp - 200 : undefined))
+  const drukTaak = druk(t, klik.taakToevoegen ?? (stand.taak ? stand.taak.klaarOp - 200 : undefined))
+  const drukSanne = druk(t, klik.taakSanne ?? stand.taak?.kiesOp)
+  const drukKop = druk(t, factureerFase ? klik.factuurMaken : klik.offerteMaken)
+  const drukInklokken = druk(t, klik.inklokken)
+  const kopC = cascade(t, op.kop)
+  const portaalC = cascade(t, op.portaal)
+  const tijdC = cascade(t, op.tijd)
   return (
     <AppVenster actief="Projecten" moduleTitel="Projecten" meldingen={stand.meldingen ?? 4} tabs={[{ label: 'Email' }, { label: 'Projecten' }, { label: klant.bedrijfsnaam, actief: true }]}>
+      <style>{CASCADE_CSS}</style>
       <div className="absolute inset-0 overflow-hidden">
         {stand.composer && t >= stand.composer.op && t < stand.composer.dichtOp + 400 && (() => {
           const c = stand.composer
@@ -127,12 +183,12 @@ export const Cockpit: React.FC<{ t: number; stand: CockpitStand }> = ({ t, stand
                 <div className="flex flex-wrap gap-1.5">
                   {medewerkers.map((mw, i) => {
                     const sel = gekozen && mw.naam === 'Sanne'
-                    return <span key={mw.id} data-doel={mw.naam === 'Sanne' ? 'taak-sanne' : undefined} className={`inline-flex items-center h-8 px-3 rounded-full text-[13px] font-medium ${kleuren[i % 2]} ${sel ? 'ring-2 ring-petrol' : ''}`}>{mw.naam}</span>
+                    return <span key={mw.id} data-doel={mw.naam === 'Sanne' ? 'taak-sanne' : undefined} className={`inline-flex items-center h-8 px-3 rounded-full text-[13px] font-medium ${kleuren[i % 2]} ${sel ? 'ring-2 ring-petrol' : ''}`} style={mw.naam === 'Sanne' ? drukStijl(drukSanne) : undefined}>{mw.naam}</span>
                   })}
                 </div>
                 <div className="mt-5 flex items-center justify-end gap-2">
                   <span className="h-9 px-4 rounded-lg border border-border text-[13px] font-medium text-foreground inline-flex items-center">Annuleren</span>
-                  <span data-doel="taak-toevoegen" className="h-9 px-4 rounded-lg bg-petrol text-white text-[13px] font-semibold inline-flex items-center" style={{ opacity: titel.length > 3 && gekozen ? 1 : 0.5 }}>Taak toevoegen</span>
+                  <span data-doel="taak-toevoegen" className="h-9 px-4 rounded-lg bg-petrol text-white text-[13px] font-semibold inline-flex items-center" style={{ opacity: titel.length > 3 && gekozen ? 1 : 0.5, ...drukStijl(drukTaak) }}>Taak toevoegen</span>
                 </div>
               </div>
             </div>
@@ -158,7 +214,7 @@ export const Cockpit: React.FC<{ t: number; stand: CockpitStand }> = ({ t, stand
                     </div>
                     <div className="mt-5 flex items-center justify-end gap-2">
                       <span className="h-9 px-4 rounded-lg border border-border text-[13px] font-medium text-foreground inline-flex items-center">Terug</span>
-                      <span data-doel="werkbon-maken" className="h-9 px-4 rounded-lg bg-flame text-white text-[13px] font-semibold inline-flex items-center gap-1.5"><ClipboardCheck className="h-3.5 w-3.5" />Werkbon maken (3)</span>
+                      <span data-doel="werkbon-maken" className="h-9 px-4 rounded-lg bg-flame text-white text-[13px] font-semibold inline-flex items-center gap-1.5" style={drukStijl(drukWerkbon)}><ClipboardCheck className="h-3.5 w-3.5" />Werkbon maken (3)</span>
                     </div>
                   </div>
                 </div>
@@ -173,13 +229,15 @@ export const Cockpit: React.FC<{ t: number; stand: CockpitStand }> = ({ t, stand
         })()}
         {/* Kop */}
         <Blok t={t} op={op.kop} className="px-8 pt-6 relative">
-          <div className="flex items-center gap-2 text-[12px] text-muted-foreground">
-            <span className="inline-flex items-center gap-1.5 text-petrol font-medium"><ArrowLeft className="h-3.5 w-3.5 text-flame" /> Projecten</span>
-            <span className="text-muted-foreground/70">·</span>
-            <span className="font-mono text-[11px] px-2 py-0.5 rounded-md bg-muted text-foreground/80">{project.project_nummer}</span>
+          <div style={kopC.laag('kop')}>
+            <div className="flex items-center gap-2 text-[12px] text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5 text-petrol font-medium"><ArrowLeft className="h-3.5 w-3.5 text-flame" /> Projecten</span>
+              <span className="text-muted-foreground/70">·</span>
+              <span className="font-mono text-[11px] px-2 py-0.5 rounded-md bg-muted text-foreground/80">{project.project_nummer}</span>
+            </div>
+            <h1 className="font-heading text-[40px] font-bold leading-tight tracking-[-0.025em] text-foreground mt-2">{project.naam}<span className="text-flame">.</span></h1>
           </div>
-          <h1 className="font-heading text-[40px] font-bold leading-tight tracking-[-0.025em] text-foreground mt-2">{project.naam}<span className="text-flame">.</span></h1>
-          <div className="flex items-center gap-2 mt-1 text-[13px]">
+          <div className="flex items-center gap-2 mt-1 text-[13px]" style={kopC.laag('inhoud')}>
             <span className="font-semibold text-foreground/80">{klant.bedrijfsnaam}</span>
             <span className="text-muted-foreground">· {klant.stad.toUpperCase()}</span>
             <span className="text-muted-foreground/70">·</span>
@@ -187,18 +245,18 @@ export const Cockpit: React.FC<{ t: number; stand: CockpitStand }> = ({ t, stand
             <span className="text-muted-foreground/70">·</span>
             <span className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground"><CalendarDays className="h-3.5 w-3.5" strokeWidth={1.75} />{project.eind_datum ? <span className="font-medium text-foreground/80">deadline 24 sep</span> : <span className="text-muted-foreground/60">+ deadline</span>}</span>
           </div>
-          <div className="absolute top-4 right-8 z-20 flex items-center gap-2">
+          <div className="absolute top-4 right-8 z-20 flex items-center gap-2" style={kopC.laag('knop')}>
             {heeftOfferte ? (
               <>
                 <span className="btn-primary-flame text-[13px] !py-[9px] !px-4 inline-flex items-center gap-1.5"><Pencil className="h-3.5 w-3.5" />Offerte bewerken</span>
                 <span className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-petrol/30 bg-card text-petrol text-[13px] font-medium"><Receipt className="h-3.5 w-3.5" />{factureerFase ? 'Maak factuur' : 'Maak factuur'}</span>
               </>
             ) : (
-              <span data-doel={factureerFase ? 'factuur-maken' : 'offerte-maken'} className="btn-primary-flame text-[13px] !py-[9px] !px-4 inline-flex items-center gap-1.5">{factureerFase ? <><Receipt className="h-3.5 w-3.5" />Factuur maken</> : <><Pencil className="h-3.5 w-3.5" />Offerte maken</>}</span>
+              <span data-doel={factureerFase ? 'factuur-maken' : 'offerte-maken'} className="btn-primary-flame text-[13px] !py-[9px] !px-4 inline-flex items-center gap-1.5" style={drukStijl(drukKop)}>{factureerFase ? <><Receipt className="h-3.5 w-3.5" />Factuur maken</> : <><Pencil className="h-3.5 w-3.5" />Offerte maken</>}</span>
             )}
           </div>
           {/* Tabs */}
-          <div className="flex items-center gap-1 border-b border-border mt-4">
+          <div className="flex items-center gap-1 border-b border-border mt-4" style={kopC.laag('inhoud')}>
             {(['Overzicht', 'Werkbon', 'Financieel', 'E-mail', 'Notities'] as const).map((naam) => (
               <span key={naam} className={`relative inline-flex items-center gap-2 px-3 py-2.5 text-[14px] ${tab === naam ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
                 {naam}
@@ -218,7 +276,7 @@ export const Cockpit: React.FC<{ t: number; stand: CockpitStand }> = ({ t, stand
             </Blok>
             <Blok t={t} op={op.portaal}>
               <div data-doel="blok-portaal" className="rounded-2xl overflow-hidden ring-1 ring-border/60 bg-card">
-                <div className="flex items-center justify-between px-5 py-3.5 text-white" style={{ background: 'linear-gradient(135deg, #1A535C, #143F46)' }}>
+                <div className="flex items-center justify-between px-5 py-3.5 text-white" style={{ background: 'linear-gradient(135deg, #1A535C, #143F46)', ...portaalC.laag('kop') }}>
                   <div className="flex items-center gap-3">
                     <span className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center"><MonitorSmartphone className="h-4 w-4" /></span>
                     <div>
@@ -231,7 +289,7 @@ export const Cockpit: React.FC<{ t: number; stand: CockpitStand }> = ({ t, stand
                     <span className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-white/10"><Eye className="h-3.5 w-3.5" />Bekijk als klant</span>
                   </div>
                 </div>
-                <div className="px-5 py-4">
+                <div className="px-5 py-4" style={portaalC.laag('inhoud')}>
                   {stand.portaal.length === 0 ? (
                     <div className="text-center py-6">
                       <p className="text-sm font-medium text-foreground">Nog niets gedeeld</p>
@@ -244,11 +302,11 @@ export const Cockpit: React.FC<{ t: number; stand: CockpitStand }> = ({ t, stand
                     <div className="flex items-center gap-3 px-3 py-2 border-b border-border text-muted-foreground"><Bold className="h-3.5 w-3.5" /><Italic className="h-3.5 w-3.5" /><Underline className="h-3.5 w-3.5" /><List className="h-3.5 w-3.5" /><LinkIcon className="h-3.5 w-3.5" /><span className="w-px h-4 bg-border" /><Paperclip className="h-3.5 w-3.5" /></div>
                     <p className="px-3 py-3 text-[13px] text-muted-foreground">Bericht...</p>
                   </div>
-                  <div className="mt-3 flex items-center gap-2">
+                  <div className="mt-3 flex items-center gap-2" style={portaalC.laag('knop')}>
                     {[['Tekening', FileText], ['Offerte', Receipt], ['OB', ClipboardCheck], ['Factuur', CreditCard], ['Foto', ImageIcon]].map(([naam, Icon]) => { const I = Icon as typeof FileText; return <span key={naam as string} className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-border text-[13px] text-foreground"><I className="h-3.5 w-3.5" />{naam as string}</span> })}
                     <span className="ml-auto w-9 h-9 rounded-full bg-petrol/15 text-petrol flex items-center justify-center"><Send className="h-4 w-4" /></span>
                   </div>
-                  <div className="mt-3 flex items-center gap-3 rounded-xl bg-muted/60 px-4 py-2.5 text-[13px]">
+                  <div className="mt-3 flex items-center gap-3 rounded-xl bg-muted/60 px-4 py-2.5 text-[13px]" style={portaalC.laag('knop')}>
                     <span className="w-9 h-5 rounded-full bg-petrol relative"><span className="absolute right-0.5 top-0.5 w-4 h-4 rounded-full bg-white" /></span>
                     <span className="font-medium text-foreground">Klant notificeren per email</span>
                     <span className="text-muted-foreground">Klant ontvangt een email bij verzending</span>
@@ -272,11 +330,11 @@ export const Cockpit: React.FC<{ t: number; stand: CockpitStand }> = ({ t, stand
                       <div className="font-mono text-[22px] font-semibold leading-none tabular-nums text-foreground">{formatKlok(sec)}</div>
                       <div className="text-[11px] text-muted-foreground mt-1">ingeklokt sinds 09:41</div>
                     </div>
-                    <span className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg bg-flame text-white text-[13px] font-medium"><Square className="h-3.5 w-3.5" strokeWidth={2.25} />Uitklokken</span>
+                    <span className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg bg-flame text-white text-[13px] font-medium" style={tijdC.laag('knop')}><Square className="h-3.5 w-3.5" strokeWidth={2.25} />Uitklokken</span>
                   </div>
                 ) : (
                   <div className="flex items-center gap-3">
-                    <span data-doel="inklokken" className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg bg-petrol text-white text-[13px] font-medium"><Play className="h-3.5 w-3.5" strokeWidth={2.25} />Inklokken</span>
+                    <span data-doel="inklokken" className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg bg-petrol text-white text-[13px] font-medium" style={{ ...tijdC.laag('knop'), ...drukStijl(drukInklokken) }}><Play className="h-3.5 w-3.5" strokeWidth={2.25} />Inklokken</span>
                     <span className="inline-flex items-center gap-1 text-[12px] text-muted-foreground">Bewerking <ChevronDown className="h-3 w-3" /></span>
                   </div>
                 )}

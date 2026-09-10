@@ -1,11 +1,11 @@
 import { MapPin, Phone } from 'lucide-react'
 import { WerkbonMonteurFeedback } from '@/components/werkbonnen/WerkbonMonteurFeedback'
 import { MobielTop } from '../../kern/AppChrome'
-import { SCHERM_B, SCHERM_H } from '../../kern/TelefoonFrame'
+import { SCHERM_B, SCHERM_H, StatusBalk } from '../../kern/TelefoonFrame'
 import { project, klant, contact, montage, werkbonNummer, fotoNa } from '../../mockData'
 import { merk, grond } from '../../brand'
 import { typ } from '../../kern/Typ'
-import { vlak } from '../../tijd'
+import { vlak, ease } from '../../tijd'
 
 // De werkbon van de monteur op de telefoon: kop zoals WerkbonMonteurView,
 // daaronder de echte foto- en handtekeningsectie uit WerkbonMonteurFeedback.
@@ -32,8 +32,14 @@ export const WerkbonTelefoon: React.FC<{ t: number; stand: WerkbonTelefoonStand 
   // Zodra er getekend wordt schuift de inhoud omhoog, zodat het
   // handtekeningveld binnen het scherm valt.
   const scroll = tekenOp === undefined ? 0 : vlak(t, tekenOp - 500, tekenOp + 100) * 260
+  // Foto-landing (HIGHEND 12): de na-foto komt scherp in beeld, scale 0,94
+  // naar 1 en blur 4 naar 0 in 400 ms. Gaat als css-variabelen naar de
+  // fototegel in WerkbonMonteurFeedback (zie FOTO_CSS).
+  const landP = vlak(t, stand.fotoOp, stand.fotoOp + 400, ease.enter)
+  const fotoVars = landP >= 1 ? undefined : { '--foto-t': `scale(${0.94 + landP * 0.06})`, '--foto-f': `blur(${(1 - landP) * 4}px)` } as React.CSSProperties
   return (
     <div className="bg-background flex flex-col" style={{ width: SCHERM_B, height: SCHERM_H, position: 'relative', overflow: 'hidden' }}>
+      <style>{FOTO_CSS}</style>
       <div style={{ transform: `translateY(${-scroll}px)` }}>
         <MobielTop titel={`Werkbon ${werkbonNummer}`} terug />
         <div className="px-4 pt-2">
@@ -51,6 +57,7 @@ export const WerkbonTelefoon: React.FC<{ t: number; stand: WerkbonTelefoonStand 
         <div className="px-4 pt-3 pb-6" style={{ position: 'relative' }}>
           {/* Midden van de knop "Na foto", gemeten op een still. */}
           <div data-doel="na-foto" style={{ position: 'absolute', left: 280, top: 108, width: 1, height: 1, pointerEvents: 'none' }} />
+          <div data-fotoland={fotoVars ? '' : undefined} style={fotoVars}>
           <WerkbonMonteurFeedback
             key={getekend ? 'getekend' : 'leeg'}
             showUren={false} showOpmerkingen={false} showFotos showHandtekening
@@ -59,22 +66,37 @@ export const WerkbonTelefoon: React.FC<{ t: number; stand: WerkbonTelefoonStand 
             onKlantNaamChange={() => {}} onHandtekeningChange={() => {}} onLightbox={() => {}}
             status="definitief"
           />
+          </div>
         </div>
+      </div>
+      {/* Statusbalk als glas: blijft staan als de inhoud scrolt, 20 px backdrop-blur. */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 54, zIndex: 5, backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', backgroundColor: `${merk.pagina}B8`, boxShadow: 'inset 0 -1px 0 rgba(255,255,255,0.5)' }}>
+        <StatusBalk />
       </div>
     </div>
   )
 }
 
+const FOTO_CSS = `
+[data-fotoland] .grid > div { transform: var(--foto-t, none); filter: var(--foto-f, none); }
+`
+
 // Het scherm in een telefoonbehuizing, als los object voor de 3D-ruimte.
 // Buitenmaat 418 x 872 css-px (390 x 844 plus 14 px rand).
+// Glas (HIGHEND 12): 1 px witte rand op 0,4 om het frame, hairline toplicht,
+// scherm concentrisch met de behuizing (radius 44 buiten, 30 binnen: bij de
+// kaartradius van 20-28 px elders in de film).
+const FRAME_RADIUS = 44
 export const TelefoonInRuimte: React.FC<{ t: number; stand: WerkbonTelefoonStand }> = ({ t, stand }) => {
   const rand = 14
   return (
     <div style={{ position: 'relative', width: SCHERM_B + rand * 2, height: SCHERM_H + rand * 2 }}>
-      <div style={{ position: 'absolute', inset: 0, borderRadius: 64, backgroundColor: grond.diep, boxShadow: '0 60px 120px -40px rgba(0,0,0,0.55), 0 0 0 2px rgba(255,255,255,0.06) inset' }} />
-      <div style={{ position: 'absolute', left: rand, top: rand, width: SCHERM_B, height: SCHERM_H, borderRadius: 50, overflow: 'hidden', backgroundColor: merk.pagina }}>
+      <div style={{ position: 'absolute', inset: 0, borderRadius: FRAME_RADIUS, backgroundColor: grond.diep, boxShadow: '0 60px 120px -40px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.4), inset 0 1px 0 rgba(255,255,255,0.55), inset 0 0 0 1px rgba(255,255,255,0.06)' }} />
+      {/* Toplicht: hairline tussen de hoekrondingen, het licht valt van boven. */}
+      <div style={{ position: 'absolute', top: 0, left: FRAME_RADIUS, right: FRAME_RADIUS, height: 1, background: 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 50%, rgba(255,255,255,0) 100%)' }} />
+      <div style={{ position: 'absolute', left: rand, top: rand, width: SCHERM_B, height: SCHERM_H, borderRadius: FRAME_RADIUS - rand, overflow: 'hidden', backgroundColor: merk.pagina }}>
         <WerkbonTelefoon t={t} stand={stand} />
-        <div style={{ position: 'absolute', top: 14, left: '50%', transform: 'translateX(-50%)', width: 120, height: 34, borderRadius: 999, backgroundColor: grond.diep }} />
+        <div style={{ position: 'absolute', top: 14, left: '50%', transform: 'translateX(-50%)', width: 120, height: 34, borderRadius: 999, backgroundColor: grond.diep, zIndex: 6 }} />
       </div>
     </div>
   )

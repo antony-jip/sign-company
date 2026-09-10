@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { createContext, useContext } from 'react'
-import { AbsoluteFill } from 'remotion'
+import { AbsoluteFill, staticFile } from 'remotion'
 import { merk } from '../brand'
 import { ease, lerp, vlak } from '../tijd'
 import { VENSTER_B, VENSTER_H } from './DesktopChrome'
@@ -59,14 +59,14 @@ const VLEKKEN: { kleur: string; alpha: string; x: number; y: number; r: number; 
 export const Aurora: React.FC<{ t: number; camera: Camera; zicht: number }> = ({ t, camera, zicht }) => {
   const f = useFormaat()
   if (zicht <= 0) return null
-  const px = -camera.x * 0.05, py = -camera.y * 0.05
+  const px = -camera.x * 0.2, py = -camera.y * 0.2
   return (
     <div style={{ position: 'absolute', inset: 0, opacity: zicht, overflow: 'hidden' }}>
-      <div style={{ position: 'absolute', inset: -200, filter: 'blur(70px)' }}>
+      <div style={{ position: 'absolute', inset: -300, filter: 'blur(74px) saturate(1.35)' }}>
         {VLEKKEN.map((v, i) => {
           const dx = Math.sin((t / v.periode) * Math.PI * 2 + v.fase) * 90
           const dy = Math.cos((t / (v.periode * 1.3)) * Math.PI * 2 + v.fase) * 70
-          return <div key={i} style={{ position: 'absolute', left: 200 + f.b * v.x - v.r + dx + px, top: 200 + f.h * v.y - v.r + dy + py, width: v.r * 2, height: v.r * 2, borderRadius: '50%', background: `radial-gradient(circle, ${v.kleur}${v.alpha} 0%, ${v.kleur}00 68%)` }} />
+          return <div key={i} style={{ position: 'absolute', left: 300 + f.b * v.x - v.r + dx + px, top: 300 + f.h * v.y - v.r + dy + py, width: v.r * 2, height: v.r * 2, borderRadius: '50%', background: `radial-gradient(circle, ${v.kleur}${v.alpha} 0%, ${v.kleur}00 68%)` }} />
         })}
       </div>
     </div>
@@ -82,6 +82,8 @@ export const Wereld: React.FC<{ camera: Camera; children: ReactNode; grond?: str
       <Aurora t={t} camera={camera} zicht={grond === 'transparent' ? 0 : 1} />
       {/* Licht vignet: de randen iets dieper, het midden blijft open */}
       {grond !== 'transparent' && <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(ellipse at 50% 45%, transparent 55%, ${merk.petrol}14 100%)` }} />}
+      {/* Grain: tileable ruis op overlay, 6 procent, verschuift 1 px per frame (HIGHEND 18) */}
+      <div style={{ position: 'absolute', inset: 0, zIndex: 3, pointerEvents: 'none', backgroundImage: `url(${staticFile('sfeer/ruis.png')})`, backgroundSize: '256px 256px', backgroundPosition: `${Math.round(t / 33) % 256}px ${Math.round(t / 47) % 256}px`, mixBlendMode: 'overlay', opacity: 0.06 }} />
       <div style={{ position: 'absolute', left: f.middenX, top: f.middenY, width: 0, height: 0, transform: `scale(${zoom}) translate(${-camera.x}px, ${-camera.y}px)`, transformOrigin: '0 0' }}>
         {children}
       </div>
@@ -109,10 +111,15 @@ type SchermProps = {
   // Extra schaal (magneet aan het eind), 1 = normaal.
   extraSchaal?: number
   rotatie?: number
+  // Camerasnelheid 0-1: niet-actieve schermen vervagen extra tijdens de vlucht.
+  snelheid?: number
+  // Momenten (ms) waarop een speculaire glint over de rand loopt (landingen).
+  glintOp?: number[]
+  // Momenten (ms) waarop de lichtrand één keer pulseert (fasesprong).
+  pulsOp?: number[]
 }
 
 const RADIUS = 28
-const RAND = `linear-gradient(135deg, ${merk.flame} 0%, ${merk.zand} 38%, ${merk.petrol} 72%, ${merk.flame} 100%)`
 
 // Vaste fase per scherm, zodat de ambient drift per venster anders loopt.
 const faseVan = (id: string) => { let h = 0; for (const c of id) h = (h * 31 + c.charCodeAt(0)) % 997; return (h / 997) * Math.PI * 2 }
@@ -120,11 +127,26 @@ const faseVan = (id: string) => { let h = 0; for (const c of id) h = (h * 31 + c
 // Een venster in de ruimte. x/y = middelpunt in wereldcoördinaten.
 // Drie lagen (MOTION.md): het paneel is de hoofdlaag, de slagschaduw de
 // secundaire laag (kantel 2-3 f later), gloed en drift zijn ambient.
-export const Scherm: React.FC<SchermProps> = ({ id, x, y, t = 0, diepte = 0, kantel = 0, schaduwKantel = kantel, breedte = SCHERM_B, hoogte = SCHERM_H, children, zicht = 1, gloed = 0, extraSchaal = 1, rotatie = 0 }) => {
+const laatsteVoor = (lijst: number[] | undefined, t: number) => { let b = -Infinity; for (const m of lijst ?? []) if (m <= t && m > b) b = m; return b }
+
+export const Scherm: React.FC<SchermProps> = ({ id, x, y, t = 0, diepte = 0, kantel = 0, schaduwKantel = kantel, breedte = SCHERM_B, hoogte = SCHERM_H, children, zicht = 1, gloed = 0, extraSchaal = 1, rotatie = 0, snelheid = 0, glintOp, pulsOp }) => {
   const schaal = extraSchaal / (1 + diepte * 0.22)
   const rand = Math.max(0, Math.min(1, gloed))
-  const blur = diepte * 2.6
-  const dim = 1 - Math.min(0.12, diepte * 0.08)
+  // Scherptediepte: scherp tot diepte 0,25, dan kwadratisch naar 9 px bij 1,5
+  // (HIGHEND 4). Tijdens een vlucht vervagen niet-actieve schermen extra.
+  const dofP = Math.max(0, (diepte - 0.25) / 1.25)
+  const blur = dofP * dofP * 9 + Math.min(1, diepte * 2) * snelheid * 4
+  const dim = 1 - Math.min(0.10, diepte * 0.07)
+  // Draaiende lichtrand: hoek uit t, 360 graden per 8 s (HIGHEND 2).
+  const hoek = ((t / 8000) * 360) % 360
+  const RAND = `conic-gradient(from ${hoek}deg, ${merk.flame} 0%, ${merk.zand} 30%, ${merk.petrolLight} 60%, ${merk.flame} 100%)`
+  // Glint: 220 px witte veeg over de rand, 600 ms, 120 ms na de landing (HIGHEND 3).
+  const glintVan = laatsteVoor(glintOp, t) + 120
+  const glintP = Number.isFinite(glintVan) ? vlak(t, glintVan, glintVan + 600, ease.camera) : 0
+  // Puls: de rand licht één keer op in de hold van een fasesprong (HIGHEND 15).
+  const pulsVan = laatsteVoor(pulsOp, t)
+  const puls = Number.isFinite(pulsVan) ? Math.sin(vlak(t, pulsVan, pulsVan + 900, ease.inUit) * Math.PI) : 0
+  const randOp = Math.min(1, 0.22 + rand * 0.5 + puls * 0.45)
   const fase = faseVan(id)
   // Ambient: gloed ademt 15 procent in 2,6 s; een niet-actief venster drijft 6 px in 3,4 s.
   const adem = 0.85 + 0.15 * Math.sin((t / 2600) * Math.PI * 2 + fase)
@@ -145,7 +167,7 @@ export const Scherm: React.FC<SchermProps> = ({ id, x, y, t = 0, diepte = 0, kan
       <div style={{
         position: 'absolute', inset: -3, borderRadius: RADIUS + 3, background: RAND,
         transform: `translate(${dx}px, ${dy}px) scale(${schaal}) rotateY(${kantel}deg) rotate(${rotatie}deg)`, transformOrigin: 'center',
-        filter: 'blur(22px)', opacity: rand * 0.55 * adem,
+        filter: 'blur(14px)', opacity: (0.08 + rand * 0.30 + puls * 0.3) * adem,
       }} />
       <div style={{
         position: 'absolute', inset: 0, borderRadius: RADIUS, overflow: 'hidden', backgroundColor: merk.wit,
@@ -153,7 +175,10 @@ export const Scherm: React.FC<SchermProps> = ({ id, x, y, t = 0, diepte = 0, kan
         filter: `blur(${blur}px) brightness(${dim})`,
         boxShadow: '0 2px 4px rgba(70,55,40,.04), 0 0 0 1px rgba(255,255,255,.6) inset',
       }}>
-        <div style={{ position: 'absolute', inset: 0, zIndex: 5, pointerEvents: 'none', borderRadius: RADIUS, padding: 2, background: RAND, opacity: 0.35 + rand * 0.65, WebkitMask: 'linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }} />
+        <div style={{ position: 'absolute', inset: 0, zIndex: 5, pointerEvents: 'none', borderRadius: RADIUS, padding: 1.5, background: RAND, opacity: randOp, WebkitMask: 'linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }} />
+        {glintP > 0 && glintP < 1 && (
+          <div style={{ position: 'absolute', inset: 0, zIndex: 6, pointerEvents: 'none', borderRadius: RADIUS, padding: 2, opacity: Math.sin(glintP * Math.PI), background: `linear-gradient(115deg, transparent ${glintP * 140 - 24}%, rgba(255,255,255,0.95) ${glintP * 140 - 8}%, transparent ${glintP * 140 + 6}%)`, WebkitMask: 'linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }} />
+        )}
         <div style={{ width: breedte / SCHERM_SCHAAL, height: hoogte / SCHERM_SCHAAL, transform: `scale(${SCHERM_SCHAAL})`, transformOrigin: '0 0' }}>
           {children}
         </div>

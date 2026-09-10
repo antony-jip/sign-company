@@ -10,7 +10,7 @@ export const Geluid: React.FC<{ klanken: Klank[]; muziek?: boolean; muziekVolume
   <>
     {muziek && (
       <Sequence from={0} durationInFrames={msNaarFrames(totMs)} name="muziek">
-        <Audio src={staticFile('audio/muziek-a.mp3')} volume={(f) => {
+        <Audio src={staticFile('audio/muziek-c.mp3')} volume={(f) => {
           // Zacht in, zacht uit aan het eind van de film.
           const tot = msNaarFrames(totMs)
           const inP = Math.min(1, f / 30)
@@ -19,8 +19,9 @@ export const Geluid: React.FC<{ klanken: Klank[]; muziek?: boolean; muziekVolume
         }} />
       </Sequence>
     )}
+    {/* Effecten 2 frames vóór het beeld: het brein verwerkt geluid sneller (HIGHEND 19) */}
     {klanken.map((k, i) => (
-      <Sequence key={i} from={msNaarFrames(k.ms)} durationInFrames={msNaarFrames(k.duurMs ?? 2500)} name={`sfx-${k.bestand}`}>
+      <Sequence key={i} from={Math.max(0, msNaarFrames(k.ms) - 2)} durationInFrames={msNaarFrames(k.duurMs ?? 2500)} name={`sfx-${k.bestand}`}>
         <Audio src={staticFile(`audio/${k.bestand}.mp3`)} volume={k.volume ?? 0.7} />
       </Sequence>
     ))}
