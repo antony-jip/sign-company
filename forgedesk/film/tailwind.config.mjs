@@ -5,12 +5,9 @@ import appConfig from '../tailwind.config.js'
 
 export default {
   presets: [appConfig],
-  // De film speelt alles op een telefoon. De viewport is 1080 breed, dus elke
-  // md:-variant zou anders de desktoplayout kiezen. Breakpoints buiten bereik
-  // leggen dwingt de mobiele varianten van de app-componenten af.
-  theme: {
-    screens: { sm: '9000px', md: '9000px', lg: '9000px', xl: '9000px', '2xl': '9000px' },
-  },
+  // Versie 2 speelt op desktopschermen in een 3D-ruimte. De viewport is 1080
+  // breed, dus md: en lg: zijn actief en app-componenten kiezen hun
+  // desktopvariant. Telefoonschermen worden apart in een 390-container gezet.
   content: {
     relative: true,
     files: [
@@ -18,9 +15,10 @@ export default {
     '../src/components/portaal/**/*.tsx',
     '../src/components/quotes/OffertePubliekPagina.tsx',
     '../src/components/shared/{HandtekeningVeld,StatusBadge}.tsx',
-    '../src/components/projects/cockpit/{ProjectFaseBar,TakenOfferteGrid,TaskChecklistView}.tsx',
+    '../src/components/projects/cockpit/*.tsx',
     '../src/components/werkbonnen/{WerkbonMonteurFeedback,WerkbonVanProjectDialog}.tsx',
-    '../src/components/email/AanvraagKaart.tsx',
+    '../src/components/email/{AanvraagKaart,EmailListItem}.tsx',
+    '../src/components/email/shell/*.tsx',
     '../src/components/ui/**/*.tsx',
     '../src/utils/statusColors.ts',
     ],

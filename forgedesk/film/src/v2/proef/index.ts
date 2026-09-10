@@ -1,0 +1,6 @@
+export { ProefPlanning } from './ProefPlanning'
+export { ProefKanban } from './ProefKanban'
+export { ProefWerkbon } from './ProefWerkbon'
+export { ProefFinancieel } from './ProefFinancieel'
+export { ProefComposer } from './ProefComposer'
+export { ProefCockpit } from './ProefCockpit'

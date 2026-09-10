@@ -20,3 +20,5 @@ export const updateMontageAfspraak = niets
 export const koppelEmailAanProject = niets
 export const getProjectVoorThread = nul
 export const verbergAanvraag = niets
+export const isAIConfigured = () => true
+export const chatCompletion = async () => ''

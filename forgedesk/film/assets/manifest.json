@@ -60,6 +60,44 @@
       "omschrijving": "Vijf seconden: de letters lichten langzaam op, verkeer onscherp op de voorgrond.",
       "prompt": "The illuminated letters slowly brighten, blurred headlights pass in the foreground, very slow camera drift, calm, steady",
       "duur": "5"
+    },
+    {
+      "id": "werkbank-telefoon",
+      "type": "still",
+      "model": "fal-ai/flux-2-pro",
+      "bestand": "werkbank-telefoon.jpg",
+      "omschrijving": "Hand legt een telefoon met donker scherm op een houten werkbank in de werkplaats, van schuin boven. Brug van telefoon naar cockpit.",
+      "prompt": "A craftsman's hand placing a smartphone with a dark blank screen on a wooden workbench in a sign maker's workshop, seen from above at a slight angle, cut vinyl letters and a steel ruler beside it, soft morning window light, calm documentary photography, muted teal and warm neutral palette, no readable text, vertical 9:16 composition",
+      "seed": 5301
+    },
+    {
+      "id": "hero-opening",
+      "type": "hero",
+      "bron": "werkplaats",
+      "bestand": "hero-opening.mp4",
+      "omschrijving": "Trage push-in in de werkplaats, stof in het licht.",
+      "prompt": "Very slow smooth camera push in through the workshop, dust particles drifting in the window light, everything else still, calm and premium, no people, no camera shake",
+      "duur": "6"
+    },
+    {
+      "id": "hero-brug",
+      "type": "hero",
+      "bron": "werkbank-telefoon",
+      "bestand": "hero-brug.mp4",
+      "omschrijving": "De hand legt de telefoon neer en trekt terug, camera zakt licht mee.",
+      "prompt": "The hand gently sets the phone down on the workbench and withdraws out of frame, the camera tilts down slightly and settles, soft light, calm, no camera shake",
+      "duur": "6"
+    },
+    {
+      "id": "hero-landing",
+      "type": "hero",
+      "bron": "bus-gevel",
+      "bestand": "hero-landing.mp4",
+      "omschrijving": "De monteur komt de ladder af, de bus staat klaar, het licht wordt warmer.",
+      "prompt": "The technician slowly climbs down the ladder, the light turns warmer as if the sun is setting, a very slow camera pull back, calm, steady, no camera shake",
+      "duur": "6"
     }
-  ]
+  ],
+  "model_hero": "bytedance/seedance-2.5/image-to-video",
+  "model_still_v2": "fal-ai/flux-2-pro"
 }

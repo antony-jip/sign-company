@@ -20,7 +20,10 @@ export const FaseBalkFilm: React.FC<{ fase: number; sindsWissel: number; donker?
   const voor = donker ? merk.wit : merk.petrol
   const lijn = donker ? 'rgba(255,255,255,0.28)' : merk.petrolBorder
   return (
-    <div style={{ position: 'absolute', left: 90, right: 90, bottom: 96, opacity: zicht, zIndex: 20 }}>
+    <div style={{ position: 'absolute', left: 90, right: 90, bottom: 250, opacity: zicht, zIndex: 20 }}>
+      <div style={{ marginBottom: 18, fontFamily: fonts.kop, fontWeight: 700, fontSize: 36, letterSpacing: '-0.02em', color: voor, opacity: p, transform: `translateY(${(1 - p) * 10}px)` }}>
+        {FASES[fase]?.label}<FlameDot />
+      </div>
       <div style={{ display: 'flex', alignItems: 'center' }}>
         {FASES.map((f, i) => {
           const isActief = i === fase
@@ -28,7 +31,7 @@ export const FaseBalkFilm: React.FC<{ fase: number; sindsWissel: number; donker?
           const schaal = isActief ? 0.85 + p * 0.15 : 1
           return (
             <div key={f.label} style={{ display: 'flex', alignItems: 'center', flex: i < FASES.length - 1 ? 1 : 'initial' }}>
-              <div style={{
+              <div data-fase={i} style={{
                 width: 60, height: 60, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                 backgroundColor: isVoorbij ? voor : 'transparent',
                 border: `3px solid ${isVoorbij || isActief ? voor : lijn}`,
@@ -45,9 +48,6 @@ export const FaseBalkFilm: React.FC<{ fase: number; sindsWissel: number; donker?
             </div>
           )
         })}
-      </div>
-      <div style={{ marginTop: 22, fontFamily: fonts.kop, fontWeight: 700, fontSize: 38, letterSpacing: '-0.02em', color: voor, opacity: p, transform: `translateY(${(1 - p) * 10}px)` }}>
-        {FASES[fase]?.label}<FlameDot />
       </div>
     </div>
   )

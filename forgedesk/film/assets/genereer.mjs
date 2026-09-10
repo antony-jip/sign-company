@@ -26,22 +26,34 @@ async function download(url, bestand) {
 async function still(b) {
   const pad = path.join(doel, b.bestand)
   if (fs.existsSync(pad) && alleen.length === 0) { console.log(`bestaat: ${b.bestand}`); return }
-  console.log(`still ${b.id} ...`)
-  const { data } = await fal.subscribe(manifest.model_still, {
-    input: {
-      prompt: `${b.prompt}. ${manifest.stijl}`,
-      aspect_ratio: '9:16',
-      seed: b.seed,
-      output_format: 'jpeg',
-      safety_tolerance: '2',
-      enable_safety_checker: true,
-    },
-    logs: false,
-  })
+  const model = b.model || manifest.model_still
+  console.log(`still ${b.id} (${model}) ...`)
+  const input = model.includes('flux-2')
+    ? { prompt: `${b.prompt}. ${manifest.stijl}`, image_size: { width: 1080, height: 1920 }, seed: b.seed, output_format: 'jpeg' }
+    : { prompt: `${b.prompt}. ${manifest.stijl}`, aspect_ratio: '9:16', seed: b.seed, output_format: 'jpeg', safety_tolerance: '2', enable_safety_checker: true }
+  const { data } = await fal.subscribe(model, { input, logs: false })
   const url = data?.images?.[0]?.url
   if (!url) throw new Error(`geen beeld voor ${b.id}: ${JSON.stringify(data).slice(0, 300)}`)
   await download(url, pad)
   console.log(`klaar: ${b.bestand} (seed ${data.seed ?? b.seed})`)
+}
+
+async function hero(b) {
+  const pad = path.join(doel, b.bestand)
+  if (fs.existsSync(pad) && alleen.length === 0) { console.log(`bestaat: ${b.bestand}`); return }
+  const bron = manifest.beelden.find((x) => x.id === b.bron)
+  const bronPad = path.join(doel, bron.bestand)
+  if (!fs.existsSync(bronPad)) throw new Error(`bron ${bron.bestand} ontbreekt voor hero ${b.id}`)
+  console.log(`hero ${b.id} (${manifest.model_hero}, uit ${bron.bestand}) ...`)
+  const image_url = await fal.storage.upload(new Blob([fs.readFileSync(bronPad)], { type: 'image/jpeg' }))
+  const { data } = await fal.subscribe(manifest.model_hero, {
+    input: { prompt: b.prompt, image_url, duration: b.duur, resolution: '720p', generate_audio: false },
+    logs: false,
+  })
+  const url = data?.video?.url
+  if (!url) throw new Error(`geen hero voor ${b.id}: ${JSON.stringify(data).slice(0, 300)}`)
+  await download(url, pad)
+  console.log(`klaar: ${b.bestand} (seed ${data.seed})`)
 }
 
 async function clip(b) {
@@ -65,6 +77,7 @@ async function clip(b) {
 for (const b of manifest.beelden.filter(wil)) {
   try {
     if (b.type === 'still') await still(b)
+    else if (b.type === 'hero') await hero(b)
     else await clip(b)
   } catch (e) {
     console.error(`FOUT ${b.id}:`, e?.message || e)

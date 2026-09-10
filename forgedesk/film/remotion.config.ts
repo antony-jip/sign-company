@@ -37,6 +37,8 @@ Config.overrideWebpackConfig((config) => {
         '@/services/supabaseClient$': path.join(stubs, 'services.ts'),
         '@/services/emailProjectService$': path.join(stubs, 'services.ts'),
         '@/services/emailService$': path.join(stubs, 'services.ts'),
+        '@/services/aiService$': path.join(stubs, 'services.ts'),
+        '@/hooks/useTijdSessies$': path.join(stubs, 'useTijdSessies.ts'),
         '@/contexts/AuthContext$': path.join(stubs, 'AuthContext.tsx'),
         '@/contexts/AppSettingsContext$': path.join(stubs, 'AppSettingsContext.tsx'),
         '@/contexts/TabsContext$': path.join(stubs, 'TabsContext.tsx'),
