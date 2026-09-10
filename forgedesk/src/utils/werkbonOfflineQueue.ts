@@ -1,5 +1,5 @@
 import type { Werkbon } from '@/types'
-import { updateWerkbon, getWerkbon } from '@/services/werkbonService'
+import { updateWerkbon, leesWerkbonStatus } from '@/services/werkbonService'
 import { safeSetItem } from './localStorageUtils'
 import { logger } from './logger'
 
@@ -47,10 +47,12 @@ export async function flushWerkbonFeedbackQueue(): Promise<void> {
   if (ids.length === 0) return
   for (const id of ids) {
     try {
-      // Een reeds afgeronde werkbon nooit terugzetten met oudere buffer-data:
-      // wis de entry zonder replay.
-      const wb = await getWerkbon(id)
-      if (!wb || wb.status === 'afgerond') {
+      // Een afgeronde of gefactureerde werkbon nooit terugzetten met oudere
+      // buffer-data: wis de entry zonder replay. Alleen "geen rij" telt als
+      // weg. getWerkbon gaf ook bij een netwerkfout null, en wiste daarmee
+      // precies de uren en handtekening die hier op dekking wachtten.
+      const status = await leesWerkbonStatus(id)
+      if (status === null || status === 'afgerond' || status === 'gefactureerd') {
         clearWerkbonFeedback(id)
         continue
       }
