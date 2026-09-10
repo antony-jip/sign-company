@@ -13,7 +13,7 @@ interface WerkbonCanvasProps {
   itemId: string
   afbeeldingen: WerkbonAfbeelding[]
   onElementMove: (afbeeldingId: string, x_mm: number, y_mm: number) => void
-  onElementResize: (afbeeldingId: string, w_mm: number, h_mm: number) => void
+  onElementResize: (afbeeldingId: string, w_mm: number, h_mm: number, x_mm: number, y_mm: number) => void
   onElementDelete: (afbeeldingId: string) => void
   onFilesDropped: (itemId: string, files: File[]) => void | Promise<void>
 }
@@ -101,6 +101,17 @@ export function WerkbonCanvas({
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [selectedId, onElementDelete])
+
+  // Een klik buiten dit werkblad heft de selectie op. Anders bleef een element
+  // in elk item geselecteerd, en wiste één Delete in meerdere items tegelijk.
+  useEffect(() => {
+    if (!selectedId) return
+    const handler = (e: PointerEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setSelectedId(null)
+    }
+    document.addEventListener('pointerdown', handler)
+    return () => document.removeEventListener('pointerdown', handler)
+  }, [selectedId])
 
   const handleDragEnter = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     if (!e.dataTransfer.types.includes('Files')) return
@@ -216,7 +227,7 @@ export function WerkbonCanvas({
           onDragStart={() => setDraggingId(afb.id)}
           onDragEnd={() => setDraggingId(null)}
           onMove={(x, y) => onElementMove(afb.id, x, y)}
-          onResize={(w, h) => onElementResize(afb.id, w, h)}
+          onResize={(w, h, x, y) => onElementResize(afb.id, w, h, x, y)}
           onDelete={() => {
             onElementDelete(afb.id)
             setSelectedId(null)

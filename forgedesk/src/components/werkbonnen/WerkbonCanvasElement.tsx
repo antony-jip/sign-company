@@ -7,6 +7,7 @@ import {
   CANVAS_SNAP_GRID_MM,
   CANVAS_MIN_ELEMENT_MM,
   CANVAS_Z_INDEX_DEFAULTS,
+  CANVAS_LOGO_DEFAULT_MM,
 } from '@/utils/werkbonCanvas'
 
 interface WerkbonCanvasElementProps {
@@ -20,7 +21,7 @@ interface WerkbonCanvasElementProps {
   onDragStart: () => void
   onDragEnd: () => void
   onMove: (x_mm: number, y_mm: number) => void
-  onResize: (w_mm: number, h_mm: number) => void
+  onResize: (w_mm: number, h_mm: number, x_mm: number, y_mm: number) => void
   onDelete: () => void
 }
 
@@ -66,10 +67,12 @@ export const WerkbonCanvasElement = React.memo(function WerkbonCanvasElement({
   onDelete,
 }: WerkbonCanvasElementProps) {
   const layout = afbeelding.layout
+  const isLogo = layout?.blok_type === 'logo'
   const x_mm = layout?.canvas_x_mm ?? 0
   const y_mm = layout?.canvas_y_mm ?? 0
-  const w_mm = layout?.canvas_breedte_mm ?? 60
-  const h_mm = layout?.canvas_hoogte_mm ?? 40
+  // Zelfde defaults als renderCanvasItem in werkbonPdfService.
+  const w_mm = layout?.canvas_breedte_mm ?? (isLogo ? CANVAS_LOGO_DEFAULT_MM : 60)
+  const h_mm = layout?.canvas_hoogte_mm ?? (isLogo ? CANVAS_LOGO_DEFAULT_MM : 40)
 
   const [livePos, setLivePos] = useState<{ x: number; y: number } | null>(null)
   const [liveSize, setLiveSize] = useState<{ w: number; h: number } | null>(null)
@@ -274,10 +277,15 @@ export const WerkbonCanvasElement = React.memo(function WerkbonCanvasElement({
       setLivePos(null)
       setActiveCorner(null)
       onDragEnd()
-      if (size && (size.w !== w_mm || size.h !== h_mm)) onResize(size.w, size.h)
-      if (pos && (pos.x !== x_mm || pos.y !== y_mm)) onMove(pos.x, pos.y)
+      // Eén aanroep met maat én positie. Twee losse callbacks bouwden elk de
+      // layout uit dezelfde oude state, zodat bij een hoek links of boven de
+      // positie-update de nieuwe maat weer overschreef.
+      if (!size || !pos) return
+      if (size.w !== w_mm || size.h !== h_mm || pos.x !== x_mm || pos.y !== y_mm) {
+        onResize(size.w, size.h, pos.x, pos.y)
+      }
     },
-    [liveSize, livePos, w_mm, h_mm, x_mm, y_mm, onResize, onMove, onDragEnd],
+    [liveSize, livePos, w_mm, h_mm, x_mm, y_mm, onResize, onDragEnd],
   )
 
   const handleResizePointerCancel = useCallback(

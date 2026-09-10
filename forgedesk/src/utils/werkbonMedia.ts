@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react'
 import { getSignedUrl } from '@/services/storageService'
 import { logger } from './logger'
 
@@ -27,7 +28,15 @@ export async function resolveWerkbonUrl(url: string): Promise<string> {
  */
 export async function toonbareUploadUrl(pad: string, lokaal: Blob): Promise<string> {
   const url = await resolveWerkbonUrl(pad)
-  return url || URL.createObjectURL(lokaal)
+  if (url) return url
+  // Luid, want de uploader ziet het lokale bestand en merkt niets, terwijl
+  // een collega of een herlaad wel een lege plek krijgt.
+  Sentry.captureMessage('Werkbonbestand direct na upload niet te tekenen', {
+    level: 'warning',
+    tags: { bron: 'werkbon-upload' },
+    extra: { pad },
+  })
+  return URL.createObjectURL(lokaal)
 }
 
 /** Schaalt een afbeelding terug tot maxWidth en levert een JPEG-blob (kwaliteit 0.8). */

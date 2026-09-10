@@ -33,7 +33,7 @@ interface WerkbonItemCardProps {
   onAfbeeldingReorder?: (itemId: string, draggedAfbId: string, targetAfbId: string) => void | Promise<void>
   // Fase 3 canvas-mutaties · alleen gebruikt wanneer werkbon_canvas_versie >= 3.
   onCanvasElementMove?: (itemId: string, afbId: string, x_mm: number, y_mm: number) => void | Promise<void>
-  onCanvasElementResize?: (itemId: string, afbId: string, w_mm: number, h_mm: number) => void | Promise<void>
+  onCanvasElementResize?: (itemId: string, afbId: string, w_mm: number, h_mm: number, x_mm: number, y_mm: number) => void | Promise<void>
 }
 
 const GROOTTE_OPTIES: ReadonlyArray<'klein' | 'normaal' | 'groot'> = ['klein', 'normaal', 'groot']
@@ -185,7 +185,7 @@ export const WerkbonItemCard = React.memo(function WerkbonItemCard({
               itemId={item.id}
               afbeeldingen={item.afbeeldingen}
               onElementMove={(afbId, x, y) => { void onCanvasElementMove?.(item.id, afbId, x, y) }}
-              onElementResize={(afbId, w, h) => { void onCanvasElementResize?.(item.id, afbId, w, h) }}
+              onElementResize={(afbId, w, h, x, y) => { void onCanvasElementResize?.(item.id, afbId, w, h, x, y) }}
               onElementDelete={(afbId) => onImageDelete(item.id, afbId)}
               onFilesDropped={onAfbeeldingenDropped ?? (() => {})}
             />

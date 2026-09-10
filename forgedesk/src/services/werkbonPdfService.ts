@@ -36,6 +36,10 @@ interface WerkbonPdfData {
 
 export interface WerkbonPdfOptions {
   fotos?: WerkbonFoto[]
+  /** Organisatie werkt met het werkblad (werkbon_canvas_versie >= 3). Dan gaat
+   *  elk item met afbeeldingen via het coord-pad, zodat de PDF toont wat de
+   *  editor toont, ook als geen afbeelding al een eigen plek heeft. */
+  canvas?: boolean
 }
 
 function hexToRgb(hex: string): [number, number, number] {
@@ -429,7 +433,7 @@ export async function generateWerkbonInstructiePDF(
     // gaan via het coord-pad, alle andere items blijven op het bestaande
     // flow-pad. Geen migratie-data-write nodig — items zonder canvas_x_mm
     // (legacy + versie<3) volgen exact het oude gedrag.
-    if (itemHeeftCanvasData(item.afbeeldingen)) {
+    if (itemHeeftCanvasData(item.afbeeldingen) || (options?.canvas && item.afbeeldingen.length > 0)) {
       renderCanvasItem(item, i)
       if (i < items.length - 1) {
         doc.setDrawColor(220, 220, 220)

@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { BackButton } from '@/components/shared/BackButton'
 import { useTabDirtyState } from '@/hooks/useTabDirtyState'
-import { useDebouncedCallback } from '@/hooks/useDebounce'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
 import {
@@ -337,7 +336,7 @@ export function WerkbonDetail() {
     if (!klantId) { toast.error('Selecteer een klant'); return }
     try {
       setIsSaving(true)
-      const medewerkerNaam = profile?.naam || user?.email || 'Onbekend'
+      const medewerkerNaam = [profile?.voornaam, profile?.achternaam].filter(Boolean).join(' ') || user?.email || 'Onbekend'
       // Volledige payload meesturen (incl. header-velden), anders gaan
       // niet-opgeslagen wijzigingen aan titel/locatie/contact/datum verloren.
       const afgerondeWerkbon = await updateWerkbon(werkbonId, {
@@ -451,23 +450,46 @@ export function WerkbonDetail() {
     locatieAdres, locatieStad, locatiePostcode, toonBriefpapier,
     werkbonItems.length, setDirty, navigate, bumpPreview])
 
-  // Item bijwerken · debounced Supabase call
-  const debouncedUpdateItem = useDebouncedCallback(
-    (itemId: string, updates: Partial<WerkbonItem>) => {
-      updateWerkbonItem(itemId, updates)
-    },
-    500,
-  )
+  // Wijzigingen per item verzamelen en per item uitstellen. Eén gedeelde
+  // debounce-timer liet de eerste van twee snelle wijzigingen (omschrijving,
+  // dan een maatveld of een ander item) stil vallen.
+  const itemWijzigingen = useRef(new Map<string, { updates: Partial<WerkbonItem>; timer: ReturnType<typeof setTimeout> }>())
+
+  const schrijfItemWijzigingen = useCallback((itemId: string) => {
+    const wacht = itemWijzigingen.current.get(itemId)
+    if (!wacht) return
+    clearTimeout(wacht.timer)
+    itemWijzigingen.current.delete(itemId)
+    updateWerkbonItem(itemId, wacht.updates).catch((err) => {
+      logger.error('Item opslaan mislukt:', err)
+      toast.error('Wijziging aan item niet opgeslagen')
+    })
+  }, [])
+
+  // Wegnavigeren binnen de wachttijd mag de laatste wijziging niet kosten.
+  useEffect(() => () => {
+    for (const itemId of [...itemWijzigingen.current.keys()]) schrijfItemWijzigingen(itemId)
+  }, [schrijfItemWijzigingen])
 
   const handleItemUpdate = useCallback(async (itemId: string, updates: Partial<WerkbonItem>) => {
     setWerkbonItems((prev) => prev.map((i) => i.id === itemId ? { ...i, ...updates } : i))
     setDirty(true)
-    debouncedUpdateItem(itemId, updates)
+    const vorige = itemWijzigingen.current.get(itemId)
+    if (vorige) clearTimeout(vorige.timer)
+    itemWijzigingen.current.set(itemId, {
+      updates: { ...vorige?.updates, ...updates },
+      timer: setTimeout(() => schrijfItemWijzigingen(itemId), 500),
+    })
     bumpPreview()
-  }, [setDirty, debouncedUpdateItem, bumpPreview])
+  }, [setDirty, schrijfItemWijzigingen, bumpPreview])
 
   // Item verwijderen
   const handleItemVerwijderen = useCallback(async (itemId: string) => {
+    const wacht = itemWijzigingen.current.get(itemId)
+    if (wacht) {
+      clearTimeout(wacht.timer)
+      itemWijzigingen.current.delete(itemId)
+    }
     await deleteWerkbonItem(itemId)
     setWerkbonItems((prev) => prev.filter((i) => i.id !== itemId))
     toast.success('Item verwijderd')
@@ -751,6 +773,8 @@ export function WerkbonDetail() {
     afbId: string,
     w_mm: number,
     h_mm: number,
+    x_mm: number,
+    y_mm: number,
   ) => {
     if (!fase3Actief) return
     const item = werkbonItems.find((i) => i.id === itemId)
@@ -758,6 +782,8 @@ export function WerkbonDetail() {
     if (!afb) return
     const nieuweLayout: WerkbonAfbeeldingLayout = {
       ...(afb.layout ?? {}),
+      canvas_x_mm: x_mm,
+      canvas_y_mm: y_mm,
       canvas_breedte_mm: w_mm,
       canvas_hoogte_mm: h_mm,
     }
@@ -1030,7 +1056,7 @@ export function WerkbonDetail() {
         project?.naam || '',
         bedrijfsProfiel,
         documentStyle,
-        { fotos }
+        { fotos, canvas: fase3Actief }
       )
       doc.save(`werkbon-${werkbonNummer || 'nieuw'}.pdf`)
       toast.success(<>PDF gedownload<span style={{ color: '#D24620' }}>.</span></>)
@@ -1040,7 +1066,7 @@ export function WerkbonDetail() {
     }
   }, [
     klanten, klantId, projecten, projectId, profile, primaireKleur, documentStyle,
-    werkbonItems, werkbonNummer, fotos, buildWerkbonPdfData,
+    werkbonItems, werkbonNummer, fotos, buildWerkbonPdfData, fase3Actief,
   ])
 
   // Print werkbon (open PDF in nieuw venster met print dialog)
@@ -1057,7 +1083,7 @@ export function WerkbonDetail() {
         project?.naam || '',
         bedrijfsProfiel,
         documentStyle,
-        { fotos }
+        { fotos, canvas: fase3Actief }
       )
       const blobUrl = doc.output('bloburl')
       const printWindow = window.open(blobUrl as unknown as string)
@@ -1086,7 +1112,8 @@ export function WerkbonDetail() {
       klant || {},
       project?.naam || '',
       bedrijfsProfiel,
-      documentStyle
+      documentStyle,
+      { fotos, canvas: fase3Actief },
     )
 
     const pdfBlob = doc.output('blob')
@@ -1119,7 +1146,7 @@ export function WerkbonDetail() {
     }
   }, [
     klanten, klantId, projecten, projectId, profile, primaireKleur, documentStyle,
-    werkbonNummer, titel, werkbonItems, buildWerkbonPdfData,
+    werkbonNummer, titel, werkbonItems, buildWerkbonPdfData, fotos, fase3Actief,
   ])
 
   // Genereer PDF-blob voor de live preview-dialog
@@ -1134,12 +1161,12 @@ export function WerkbonDetail() {
       project?.naam || '',
       bedrijfsProfiel,
       documentStyle,
-      { fotos },
+      { fotos, canvas: fase3Actief },
     )
     return doc.output('blob') as Blob
   }, [
     klanten, klantId, projecten, projectId, profile, primaireKleur, documentStyle,
-    werkbonItems, fotos, buildWerkbonPdfData,
+    werkbonItems, fotos, buildWerkbonPdfData, fase3Actief,
   ])
 
   if (isLoading) {

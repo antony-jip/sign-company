@@ -81,7 +81,7 @@ export function WerkbonMonteurView() {
   const {
     settings, profile, primaireKleur,
     werkbonMonteurUren, werkbonMonteurOpmerkingen,
-    werkbonMonteurFotos, werkbonKlantHandtekening,
+    werkbonMonteurFotos, werkbonKlantHandtekening, werkbonCanvasVersie,
   } = useAppSettings()
   const documentStyle = useDocumentStyle()
   const userId = user?.id || ''
@@ -506,7 +506,7 @@ export function WerkbonMonteurView() {
     clearWerkbonFeedback(werkbon.id)
     try {
       setIsSaving(true)
-      const medewerkerNaam = profile?.naam || user?.email || 'Onbekend'
+      const medewerkerNaam = [profile?.voornaam, profile?.achternaam].filter(Boolean).join(' ') || user?.email || 'Onbekend'
       const nieuweOpmerkingen = opmerkingenMetAfronder(monteurOpmerkingen, medewerkerNaam)
       const afgerondeWerkbon = await updateWerkbon(werkbon.id, {
         status: 'afgerond',
@@ -525,7 +525,7 @@ export function WerkbonMonteurView() {
         || medewerkers.find((m) => !!user?.email && m.email?.toLowerCase() === user.email.toLowerCase())
         || null
       boekWerkbonUren({
-        werkbon: afgerondeWerkbon, afronder, afronderNaam: user?.email || undefined, medewerkers, settings,
+        werkbon: afgerondeWerkbon, afronder, afronderNaam: medewerkerNaam, medewerkers, settings,
         urenVelden: urenVeldenUitInstellingen(settings.calculatie_uren_velden),
       })
         .then((regels) => { if (regels.length > 0) toast.success(geboektMelding(regels)) })
@@ -580,12 +580,13 @@ export function WerkbonMonteurView() {
       project?.naam || '',
       bedrijfsProfiel,
       documentStyle,
-      { fotos },
+      { fotos, canvas: werkbonCanvasVersie >= 3 },
     )
     return doc.output('blob') as Blob
   }, [
     werkbon, werkbonItems, klant, project, fotos, profile, primaireKleur, documentStyle,
     medewerkers, userId, urenGewerkt, monteurOpmerkingen, handtekeningData, klantNaamGetekend,
+    werkbonCanvasVersie,
   ])
 
   if (isLoading) {
