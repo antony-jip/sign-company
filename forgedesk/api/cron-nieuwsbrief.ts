@@ -42,8 +42,31 @@ if (process.env.SENTRY_DSN && !Sentry.getClient()) {
 export const config = { maxDuration: 60 }
 
 const OWNER_USER_ID = 'ce6843e3-5cd9-4043-9461-55071bc91eb7'
-const FROM = 'Sign Company <antony@signcompany.nl>'
-const REPLY_TO = 'antony@signcompany.nl'
+// ── NIEUWSBRIEF-AFZENDER BEGIN ──
+// De afzender komt uit de nieuwsbrief, maar alleen adressen uit deze lijst mogen:
+// ze vallen onder het geverifieerde Resend-domein en ontvangen echt antwoorden.
+// Staat gelijk in src/services/nieuwsbriefService.ts (AFZENDER_ADRESSEN).
+const AFZENDER_ADRESSEN = ['antony@signcompany.nl', 'info@signcompany.nl']
+const STANDAARD_AFZENDER_NAAM = 'Sign Company'
+function kiesAfzender(naam: unknown, email: unknown): { from: string; replyTo: string } {
+  const gevraagd = typeof email === 'string' ? email.trim().toLowerCase() : ''
+  const adres = AFZENDER_ADRESSEN.includes(gevraagd) ? gevraagd : AFZENDER_ADRESSEN[0]
+  // Alleen letters, cijfers en gewone leestekens: een @, : of < maakt de From-kop
+  // ongeldig of smokkelt er een tweede adres in, en dan weigert Resend de mail.
+  const schoon = typeof naam === 'string' ? naam.replace(/[^\p{L}\p{N} .'&|!?()+\-·]/gu, '').replace(/\s+/g, ' ').trim().slice(0, 60) : ''
+  return { from: `${schoon || STANDAARD_AFZENDER_NAAM} <${adres}>`, replyTo: adres }
+}
+// ── NIEUWSBRIEF-AFZENDER EINDE ──
+
+// Uit de database, zodat verzending, A/B-rest en herzending dezelfde afzender
+// gebruiken. Faalt de query (42703: migratie 250 draaide nog niet), dan de vaste
+// afzender in plaats van een afgebroken verzending.
+async function afzenderVan(nieuwsbriefId: string): Promise<{ from: string; replyTo: string }> {
+  const { data, error } = await supabase.from('nieuwsbrieven').select('afzender_naam, afzender_email').eq('id', nieuwsbriefId).maybeSingle()
+  if (error || !data) return kiesAfzender(null, null)
+  const rij = data as { afzender_naam?: unknown; afzender_email?: unknown }
+  return kiesAfzender(rij.afzender_naam, rij.afzender_email)
+}
 const APP_URL = (process.env.VITE_APP_URL || process.env.APP_URL || 'https://app.doen.team').replace(/\/$/, '')
 const BATCH_GROOTTE = 100
 const THROTTLE_MS = 110
@@ -350,10 +373,11 @@ async function verwerkTest(rij: Record<string, unknown>, orgId: string): Promise
     // Exact dezelfde mail als de testgroep kreeg; alleen het onderwerp verschilt.
     const volledigeHtml = String(rij.verzend_html || '')
     const tags = [{ name: 'nieuwsbrief_id', value: id }]
+    const afzender = await afzenderVan(id)
     const maak = (o: Ontvanger) => ({
-      from: FROM,
+      from: afzender.from,
       to: [o.email],
-      replyTo: REPLY_TO,
+      replyTo: afzender.replyTo,
       subject: personaliseer(onderwerp, o, id),
       html: personaliseer(volledigeHtml, o, id),
       headers: {

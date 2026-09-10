@@ -11,8 +11,31 @@ export const config = { maxDuration: 300 }
 
 const OWNER_USER_ID = 'ce6843e3-5cd9-4043-9461-55071bc91eb7'
 const AUDIENCE_NAAM = 'Sign Company nieuwsbrief'
-const FROM = 'Sign Company <antony@signcompany.nl>'
-const REPLY_TO = 'antony@signcompany.nl'
+// ── NIEUWSBRIEF-AFZENDER BEGIN ──
+// De afzender komt uit de nieuwsbrief, maar alleen adressen uit deze lijst mogen:
+// ze vallen onder het geverifieerde Resend-domein en ontvangen echt antwoorden.
+// Staat gelijk in src/services/nieuwsbriefService.ts (AFZENDER_ADRESSEN).
+const AFZENDER_ADRESSEN = ['antony@signcompany.nl', 'info@signcompany.nl']
+const STANDAARD_AFZENDER_NAAM = 'Sign Company'
+function kiesAfzender(naam: unknown, email: unknown): { from: string; replyTo: string } {
+  const gevraagd = typeof email === 'string' ? email.trim().toLowerCase() : ''
+  const adres = AFZENDER_ADRESSEN.includes(gevraagd) ? gevraagd : AFZENDER_ADRESSEN[0]
+  // Alleen letters, cijfers en gewone leestekens: een @, : of < maakt de From-kop
+  // ongeldig of smokkelt er een tweede adres in, en dan weigert Resend de mail.
+  const schoon = typeof naam === 'string' ? naam.replace(/[^\p{L}\p{N} .'&|!?()+\-·]/gu, '').replace(/\s+/g, ' ').trim().slice(0, 60) : ''
+  return { from: `${schoon || STANDAARD_AFZENDER_NAAM} <${adres}>`, replyTo: adres }
+}
+// ── NIEUWSBRIEF-AFZENDER EINDE ──
+
+// Uit de database, zodat verzending, A/B-rest en herzending dezelfde afzender
+// gebruiken. Faalt de query (42703: migratie 250 draaide nog niet), dan de vaste
+// afzender in plaats van een afgebroken verzending.
+async function afzenderVan(nieuwsbriefId: string): Promise<{ from: string; replyTo: string }> {
+  const { data, error } = await supabase.from('nieuwsbrieven').select('afzender_naam, afzender_email').eq('id', nieuwsbriefId).maybeSingle()
+  if (error || !data) return kiesAfzender(null, null)
+  const rij = data as { afzender_naam?: unknown; afzender_email?: unknown }
+  return kiesAfzender(rij.afzender_naam, rij.afzender_email)
+}
 const APP_URL = (process.env.VITE_APP_URL || process.env.APP_URL || 'https://app.doen.team').replace(/\/$/, '')
 // Gerichte verzendingen gaan per mail (batch van 100); bij inplannen per mail
 // met scheduledAt, want de batch-API kent geen scheduledAt. Throttle voor de
@@ -533,6 +556,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!rij || (rij as Record<string, unknown>).user_id !== OWNER_USER_ID) {
       return res.status(404).json({ error: 'Nieuwsbrief niet gevonden' })
     }
+    const afzender = await afzenderVan(nieuwsbriefId)
     const huidigeStatus = (rij as Record<string, unknown>).status
     if (huidigeStatus === 'verzonden') return res.status(400).json({ error: 'Deze nieuwsbrief is al verzonden' })
     if (huidigeStatus === 'gepland') return res.status(400).json({ error: 'Deze nieuwsbrief staat al ingepland' })
@@ -585,8 +609,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const { data: broadcast, error: bcErr } = await resend.broadcasts.create({
         audienceId,
-        from: FROM,
-        replyTo: REPLY_TO,
+        from: afzender.from,
+        replyTo: afzender.replyTo,
         subject: onderwerp.trim(),
         previewText: preheader?.trim() || undefined,
         html: volledigeHtml,
@@ -642,9 +666,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const onderwerpVoor = (o: Ontvanger) => (abActief && variantVan(o.email) === 'b' ? onderwerpB : onderwerp.trim())
       const tags = [{ name: 'nieuwsbrief_id', value: nieuwsbriefId }]
       const maak = (o: Ontvanger) => ({
-        from: FROM,
+        from: afzender.from,
         to: [o.email],
-        replyTo: REPLY_TO,
+        replyTo: afzender.replyTo,
         subject: personaliseer(onderwerpVoor(o), o, nieuwsbriefId),
         html: personaliseer(volledigeHtml, o, nieuwsbriefId),
         headers: {

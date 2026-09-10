@@ -9,6 +9,12 @@ export type NieuwsbriefStatus = 'concept' | 'gepland' | 'verzonden'
 
 export type EditorModus = 'blokken' | 'html'
 
+// Adressen onder het geverifieerde Resend-domein die ook echt mail ontvangen.
+// Staat gespiegeld in de nieuwsbrief-api's (kiesAfzender); de server weigert
+// alles daarbuiten. tests/services/nieuwsbriefAfzender.test.ts bewaakt dat ze gelijk blijven.
+export const AFZENDER_ADRESSEN: readonly string[] = ['antony@signcompany.nl', 'info@signcompany.nl']
+export const STANDAARD_AFZENDER_NAAM = 'Sign Company'
+
 // Gedrag uit eerdere verzendingen als extra zeef op de selectie. Het venster
 // is het aantal recentste verzendingen waar 'betrokken' en 'sluimerend' naar
 // kijken; 'klikkers' kijkt naar alles, 'nieuw' naar of iemand ooit iets kreeg.
@@ -61,6 +67,9 @@ export interface Nieuwsbrief {
   aantal_ontvangers: number | null
   gepland_op: string | null
   verzonden_op: string | null
+  /** Ontbreekt zolang migratie 250 niet gedraaid is; null = standaardafzender. */
+  afzender_naam?: string | null
+  afzender_email?: string | null
   created_at: string
   updated_at: string
 }
@@ -139,7 +148,7 @@ export async function updateConcept(
   id: string,
   velden: Partial<Pick<Nieuwsbrief,
     'onderwerp' | 'html' | 'preheader' | 'blokken' | 'editor_modus' | 'template_key' | 'ontvangers' | 'test_verstuurd_op'
-    | 'onderwerp_b' | 'preheader_b' | 'ab_actief' | 'ab_testdeel' | 'ab_wachttijd_uren'>>,
+    | 'onderwerp_b' | 'preheader_b' | 'ab_actief' | 'ab_testdeel' | 'ab_wachttijd_uren' | 'afzender_naam' | 'afzender_email'>>,
 ): Promise<Nieuwsbrief> {
   const { data, error } = await db()
     .from('nieuwsbrieven')
@@ -555,11 +564,12 @@ export async function verstuurTest(
   preheader?: string,
   naar?: string,
   stijl?: MailStijl,
+  afzender?: { naam: string; email: string },
 ): Promise<string> {
   const res = await fetch('/api/nieuwsbrief-test', {
     method: 'POST',
     headers: await authHeader(),
-    body: JSON.stringify({ onderwerp, html, preheader, naar, stijl }),
+    body: JSON.stringify({ onderwerp, html, preheader, naar, stijl, afzender }),
   })
   const body = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(body.error || 'Test versturen mislukt')

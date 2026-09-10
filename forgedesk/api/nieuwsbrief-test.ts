@@ -6,7 +6,21 @@ import { Ratelimit } from '@upstash/ratelimit'
 import { Redis } from '@upstash/redis'
 
 const OWNER_USER_ID = 'ce6843e3-5cd9-4043-9461-55071bc91eb7'
-const FROM = 'Sign Company <antony@signcompany.nl>'
+// ── NIEUWSBRIEF-AFZENDER BEGIN ──
+// De afzender komt uit de nieuwsbrief, maar alleen adressen uit deze lijst mogen:
+// ze vallen onder het geverifieerde Resend-domein en ontvangen echt antwoorden.
+// Staat gelijk in src/services/nieuwsbriefService.ts (AFZENDER_ADRESSEN).
+const AFZENDER_ADRESSEN = ['antony@signcompany.nl', 'info@signcompany.nl']
+const STANDAARD_AFZENDER_NAAM = 'Sign Company'
+function kiesAfzender(naam: unknown, email: unknown): { from: string; replyTo: string } {
+  const gevraagd = typeof email === 'string' ? email.trim().toLowerCase() : ''
+  const adres = AFZENDER_ADRESSEN.includes(gevraagd) ? gevraagd : AFZENDER_ADRESSEN[0]
+  // Alleen letters, cijfers en gewone leestekens: een @, : of < maakt de From-kop
+  // ongeldig of smokkelt er een tweede adres in, en dan weigert Resend de mail.
+  const schoon = typeof naam === 'string' ? naam.replace(/[^\p{L}\p{N} .'&|!?()+\-·]/gu, '').replace(/\s+/g, ' ').trim().slice(0, 60) : ''
+  return { from: `${schoon || STANDAARD_AFZENDER_NAAM} <${adres}>`, replyTo: adres }
+}
+// ── NIEUWSBRIEF-AFZENDER EINDE ──
 const APP_URL = (process.env.VITE_APP_URL || process.env.APP_URL || 'https://app.doen.team').replace(/\/$/, '')
 // Zelfde sleutel als nieuwsbrief-verzend.ts en nieuwsbrief-afmelden.ts, anders weigert de afmeldpagina de link.
 const AFMELD_GEHEIM = process.env.NIEUWSBRIEF_WEBHOOK_TOKEN || (process.env.SUPABASE_SERVICE_ROLE_KEY ? `afmeld:${process.env.SUPABASE_SERVICE_ROLE_KEY}` : '')
@@ -147,9 +161,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!ok) return res.status(403).json({ error: 'Geen toegang' })
     if (!(await enforceRateLimit(OWNER_USER_ID, res))) return
 
-    const { onderwerp, html, preheader, naar, stijl } = (req.body ?? {}) as {
+    const { onderwerp, html, preheader, naar, stijl, afzender } = (req.body ?? {}) as {
       onderwerp?: string; html?: string; preheader?: string; naar?: string; stijl?: MailStijl
+      afzender?: { naam?: string; email?: string }
     }
+    // De testmail volgt wat er nu in de editor staat, ook als dat nog niet is opgeslagen.
+    const { from, replyTo } = kiesAfzender(afzender?.naam, afzender?.email)
     if (!html?.trim()) return res.status(400).json({ error: 'De nieuwsbrief is nog leeg' })
     if (html.length > 500_000) return res.status(400).json({ error: 'De nieuwsbrief is te groot (max 500 kB HTML)' })
 
@@ -159,7 +176,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const volledig = resolveMergeTags(buildNieuwsbriefHtml(html, onderwerp?.trim() || '(geen onderwerp)', preheader, stijl), ontvanger)
 
     const { error } = await resend.emails.send({
-      from: FROM,
+      from,
+      replyTo,
       to: [ontvanger],
       subject: `[TEST] ${onderwerp?.trim() || '(geen onderwerp)'}`,
       html: volledig,

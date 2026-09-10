@@ -8,8 +8,7 @@ import { cn, formatDateTime } from '@/lib/utils'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import {
   updateConcept, verstuurNieuwsbrief, verstuurTest, STANDAARD_AB, type AbInstelling, genereerMetDaan, genereerBlokkenMetDaan, stelOnderwerpenVoor, uploadAfbeelding, syncContactenVolledig, herstelVastgelopenConcept,
-  type Nieuwsbrief, type OntvangerSelectie, STANDAARD_SELECTIE,
-} from '@/services/nieuwsbriefService'
+  type Nieuwsbrief, type OntvangerSelectie, STANDAARD_SELECTIE, AFZENDER_ADRESSEN, STANDAARD_AFZENDER_NAAM } from '@/services/nieuwsbriefService'
 import { BlokBouwer } from './BlokBouwer'
 import { DaanChat } from './DaanChat'
 import { OntvangerKiezer } from './OntvangerKiezer'
@@ -36,7 +35,6 @@ const STAPPEN: { key: Stap; label: string; Icon: typeof Users }[] = [
 ]
 
 const STATUS_LABEL: Record<Nieuwsbrief['status'], string> = { concept: 'Concept', gepland: 'Gepland', verzonden: 'Verzonden' }
-const AFZENDER = 'Sign Company'
 
 const KNOP_SECUNDAIR = 'inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground transition-all hover:border-petrol/50 hover:bg-background disabled:opacity-60'
 const KNOP_PRIMAIR = 'inline-flex items-center gap-2 rounded-xl bg-flame px-5 py-2.5 text-sm font-semibold text-white shadow-[0_2px_8px_rgba(210, 70, 32,0.25),0_0_0_1px_rgba(210, 70, 32,0.1)] transition-all duration-200 hover:-translate-y-[1px] hover:bg-[#E04520] hover:shadow-[0_4px_16px_rgba(210, 70, 32,0.35),0_0_0_1px_rgba(210, 70, 32,0.15)] active:translate-y-0 disabled:opacity-60 disabled:hover:translate-y-0'
@@ -50,6 +48,13 @@ function toLocalInputWaarde(d: Date): string {
 export function NieuwsbriefEditor({ nieuwsbrief, onTerug, onGewijzigd, startMetDaan }: Props) {
   const [onderwerp, setOnderwerp] = useState(nieuwsbrief.onderwerp)
   const [preheader, setPreheader] = useState(nieuwsbrief.preheader || '')
+  // Zonder migratie 250 bestaan de kolommen niet; meesturen zou het hele opslaan laten falen (PGRST204).
+  const kanAfzenderKiezen = 'afzender_email' in nieuwsbrief
+  const [afzenderNaam, setAfzenderNaam] = useState(nieuwsbrief.afzender_naam || STANDAARD_AFZENDER_NAAM)
+  const [afzenderEmail, setAfzenderEmail] = useState(
+    nieuwsbrief.afzender_email && AFZENDER_ADRESSEN.includes(nieuwsbrief.afzender_email) ? nieuwsbrief.afzender_email : AFZENDER_ADRESSEN[0],
+  )
+  const afzenderWeergave = afzenderNaam.trim() || STANDAARD_AFZENDER_NAAM
   const [modus, setModus] = useState<'blokken' | 'html'>(nieuwsbrief.editor_modus || 'html')
   const [doc, setDoc] = useState<NieuwsbriefDocument>(() => normaliseerDocument(nieuwsbrief.blokken))
   const [html, setHtml] = useState(nieuwsbrief.html)
@@ -107,6 +112,7 @@ export function NieuwsbriefEditor({ nieuwsbrief, onTerug, onGewijzigd, startMetD
         editor_modus: modus, ontvangers: selectie, test_verstuurd_op: testVerstuurdOp,
         onderwerp_b: ab.onderwerpB || null, ab_actief: ab.actief,
         ab_testdeel: ab.testdeel, ab_wachttijd_uren: ab.wachttijdUren,
+        ...(kanAfzenderKiezen ? { afzender_naam: afzenderNaam.trim() || null, afzender_email: afzenderEmail } : {}),
       })
       onGewijzigd(bijgewerkt)
       setOpslaanStatus('schoon')
@@ -115,7 +121,7 @@ export function NieuwsbriefEditor({ nieuwsbrief, onTerug, onGewijzigd, startMetD
       setOpslaanStatus('fout')
       console.error('[nieuwsbrief] autosave mislukt:', err)
     }
-  }, [vergrendeld, nieuwsbrief.id, onderwerp, preheader, gerenderd, modus, doc, selectie, testVerstuurdOp, ab, onGewijzigd])
+  }, [vergrendeld, nieuwsbrief.id, onderwerp, preheader, gerenderd, modus, doc, selectie, testVerstuurdOp, ab, kanAfzenderKiezen, afzenderNaam, afzenderEmail, onGewijzigd])
 
   const slaOpRef = useRef(slaOp)
   useEffect(() => { slaOpRef.current = slaOp }, [slaOp])
@@ -127,7 +133,7 @@ export function NieuwsbriefEditor({ nieuwsbrief, onTerug, onGewijzigd, startMetD
     if (opslaanTimer.current) clearTimeout(opslaanTimer.current)
     opslaanTimer.current = setTimeout(() => slaOpRef.current(), 1200)
     return () => { if (opslaanTimer.current) clearTimeout(opslaanTimer.current) }
-  }, [onderwerp, preheader, gerenderd, modus, doc, selectie, testVerstuurdOp, ab, vergrendeld])
+  }, [onderwerp, preheader, gerenderd, modus, doc, selectie, testVerstuurdOp, ab, afzenderNaam, afzenderEmail, vergrendeld])
 
   useEffect(() => () => {
     if (opslaanTimer.current) { clearTimeout(opslaanTimer.current); slaOpRef.current() }
@@ -214,7 +220,7 @@ export function NieuwsbriefEditor({ nieuwsbrief, onTerug, onGewijzigd, startMetD
     if (!gerenderd.trim()) { toast.error('De nieuwsbrief is nog leeg'); return }
     setTestBezig(true)
     try {
-      const naar = await verstuurTest(onderwerp.trim() || 'Test nieuwsbrief', gerenderd, preheader.trim() || undefined, testNaar.trim() || undefined, stijl)
+      const naar = await verstuurTest(onderwerp.trim() || 'Test nieuwsbrief', gerenderd, preheader.trim() || undefined, testNaar.trim() || undefined, stijl, { naam: afzenderNaam, email: afzenderEmail })
       setTestVerstuurdOp(new Date().toISOString())
       toast.success(`Testmail verstuurd naar ${naar}`)
     } catch (err) {
@@ -222,7 +228,7 @@ export function NieuwsbriefEditor({ nieuwsbrief, onTerug, onGewijzigd, startMetD
     } finally {
       setTestBezig(false)
     }
-  }, [gerenderd, onderwerp, preheader, testNaar, stijl])
+  }, [gerenderd, onderwerp, preheader, testNaar, stijl, afzenderNaam, afzenderEmail])
 
   const doeVerzend = useCallback(async (scheduledAt?: string) => {
     setBezig(true)
@@ -424,7 +430,7 @@ export function NieuwsbriefEditor({ nieuwsbrief, onTerug, onGewijzigd, startMetD
             <div className="flex min-h-0 flex-1 flex-col">
               {ontwerpWeergave === 'bouwen'
                 ? <BlokBouwer document={doc} onChange={setDoc} disabled={vergrendeld} />
-                : <NieuwsbriefPreview html={previewHtml} afzender={AFZENDER} onderwerp={onderwerp} preheader={preheader} className="min-h-0 flex-1" />}
+                : <NieuwsbriefPreview html={previewHtml} afzender={afzenderWeergave} onderwerp={onderwerp} preheader={preheader} className="min-h-0 flex-1" />}
               {!vergrendeld && (
                 <DaanChat
                   doc={doc}
@@ -465,7 +471,7 @@ export function NieuwsbriefEditor({ nieuwsbrief, onTerug, onGewijzigd, startMetD
                   className="min-h-0 flex-1 resize-none bg-transparent px-4 py-3 font-mono text-[13px] leading-relaxed text-foreground outline-none placeholder:text-muted-foreground/50 disabled:opacity-70 md:px-6"
                 />
               </div>
-              <NieuwsbriefPreview html={previewHtml} afzender={AFZENDER} onderwerp={onderwerp} preheader={preheader} className="hidden min-h-0 md:flex" />
+              <NieuwsbriefPreview html={previewHtml} afzender={afzenderWeergave} onderwerp={onderwerp} preheader={preheader} className="hidden min-h-0 md:flex" />
             </div>
           )}
         </>
@@ -484,6 +490,43 @@ export function NieuwsbriefEditor({ nieuwsbrief, onTerug, onGewijzigd, startMetD
               <div>
                 <h2 className="text-[20px] font-extrabold tracking-[-0.3px] text-foreground">Laatste controle<span className="text-flame">.</span></h2>
                 <p className="mt-1 text-[13px] text-muted-foreground">{fouten > 0 ? `${fouten} punt${fouten > 1 ? 'en' : ''} moet${fouten > 1 ? 'en' : ''} eerst opgelost worden.` : 'Geen blokkades. Oranje punten zijn adviezen.'}</p>
+              </div>
+
+              <div className="doen-slate-surface rounded-2xl p-4">
+                <div className="mb-3 flex items-center gap-2">
+                  <Send className="h-4 w-4 text-petrol" />
+                  <span className="text-[14px] font-bold text-foreground">Afzender en onderwerp<span className="text-flame">.</span></span>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="block">
+                    <span className="mb-1 block text-[12px] font-medium text-muted-foreground">Naam die ontvangers zien</span>
+                    <input value={afzenderNaam} onChange={e => setAfzenderNaam(e.target.value)} maxLength={60} placeholder={STANDAARD_AFZENDER_NAAM} disabled={vergrendeld || !kanAfzenderKiezen} className={cn(INPUT, 'disabled:opacity-60')} />
+                  </label>
+                  <label className="block">
+                    <span className="mb-1 block text-[12px] font-medium text-muted-foreground">Afzenderadres</span>
+                    <select value={afzenderEmail} onChange={e => setAfzenderEmail(e.target.value)} disabled={vergrendeld || !kanAfzenderKiezen} className={cn(INPUT, 'disabled:opacity-60 dark:[color-scheme:dark]')}>
+                      {AFZENDER_ADRESSEN.map(a => <option key={a} value={a}>{a}</option>)}
+                    </select>
+                  </label>
+                  <label className="block sm:col-span-2">
+                    <span className="mb-1 block text-[12px] font-medium text-muted-foreground">Onderwerp</span>
+                    <input value={onderwerp} onChange={e => setOnderwerp(e.target.value)} maxLength={150} placeholder="Onderwerp van je nieuwsbrief" disabled={vergrendeld} className={INPUT} />
+                  </label>
+                  <label className="block sm:col-span-2">
+                    <span className="mb-1 block text-[12px] font-medium text-muted-foreground">Subtekst in de inbox</span>
+                    <input value={preheader} onChange={e => setPreheader(e.target.value)} maxLength={200} placeholder="De regel naast het onderwerp (optioneel)" disabled={vergrendeld} className={INPUT} />
+                  </label>
+                </div>
+                {!kanAfzenderKiezen && (
+                  <p className="mt-2 rounded-lg bg-[#B7791F]/10 px-3 py-2 text-[12px] text-[#8A5A12] dark:text-[#E3B25C]">Afzender kiezen werkt zodra migratie 250 gedraaid is. Tot die tijd gaat de mail uit als {STANDAARD_AFZENDER_NAAM} &lt;{AFZENDER_ADRESSEN[0]}&gt;.</p>
+                )}
+                <div className="mt-4 rounded-xl border border-border bg-background px-3 py-2.5">
+                  <div className="text-[11px] text-muted-foreground">Zo zien ontvangers het in hun inbox</div>
+                  <div className="mt-1 truncate text-[13px]"><span className="font-bold text-foreground">{afzenderWeergave}</span> <span className="text-muted-foreground">{afzenderEmail}</span></div>
+                  <div className="truncate text-[13px] font-semibold text-foreground">{onderwerp.trim() || 'Nog geen onderwerp'}</div>
+                  <div className="truncate text-[12px] text-muted-foreground">{preheader.trim() || 'Geen subtekst: de inbox toont dan de eerste regel van je mail.'}</div>
+                </div>
+                <p className="mt-2 text-[12px] text-muted-foreground">Antwoorden komen binnen op {afzenderEmail}.</p>
               </div>
 
               <div className="doen-slate-surface divide-y divide-border/60 rounded-2xl">
@@ -635,7 +678,7 @@ export function NieuwsbriefEditor({ nieuwsbrief, onTerug, onGewijzigd, startMetD
               )}
             </div>
           </div>
-          <NieuwsbriefPreview html={previewHtml} afzender={AFZENDER} onderwerp={onderwerp} preheader={preheader} className="hidden min-h-0 border-l border-border lg:flex" />
+          <NieuwsbriefPreview html={previewHtml} afzender={afzenderWeergave} onderwerp={onderwerp} preheader={preheader} className="hidden min-h-0 border-l border-border lg:flex" />
         </div>
       )}
 
@@ -702,7 +745,7 @@ export function NieuwsbriefEditor({ nieuwsbrief, onTerug, onGewijzigd, startMetD
                     </dd>
                   </div>
                 )}
-                <div className="flex gap-3"><dt className="w-24 flex-shrink-0 text-muted-foreground">Afzender</dt><dd className="text-foreground">Sign Company &lt;antony@signcompany.nl&gt;</dd></div>
+                <div className="flex gap-3"><dt className="w-24 flex-shrink-0 text-muted-foreground">Afzender</dt><dd className="text-foreground">{afzenderWeergave} &lt;{afzenderEmail}&gt;</dd></div>
               </dl>
               {!testVerstuurdOp && <p className="mt-4 rounded-lg bg-[#B7791F]/10 px-3 py-2 text-[12px] text-[#8A5A12] dark:text-[#E3B25C]">Je hebt nog geen testmail gestuurd. Weet je zeker dat alles klopt?</p>}
               {grootPubliek && (
