@@ -109,6 +109,16 @@ async function hoortBijOrganisatie(pad: string, organisatieId: string): Promise<
   return false
 }
 
+// fetch normaliseert punt-segmenten vóórdat het verzoek vertrekt: `..`, `.%2e`
+// en `%2e%2e`, en een `\` telt als `/`. Zonder deze controle werd
+// `werkbon-afbeeldingen/{eigen item}/%2e%2e/%2e%2e/{pad van een ander}`
+// goedgekeurd op het eigen item, en tekende Storage daarna het andere bestand.
+// Punten binnen een bestandsnaam (`foto..webp`) zijn geen sprong en mogen.
+function isOnveiligPad(pad: string): boolean {
+  if (pad.includes('\\') || /%2f|%5c|%25/i.test(pad)) return true
+  return pad.split('/').some((segment) => /^(?:\.|%2e){1,2}$/i.test(segment))
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST')
@@ -129,7 +139,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (/^https?:\/\//i.test(pad) || pad.startsWith('data:')) {
     return res.status(400).json({ fout: 'Verwacht een storage-pad, geen URL' })
   }
-  if (pad.includes('..')) return res.status(400).json({ fout: 'Ongeldig pad' })
+  if (isOnveiligPad(pad)) return res.status(400).json({ fout: 'Ongeldig pad' })
 
   const { data: profiel } = await supabaseAdmin
     .from('profiles')
