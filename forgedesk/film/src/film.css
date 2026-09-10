@@ -1,0 +1,7 @@
+/* Alleen wat de film zelf nodig heeft. De app-tokens en componentklassen komen
+   uit ../../src/index.css, die Root.tsx los importeert: een @import hier zou
+   langs de Tailwind-loader heen gaan (css-loader zonder importLoaders). */
+.film-root {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+}

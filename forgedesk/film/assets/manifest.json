@@ -1,0 +1,65 @@
+{
+  "model_still": "fal-ai/flux-pro/v1.1-ultra",
+  "model_clip": "fal-ai/kling-video/v2.1/standard/image-to-video",
+  "stijl": "calm documentary photography, natural light, muted teal and warm neutral palette, shallow depth of field, no readable text, no logos, no watermark",
+  "beelden": [
+    {
+      "id": "werkplaats",
+      "type": "still",
+      "bestand": "werkplaats.jpg",
+      "omschrijving": "Werkplaats van een signmaker in ochtendlicht, plotter en printer, gesneden letters op de werkbank.",
+      "prompt": "Interior of a sign maker's workshop in early morning light, a large format printer and a vinyl cutting plotter, rolls of vinyl on a rack, freshly cut acrylic letters lying on a wooden workbench, soft light through tall windows, dust in the air, no people, vertical composition",
+      "seed": 4201
+    },
+    {
+      "id": "bus-gevel",
+      "type": "still",
+      "bestand": "bus-gevel.jpg",
+      "omschrijving": "Bedrijfsbus voor een showroomgevel, monteur op ladder met verlichte letters.",
+      "prompt": "A white work van parked in front of a modern showroom facade in soft late afternoon light, a technician seen from behind on a tall ladder fixing one large abstract geometric letter shape to the facade, the rest of the sign still covered in grey protective foil so nothing is legible, tools on the pavement, calm street, vertical composition",
+      "seed": 4212
+    },
+    {
+      "id": "kantoor-klant",
+      "type": "still",
+      "bestand": "kantoor-klant.jpg",
+      "omschrijving": "Klant aan bureau in een lichte showroom, telefoon in de hand.",
+      "prompt": "A business owner in her forties sitting at a bright desk in a furniture showroom office, holding a smartphone and glancing at it, seen from the side at a slight distance, natural window light, plants and wood, relaxed, vertical composition",
+      "seed": 4203
+    },
+    {
+      "id": "gevel-avond",
+      "type": "still",
+      "bestand": "gevel-avond.jpg",
+      "omschrijving": "Showroomgevel in de schemer met nieuwe verlichte letters en lichtbak. Dit is de foto in het portaal.",
+      "prompt": "Modern showroom facade at blue hour photographed from across a wet street, a long slim illuminated lightbox above the entrance as a clean rectangle of soft white light, above it a row of illuminated channel letters cropped by the top edge of the frame so only their glowing lower halves are visible and nothing is legible, warm interior light spilling from large windows, reflections on the pavement, architectural photography, vertical composition",
+      "seed": 4221
+    },
+    {
+      "id": "hand-telefoon-bus",
+      "type": "still",
+      "bestand": "hand-telefoon-bus.jpg",
+      "omschrijving": "Hand met telefoon in de bus, dashboard onscherp. Scherm donker.",
+      "prompt": "Close-up of a craftsman's hand holding a smartphone with a dark blank screen inside a work van, blurred dashboard and windscreen with morning light, worn work jacket sleeve, documentary feel, vertical composition",
+      "seed": 4205
+    },
+    {
+      "id": "bus-rijdt",
+      "type": "clip",
+      "bron": "bus-gevel",
+      "bestand": "bus-rijdt.mp4",
+      "omschrijving": "Vijf seconden beweging op de bus-gevel still: licht verschuift, monteur beweegt licht.",
+      "prompt": "Subtle slow camera push in, the technician on the ladder moves slightly, soft light shifts, calm and steady, no camera shake",
+      "duur": "5"
+    },
+    {
+      "id": "gevel-licht-aan",
+      "type": "clip",
+      "bron": "gevel-avond",
+      "bestand": "gevel-licht-aan.mp4",
+      "omschrijving": "Vijf seconden: de letters lichten langzaam op, verkeer onscherp op de voorgrond.",
+      "prompt": "The illuminated letters slowly brighten, blurred headlights pass in the foreground, very slow camera drift, calm, steady",
+      "duur": "5"
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "name": "doen-film",
+  "private": true,
+  "version": "0.1.0",
+  "description": "doen. motion graphic 9:16 voor de Sibon-app. Eigen Remotion-root, los van de app.",
+  "scripts": {
+    "dev": "remotion studio",
+    "still": "remotion still DoenFilm out/still.png",
+    "render": "remotion render DoenFilm out/doen-film.mp4 --codec=h264 --crf=18",
+    "typecheck": "tsc --noEmit",
+    "sfeer": "node --env-file=../.env.local assets/genereer.mjs"
+  },
+  "dependencies": {
+    "@fal-ai/client": "^1.2.0",
+    "@remotion/cli": "4.0.471",
+    "@remotion/google-fonts": "4.0.471",
+    "@remotion/media": "4.0.471",
+    "@remotion/tailwind": "4.0.471",
+    "@remotion/transitions": "4.0.471",
+    "autoprefixer": "^10.4.17",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.0",
+    "framer-motion": "^12.38.0",
+    "lucide-react": "^0.312.0",
+    "postcss": "^8.4.33",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "remotion": "4.0.471",
+    "tailwind-merge": "^2.2.1",
+    "tailwindcss": "^3.4.1",
+    "tailwindcss-animate": "^1.0.7"
+  },
+  "devDependencies": {
+    "@radix-ui/react-checkbox": "^1.0.4",
+    "@radix-ui/react-dialog": "^1.0.5",
+    "@radix-ui/react-label": "^2.0.2",
+    "@radix-ui/react-slot": "^1.0.2",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "typescript": "^5.3.3"
+  }
+}
