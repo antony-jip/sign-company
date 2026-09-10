@@ -15,6 +15,10 @@ export type EditorModus = 'blokken' | 'html'
 export const AFZENDER_ADRESSEN: readonly string[] = ['antony@signcompany.nl', 'info@signcompany.nl']
 export const STANDAARD_AFZENDER_NAAM = 'Sign Company'
 
+// Spiegelt VIA_RESEND_LIJST in api/nieuwsbrief-verzend.ts. Zolang dit false is gaat
+// alles per mail en hoeft de Resend-lijst vóór verzenden niet bijgewerkt te worden.
+export const VERZEND_VIA_RESEND_LIJST = false
+
 // Gedrag uit eerdere verzendingen als extra zeef op de selectie. Het venster
 // is het aantal recentste verzendingen waar 'betrokken' en 'sluimerend' naar
 // kijken; 'klikkers' kijkt naar alles, 'nieuw' naar of iemand ooit iets kreeg.
@@ -70,6 +74,12 @@ export interface Nieuwsbrief {
   /** Ontbreekt zolang migratie 250 niet gedraaid is; null = standaardafzender. */
   afzender_naam?: string | null
   afzender_email?: string | null
+  /** Migratie 251: ingepland en door de cron (per mail) te versturen. */
+  verzend_via_cron?: boolean
+  /** Gezet zolang de cron hem aan het versturen is. */
+  cron_gestart_op?: string | null
+  cron_pogingen?: number
+  cron_fout?: string | null
   created_at: string
   updated_at: string
 }
@@ -154,9 +164,14 @@ export async function updateConcept(
     .from('nieuwsbrieven')
     .update({ ...velden, updated_at: new Date().toISOString() })
     .eq('id', id)
+    // Alleen concepten. Een ingeplande brief gaat op het moment zelf de deur uit met
+    // onderwerp, ontvangers en afzender uit deze rij; een late autosave of een tweede
+    // tabblad mag die niet meer veranderen.
+    .eq('status', 'concept')
     .select('*')
-    .single()
+    .maybeSingle()
   if (error) throw error
+  if (!data) throw new Error('Deze nieuwsbrief is ingepland of verzonden en wordt niet meer opgeslagen')
   return data as Nieuwsbrief
 }
 
@@ -169,6 +184,25 @@ export async function herstelVastgelopenConcept(id: string): Promise<Nieuwsbrief
     .eq('id', id)
     .eq('status', 'gepland')
     .is('resend_broadcast_id', null)
+    .is('aantal_ontvangers', null)
+    .select('*')
+    .maybeSingle()
+  if (error) throw error
+  return (data as Nieuwsbrief | null) ?? null
+}
+
+// Een via de cron ingeplande brief terug naar concept, zolang er nog niemand iets
+// ontving. Begonnen = cron_gestart_op gezet (de verzending loopt) of aantal_ontvangers
+// gezet (een eerdere ronde verstuurde al een deel). Omdat de cron op dezelfde lege
+// claim wacht, kan maar één van beide winnen.
+export async function annuleerInplanning(id: string): Promise<Nieuwsbrief | null> {
+  const { data, error } = await db()
+    .from('nieuwsbrieven')
+    .update({ status: 'concept', gepland_op: null, verzend_via_cron: false, cron_fout: null, cron_pogingen: 0, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('status', 'gepland')
+    .eq('verzend_via_cron', true)
+    .is('cron_gestart_op', null)
     .is('aantal_ontvangers', null)
     .select('*')
     .maybeSingle()

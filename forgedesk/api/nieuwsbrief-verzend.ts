@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 import { Ratelimit } from '@upstash/ratelimit'
 import { Redis } from '@upstash/redis'
-import { createHmac } from 'node:crypto'
+import { createHash, createHmac } from 'node:crypto'
 
 // Vijf minuten in plaats van één. Een verzending naar duizenden adressen gaat
 // zo in één klik de deur uit; met 60 seconden kapte Vercel de lus af halverwege.
@@ -37,11 +37,8 @@ async function afzenderVan(nieuwsbriefId: string): Promise<{ from: string; reply
   return kiesAfzender(rij.afzender_naam, rij.afzender_email)
 }
 const APP_URL = (process.env.VITE_APP_URL || process.env.APP_URL || 'https://app.doen.team').replace(/\/$/, '')
-// Gerichte verzendingen gaan per mail (batch van 100); bij inplannen per mail
-// met scheduledAt, want de batch-API kent geen scheduledAt. Throttle voor de
-// 10 req/s-limiet van Resend en de 60s-limiet van deze functie.
+// Per mail in batches van 100. Throttle voor de 10 req/s-limiet van Resend.
 const BATCH_GROOTTE = 100
-const MAX_GEPLAND_PER_RUN = 120
 const THROTTLE_MS = 110
 // Vangnet onder de maxDuration van 300. Bij een gewone lijst raakt dit budget
 // nooit op; het is er voor het geval een lijst zó groot is dat Vercel de lus
@@ -50,6 +47,13 @@ const THROTTLE_MS = 110
 // sluiten we netjes af en gaat de rest mee bij een tweede klik; wie 'sent'
 // heeft wordt daarbij overgeslagen.
 const TIJD_BUDGET_MS = 270_000
+// Alles per mail zolang het Resend-account geen marketingplan heeft: een broadcast
+// naar de Resend-lijst loopt anders vast op het contactenlimiet ("You have reached
+// your contacts quota"). Op true na een upgrade. Gespiegeld in de editor
+// (VERZEND_VIA_RESEND_LIJST in src/services/nieuwsbriefService.ts).
+const VIA_RESEND_LIJST = false
+// Hoe vaak de cron een ingeplande brief probeert voor hij hem teruggeeft als concept.
+const MAX_CRON_POGINGEN = 4
 
 // Afmeldlink-sleutel: webhook-token als dat er is, anders afgeleid van de
 // service-role-key (altijd aanwezig en geheim). Zelfde keuze in nieuwsbrief-afmelden.ts.
@@ -406,6 +410,65 @@ async function legOntvangersVast(nieuwsbriefId: string, lijst: Ontvanger[], vari
   }
 }
 
+// Wie deze brief al kreeg ('sent'), in stukken van 1000: PostgREST geeft nooit meer
+// rijen terug, en een tweede poging zou anders iedereen na de eerste 1000 nog eens mailen.
+async function alVerstuurdAan(nieuwsbriefId: string): Promise<Set<string>> {
+  const uit = new Set<string>()
+  for (let van = 0; ; van += 1000) {
+    const { data, error } = await supabase
+      .from('nieuwsbrief_events').select('email')
+      .eq('nieuwsbrief_id', nieuwsbriefId).eq('type', 'sent')
+      .order('email').range(van, van + 999)
+    if (error) throw error
+    const rijen = (data ?? []) as { email: string }[]
+    for (const r of rijen) uit.add(String(r.email).toLowerCase())
+    if (rijen.length < 1000) break
+  }
+  return uit
+}
+
+type MailOpties = Parameters<Resend['batch']['send']>[0][number]
+
+// Per 100 via de batch-API. Elke batch krijgt een idempotency-sleutel uit de inhoud
+// van die batch: stuurt een nieuwe poging exact dezelfde batch (na een time-out die
+// Resend toch uitvoerde), dan verstuurt Resend hem niet nog eens. Per gelukte batch
+// vastleggen wie hem kreeg, zodat een volgende poging die adressen overslaat. Lukt
+// dat ook na een herkansing niet, dan stoppen: doorgaan maakt een volgende poging
+// blind voor wie hem al had.
+async function verstuurInBatches(
+  client: Resend,
+  nieuwsbriefId: string,
+  lijst: Ontvanger[],
+  maak: (o: Ontvanger) => MailOpties,
+  tijdOp: () => boolean,
+): Promise<{ aantal: number; mislukt: string[]; afgebroken: boolean; teGaan: number; vastleggenMislukt: boolean }> {
+  let aantal = 0
+  const mislukt: string[] = []
+  for (let i = 0; i < lijst.length; i += BATCH_GROOTTE) {
+    if (tijdOp()) return { aantal, mislukt, afgebroken: true, teGaan: lijst.length - i, vastleggenMislukt: false }
+    const deel = lijst.slice(i, i + BATCH_GROOTTE)
+    const mails = deel.map(maak)
+    const idempotencyKey = `nieuwsbrief-${createHash('sha256').update(`${nieuwsbriefId}:${JSON.stringify(mails)}`).digest('hex')}`
+    const { data, error } = await client.batch.send(mails, { idempotencyKey })
+    if (error) {
+      console.error('[nieuwsbrief-verzend] batch mislukt:', error)
+      mislukt.push(...deel.map(d => d.email))
+    } else {
+      aantal += data?.data?.length ?? deel.length
+      const rijen = deel.map(d => ({ nieuwsbrief_id: nieuwsbriefId, email: d.email, type: 'sent' }))
+      const vastleggen = () => supabase.from('nieuwsbrief_events').upsert(rijen, { onConflict: 'nieuwsbrief_id,email,type', ignoreDuplicates: true })
+      let { error: vastFout } = await vastleggen()
+      if (vastFout) ({ error: vastFout } = await vastleggen())
+      if (vastFout) {
+        console.error('[nieuwsbrief-verzend] vastleggen wie hem kreeg mislukt, verzending gestopt:', vastFout)
+        return { aantal, mislukt, afgebroken: true, teGaan: lijst.length - i - deel.length, vastleggenMislukt: true }
+      }
+    }
+    if (i + BATCH_GROOTTE < lijst.length) await sleep(THROTTLE_MS)
+  }
+  return { aantal, mislukt, afgebroken: false, teGaan: 0, vastleggenMislukt: false }
+}
+
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '',
   process.env.SUPABASE_SERVICE_ROLE_KEY || '',
@@ -521,12 +584,134 @@ async function enforceRateLimit(identifier: string, res: VercelResponse): Promis
   }
 }
 
+function isCronVerzoek(req: VercelRequest): boolean {
+  const geheim = process.env.CRON_SECRET
+  return !!geheim && req.headers.authorization === `Bearer ${geheim}`
+}
+
+// Door api/cron-nieuwsbrief aangeroepen zodra een ingeplande brief aan de beurt is.
+// Doet wat de knop Verstuur doet, met de mail die bij het inplannen is vastgezet
+// (verzend_html), en altijd per mail.
+async function verstuurIngepland(client: Resend | null, nieuwsbriefId: string, res: VercelResponse) {
+  if (!client) return res.status(500).json({ error: 'Resend is niet geconfigureerd' })
+  const start = new Date()
+  // Claim: alleen de run die cron_gestart_op van leeg naar nu zet, mag door. Twee
+  // overlappende cron-rondes kunnen zo nooit tegelijk dezelfde brief versturen.
+  const { data: geclaimd, error: claimFout } = await supabase
+    .from('nieuwsbrieven')
+    .update({ cron_gestart_op: start.toISOString(), updated_at: start.toISOString() })
+    .eq('id', nieuwsbriefId)
+    .eq('user_id', OWNER_USER_ID)
+    .eq('status', 'gepland')
+    .eq('verzend_via_cron', true)
+    .lte('gepland_op', start.toISOString())
+    .is('cron_gestart_op', null)
+    .select('id, onderwerp, verzend_html, ontvangers, cron_pogingen')
+  if (claimFout) return res.status(500).json({ error: claimFout.message })
+  if (!geclaimd || geclaimd.length === 0) return res.status(409).json({ error: 'Deze brief is niet (meer) aan de beurt' })
+  const rij = geclaimd[0] as Record<string, unknown>
+  const pogingen = Number(rij.cron_pogingen || 0) + 1
+
+  // Bij een fout niet terug naar concept, want dan verdwijnt de inplanning stil. De
+  // claim gaat eraf en de volgende ronde probeert het opnieuw; wie al 'sent' heeft,
+  // wordt dan overgeslagen. Pas na MAX_CRON_POGINGEN, of met stoppen (als een nieuwe
+  // poging zelf gevaar oplevert), terug naar concept met de fout erbij, zodat hij in
+  // doen. te zien is.
+  const geefTerug = async (fout: string, opties: { code?: number; aantal?: number; stoppen?: boolean } = {}) => {
+    const opgeven = opties.stoppen === true || pogingen >= MAX_CRON_POGINGEN
+    const basis = {
+      cron_gestart_op: null,
+      cron_pogingen: pogingen,
+      cron_fout: fout,
+      updated_at: new Date().toISOString(),
+      ...(opties.aantal ? { aantal_ontvangers: opties.aantal } : {}),
+    }
+    await supabase
+      .from('nieuwsbrieven')
+      .update(opgeven ? { ...basis, status: 'concept', gepland_op: null, verzend_via_cron: false } : basis)
+      .eq('id', nieuwsbriefId)
+    return res.status(opties.code ?? 502).json({ error: fout, pogingen, opgegeven: opgeven })
+  }
+
+  // Wie hem al kreeg, ook als er onderweg iets onverwachts misgaat: zonder dat getal kan
+  // een deels verstuurde brief nog geannuleerd worden.
+  let alVerstuurd = 0
+  try {
+    const volledigeHtml = String(rij.verzend_html || '')
+    const onderwerp = String(rij.onderwerp || '').trim()
+    if (!volledigeHtml.trim() || !onderwerp) return await geefTerug('De ingeplande mail is leeg of heeft geen onderwerp', { code: 400 })
+    if (!AFMELD_GEHEIM) return await geefTerug('NIEUWSBRIEF_WEBHOOK_TOKEN ontbreekt; de afmeldlink kan niet worden gemaakt', { code: 500 })
+    const { data: profiel } = await supabase.from('profiles').select('organisatie_id').eq('id', OWNER_USER_ID).maybeSingle()
+    const orgId = (profiel?.organisatie_id as string | null) ?? null
+    if (!orgId) return await geefTerug('Geen organisatie gevonden voor de eigenaar', { code: 400 })
+
+    const selectie = (rij.ontvangers ?? { type: 'alle' }) as OntvangerSelectie
+    const volledigeLijst = await verzamelOntvangers(orgId, selectie)
+    if (volledigeLijst.length === 0) return await geefTerug('De selectie bevat geen ontvangers met een e-mailadres', { code: 400 })
+    const klaar = await alVerstuurdAan(nieuwsbriefId)
+    const lijst = volledigeLijst.filter(o => !klaar.has(o.email))
+    alVerstuurd = klaar.size
+    await legOntvangersVast(nieuwsbriefId, lijst)
+
+    const afzender = await afzenderVan(nieuwsbriefId)
+    const tags = [{ name: 'nieuwsbrief_id', value: nieuwsbriefId }]
+    const maak = (o: Ontvanger): MailOpties => ({
+      from: afzender.from,
+      to: [o.email],
+      replyTo: afzender.replyTo,
+      subject: personaliseer(onderwerp, o, nieuwsbriefId),
+      html: personaliseer(volledigeHtml, o, nieuwsbriefId),
+      headers: {
+        'List-Unsubscribe': `<${afmeldUrl(o.email, nieuwsbriefId)}>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      },
+      tags,
+    })
+    const tijdOp = () => Date.now() - start.getTime() > TIJD_BUDGET_MS
+    const uitslag = await verstuurInBatches(client, nieuwsbriefId, lijst, maak, tijdOp)
+    const totaal = klaar.size + uitslag.aantal
+    alVerstuurd = totaal
+
+    if (uitslag.vastleggenMislukt) {
+      return await geefTerug(`${totaal} verstuurd, daarna mislukte het vastleggen wie hem kreeg. Gestopt zonder nieuwe poging; kijk in Resend wie hem al heeft voor je opnieuw verstuurt.`, { code: 500, aantal: totaal, stoppen: true })
+    }
+    if (uitslag.mislukt.length > 0 && uitslag.aantal === 0) return await geefTerug(`Geen enkele mail kon worden verstuurd (${uitslag.mislukt.length} mislukt)`, { aantal: totaal })
+    if (uitslag.mislukt.length > 0) return await geefTerug(`${uitslag.mislukt.length} mails mislukt; de volgende ronde probeert alleen die opnieuw`, { aantal: totaal })
+    if (uitslag.afgebroken) {
+      // Tijd op maar niets fout: geen poging verbruiken, de volgende ronde gaat verder.
+      await supabase.from('nieuwsbrieven').update({ cron_gestart_op: null, aantal_ontvangers: totaal, updated_at: new Date().toISOString() }).eq('id', nieuwsbriefId)
+      return res.status(200).json({ ok: true, status: 'gepland', aantalOntvangers: totaal, teGaan: uitslag.teGaan })
+    }
+
+    const klaarOp = new Date().toISOString()
+    const { data: bijgewerkt } = await supabase
+      .from('nieuwsbrieven')
+      .update({
+        status: 'verzonden', verzonden_op: klaarOp, gepland_op: null, aantal_ontvangers: totaal,
+        cron_gestart_op: null, cron_pogingen: pogingen, cron_fout: null, updated_at: klaarOp,
+      })
+      .eq('id', nieuwsbriefId)
+      .select('*')
+      .maybeSingle()
+    return res.status(200).json({ ok: true, status: 'verzonden', aantalOntvangers: totaal, nieuwsbrief: bijgewerkt ?? null })
+  } catch (err) {
+    console.error('[nieuwsbrief-verzend] ingeplande verzending mislukt:', err)
+    return await geefTerug((err as Error).message || 'Ingeplande verzending mislukt', { code: 500, aantal: alVerstuurd })
+  }
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
   if (!resend) return res.status(500).json({ error: 'Resend is niet geconfigureerd' })
 
   try {
+    // Op het ingeplande moment drukt api/cron-nieuwsbrief zelf op verzenden.
+    if (isCronVerzoek(req)) {
+      const id = String((req.body as { nieuwsbriefId?: unknown } | undefined)?.nieuwsbriefId ?? '')
+      if (!/^[0-9a-f-]{36}$/i.test(id)) return res.status(400).json({ error: 'nieuwsbriefId ontbreekt' })
+      return await verstuurIngepland(resend, id, res)
+    }
     if (!(await verifyOwner(req))) return res.status(403).json({ error: 'Geen toegang' })
     if (!(await enforceRateLimit(OWNER_USER_ID, res))) return
 
@@ -563,12 +748,49 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (html.length > 500_000) return res.status(400).json({ error: 'De nieuwsbrief is te groot (max 500 kB HTML)' })
     if (onderwerp.trim().length > 200) return res.status(400).json({ error: 'Het onderwerp is te lang' })
 
+    if (scheduledAt) {
+      // Inplannen verstuurt nog niets. De mail wordt vastgezet zoals hij nu is en
+      // api/cron-nieuwsbrief drukt op het moment zelf op verzenden, per mail. Zo
+      // geldt geen maximum per keer en geen contactenlimiet van de Resend-lijst.
+      const { data: profiel } = await supabase.from('profiles').select('organisatie_id').eq('id', OWNER_USER_ID).maybeSingle()
+      const planOrgId = (profiel?.organisatie_id as string | null) ?? null
+      if (!planOrgId) return res.status(400).json({ error: 'Geen organisatie gevonden voor de eigenaar' })
+      const ontvangersNu = await verzamelOntvangers(planOrgId, selectie)
+      if (ontvangersNu.length === 0) return res.status(400).json({ error: 'Je selectie bevat geen ontvangers met een e-mailadres' })
+      const { data: ingepland, error: planFout } = await supabase
+        .from('nieuwsbrieven')
+        .update({
+          status: 'gepland',
+          gepland_op: new Date(scheduledAt).toISOString(),
+          verzend_via_cron: true,
+          cron_gestart_op: null,
+          cron_pogingen: 0,
+          cron_fout: null,
+          onderwerp: onderwerp.trim(),
+          html,
+          preheader: preheader?.trim() || null,
+          ontvangers: selectie,
+          verzend_html: buildNieuwsbriefHtml(html, onderwerp.trim(), preheader, stijl),
+          ab_actief: false,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', nieuwsbriefId)
+        .eq('status', 'concept')
+        .select('*')
+      if (planFout) {
+        const melding = planFout.code === 'PGRST204' ? 'Inplannen werkt pas na migratie 251' : `Inplannen mislukt: ${planFout.message}`
+        return res.status(500).json({ error: melding })
+      }
+      if (!ingepland || ingepland.length === 0) return res.status(409).json({ error: 'Deze nieuwsbrief wordt al verstuurd' })
+      return res.status(200).json({ ok: true, status: 'gepland', aantalOntvangers: ontvangersNu.length, wachtOpWinnaar: 0, teGaan: 0, broadcastId: null, nieuwsbrief: ingepland[0] })
+    }
+
     // Claim de rij vóór het verzenden: twee snelle klikken of twee tabbladen
     // mogen nooit twee broadcasts opleveren. Alleen wie van 'concept' naar
     // 'bezig' komt, mag door; bij een fout zetten we hem terug.
     const { data: geclaimd } = await supabase
       .from('nieuwsbrieven')
-      .update({ status: 'gepland', gepland_op: scheduledAt || null, updated_at: new Date().toISOString() })
+      .update({ status: 'gepland', gepland_op: null, updated_at: new Date().toISOString() })
       .eq('id', nieuwsbriefId)
       .eq('status', 'concept')
       .select('id')
@@ -579,7 +801,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const volledigeHtml = buildNieuwsbriefHtml(html, onderwerp.trim(), preheader, stijl)
-    const gepland = Boolean(scheduledAt)
     const { data: profile } = await supabase
       .from('profiles').select('organisatie_id').eq('id', OWNER_USER_ID).maybeSingle()
     const orgId = (profile?.organisatie_id as string | null) ?? null
@@ -598,7 +819,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // gedragszeef of een A/B-test op zit, moet het per mail, anders krijgt
     // iedereen hem alsnog.
     const gedragsZeef = Boolean(selectie.gedrag && selectie.gedrag !== 'alle')
-    if ((!selectie.type || selectie.type === 'alle') && !abActief && !gedragsZeef) {
+    if (VIA_RESEND_LIJST && (!selectie.type || selectie.type === 'alle') && !abActief && !gedragsZeef) {
       // Iedereen: via de Resend-lijst als broadcast. Resend regelt dan zelf de
       // afmeldlink per ontvanger en het inplannen op schaal.
       const audienceId = await vindAudienceId(resend)
@@ -616,9 +837,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         html: volledigeHtml,
       })
       if (bcErr || !broadcast) return geefVrij(`Kon de nieuwsbrief niet aanmaken bij Resend: ${bcErr?.message ?? 'onbekend'}`)
-      const { error: sendErr } = scheduledAt
-        ? await resend.broadcasts.send(broadcast.id, { scheduledAt })
-        : await resend.broadcasts.send(broadcast.id)
+      const { error: sendErr } = await resend.broadcasts.send(broadcast.id)
       if (sendErr) return geefVrij(`Verzenden mislukt bij Resend: ${sendErr.message}`)
       aantal = actief.length
       broadcastId = broadcast.id
@@ -651,15 +870,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       // Na een afgebroken eerdere poging niet opnieuw mailen naar wie al had.
-      const { data: alVerstuurd } = await supabase
-        .from('nieuwsbrief_events').select('email').eq('nieuwsbrief_id', nieuwsbriefId).eq('type', 'sent')
-      const klaar = new Set((alVerstuurd ?? []).map(r => String((r as { email: string }).email).toLowerCase()))
+      const klaar = await alVerstuurdAan(nieuwsbriefId)
       const testGroep = lijst
       if (klaar.size > 0) lijst = lijst.filter(o => !klaar.has(o.email))
       if (lijst.length === 0 && klaar.size > 0) return geefVrij('Iedereen in deze selectie heeft deze nieuwsbrief al ontvangen', 400)
-      if (gepland && lijst.length > MAX_GEPLAND_PER_RUN) {
-        return geefVrij(`Inplannen voor een selectie kan tot ${MAX_GEPLAND_PER_RUN} ontvangers. Kies "Iedereen" of verstuur nu.`, 400)
-      }
 
       await legOntvangersVast(nieuwsbriefId, lijst, abActief ? o => variantVan(o.email) : undefined)
 
@@ -678,32 +892,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         tags,
       })
 
-      const mislukt: string[] = []
-      if (gepland) {
-        let gedaan = 0
-        for (const o of lijst) {
-          if (tijdOp()) { afgebroken = true; teGaan = lijst.length - gedaan; break }
-          const { error } = await resend.emails.send({ ...maak(o), scheduledAt })
-          if (error) mislukt.push(o.email)
-          else aantal++
-          gedaan++
-          await sleep(THROTTLE_MS)
-        }
-      } else {
-        for (let i = 0; i < lijst.length; i += BATCH_GROOTTE) {
-          if (tijdOp()) { afgebroken = true; teGaan = lijst.length - i; break }
-          const deel = lijst.slice(i, i + BATCH_GROOTTE)
-          const { data, error } = await resend.batch.send(deel.map(maak))
-          if (error) {
-            console.error('[nieuwsbrief-verzend] batch mislukt:', error)
-            mislukt.push(...deel.map(d => d.email))
-          } else {
-            aantal += data?.data?.length ?? deel.length
-            const rijen = deel.map(d => ({ nieuwsbrief_id: nieuwsbriefId, email: d.email, type: 'sent' }))
-            await supabase.from('nieuwsbrief_events').upsert(rijen, { onConflict: 'nieuwsbrief_id,email,type', ignoreDuplicates: true })
-          }
-          if (i + BATCH_GROOTTE < lijst.length) await sleep(THROTTLE_MS)
-        }
+      const uitslag = await verstuurInBatches(resend, nieuwsbriefId, lijst, maak, tijdOp)
+      aantal = uitslag.aantal
+      afgebroken = uitslag.afgebroken
+      teGaan = uitslag.teGaan
+      const mislukt = uitslag.mislukt
+      if (uitslag.vastleggenMislukt) {
+        return geefVrij(`${aantal} mails verstuurd, daarna mislukte het vastleggen wie hem kreeg. Verstuur niet opnieuw voordat je in Resend hebt gekeken wie hem al heeft.`, 500)
       }
       restAantal = abActief ? volledigeLijst.length - testGroep.length : 0
       if (aantal === 0) return geefVrij('Geen enkele mail kon worden verstuurd. Controleer de Resend-instellingen.')
@@ -738,11 +933,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // telt de brief als afgerond terwijl er mensen open staan, en pakt de
         // A/B-cron hem op (die zoekt op status 'verzonden') voordat de testgroep
         // compleet is.
-        status: afgebroken ? 'concept' : gepland ? 'gepland' : 'verzonden',
+        status: afgebroken ? 'concept' : 'verzonden',
         resend_broadcast_id: broadcastId,
         aantal_ontvangers: aantal,
-        gepland_op: !afgebroken && gepland ? scheduledAt : null,
-        verzonden_op: afgebroken || gepland ? null : nu,
+        gepland_op: null,
+        verzonden_op: afgebroken ? null : nu,
         updated_at: nu,
       })
       .eq('id', nieuwsbriefId)
@@ -755,7 +950,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.status(200).json({
       ok: true,
-      status: afgebroken ? 'concept' : gepland ? 'gepland' : 'verzonden',
+      status: afgebroken ? 'concept' : 'verzonden',
       aantalOntvangers: aantal,
       wachtOpWinnaar: afgebroken ? 0 : restAantal,
       teGaan: afgebroken ? teGaan : 0,
@@ -765,7 +960,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   } catch (err) {
     console.error('[nieuwsbrief-verzend] fout:', err)
     const id = (req.body as { nieuwsbriefId?: string } | undefined)?.nieuwsbriefId
-    if (id) await supabase.from('nieuwsbrieven').update({ status: 'concept', gepland_op: null }).eq('id', id).eq('status', 'gepland').is('resend_broadcast_id', null).is('verzonden_op', null).is('aantal_ontvangers', null)
+    // Een cron-verzending regelt zijn eigen claim; die hier naar concept zetten laat
+    // verzend_via_cron en de claim half staan.
+    if (id && !isCronVerzoek(req)) await supabase.from('nieuwsbrieven').update({ status: 'concept', gepland_op: null }).eq('id', id).eq('status', 'gepland').is('resend_broadcast_id', null).is('verzonden_op', null).is('aantal_ontvangers', null)
     return res.status(500).json({ error: (err as Error).message || 'Verzenden mislukt' })
   }
 }

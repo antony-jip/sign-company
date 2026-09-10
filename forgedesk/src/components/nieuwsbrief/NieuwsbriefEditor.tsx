@@ -8,7 +8,7 @@ import { cn, formatDateTime } from '@/lib/utils'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import {
   updateConcept, verstuurNieuwsbrief, verstuurTest, STANDAARD_AB, type AbInstelling, genereerMetDaan, genereerBlokkenMetDaan, stelOnderwerpenVoor, uploadAfbeelding, syncContactenVolledig, herstelVastgelopenConcept,
-  type Nieuwsbrief, type OntvangerSelectie, STANDAARD_SELECTIE, AFZENDER_ADRESSEN, STANDAARD_AFZENDER_NAAM } from '@/services/nieuwsbriefService'
+  type Nieuwsbrief, type OntvangerSelectie, STANDAARD_SELECTIE, AFZENDER_ADRESSEN, STANDAARD_AFZENDER_NAAM, annuleerInplanning, VERZEND_VIA_RESEND_LIJST } from '@/services/nieuwsbriefService'
 import { BlokBouwer } from './BlokBouwer'
 import { DaanChat } from './DaanChat'
 import { OntvangerKiezer } from './OntvangerKiezer'
@@ -234,7 +234,7 @@ export function NieuwsbriefEditor({ nieuwsbrief, onTerug, onGewijzigd, startMetD
     setBezig(true)
     try {
       await forceerOpslaan()
-      if (selectie.type === 'alle') {
+      if (VERZEND_VIA_RESEND_LIJST && selectie.type === 'alle') {
         // Broadcast gaat naar de Resend-lijst; die eerst compleet maken.
         const t = toast.loading('Verzendlijst bijwerken...')
         try {
@@ -354,15 +354,32 @@ export function NieuwsbriefEditor({ nieuwsbrief, onTerug, onGewijzigd, startMetD
       {vergrendeld && (
         <div className="flex items-center gap-2 border-b border-border/60 bg-petrol/[0.05] px-4 py-2 text-[13px] text-foreground md:px-6">
           <Lock className="h-4 w-4 text-petrol" />
-          {nieuwsbrief.status === 'gepland' && !nieuwsbrief.resend_broadcast_id && nieuwsbrief.aantal_ontvangers == null
+          {nieuwsbrief.status === 'gepland' && !nieuwsbrief.verzend_via_cron && !nieuwsbrief.resend_broadcast_id && nieuwsbrief.aantal_ontvangers == null
             ? <>Deze verzending is niet afgerond (waarschijnlijk een time-out). Wie al een mail kreeg, krijgt hem bij een nieuwe poging niet nog eens.
                 <button type="button" onClick={async () => {
                   try { const n = await herstelVastgelopenConcept(nieuwsbrief.id); if (n) { onGewijzigd(n); toast.success('Terug als concept') } else toast.error('Kon niet herstellen') }
                   catch (err) { toast.error(err instanceof Error ? err.message : 'Herstellen mislukt') }
                 }} className="ml-2 font-semibold text-petrol underline dark:text-foreground">Zet terug naar concept</button></>
+            : nieuwsbrief.status === 'gepland' && nieuwsbrief.verzend_via_cron
+            ? <>Ingepland voor <strong>{nieuwsbrief.gepland_op ? formatDateTime(nieuwsbrief.gepland_op) : 'later'}</strong>. doen. verstuurt hem dan zelf, per mail.
+                {nieuwsbrief.cron_gestart_op && <> Wordt nu verstuurd.</>}
+                {nieuwsbrief.cron_fout && <> Vorige poging: {nieuwsbrief.cron_fout}. De volgende ronde probeert het opnieuw.</>}
+                {!nieuwsbrief.cron_gestart_op && (
+                  <button type="button" onClick={async () => {
+                    try { const n = await annuleerInplanning(nieuwsbrief.id); if (n) { onGewijzigd(n); toast.success('Inplanning geannuleerd, terug als concept') } else toast.error('Te laat: de verzending is al begonnen') }
+                    catch (err) { toast.error(err instanceof Error ? err.message : 'Annuleren mislukt') }
+                  }} className="ml-2 font-semibold text-petrol underline dark:text-foreground">Annuleer inplanning</button>
+                )}</>
             : nieuwsbrief.status === 'gepland'
             ? <>Ingepland voor <strong>{nieuwsbrief.gepland_op ? formatDateTime(nieuwsbrief.gepland_op) : 'later'}</strong>. Wijzigen kan niet meer; dupliceer ’m in de lijst als je iets wilt aanpassen.</>
             : <>Deze nieuwsbrief is verzonden en kan niet meer worden aangepast.</>}
+        </div>
+      )}
+
+      {!vergrendeld && nieuwsbrief.cron_fout && (
+        <div className="flex items-center gap-2 border-b border-border/60 bg-[#C0451A]/[0.06] px-4 py-2 text-[13px] text-foreground md:px-6">
+          <AlertCircle className="h-4 w-4 flex-shrink-0 text-[#C0451A]" />
+          <span>De ingeplande verzending is gestopt na herhaalde fouten: {nieuwsbrief.cron_fout}. Wie hem al kreeg, krijgt hem bij een nieuwe poging niet nog eens.</span>
         </div>
       )}
 
@@ -674,6 +691,9 @@ export function NieuwsbriefEditor({ nieuwsbrief, onTerug, onGewijzigd, startMetD
                       <Send className="h-4 w-4" /> Verstuur nu
                     </button>
                   </div>
+                  {inplanOpen && (
+                    <p className="mt-2 text-[12px] text-muted-foreground">doen. verstuurt hem op dat moment zelf, per mail. De controle draait elk kwartier, dus kies bijvoorbeeld 9:00, 9:15 of 9:30.</p>
+                  )}
                 </div>
               )}
             </div>

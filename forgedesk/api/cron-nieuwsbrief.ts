@@ -39,7 +39,9 @@ if (process.env.SENTRY_DSN && !Sentry.getClient()) {
 // verzendlogica staat hier bewust nog een keer. Wijzig je iets aan de mailshell,
 // de afmeldlink of het verzamelen van ontvangers, wijzig het dan ook in
 // api/nieuwsbrief-verzend.ts.
-export const config = { maxDuration: 60 }
+// Vijf minuten: deze cron wacht op een ingeplande verzending, en die mag zelf ook
+// vijf minuten duren (api/nieuwsbrief-verzend).
+export const config = { maxDuration: 300 }
 
 const OWNER_USER_ID = 'ce6843e3-5cd9-4043-9461-55071bc91eb7'
 // ── NIEUWSBRIEF-AFZENDER BEGIN ──
@@ -438,6 +440,95 @@ async function verwerkTest(rij: Record<string, unknown>, orgId: string): Promise
   return `${id}: winnaar ${uitslag.winnaar} (${uitslag.opensA}/${uitslag.groepA} vs ${uitslag.opensB}/${uitslag.groepB}), ${verstuurd} naar de rest`
 }
 
+// Ingeplande brieven: op het moment zelf drukt de cron op verzenden. Dat gebeurt in
+// api/nieuwsbrief-verzend, dezelfde route als de knop, zodat er geen tweede kopie
+// van de verzendlogica bestaat. Eén brief per ronde, want een verzending mag vijf
+// minuten duren en deze functie ook.
+// Zelfde grens als api/nieuwsbrief-verzend.ts; na zoveel fouten gaat de brief terug naar concept.
+const MAX_CRON_POGINGEN = 4
+
+async function startIngeplande(): Promise<{ melding: string; gestart: boolean } | null> {
+  const geheim = process.env.CRON_SECRET
+  if (!geheim) return null
+  try {
+    const nu = Date.now()
+    // Een claim ouder dan tien minuten is van een run die gestorven is (verzenden stopt
+    // zelf na vijf): vrijgeven, zodat deze ronde verder kan waar die bleef.
+    const { error: vrijFout } = await supabase
+      .from('nieuwsbrieven')
+      .update({ cron_gestart_op: null })
+      .eq('user_id', OWNER_USER_ID)
+      .eq('status', 'gepland')
+      .eq('verzend_via_cron', true)
+      .lt('cron_gestart_op', new Date(nu - 10 * 60_000).toISOString())
+    // Vóór migratie 251 bestaat de kolom niet: 42703 (in het filter) of PGRST204 (in de update).
+    // Dan staat er ook niets via de cron ingepland.
+    if (vrijFout) return ['42703', 'PGRST204'].includes(vrijFout.code ?? '') ? null : { melding: `ingepland: vrijgeven mislukt (${vrijFout.message})`, gestart: false }
+
+    const { data: aanDeBeurt, error } = await supabase
+      .from('nieuwsbrieven')
+      .select('id, cron_pogingen, updated_at')
+      .eq('user_id', OWNER_USER_ID)
+      .eq('status', 'gepland')
+      .eq('verzend_via_cron', true)
+      .lte('gepland_op', new Date(nu).toISOString())
+      .is('cron_gestart_op', null)
+      .order('gepland_op')
+      .limit(1)
+    if (error) return { melding: `ingepland: zoeken mislukt (${error.message})`, gestart: false }
+    const rij = aanDeBeurt?.[0] as { id?: string; cron_pogingen?: number; updated_at?: string } | undefined
+    if (!rij?.id) return null
+    const id = rij.id
+
+    let status = 0
+    let body: Record<string, unknown> = {}
+    let netwerkFout = ''
+    try {
+      const r = await fetch(`${APP_URL}/api/nieuwsbrief-verzend`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${geheim}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nieuwsbriefId: id }),
+        signal: AbortSignal.timeout(290_000),
+      })
+      status = r.status
+      body = (await r.json().catch(() => ({}))) as Record<string, unknown>
+    } catch (err) {
+      netwerkFout = err instanceof Error ? err.message : String(err)
+    }
+
+    // Zodra de verzendroute de brief geclaimd heeft, houdt hij zelf pogingen en fouten bij:
+    // dan zit 'ok' of 'pogingen' in het antwoord. Kwam het verzoek daar niet eens aan
+    // (netwerk, toegang, time-out, koude start, een doorverwijzing naar een HTML-pagina),
+    // dan legt de cron het hier vast. Anders blijft de brief eeuwig op een tijdstip in het
+    // verleden staan zonder dat iemand het ziet.
+    if (status === 409) return { melding: `${id}: een andere ronde was net eerder`, gestart: false }
+    const aangekomen = netwerkFout === '' && (body.ok === true || body.pogingen !== undefined)
+    if (!aangekomen) {
+      const fout = netwerkFout ? `Verzendroute niet bereikt: ${netwerkFout}` : `Verzendroute gaf ${status}: ${String(body.error ?? 'geen uitleg')}`
+      const pogingen = Number(rij.cron_pogingen || 0) + 1
+      const opgeven = pogingen >= MAX_CRON_POGINGEN
+      const basis = { cron_pogingen: pogingen, cron_fout: fout, updated_at: new Date().toISOString() }
+      // Alleen als de rij sinds het ophalen niet veranderd is. Liep de verzending toch en
+      // stopte die net na onze time-out (claim gezet en weer vrijgegeven, beide met een
+      // nieuwe updated_at), dan was hij wél aangekomen en blijft deze cron eraf.
+      await supabase
+        .from('nieuwsbrieven')
+        .update(opgeven ? { ...basis, status: 'concept', gepland_op: null, verzend_via_cron: false } : basis)
+        .eq('id', id)
+        .eq('status', 'gepland')
+        .eq('verzend_via_cron', true)
+        .is('cron_gestart_op', null)
+        .eq('updated_at', rij.updated_at ?? '')
+      Sentry.captureMessage(`[cron-nieuwsbrief] ingeplande brief ${id}: ${fout}`, 'error')
+      return { melding: `${id}: ${fout} (poging ${pogingen}${opgeven ? ', opgegeven' : ''})`, gestart: false }
+    }
+    return { melding: `${id}: ingepland, ${status} ${String(body.status ?? '')} ${String(body.aantalOntvangers ?? '')} ${String(body.error ?? '')}`.trim(), gestart: true }
+  } catch (err) {
+    Sentry.captureException(err)
+    return { melding: `ingepland: fout (${err instanceof Error ? err.message : String(err)})`, gestart: false }
+  }
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const geheim = process.env.CRON_SECRET
   const bevoegd = !!geheim && req.headers.authorization === `Bearer ${geheim}`
@@ -449,6 +540,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { data: profile } = await supabase.from('profiles').select('organisatie_id').eq('id', OWNER_USER_ID).maybeSingle()
     const orgId = (profile?.organisatie_id as string | null) ?? null
     if (!orgId) return res.status(200).json({ ok: true, overgeslagen: 'geen organisatie' })
+
+    // Eerst ingeplande brieven. Is er één verstuurd, dan de A/B-tests de volgende
+    // ronde: samen passen ze niet binnen de looptijd van deze functie.
+    const ingepland = await startIngeplande()
+    if (ingepland) console.log('[cron-nieuwsbrief]', ingepland.melding)
+    if (ingepland?.gestart) return res.status(200).json({ ok: true, afgehandeld: 1, meldingen: [ingepland.melding] })
 
     const { data: open } = await supabase
       .from('nieuwsbrieven')

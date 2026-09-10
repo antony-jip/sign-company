@@ -95,7 +95,7 @@
       "maxDuration": 120
     },
     "api/cron-nieuwsbrief.ts": {
-      "maxDuration": 60
+      "maxDuration": 300
     },
     "api/nieuwsbrief-herzend.ts": {
       "maxDuration": 60
