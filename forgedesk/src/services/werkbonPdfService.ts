@@ -5,7 +5,7 @@ import { resolveImageToBase64, detectImageFormat } from '@/services/pdfService'
 import { resolveSchaal } from '@/services/werkbonService'
 import {
   itemHeeftCanvasData,
-  heeftCanvasCoords,
+  metCanvasPositie,
   CANVAS_WERKRUIMTE_MM,
   CANVAS_Z_INDEX_DEFAULTS,
   CANVAS_LOGO_DEFAULT_MM,
@@ -396,8 +396,7 @@ export async function generateWerkbonInstructiePDF(
     // Z-sort: lager z eerst (achter), tiebreaker created_at (newer-on-top).
     // Identieke fallback-logica als WerkbonCanvas zodat DOM-stacking in de
     // editor en PDF-stacking in de output nooit divergeren.
-    const canvasElementen = [...item.afbeeldingen]
-      .filter((a) => heeftCanvasCoords(a.layout))
+    const canvasElementen = metCanvasPositie(item.afbeeldingen)
       .sort((a, b) => {
         const blokA = a.layout?.blok_type ?? 'foto'
         const blokB = b.layout?.blok_type ?? 'foto'

@@ -72,6 +72,22 @@ export function itemHeeftCanvasData(afbeeldingen: WerkbonAfbeelding[]): boolean 
 }
 
 /**
+ * Geeft afbeeldingen zonder canvas-coordinaten een plek op het werkblad, in
+ * plaats van ze weg te filteren. Een foto die uit de offerte is overgenomen
+ * heeft geen coordinaten; werkblad en PDF lieten die weg, dus hij stond wel in
+ * de database maar was nergens te zien. Trapsgewijs op de positie in de lijst,
+ * zodat ze niet stapelen en niet verspringen als een ander element verplaatst
+ * wordt. Afmetingen blijven leeg: editor en PDF vallen dan op dezelfde default.
+ */
+export function metCanvasPositie(afbeeldingen: WerkbonAfbeelding[]): WerkbonAfbeelding[] {
+  return afbeeldingen.map((afb, index) => {
+    if (heeftCanvasCoords(afb.layout)) return afb
+    const offset = CANVAS_DROP_CASCADE_START_MM + (index % 6) * CANVAS_DROP_CASCADE_OFFSET_MM
+    return { ...afb, layout: { ...(afb.layout ?? {}), canvas_x_mm: offset, canvas_y_mm: offset } }
+  })
+}
+
+/**
  * Leest de aspect-ratio (breedte/hoogte) uit een image-blob via een
  * tijdelijke object-URL. Wordt bij drop gebruikt om de canvas-afmetingen
  * direct aan de source-ratio te koppelen, zodat object-contain geen

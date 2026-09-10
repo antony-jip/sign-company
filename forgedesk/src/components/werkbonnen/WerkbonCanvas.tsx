@@ -6,7 +6,7 @@ import {
   CANVAS_WERKRUIMTE_MM,
   CANVAS_SNAP_GRID_MM,
   CANVAS_Z_INDEX_DEFAULTS,
-  heeftCanvasCoords,
+  metCanvasPositie,
 } from '@/utils/werkbonCanvas'
 
 interface WerkbonCanvasProps {
@@ -67,8 +67,7 @@ export function WerkbonCanvas({
   // Z-sort: lager z eerst (achter), tiebreaker created_at (newer-on-top).
   // Foto/pdf default z=1, logo z=2 → logo komt automatisch bovenop.
   const canvasElementen = useMemo(() => {
-    return afbeeldingen
-      .filter((a) => heeftCanvasCoords(a.layout))
+    return metCanvasPositie(afbeeldingen)
       .sort((a, b) => {
         const blokTypeA = a.layout?.blok_type ?? 'foto'
         const blokTypeB = b.layout?.blok_type ?? 'foto'
