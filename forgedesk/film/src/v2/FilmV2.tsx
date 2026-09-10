@@ -27,15 +27,15 @@ export const FILM2_DUUR_MS = B2.eind
 
 // Plekken in de ruimte (middelpunten, filmcoördinaten bij zoom 1).
 const PLEK = {
-  mail: { x: -60, y: 0 },
-  cockpit: { x: 1120, y: 120 },
-  editor: { x: 2240, y: -420 },
-  portaal: { x: 2240, y: 760 },
-  planning: { x: -60, y: 1240 },
-  telefoon: { x: 1120, y: -1050 },
-  kanban: { x: 1120, y: 1420 },
+  mail: { x: 160, y: -900 },
+  cockpit: { x: 1120, y: 500 },
+  editor: { x: 2080, y: -900 },
+  portaal: { x: 2080, y: 1900 },
+  planning: { x: 160, y: 1900 },
+  telefoon: { x: 1120, y: -2000 },
+  kanban: { x: 1120, y: 2500 },
 }
-const CENTRUM = { x: 1100, y: 420 }
+const CENTRUM = { x: 1120, y: 250 }
 
 const lokaal = (plek: { x: number; y: number }, cx: number, cy: number) => ({ x: plek.x + (cx - 720) * (SCHERM_B / 1440), y: plek.y + (cy - 540) * (SCHERM_H / 1080) })
 const TELEFOON_B = 418 * 0.62, TELEFOON_H = 872 * 0.62
@@ -58,24 +58,25 @@ const STOPS: CameraStop[] = [
   { ms: B.terugCockpit2, ...lokaal(PLEK.cockpit, 520, 470), zoom: 2.2, duurMs: 1100 },
   // Montage
   { ms: B2.klikMontage - 700, ...lokaal(PLEK.cockpit, 420, 840), zoom: 2.4, duurMs: 800 },
-  { ms: B2.planningCamOp, ...lokaal(PLEK.planning, 560, 520), zoom: 1.7, duurMs: 1100 },
+  { ms: B2.planningCamOp, ...lokaal(PLEK.planning, 880, 600), zoom: 1.7, duurMs: 1100 },
+  { ms: B2.sleepOp - 700, ...lokaal(PLEK.planning, 940, 620), zoom: 1.9, duurMs: 1900 },
   { ms: B2.terugCockpit3, ...lokaal(PLEK.cockpit, 520, 470), zoom: 2.2, duurMs: 1100 },
   // Klokken en telefoon
   { ms: B2.klikInklokken - 700, ...lokaal(PLEK.cockpit, 1120, 420), zoom: 2.6, duurMs: 800 },
-  { ms: B2.telefoonCamOp, ...telefoonLokaal(209, 470), zoom: 3.0, duurMs: 1100 },
+  { ms: B2.telefoonCamOp, ...telefoonLokaal(209, 540), zoom: 2.9, duurMs: 1100 },
   { ms: B2.terugCockpit4, ...lokaal(PLEK.cockpit, 520, 900), zoom: 2.0, duurMs: 1100 },
   // Mail uit het project
   { ms: B2.klikMailContact - 700, ...lokaal(PLEK.cockpit, 1120, 640), zoom: 2.4, duurMs: 800 },
-  { ms: B2.composerOp, ...lokaal(PLEK.cockpit, 1080, 600), zoom: 2.3, duurMs: 900 },
-  { ms: B2.klikUitProject - 700, ...lokaal(PLEK.cockpit, 1080, 800), zoom: 2.5, duurMs: 800 },
+  { ms: B2.composerOp, ...lokaal(PLEK.cockpit, 1080, 880), zoom: 2.5, duurMs: 900 },
   // Financieel
   { ms: B2.klikFinancieel - 700, ...lokaal(PLEK.cockpit, 720, 330), zoom: 2.2, duurMs: 900 },
   { ms: B2.klikFactuurMaken - 700, ...lokaal(PLEK.cockpit, 1000, 300), zoom: 2.4, duurMs: 800 },
-  { ms: B2.klikFactuurVerstuur - 700, ...lokaal(PLEK.cockpit, 720, 620), zoom: 2.2, duurMs: 800 },
+  { ms: B2.klikFactuurVerstuur - 700, ...lokaal(PLEK.cockpit, 900, 520), zoom: 2.6, duurMs: 800 },
+  { ms: B2.betaaldOp - 300, ...lokaal(PLEK.cockpit, 760, 470), zoom: 2.8, duurMs: 900 },
   // Pull-back, constellatie, magneet
   { ms: B2.pullbackOp, ...lokaal(PLEK.cockpit, 720, 540), zoom: 1.0, duurMs: 1400 },
-  { ms: B2.constellatieOp, ...CENTRUM, zoom: 0.31, duurMs: 1600 },
-  { ms: B2.magneetOp, ...CENTRUM, zoom: 0.5, duurMs: 2400 },
+  { ms: B2.constellatieOp, ...CENTRUM, zoom: 0.30, duurMs: 1600 },
+  { ms: B2.magneetOp, ...CENTRUM, zoom: 0.5, duurMs: 1800 },
 ]
 
 const CURSOR: CursorStap[] = [
@@ -131,22 +132,23 @@ const KLANKEN: Klank[] = [
 
 // Flame-stip die van een knop naar een cirkel in de fasebalk loopt: de klik
 // veroorzaakt zichtbaar de fase.
-const FaseStip: React.FC<{ t: number; op: number; vanDoel: string; naarFase: number }> = ({ t, op, vanDoel, naarFase }) => {
+const FaseStip: React.FC<{ t: number; op: number; vanDoel: string; naarFase?: number; naarPunt?: { x: number; y: number }; duurMs?: number }> = ({ t, op, vanDoel, naarFase, naarPunt, duurMs = 700 }) => {
   const [pos, setPos] = useState<{ a: { x: number; y: number }; b: { x: number; y: number } } | null>(null)
   useLayoutEffect(() => {
     const root = document.querySelector('[data-film-root]')
-    const a = document.querySelector(`[data-doel="${vanDoel}"]`)
-    const b = document.querySelector(`[data-fase="${naarFase}"]`)
-    if (!root || !a || !b) { setPos((p) => (p === null ? p : null)); return }
+    const a = document.querySelector(vanDoel.startsWith('fase:') ? `[data-fase="${vanDoel.slice(5)}"]` : `[data-doel="${vanDoel}"]`)
+    const b = naarFase !== undefined ? document.querySelector(`[data-fase="${naarFase}"]`) : null
+    if (!root || !a || (!b && !naarPunt)) { setPos((p) => (p === null ? p : null)); return }
     const f = root.getBoundingClientRect(); const s = f.width / 1080
-    const ra = a.getBoundingClientRect(); const rb = b.getBoundingClientRect()
-    const n = { a: { x: (ra.left + ra.width / 2 - f.left) / s, y: (ra.top + ra.height / 2 - f.top) / s }, b: { x: (rb.left + rb.width / 2 - f.left) / s, y: (rb.top + rb.height / 2 - f.top) / s } }
+    const ra = a.getBoundingClientRect()
+    const bb = b ? (() => { const rb = b.getBoundingClientRect(); return { x: (rb.left + rb.width / 2 - f.left) / s, y: (rb.top + rb.height / 2 - f.top) / s } })() : naarPunt!
+    const n = { a: { x: (ra.left + ra.width / 2 - f.left) / s, y: (ra.top + ra.height / 2 - f.top) / s }, b: bb }
     setPos((p) => (p && Math.abs(p.a.x - n.a.x) < 0.05 && Math.abs(p.b.y - n.b.y) < 0.05 && Math.abs(p.a.y - n.a.y) < 0.05 && Math.abs(p.b.x - n.b.x) < 0.05 ? p : n))
   })
-  if (t < op || t > op + 1100 || !pos) return null
-  const p = vlak(t, op, op + 700)
+  if (t < op || t > op + duurMs + 400 || !pos) return null
+  const p = vlak(t, op, op + duurMs)
   const x = lerp(pos.a.x, pos.b.x, p), y = lerp(pos.a.y, pos.b.y, p) - Math.sin(p * Math.PI) * 220
-  const puls = vlak(t, op + 700, op + 1100)
+  const puls = vlak(t, op + duurMs, op + duurMs + 400)
   return (
     <>
       <div style={{ position: 'absolute', left: x - 14, top: y - 14, width: 28, height: 28, borderRadius: '50%', backgroundColor: merk.flame, boxShadow: `0 0 ${20 + p * 30}px ${merk.flame}99`, zIndex: 70, opacity: 1 - puls }} />
@@ -158,14 +160,14 @@ const FaseStip: React.FC<{ t: number; op: number; vanDoel: string; naarFase: num
 // Deeltjes voor de inslag, deterministisch.
 const lcg = (seed: number) => { let s = seed; return () => { s = (s * 1664525 + 1013904223) % 4294967296; return s / 4294967296 } }
 const DEELTJES = (() => {
-  const rnd = lcg(311); const kleuren = ['#1A535C', '#D24620', '#2D6B48', '#3A6B8C', '#9A5A48', '#6A5A8A', '#C44830']
+  const rnd = lcg(311); const kleuren = [merk.petrol, merk.flame, merk.wit, merk.petrol, merk.flame]
   return Array.from({ length: 110 }, (_, i) => { const hoek = rnd() * Math.PI * 2; const v = 500 + rnd() * 900; return { kleur: kleuren[i % kleuren.length], dx: Math.cos(hoek) * v, dy: Math.sin(hoek) * v - 150, r: 6 + rnd() * 14, vertraag: rnd() * 90 } })
 })()
 
 const MeldingFilm: React.FC<{ t: number; op: number; notificatie: typeof notificatieAkkoord }> = ({ t, op, notificatie }) => {
   if (t < op || t >= op + 4000) return null
   return (
-    <div style={{ position: 'absolute', left: 60, top: 300, width: 960, zIndex: 60, transform: 'scale(1.35)', transformOrigin: 'top left', opacity: 1 - vlak(t, op + 3400, op + 4000) }}>
+    <div style={{ position: 'absolute', left: 50, top: 300, width: 610, zIndex: 60, transform: 'scale(1.6)', transformOrigin: 'top left', opacity: 1 - vlak(t, op + 3400, op + 4000) }}>
       <div style={{ position: 'relative', height: 90 }}><Toast t={t} op={op} notificatie={notificatie} top={0} /></div>
     </div>
   )
@@ -196,6 +198,8 @@ export const FilmV2: React.FC = () => {
   const faseIdx = { gepland: 0, 'in-review': 1, 'akkoord-klant': 2, ingepland: 4, 'te-factureren': 5 }[status]
   const faseWissel = t >= B2.teFacturerenOp ? B2.teFacturerenOp : t >= B2.ingeplandOp ? B2.ingeplandOp : t >= B.akkoordKlantOp ? B.akkoordKlantOp : t >= B.inReviewOp ? B.inReviewOp : B.cockpitOp
   const meldingen = t >= B2.toastBetaaldOp - 200 ? 6 : t >= B.toastAkkoordOp - 200 ? 5 : 4
+  const faseLabel = t >= B2.betaaldOp ? 'Betaald' : t >= B2.factuurVerstuurdOp ? 'Gefactureerd' : undefined
+  const faseLabelWissel = t >= B2.betaaldOp ? B2.betaaldOp : t >= B2.factuurVerstuurdOp ? B2.factuurVerstuurdOp : faseWissel
 
   const cockpitStand = {
     status: status as 'gepland' | 'in-review' | 'akkoord-klant' | 'ingepland' | 'te-factureren',
@@ -213,13 +217,13 @@ export const FilmV2: React.FC = () => {
   const financieelP = vlak(t, B2.financieelOp, B2.financieelOp + 300)
 
   // Magneet: alle schermen trekken naar het centrum en krimpen, dan inslag.
-  const trek = vlak(t, B2.magneetOp, B2.inslagOp, Easing.in(Easing.quad))
+  const trek = vlak(t, B2.magneetOp, B2.inslagOp, Easing.in(Easing.cubic))
   const naInslag = t >= B2.inslagOp
   const plekVan = (p: { x: number; y: number }) => ({ x: lerp(p.x, CENTRUM.x, trek), y: lerp(p.y, CENTRUM.y, trek) })
   const magneetSchaal = lerp(1, 0.18, trek)
   const wereldZicht = naInslag ? 0 : 1
   const openingZicht = 1 - vlak(t, B.mailCamOp - 200, B.mailCamOp + 600)
-  const eindGrond = vlak(t, B2.eindkaartOp, B2.eindkaartOp + 700, ease.inUit)
+  const eindGrond = vlak(t, B2.eindkaartOp, B2.eindkaartOp + 220, ease.inUit)
 
   // Letters
   const puntZicht = vlak(t, B2.puntOp, B2.puntOp + 150)
@@ -299,10 +303,10 @@ export const FilmV2: React.FC = () => {
       <Belofte t={t} op={B.projectBelofteOp} uit={B.projectBelofteUit} tekst="Eén klik. Het project staat" kernwoord="staat" positie="onder" />
       <Belofte t={t} op={B.offerteBelofteOp} uit={B.offerteBelofteUit} tekst="Je marge zie je vóór je verstuurt" kernwoord="marge" positie="onder" />
       <Belofte t={t} op={B.portaalBelofteOp} uit={B.portaalBelofteUit} tekst="Je klant tekent. Jij ziet het meteen" kernwoord="tekent" positie="onder" />
-      <Belofte t={t} op={B2.montageBelofteOp} uit={B2.montageBelofteUit} tekst="Montage slepen is inplannen" kernwoord="slepen" positie="onder" />
-      <Belofte t={t} op={B2.werkbonBelofteOp} uit={B2.werkbonBelofteUit} tekst="Uren, foto's en maten. Op locatie" kernwoord="locatie" positie="onder" />
-      <Belofte t={t} op={B2.mailBelofteOp} uit={B2.mailBelofteUit} tekst="Mailen uit het project. Tekening erbij" kernwoord="Tekening" positie="onder" />
-      <Belofte t={t} op={B2.factuurBelofteOp} uit={B2.factuurBelofteUit} tekst="Factuur eruit. Betaald gezien" kernwoord="Betaald" positie="onder" />
+      <Belofte t={t} op={B2.montageBelofteOp} uit={B2.montageBelofteUit} tekst="Eén sleep. De montage staat" kernwoord="staat" positie="onder" />
+      <Belofte t={t} op={B2.werkbonBelofteOp} uit={B2.werkbonBelofteUit} tekst="Uren en foto's. Op locatie" kernwoord="locatie" positie="boven" />
+      <Belofte t={t} op={B2.mailBelofteOp} uit={B2.mailBelofteUit} tekst="Mail uit het project. Tekening erbij" kernwoord="Tekening" positie="boven" />
+      <Belofte t={t} op={B2.factuurBelofteOp} uit={B2.factuurBelofteUit} tekst="Factuur eruit. Betaald" kernwoord="Betaald" positie="boven" />
       <Belofte t={t} op={B2.allesBelofteOp} uit={B2.allesBelofteUit} tekst="Eén project. Alles erin" kernwoord="Alles" positie="boven" />
 
       <MeldingFilm t={t} op={B.toastAkkoordOp} notificatie={notificatieAkkoord} />
@@ -311,7 +315,8 @@ export const FilmV2: React.FC = () => {
       <Geluid klanken={KLANKEN} totMs={FILM2_DUUR_MS} />
       {t < B2.constellatieOp && <Cursor t={t} stappen={CURSOR} zichtVan={B.mailCamOp + 400} zichtTot={B2.pullbackOp + 400} />}
       <FaseStip t={t} op={B.stipOp} vanDoel="bevestigen" naarFase={2} />
-      {t >= B.cockpitOp && t < B2.magneetOp && <FaseBalkFilm fase={faseIdx} sindsWissel={t - faseWissel} donker={false} zicht={Math.min(vlak(t, B.cockpitOp, B.cockpitOp + 500), 1 - vlak(t, B2.constellatieOp, B2.constellatieOp + 600))} />}
+      <FaseStip t={t} op={B2.magneetOp + 400} vanDoel="fase:5" naarPunt={{ x: puntPos.x + puntPos.b / 2, y: MIDDEN_Y + 92 }} duurMs={B2.inslagOp - B2.magneetOp - 400} />
+      {t >= B.cockpitOp && t < B2.inslagOp && <FaseBalkFilm fase={faseIdx} sindsWissel={t - Math.max(faseWissel, faseLabelWissel)} label={faseLabel} donker={false} zicht={Math.min(vlak(t, B.cockpitOp, B.cockpitOp + 500), 1 - vlak(t, B2.magneetOp + 400, B2.magneetOp + 900))} />}
 
       {/* Inslag, letters, punt, end card */}
       {naInslag && (
@@ -328,7 +333,7 @@ export const FilmV2: React.FC = () => {
       <AbsoluteFill style={{ backgroundColor: merk.petrol, opacity: eindGrond, zIndex: 5 }} />
       {t >= B2.lettersOp && (
         <div style={{ position: 'relative', zIndex: 10 }}>
-          <Wordmark y={MIDDEN_Y} kleur={eindGrond > 0.5 ? merk.wit : merk.petrol} stand={(i) => {
+          <Wordmark y={MIDDEN_Y} kleur={merk.wit} stand={(i) => {
             if (i === 4) return { op: puntZicht, dy: (1 - puntP) * -260, schaal: 1 + pulse * 0.45 }
             const p = veer(t, B2.lettersOp + i * 280, { demping: 14, duurMs: 800 })
             return { op: vlak(t, B2.lettersOp + i * 280, B2.lettersOp + i * 280 + 150), dy: (1 - p) * 140 }

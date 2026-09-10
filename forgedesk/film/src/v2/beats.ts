@@ -38,7 +38,7 @@ export const B2 = {
   klikFactuurVerstuur: 55000, factuurVerstuurdOp: klik(55000) + 220, toastBetaaldOp: 56600, betaaldOp: 57000, teFacturerenOp: 57200,
   factuurBelofteOp: 54200, factuurBelofteUit: 58200,
   // Pull-back en landing
-  pullbackOp: 58600, allesBelofteOp: 59400, allesBelofteUit: 63200, constellatieOp: 60800, magneetOp: 63000, inslagOp: 65400,
-  lettersOp: 65700, puntOp: 67400, pulseOp: 68300, eindkaartOp: 69000, regelOp: 70200, urlOp: 71400,
+  pullbackOp: 58600, allesBelofteOp: 61400, allesBelofteUit: 64200, constellatieOp: 60800, magneetOp: 62400, inslagOp: 64200,
+  lettersOp: 64500, puntOp: 66200, pulseOp: 67100, eindkaartOp: 64200, regelOp: 68000, urlOp: 69200,
   eind: 75000,
 } as const

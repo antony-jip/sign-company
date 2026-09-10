@@ -4,13 +4,41 @@ Motion graphic van 75 seconden, 9:16 (1080x1920), voor de Sibon-app. Eén klus
 van mail tot betaald, in twee camera's: jij en je klant. Eigen Remotion-root,
 volledig los van de app in `../src`. De app wordt er niet door geraakt.
 
+## Versie 2: de cockpit als podium
+
+`DoenFilm2` is de huidige film. Eén klus, één projectcockpit, één camera door een
+2.5D-ruimte met desktopschermen (1440 x 1080 css-px op 0,62), 75 seconden.
+Alles in `src/v2/`:
+
+- `beats.ts`: elke beat in absolute ms (`B` eerste helft, `B2` tweede helft). Een
+  klik landt op klikX + 80; gevolgen komen daarna.
+- `FilmV2.tsx`: plekken van de schermen (`PLEK`), camera-stops (`STOPS`), cursorpad
+  (`CURSOR`), beloften, meldingen, geluid, magneet en landing.
+- `Wereld.tsx`: camera {x, y, zoom} met logaritmische zoom, `Scherm` met diepte
+  (blur, kleiner, lichter), kantel en gloed.
+- `Cursor.tsx`: de Flame-pijl. Doelen zijn `data-doel="..."` in de schermen of
+  `tekst:Knoptekst`; de cursor meet ze in de DOM, dus ze kloppen ook tijdens een pan.
+- `Belofte.tsx`: één regel per beat, kernwoord met stippellijn-selectie dat Flame kleurt.
+- `Cockpit.tsx`: de projectcockpit uit de echte kaarten (ProjectFaseBar, BriefingCard,
+  TakenOfferteGrid, KlantCard, TeamCard, ActiesCard) plus nagebouwd Tijd en Portaal.
+- `schermen/`: MailApp, OfferteEditor, PortaalKlant (echte portaalcomponenten),
+  Planning, Kanban, WerkbonTelefoon, FinancieelTab, MailComposer.
+- `proef/`: losse composities per scherm (`ProefPlanning` enz.) om ze apart te bekijken.
+- `Geluid.tsx`: muziek en effecten uit `public/audio/`, gegenereerd met
+  `assets/audio.mjs` (MiniMax Music 2.6 en ElevenLabs Sound Effects v2 op FAL).
+- `BOUWREGELS.md`: de afspraken voor nieuwe schermen.
+
+Hero-shots via Seedance 2.5 staan in `assets/manifest.json` als type `hero`
+(`hero-opening`, `hero-brug`, `hero-landing`); de opening gebruikt `hero-opening.mp4`.
+Versie 1 (telefoon, zes scenes) staat nog als `DoenFilm` in `src/scenes/`.
+
 ## Draaien
 
 ```
 cd film
 npm install
 npm run dev          # Remotion Studio, scrubben per scene of de hele film
-npm run render       # out/doen-film.mp4, H.264, crf 18
+npm run render       # out/doen-film.mp4 (v1); v2: npx remotion render DoenFilm2 out/doen-film-v2.mp4 --codec=h264 --crf=18
 npm run still -- --frame=200   # één frame naar out/still.png
 ./stills.sh S3Akkoord 71 200   # controleframes per scene
 npm run typecheck
