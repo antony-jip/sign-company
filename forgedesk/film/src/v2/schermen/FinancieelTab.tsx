@@ -1,7 +1,7 @@
 import { ArrowLeft, CalendarDays, Pencil, Receipt, Send, CheckCircle2, Check } from 'lucide-react'
 import { AppVenster } from '../DesktopChrome'
 import { project, klant, offerte, factuur } from '../../mockData'
-import { euro } from '../../kern/Typ'
+import { tel, euro } from '../../kern/Typ'
 import { vlak, veer } from '../../tijd'
 
 // De projectcockpit met de tab Financieel open: kop zoals Cockpit.tsx,
@@ -78,7 +78,7 @@ export const FinancieelTab: React.FC<{ t: number; stand: FinancieelStand }> = ({
           <div className="grid grid-cols-4 gap-4">
             <Tegel label="Offerte" waarde={euro(offerte.subtotaal)} accent="#1A535C" />
             <Tegel label="Gefactureerd" waarde={euro(heeftFactuur ? factuur.subtotaal : 0)} accent="#3A5A9A" />
-            <Tegel label="Betaald" waarde={euro(betaald ? factuur.subtotaal : 0)} accent="#2D6B48" />
+            <Tegel label="Betaald" waarde={euro(betaald ? tel(factuur.subtotaal, t, stand.betaaldOp, 900) : 0)} accent="#2D6B48" />
             <Tegel label="Marge" waarde="40%" accent="#8A7A4A" sub={`${euro(offerte.subtotaal * 0.4)} op ${euro(offerte.subtotaal)}`} />
           </div>
 

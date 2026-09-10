@@ -6,9 +6,9 @@ import { useFormaat } from './formaat'
 
 // Eén regel per beat, groot, petrol op de lichte grond. Het kernwoord krijgt
 // een stippellijn-selectie die van links naar rechts tekent, dan kleurt het Flame.
-type Props = { t: number; op: number; uit: number; tekst: string; kernwoord: string; selectOp?: number; positie?: 'boven' | 'onder'; punt?: boolean }
+type Props = { t: number; op: number; uit: number; tekst: string; kernwoord: string; selectOp?: number; positie?: 'boven' | 'onder'; punt?: boolean; uitleg?: string }
 
-export const Belofte: React.FC<Props> = ({ t, op, uit, tekst, kernwoord, selectOp, positie = 'boven', punt = true }) => {
+export const Belofte: React.FC<Props> = ({ t, op, uit, tekst, kernwoord, selectOp, positie = 'boven', punt = true, uitleg }) => {
   const f = useFormaat()
   if (t < op || t > uit) return null
   const inP = veer(t, op, { demping: 18, duurMs: 700 })
@@ -27,6 +27,9 @@ export const Belofte: React.FC<Props> = ({ t, op, uit, tekst, kernwoord, selectO
         {sel > 0 && sel < 1 && <span style={{ position: 'absolute', left: `${sel * 108 - 4}%`, top: '-0.02em', bottom: '-0.02em', width: 3, backgroundColor: merk.flame }} />}
       </span>
       {delen[1]?.startsWith('.') ? delen[1].slice(1) : delen[1]}{punt && (delen[1] ?? '').trim() === '' ? <FlameDot /> : null}
+      {uitleg && (
+        <div style={{ marginTop: size * 0.22, fontFamily: fonts.body, fontWeight: 500, fontSize: size * 0.36, lineHeight: 1.3, letterSpacing: '-0.005em', color: merk.tekstSec, opacity: vlak(t, op + 500, op + 800), transform: `translateY(${(1 - vlak(t, op + 500, op + 900)) * 10}px)` }}>{uitleg}</div>
+      )}
     </div>
   )
 }

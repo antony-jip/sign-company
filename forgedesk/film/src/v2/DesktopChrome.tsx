@@ -15,11 +15,12 @@ type Props = {
   moduleTitel: string
   tabs?: { label: string; actief?: boolean }[]
   meldingen?: number
+  mailOngelezen?: number
   children: ReactNode
   klasse?: string
 }
 
-export const AppVenster: React.FC<Props> = ({ actief, moduleTitel, tabs = [], meldingen = 4, children, klasse }) => (
+export const AppVenster: React.FC<Props> = ({ actief, moduleTitel, tabs = [], meldingen = 4, mailOngelezen = 0, children, klasse }) => (
   <div className={`bg-background text-foreground flex ${klasse ?? ''}`} style={{ width: VENSTER_B, height: VENSTER_H, fontFamily: 'Inter, sans-serif', overflow: 'hidden' }}>
     {/* Rail */}
     <aside className="doen-sidebar flex flex-col items-center flex-shrink-0 border-r border-border" style={{ width: 64 }}>
@@ -32,10 +33,11 @@ export const AppVenster: React.FC<Props> = ({ actief, moduleTitel, tabs = [], me
           const Icon = item.icon
           const active = item.label === actief
           return (
-            <div key={item.label} className="relative flex items-center justify-center w-full" style={{ height: 44 }}>
+            <div key={item.label} data-doel={item.label === 'Email' ? 'rail-email' : undefined} className="relative flex items-center justify-center w-full" style={{ height: 44 }}>
               {active && <div className="doen-sidebar-active-pill absolute rounded-[12px]" style={{ insetInline: 10, insetBlock: 4 }} />}
               {active && <span className="doen-sidebar-flame-accent z-10" />}
-              {item.label === 'Email' && <span className="absolute right-[13px] top-[7px] z-10 h-[7px] w-[7px] rounded-full bg-flame ring-2 ring-background" />}
+              {item.label === 'Email' && mailOngelezen === 0 && <span className="absolute right-[13px] top-[7px] z-10 h-[7px] w-[7px] rounded-full bg-flame ring-2 ring-background" />}
+              {item.label === 'Email' && mailOngelezen > 0 && <span className="absolute right-[6px] top-[3px] z-10 min-w-[18px] h-[18px] px-1 rounded-full bg-flame text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-background">{mailOngelezen}</span>}
               <Icon className="relative z-10 h-[19px] w-[19px]" style={{ color: active ? '#fff' : item.color }} strokeWidth={active ? 2.2 : 1.8} />
             </div>
           )

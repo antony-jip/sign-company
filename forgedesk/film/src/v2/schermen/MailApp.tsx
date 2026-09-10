@@ -61,7 +61,7 @@ export const MailApp: React.FC<{ t: number; stand: MailStand }> = ({ t, stand })
               <Search className="h-4 w-4 text-muted-foreground" />
             </div>
             <div className="flex items-center gap-1 px-4 pb-1.5">
-              {[['Aanvragen', 3], ['Klanten', 8], ['Leveranciers', 2], ['Overig', 5]].map(([l, n], i) => (
+              {[['Aanvragen', projectKlaar ? 2 : 3], ['Klanten', 8], ['Leveranciers', 2], ['Overig', 5]].map(([l, n], i) => (
                 <span key={l as string} className={`h-7 px-2.5 rounded-lg text-[12px] inline-flex items-center gap-1.5 ${i === 0 ? 'bg-petrol/[0.10] text-petrol font-semibold' : 'text-muted-foreground'}`}>{l as string}<span className="font-mono tabular-nums text-[10px] opacity-80">{n as number}</span></span>
               ))}
             </div>
