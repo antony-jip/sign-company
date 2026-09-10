@@ -49,7 +49,7 @@ export const Opening: React.FC<{ t: number }> = ({ t }) => {
   const pulse = Math.sin(vlak(t, B0.pulseOp, B0.pulseOp + 600, ease.inUit) * Math.PI)
   // Na de belofte schuift het woord omhoog en vervaagt, het dashboard komt eronder vandaan.
   const wegP = vlak(t, B0.dashboardOp, B0.dashboardOp + 900, ease.inUit)
-  const zicht = 1 - vlak(t, B0.dashboardOp + 300, B0.dashboardOp + 900)
+  const zicht = 1 - vlak(t, B0.dashboardOp, B0.dashboardOp + 400)
   if (t > B0.dashboardOp + 1000) return null
   return (
     <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 15 }}>

@@ -16,7 +16,7 @@ export type ComposerStand = {
 export const PANEEL_B = 720
 export const PANEEL_H = 1080
 
-const BERICHT = 'Beste Pieter,\n\nEven een herinnering: de offerte voor de gevel staat klaar in het portaal. De tekening zit erbij.'
+const BERICHT = 'Beste Pieter,\n\nDonderdag 24 sep om 08:00 komen we monteren. De tekening zit erbij, dan weet je wat er komt.'
 
 const opmaakKnop = 'h-7 w-7 rounded-md flex items-center justify-center text-foreground/70'
 const chipKnop = 'flex items-center gap-1.5 h-8 pl-2.5 pr-2 rounded-lg text-[11px] font-semibold border bg-white text-petrol border-petrol/30'
@@ -30,7 +30,7 @@ export const MailComposer: React.FC<{ t: number; stand: ComposerStand }> = ({ t,
   const bijlagePop = veer(t, stand.bijlageOp, { demping: 16, duurMs: 600 })
   const bijlageZicht = vlak(t, stand.bijlageOp, stand.bijlageOp + 180)
   return (
-    <div className="bg-card text-foreground flex flex-col border-l border-border shadow-[-12px_0_32px_rgba(13,52,60,0.10)]" style={{ width: PANEEL_B, height: PANEEL_H, fontFamily: 'Inter, sans-serif', overflow: 'hidden' }}>
+    <div className="bg-card text-foreground flex flex-col border-l border-border shadow-[-12px_0_32px_rgba(13,52,60,0.10)]" style={{ width: PANEEL_B, height: '100%', fontFamily: 'Inter, sans-serif', overflow: 'hidden' }}>
       {/* Kop, ProjectMailDialog */}
       <div className="flex items-center justify-between gap-3 pl-5 pr-2 h-12 border-b border-border/70 flex-shrink-0">
         <div className="min-w-0 flex items-baseline gap-2">

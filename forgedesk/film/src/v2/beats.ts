@@ -6,7 +6,7 @@ const klik = (ms: number) => ms + 80
 // Opening: losse tools zweven, smelten samen tot doen., het dashboard opent.
 export const B0 = {
   toolsOp: 300, zweefTot: 3200, ontstekingOp: 3000, trekVan: 3300, inslagOp: 5400,
-  lettersOp: 5700, puntOp: 7200, pulseOp: 8000, belofteOp: 8300, belofteSelectOp: 9000, belofteUit: 11200,
+  lettersOp: 5700, puntOp: 7200, pulseOp: 8000, belofteOp: 8300, belofteSelectOp: 9000, belofteUit: 10900,
   dashboardOp: 10600, dashboardMailOp: 12000, klikEmail: 12900,
 } as const
 
