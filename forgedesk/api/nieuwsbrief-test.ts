@@ -1,11 +1,15 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
+import { createHmac } from 'node:crypto'
 import { Ratelimit } from '@upstash/ratelimit'
 import { Redis } from '@upstash/redis'
 
 const OWNER_USER_ID = 'ce6843e3-5cd9-4043-9461-55071bc91eb7'
 const FROM = 'Sign Company <antony@signcompany.nl>'
+const APP_URL = (process.env.VITE_APP_URL || process.env.APP_URL || 'https://app.doen.team').replace(/\/$/, '')
+// Zelfde sleutel als nieuwsbrief-verzend.ts en nieuwsbrief-afmelden.ts, anders weigert de afmeldpagina de link.
+const AFMELD_GEHEIM = process.env.NIEUWSBRIEF_WEBHOOK_TOKEN || (process.env.SUPABASE_SERVICE_ROLE_KEY ? `afmeld:${process.env.SUPABASE_SERVICE_ROLE_KEY}` : '')
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '',
@@ -26,6 +30,15 @@ function escapeHtml(str: string): string {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 }
 
+// Een testmail krijgt een echte afmeldlink, zodat je de afmeldpagina kunt
+// nalopen. Met test=1 toont die pagina alles maar meldt niemand af: anders haal
+// je jezelf van je eigen lijst zodra je op je testmail klikt.
+function afmeldTestUrl(email: string): string {
+  const adres = email.toLowerCase()
+  const token = createHmac('sha256', AFMELD_GEHEIM).update(adres).digest('hex').slice(0, 32)
+  return `${APP_URL}/api/nieuwsbrief-afmelden?e=${encodeURIComponent(adres)}&t=${token}&test=1`
+}
+
 // Vervangt Resend-merge-tags door voorbeeldwaarden (bij een test resolvet Resend
 // ze niet, want dit gaat via emails.send i.p.v. een broadcast).
 function resolveMergeTags(html: string, naar: string): string {
@@ -33,7 +46,7 @@ function resolveMergeTags(html: string, naar: string): string {
     .replace(/\{\{\{contact\.first_name(?:\|([^}]*))?\}\}\}/g, (_m, fb) => fb || 'Jan')
     .replace(/\{\{\{contact\.last_name(?:\|([^}]*))?\}\}\}/g, (_m, fb) => fb || 'Jansen')
     .replace(/\{\{\{contact\.email\}\}\}/g, naar)
-    .replace(/\{\{\{RESEND_UNSUBSCRIBE_URL\}\}\}/g, '#')
+    .replace(/\{\{\{RESEND_UNSUBSCRIBE_URL\}\}\}/g, afmeldTestUrl(naar))
 }
 
 interface MailStijl { font?: string; achtergrond?: string; kaart?: string; tekst?: string }

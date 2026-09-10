@@ -47,14 +47,14 @@ function escapeHtml(str: string): string {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 }
 
-function pagina(titel: string, tekst: string, knop?: { label: string; email: string; token: string; nieuwsbriefId: string }): string {
+function pagina(titel: string, tekst: string, knop?: { label: string; email: string; token: string; nieuwsbriefId: string; test?: boolean }, melding?: string): string {
   const keuzes = knop
     ? REDENEN.map(r => `<label style="display:flex;align-items:center;gap:10px;padding:9px 0;font-size:14px;color:#57574F;cursor:pointer;">
         <input type="radio" name="r" value="${r.waarde}" style="accent-color:#D24620;width:16px;height:16px;">${escapeHtml(r.label)}</label>`).join('')
     : ''
   const formulier = knop
     ? `<form method="post" style="margin-top:24px;">
-        <input type="hidden" name="e" value="${escapeHtml(knop.email)}"><input type="hidden" name="t" value="${escapeHtml(knop.token)}"><input type="hidden" name="n" value="${escapeHtml(knop.nieuwsbriefId)}">
+        <input type="hidden" name="e" value="${escapeHtml(knop.email)}"><input type="hidden" name="t" value="${escapeHtml(knop.token)}"><input type="hidden" name="n" value="${escapeHtml(knop.nieuwsbriefId)}">${knop.test ? '<input type="hidden" name="test" value="1">' : ''}
         <div style="margin:0 0 20px;padding-top:4px;border-top:1px solid #EAE8E3;">
           <div style="margin:16px 0 4px;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#9B9B95;">Mag ik vragen waarom?</div>
           ${keuzes}
@@ -67,6 +67,7 @@ function pagina(titel: string, tekst: string, knop?: { label: string; email: str
   <div style="max-width:520px;margin:64px auto;padding:0 20px;">
     <div style="background:#fff;border-radius:16px;padding:40px 36px;box-shadow:0 8px 24px -12px rgba(26,26,26,0.12);">
       <div style="font-size:20px;font-weight:800;letter-spacing:-0.02em;">Sign Company<span style="color:#D24620;">.</span></div>
+      ${melding ? `<p style="margin:20px 0 0;padding:12px 14px;border-radius:10px;background:#FFF4DC;font-size:13px;line-height:1.5;color:#6B4E00;">${melding}</p>` : ''}
       <h1 style="margin:24px 0 0;font-size:24px;line-height:1.25;font-weight:800;letter-spacing:-0.02em;">${escapeHtml(titel)}</h1>
       <p style="margin:12px 0 0;font-size:15px;line-height:1.65;color:#57574F;">${tekst}</p>
       ${formulier}
@@ -100,7 +101,7 @@ async function meldAf(email: string, reden: string, nieuwsbriefId: string): Prom
   }
 }
 
-function leesParams(req: VercelRequest): { email: string; token: string; nieuwsbriefId: string; reden: string } {
+function leesParams(req: VercelRequest): { email: string; token: string; nieuwsbriefId: string; reden: string; test: boolean } {
   const bron = (req.method === 'POST' ? { ...(req.query ?? {}), ...((req.body as Record<string, unknown>) ?? {}) } : (req.query ?? {})) as Record<string, unknown>
   const email = String(bron.e ?? '').trim().toLowerCase()
   const token = String(bron.t ?? '').trim()
@@ -108,19 +109,25 @@ function leesParams(req: VercelRequest): { email: string; token: string; nieuwsb
   const nieuwsbriefId = /^[0-9a-f-]{36}$/i.test(ruweId) ? ruweId : ''
   const ruweReden = String(bron.r ?? '').trim()
   const reden = REDENEN.some(r => r.waarde === ruweReden) ? ruweReden : ''
-  return { email, token, nieuwsbriefId, reden }
+  // Alleen de testmail zet test=1. De vlag zit niet in de HMAC: wie hem aan een
+  // echte link hangt, voorkomt alleen zijn eigen afmelding.
+  const test = String(bron.test ?? '') === '1'
+  return { email, token, nieuwsbriefId, reden, test }
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Content-Type', 'text/html; charset=utf-8')
   res.setHeader('Cache-Control', 'no-store')
-  const { email, token, nieuwsbriefId, reden } = leesParams(req)
+  const { email, token, nieuwsbriefId, reden, test } = leesParams(req)
 
   if (!isEmail(email) || !tokenKlopt(email, nieuwsbriefId, token)) {
     return res.status(400).send(pagina('Deze link klopt niet', 'De afmeldlink is onvolledig of verlopen. Reageer op de nieuwsbrief en we halen je handmatig van de lijst.'))
   }
 
   if (req.method === 'POST') {
+    if (test) {
+      return res.status(200).send(pagina('Testmail: niemand afgemeld', `Zo ziet de bevestiging eruit voor een ontvanger. Omdat je vanuit een testmail klikte, blijft <strong>${escapeHtml(email)}</strong> gewoon op de lijst.`))
+    }
     await meldAf(email, reden, nieuwsbriefId)
     return res.status(200).send(pagina('Je bent afgemeld', `Je ontvangt geen nieuwsbrieven meer op <strong>${escapeHtml(email)}</strong>. Bedankt voor de tijd dat je meelas.`))
   }
@@ -129,7 +136,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).send(pagina(
       'Afmelden voor de nieuwsbrief',
       `Wil je geen nieuwsbrieven van Sign Company meer ontvangen op <strong>${escapeHtml(email)}</strong>?`,
-      { label: 'Ja, meld me af', email, token, nieuwsbriefId },
+      { label: 'Ja, meld me af', email, token, nieuwsbriefId, test },
+      test ? 'Je opent deze pagina vanuit een testmail. Probeer gerust alles: er wordt niemand afgemeld.' : undefined,
     ))
   }
 
