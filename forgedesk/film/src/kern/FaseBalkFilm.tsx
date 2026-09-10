@@ -15,12 +15,12 @@ const FASES = [
   { label: 'Te factureren', Icon: Receipt },
 ]
 
-export const FaseBalkFilm: React.FC<{ fase: number; sindsWissel: number; donker?: boolean; zicht?: number; label?: string }> = ({ fase, sindsWissel, donker = true, zicht = 1, label }) => {
+export const FaseBalkFilm: React.FC<{ fase: number; sindsWissel: number; donker?: boolean; zicht?: number; label?: string; bottom?: number; zijkant?: number; schaal?: number }> = ({ fase, sindsWissel, donker = true, zicht = 1, label, bottom = 250, zijkant = 90, schaal = 1 }) => {
   const p = vlak(sindsWissel, 0, 500, ease.uit)
   const voor = donker ? merk.wit : merk.petrol
   const lijn = donker ? 'rgba(255,255,255,0.28)' : merk.petrolBorder
   return (
-    <div style={{ position: 'absolute', left: 90, right: 90, bottom: 250, opacity: zicht, zIndex: 20 }}>
+    <div style={{ position: 'absolute', left: zijkant, right: zijkant, bottom, opacity: zicht, zIndex: 20, transform: `scale(${schaal})`, transformOrigin: 'bottom center' }}>
       <div style={{ marginBottom: 18, fontFamily: fonts.kop, fontWeight: 700, fontSize: 36, letterSpacing: '-0.02em', color: voor, opacity: p, transform: `translateY(${(1 - p) * 10}px)` }}>
         {label ?? FASES[fase]?.label}<FlameDot />
       </div>

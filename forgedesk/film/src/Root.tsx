@@ -15,7 +15,8 @@ MotionGlobalConfig.skipAnimations = true
 export const RemotionRoot: React.FC = () => (
   <>
     <Composition id="DoenFilm" component={Film} durationInFrames={msNaarFrames(FILM_DUUR_MS)} fps={FPS} width={1080} height={1920} />
-    <Composition id="DoenFilm2" component={FilmV2} durationInFrames={msNaarFrames(FILM2_DUUR_MS)} fps={FPS} width={1080} height={1920} />
+    <Composition id="DoenFilm2" component={FilmV2} durationInFrames={msNaarFrames(FILM2_DUUR_MS)} fps={FPS} width={1440} height={1080} defaultProps={{ formaat: '4:3' as const }} />
+    <Composition id="DoenFilm2Verticaal" component={FilmV2} durationInFrames={msNaarFrames(FILM2_DUUR_MS)} fps={FPS} width={1080} height={1920} defaultProps={{ formaat: '9:16' as const }} />
     {[['ProefPlanning', ProefPlanning], ['ProefKanban', ProefKanban], ['ProefWerkbon', ProefWerkbon], ['ProefFinancieel', ProefFinancieel], ['ProefComposer', ProefComposer]].map(([id, C]) => (
       <Composition key={id as string} id={id as string} component={C as React.FC} durationInFrames={300} fps={FPS} width={1080} height={1920} />
     ))}

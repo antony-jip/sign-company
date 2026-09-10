@@ -38,7 +38,7 @@ Versie 1 (telefoon, zes scenes) staat nog als `DoenFilm` in `src/scenes/`.
 cd film
 npm install
 npm run dev          # Remotion Studio, scrubben per scene of de hele film
-npm run render       # out/doen-film.mp4 (v1); v2: npx remotion render DoenFilm2 out/doen-film-v2.mp4 --codec=h264 --crf=18
+npm run render       # out/doen-film.mp4 (v1); v2 4:3: npx remotion render DoenFilm2 out/doen-film-v2-43.mp4 --codec=h264 --crf=18 (staand: DoenFilm2Verticaal)
 npm run still -- --frame=200   # één frame naar out/still.png
 ./stills.sh S3Akkoord 71 200   # controleframes per scene
 npm run typecheck

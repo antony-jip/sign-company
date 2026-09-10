@@ -3,7 +3,8 @@ import { AbsoluteFill, Easing } from 'remotion'
 import { useSceneTijd, vlak, veer, lerp, ease } from '../tijd'
 import { fonts } from '../fonts'
 import { merk } from '../brand'
-import { Wereld, Scherm, useCamera, SCHERM_B, SCHERM_H, MIDDEN_Y, type CameraStop } from './Wereld'
+import { Wereld, Scherm, useCamera, SCHERM_B, SCHERM_H, type CameraStop } from './Wereld'
+import { FormaatCtx, FORMATEN, useFormaat, type Formaat } from './formaat'
 import { Cursor, type CursorStap } from './Cursor'
 import { Belofte } from './Belofte'
 import { Cockpit } from './Cockpit'
@@ -54,7 +55,7 @@ const STOPS: CameraStop[] = [
   { ms: B.klikVerstuur - 700, ...lokaal(PLEK.editor, 1180, 300), zoom: 2.6, duurMs: 800 },
   { ms: B.terugCockpit1, ...lokaal(PLEK.cockpit, 520, 470), zoom: 2.2, duurMs: 1100 },
   { ms: B.portaalCamOp, ...lokaal(PLEK.portaal, 520, 430), zoom: 2.3, duurMs: 1200 },
-  { ms: B.publiekOp, ...lokaal(PLEK.portaal, 1180, 720), zoom: 3.2, duurMs: 900 },
+  { ms: B.publiekOp, ...lokaal(PLEK.portaal, 1180, 650), zoom: 3.1, duurMs: 900 },
   { ms: B.terugCockpit2, ...lokaal(PLEK.cockpit, 520, 470), zoom: 2.2, duurMs: 1100 },
   // Montage
   { ms: B2.klikMontage - 700, ...lokaal(PLEK.cockpit, 420, 840), zoom: 2.4, duurMs: 800 },
@@ -134,12 +135,13 @@ const KLANKEN: Klank[] = [
 // veroorzaakt zichtbaar de fase.
 const FaseStip: React.FC<{ t: number; op: number; vanDoel: string; naarFase?: number; naarPunt?: { x: number; y: number }; duurMs?: number }> = ({ t, op, vanDoel, naarFase, naarPunt, duurMs = 700 }) => {
   const [pos, setPos] = useState<{ a: { x: number; y: number }; b: { x: number; y: number } } | null>(null)
+  const formaat = useFormaat()
   useLayoutEffect(() => {
     const root = document.querySelector('[data-film-root]')
     const a = document.querySelector(vanDoel.startsWith('fase:') ? `[data-fase="${vanDoel.slice(5)}"]` : `[data-doel="${vanDoel}"]`)
     const b = naarFase !== undefined ? document.querySelector(`[data-fase="${naarFase}"]`) : null
     if (!root || !a || (!b && !naarPunt)) { setPos((p) => (p === null ? p : null)); return }
-    const f = root.getBoundingClientRect(); const s = f.width / 1080
+    const f = root.getBoundingClientRect(); const s = f.width / formaat.b
     const ra = a.getBoundingClientRect()
     const bb = b ? (() => { const rb = b.getBoundingClientRect(); return { x: (rb.left + rb.width / 2 - f.left) / s, y: (rb.top + rb.height / 2 - f.top) / s } })() : naarPunt!
     const n = { a: { x: (ra.left + ra.width / 2 - f.left) / s, y: (ra.top + ra.height / 2 - f.top) / s }, b: bb }
@@ -165,17 +167,27 @@ const DEELTJES = (() => {
 })()
 
 const MeldingFilm: React.FC<{ t: number; op: number; notificatie: typeof notificatieAkkoord }> = ({ t, op, notificatie }) => {
+  const f = useFormaat()
   if (t < op || t >= op + 4000) return null
   return (
-    <div style={{ position: 'absolute', left: 50, top: 300, width: 610, zIndex: 60, transform: 'scale(1.6)', transformOrigin: 'top left', opacity: 1 - vlak(t, op + 3400, op + 4000) }}>
+    <div style={{ position: 'absolute', left: f.toastLeft, top: f.toastTop, width: f.toastBreedte, zIndex: 60, transform: `scale(${f.toastSchaal})`, transformOrigin: 'top left', opacity: 1 - vlak(t, op + 3400, op + 4000) }}>
       <div style={{ position: 'relative', height: 90 }}><Toast t={t} op={op} notificatie={notificatie} top={0} /></div>
     </div>
   )
 }
 
-export const FilmV2: React.FC = () => {
+export const FilmV2: React.FC<{ formaat?: Formaat['naam'] }> = ({ formaat = '4:3' }) => (
+  <FormaatCtx.Provider value={FORMATEN[formaat]}>
+    <FilmV2Binnen />
+  </FormaatCtx.Provider>
+)
+
+const FilmV2Binnen: React.FC = () => {
   const t = useSceneTijd(true)
   const cam = useCamera(t, STOPS)
+  const F = useFormaat()
+  const MIDDEN_Y = F.middenY
+  const MIDDEN_X = F.middenX
 
   // Welk scherm actief is, en hoe ver een wissel gevorderd is (0..1).
   const WISSELS: { ms: number; naar: string }[] = [
@@ -229,11 +241,12 @@ export const FilmV2: React.FC = () => {
   const puntZicht = vlak(t, B2.puntOp, B2.puntOp + 150)
   const puntP = veer(t, B2.puntOp, { demping: 12, duurMs: 800 })
   const pulse = Math.sin(vlak(t, B2.pulseOp, B2.pulseOp + 600, ease.inUit) * Math.PI)
-  const puntPos = letterPosities().find((p) => p.teken === '.')!
+  const puntPos = letterPosities(F.wordmarkSize, MIDDEN_X).find((p) => p.teken === '.')!
   const regelP = veer(t, B2.regelOp, { demping: 18, duurMs: 800 })
   const urlP = veer(t, B2.urlOp, { demping: 18, duurMs: 800 })
 
   const inMail = t < B.cockpitCamOp + 1300 || t >= B2.pullbackOp
+  const rust = (x: number, y: number) => ({ x: (x / 1080) * F.b, y: (y / 1920) * F.h })
   const inEditor = (t >= B.editorCamOp - 800 && t <= B.terugCockpit1 + 1300) || t >= B2.pullbackOp
   const inPortaal = (t >= B.portaalCamOp - 800 && t <= B.terugCockpit2 + 1300) || t >= B2.pullbackOp
   const inPlanning = (t >= B2.planningCamOp - 800 && t <= B2.terugCockpit3 + 1300) || t >= B2.pullbackOp
@@ -315,8 +328,8 @@ export const FilmV2: React.FC = () => {
       <Geluid klanken={KLANKEN} totMs={FILM2_DUUR_MS} />
       {t < B2.constellatieOp && <Cursor t={t} stappen={CURSOR} zichtVan={B.mailCamOp + 400} zichtTot={B2.pullbackOp + 400} />}
       <FaseStip t={t} op={B.stipOp} vanDoel="bevestigen" naarFase={2} />
-      <FaseStip t={t} op={B2.magneetOp + 400} vanDoel="fase:5" naarPunt={{ x: puntPos.x + puntPos.b / 2, y: MIDDEN_Y + 92 }} duurMs={B2.inslagOp - B2.magneetOp - 400} />
-      {t >= B.cockpitOp && t < B2.inslagOp && <FaseBalkFilm fase={faseIdx} sindsWissel={t - Math.max(faseWissel, faseLabelWissel)} label={faseLabel} donker={false} zicht={Math.min(vlak(t, B.cockpitOp, B.cockpitOp + 500), 1 - vlak(t, B2.magneetOp + 400, B2.magneetOp + 900))} />}
+      <FaseStip t={t} op={B2.magneetOp + 400} vanDoel="fase:5" naarPunt={{ x: puntPos.x + puntPos.b / 2, y: MIDDEN_Y + F.wordmarkSize * 0.28 }} duurMs={B2.inslagOp - B2.magneetOp - 400} />
+      {t >= B.cockpitOp && t < B2.inslagOp && <FaseBalkFilm fase={faseIdx} sindsWissel={t - Math.max(faseWissel, faseLabelWissel)} label={faseLabel} donker={false} bottom={F.faseBottom} zijkant={F.faseZijkant} schaal={F.faseSchaal} zicht={Math.min(vlak(t, B.cockpitOp, B.cockpitOp + 500), 1 - vlak(t, B2.magneetOp + 400, B2.magneetOp + 900))} />}
 
       {/* Inslag, letters, punt, end card */}
       {naInslag && (
@@ -326,23 +339,23 @@ export const FilmV2: React.FC = () => {
             const p = vlak(t, B2.inslagOp + d.vertraag, B2.inslagOp + d.vertraag + 1100, ease.uit)
             const val = vlak(t, B2.inslagOp + d.vertraag, B2.inslagOp + d.vertraag + 1100, ease.in)
             const zicht = 1 - vlak(t, B2.inslagOp + d.vertraag + 500, B2.inslagOp + d.vertraag + 1100)
-            return <div key={i} style={{ position: 'absolute', left: 540 + d.dx * p - d.r, top: MIDDEN_Y + d.dy * p + 400 * val - d.r, width: d.r * 2, height: d.r * 2, borderRadius: '50%', backgroundColor: d.kleur, opacity: zicht }} />
+            return <div key={i} style={{ position: 'absolute', left: MIDDEN_X + d.dx * p - d.r, top: MIDDEN_Y + d.dy * p + 400 * val - d.r, width: d.r * 2, height: d.r * 2, borderRadius: '50%', backgroundColor: d.kleur, opacity: zicht }} />
           })}
         </>
       )}
       <AbsoluteFill style={{ backgroundColor: merk.petrol, opacity: eindGrond, zIndex: 5 }} />
       {t >= B2.lettersOp && (
         <div style={{ position: 'relative', zIndex: 10 }}>
-          <Wordmark y={MIDDEN_Y} kleur={merk.wit} stand={(i) => {
+          <Wordmark y={MIDDEN_Y} centrumX={MIDDEN_X} size={F.wordmarkSize} kleur={merk.wit} stand={(i) => {
             if (i === 4) return { op: puntZicht, dy: (1 - puntP) * -260, schaal: 1 + pulse * 0.45 }
             const p = veer(t, B2.lettersOp + i * 280, { demping: 14, duurMs: 800 })
             return { op: vlak(t, B2.lettersOp + i * 280, B2.lettersOp + i * 280 + 150), dy: (1 - p) * 140 }
           }} />
-          {t >= B2.pulseOp && pulse > 0 && <div style={{ position: 'absolute', left: puntPos.x + puntPos.b / 2 - 40, top: MIDDEN_Y + 92 - 40, width: 80, height: 80, borderRadius: '50%', border: `4px solid ${merk.flame}`, opacity: 1 - vlak(t, B2.pulseOp, B2.pulseOp + 700), transform: `scale(${1 + vlak(t, B2.pulseOp, B2.pulseOp + 700, ease.uit) * 3})` }} />}
-          <div style={{ position: 'absolute', left: 90, right: 90, top: MIDDEN_Y + 290, textAlign: 'center', fontFamily: fonts.kop, fontWeight: 600, fontSize: 52, lineHeight: 1.2, letterSpacing: '-0.02em', color: merk.wit, opacity: vlak(t, B2.regelOp, B2.regelOp + 250), transform: `translateY(${(1 - regelP) * 30}px)`, textWrap: 'balance' as never }}>
+          {t >= B2.pulseOp && pulse > 0 && <div style={{ position: 'absolute', left: puntPos.x + puntPos.b / 2 - 40, top: MIDDEN_Y + F.wordmarkSize * 0.28 - 40, width: 80, height: 80, borderRadius: '50%', border: `4px solid ${merk.flame}`, opacity: 1 - vlak(t, B2.pulseOp, B2.pulseOp + 700), transform: `scale(${1 + vlak(t, B2.pulseOp, B2.pulseOp + 700, ease.uit) * 3})` }} />}
+          <div style={{ position: 'absolute', left: 90, right: 90, top: MIDDEN_Y + F.wordmarkSize * 0.88, textAlign: 'center', fontFamily: fonts.kop, fontWeight: 600, fontSize: F.naam === '4:3' ? 40 : 52, lineHeight: 1.2, letterSpacing: '-0.02em', color: merk.wit, opacity: vlak(t, B2.regelOp, B2.regelOp + 250), transform: `translateY(${(1 - regelP) * 30}px)`, textWrap: 'balance' as never }}>
             Alles wat een signmaker nodig heeft. In één app.
           </div>
-          <div style={{ position: 'absolute', left: 0, right: 0, top: MIDDEN_Y + 470, textAlign: 'center', fontFamily: fonts.mono, fontSize: 40, letterSpacing: '0.04em', color: 'rgba(255,255,255,0.85)', opacity: vlak(t, B2.urlOp, B2.urlOp + 250), transform: `translateY(${(1 - urlP) * 20}px)` }}>
+          <div style={{ position: 'absolute', left: 0, right: 0, top: MIDDEN_Y + F.wordmarkSize * (F.naam === '4:3' ? 1.28 : 1.42), textAlign: 'center', fontFamily: fonts.mono, fontSize: F.naam === '4:3' ? 30 : 40, letterSpacing: '0.04em', color: 'rgba(255,255,255,0.85)', opacity: vlak(t, B2.urlOp, B2.urlOp + 250), transform: `translateY(${(1 - urlP) * 20}px)` }}>
             app.doen.team
           </div>
         </div>

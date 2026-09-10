@@ -1,6 +1,7 @@
 import { useLayoutEffect, useState } from 'react'
 import { merk } from '../brand'
 import { ease, vlak, lerp } from '../tijd'
+import { useFormaat } from './formaat'
 
 // De grote Flame-pijl. Doelen zijn data-doel-attributen in de schermen: de
 // cursor meet ze elke frame in de DOM, inclusief cameratransform, dus de
@@ -9,7 +10,7 @@ export type CursorStap = { ms: number; doel: string | { x: number; y: number }; 
 
 type Positie = { x: number; y: number }
 
-const meet = (doel: string | Positie, dx = 0, dy = 0): Positie | null => {
+const meet = (doel: string | Positie, dx = 0, dy = 0, filmB = 1080): Positie | null => {
   if (typeof doel !== 'string') return { x: doel.x + dx, y: doel.y + dy }
   if (typeof document === 'undefined') return null
   const root = document.querySelector('[data-film-root]')
@@ -29,12 +30,13 @@ const meet = (doel: string | Positie, dx = 0, dy = 0): Positie | null => {
   if (!el || !root) return null
   const r = el.getBoundingClientRect()
   const f = root.getBoundingClientRect()
-  const s = f.width / 1080
+  const s = f.width / filmB
   return { x: (r.left + r.width / 2 - f.left) / s + dx, y: (r.top + r.height / 2 - f.top) / s + dy }
 }
 
 export const Cursor: React.FC<{ t: number; stappen: CursorStap[]; zichtVan?: number; zichtTot?: number }> = ({ t, stappen, zichtVan = 0, zichtTot = Infinity }) => {
   const [pos, setPos] = useState<Positie | null>(null)
+  const formaat = useFormaat()
   // Welke twee stappen zijn relevant
   let i = 0
   for (let k = 0; k < stappen.length; k++) if (t >= stappen[k].ms) i = k
@@ -43,8 +45,8 @@ export const Cursor: React.FC<{ t: number; stappen: CursorStap[]; zichtVan?: num
   const reisDuur = 700
   const p = i === 0 ? 1 : vlak(t, naar.ms, naar.ms + reisDuur, ease.uit)
   useLayoutEffect(() => {
-    const a = meet(van.doel, van.dx, van.dy)
-    const b = meet(naar.doel, naar.dx, naar.dy)
+    const a = meet(van.doel, van.dx, van.dy, formaat.b)
+    const b = meet(naar.doel, naar.dx, naar.dy, formaat.b)
     if (!b) { setPos((prev) => (prev === null ? prev : null)); return }
     const start = a ?? b
     // Lichte boog en 8% overshoot in de richting van de reis.

@@ -4,6 +4,7 @@ import { AbsoluteFill } from 'remotion'
 import { merk } from '../brand'
 import { ease, lerp, vlak } from '../tijd'
 import { VENSTER_B, VENSTER_H } from './DesktopChrome'
+import { useFormaat } from './formaat'
 
 // 2.5D-ruimte. Schermen liggen op vaste plekken in een vlak; de camera is
 // {x, y, zoom} en vliegt tussen stops. Schermen die niet actief zijn kantelen
@@ -35,17 +36,21 @@ export const useHuidigeCamera = () => useContext(CameraCtx)
 export const MIDDEN_Y = 860
 export const naarFilm = (cam: Camera, wx: number, wy: number) => ({ x: 540 + (wx - cam.x) * cam.zoom, y: MIDDEN_Y + (wy - cam.y) * cam.zoom })
 
-export const Wereld: React.FC<{ camera: Camera; children: ReactNode; grond?: string }> = ({ camera, children, grond = merk.pagina }) => (
+export const Wereld: React.FC<{ camera: Camera; children: ReactNode; grond?: string }> = ({ camera, children, grond = merk.pagina }) => {
+  const f = useFormaat()
+  const zoom = camera.zoom * f.zoomFactor
+  return (
   <CameraCtx.Provider value={camera}>
     <AbsoluteFill style={{ backgroundColor: grond, overflow: 'hidden' }}>
       {/* Zachte petrol-gloed die meebeweegt met de camera, als omgevingslicht */}
-      <div style={{ position: 'absolute', left: 540 - 900, top: MIDDEN_Y - 900, width: 1800, height: 1800, borderRadius: '50%', background: `radial-gradient(circle, ${merk.petrol}2E 0%, ${merk.petrol}0F 40%, transparent 68%)` }} />
-      <div style={{ position: 'absolute', left: 540, top: MIDDEN_Y, width: 0, height: 0, transform: `scale(${camera.zoom}) translate(${-camera.x}px, ${-camera.y}px)`, transformOrigin: '0 0' }}>
+      <div style={{ position: 'absolute', left: f.middenX - 900, top: f.middenY - 900, width: 1800, height: 1800, borderRadius: '50%', background: `radial-gradient(circle, ${merk.petrol}2E 0%, ${merk.petrol}0F 40%, transparent 68%)` }} />
+      <div style={{ position: 'absolute', left: f.middenX, top: f.middenY, width: 0, height: 0, transform: `scale(${zoom}) translate(${-camera.x}px, ${-camera.y}px)`, transformOrigin: '0 0' }}>
         {children}
       </div>
     </AbsoluteFill>
   </CameraCtx.Provider>
-)
+  )
+}
 
 type SchermProps = {
   id: string

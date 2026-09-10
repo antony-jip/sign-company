@@ -8,9 +8,9 @@ export const WORD_SIZE = 330
 // Gemeten breedtes van Instrument Sans 700 per letter, als fractie van de fontgrootte.
 const BREEDTE: Record<string, number> = { d: 0.60, o: 0.60, e: 0.57, n: 0.58, '.': 0.27 }
 
-export const letterPosities = (size = WORD_SIZE) => {
+export const letterPosities = (size = WORD_SIZE, centrumX = 540) => {
   const totaal = LETTERS.reduce((s, l) => s + BREEDTE[l], 0) + BREEDTE['.']
-  let x = 540 - (totaal * size) / 2
+  let x = centrumX - (totaal * size) / 2
   const posities: { teken: string; x: number; b: number }[] = []
   for (const l of [...LETTERS, '.']) {
     posities.push({ teken: l, x, b: BREEDTE[l] * size })
@@ -21,14 +21,15 @@ export const letterPosities = (size = WORD_SIZE) => {
 
 type Props = {
   y: number
+  centrumX?: number
   size?: number
   kleur?: string
   // Per letter: opacity + translateY. Index 4 = de punt.
   stand: (i: number) => { op: number; dy: number; schaal?: number }
 }
 
-export const Wordmark: React.FC<Props> = ({ y, size = WORD_SIZE, kleur = merk.wit, stand }) => {
-  const posities = letterPosities(size)
+export const Wordmark: React.FC<Props> = ({ y, centrumX = 540, size = WORD_SIZE, kleur = merk.wit, stand }) => {
+  const posities = letterPosities(size, centrumX)
   return (
     <div style={{ position: 'absolute', left: 0, right: 0, top: y - size * 0.55, height: size * 1.1, pointerEvents: 'none' }}>
       {posities.map((p, i) => {
