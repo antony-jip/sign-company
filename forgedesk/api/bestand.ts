@@ -65,6 +65,32 @@ function geldigheidVoor(pad: string): number {
   return pad.startsWith('email-bijlagen-groot/') ? 60 * 60 * 24 * 30 : GELDIGHEID_SECONDEN
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+// Werkbonbestanden dragen hun eigenaar wél in het pad, met dezelfde regel als
+// de storage-policy van migratie 243: werkbon-fotos/{werkbon}/... en
+// werkbon-afbeeldingen/ of werkbon-pdfs/{werkbon_item}/.... Hier via het pad
+// en niet via een verwijzende rij: de editor vraagt de link direct na het
+// uploaden op. Wachten op een rij gaf dan een 404, en een net toegevoegde
+// afbeelding bleef onzichtbaar. werkbon_fotos stond bovendien in geen enkele
+// lijst, dus monteurfoto's kregen nooit een link.
+async function werkbonPadHoortBijOrganisatie(pad: string, organisatieId: string): Promise<boolean> {
+  const [map, eigenaarId] = pad.split('/')
+  const tabel = map === 'werkbon-fotos'
+    ? 'werkbonnen'
+    : map === 'werkbon-afbeeldingen' || map === 'werkbon-pdfs'
+      ? 'werkbon_items'
+      : null
+  if (!tabel || !eigenaarId || !UUID.test(eigenaarId)) return false
+  const { data, error } = await supabaseAdmin
+    .from(tabel)
+    .select('id')
+    .eq('id', eigenaarId)
+    .eq('organisatie_id', organisatieId)
+    .limit(1)
+  return !error && !!data && data.length > 0
+}
+
 async function hoortBijOrganisatie(pad: string, organisatieId: string): Promise<boolean> {
   for (const { tabel, kolommen } of VERWIJZINGEN) {
     for (const kolom of kolommen) {
@@ -116,6 +142,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const toegestaan =
     padEigenaarKlopt(pad, organisatieId, gebruikerId) ||
+    (await werkbonPadHoortBijOrganisatie(pad, organisatieId)) ||
     (await hoortBijOrganisatie(pad, organisatieId))
 
   if (!toegestaan) {

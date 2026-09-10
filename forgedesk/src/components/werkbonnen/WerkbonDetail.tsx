@@ -37,7 +37,7 @@ import { generateWerkbonInstructiePDF } from '@/services/werkbonPdfService'
 import { boekWerkbonUren, geboektMelding } from '@/services/werkbonUrenService'
 import { uploadFile } from '@/services/storageService'
 import { urenVeldenUitInstellingen } from '@/utils/offerteUren'
-import { resolveWerkbonUrl, resizeWerkbonImage, opmerkingenMetAfronder } from '@/utils/werkbonMedia'
+import { resolveWerkbonUrl, resizeWerkbonImage, opmerkingenMetAfronder, toonbareUploadUrl } from '@/utils/werkbonMedia'
 import { sanitizeStorageFilename } from '@/utils/storageHelpers'
 import { pdfEerstePaginaNaarImage } from '@/utils/pdfToImage'
 import {
@@ -188,14 +188,11 @@ export function WerkbonDetail() {
             getWerkbonFotos(wb.id),
           ])
           if (cancelled) return
-          for (const item of wbItems) {
-            for (const afb of item.afbeeldingen) {
-              afb.url = await resolveUrl(afb.url)
-            }
-          }
-          for (const foto of wbFotos) {
-            foto.url = await resolveUrl(foto.url)
-          }
+          await Promise.all([
+            ...wbItems.flatMap((item) => item.afbeeldingen.map(async (afb) => { afb.url = await resolveUrl(afb.url) })),
+            ...wbFotos.map(async (foto) => { foto.url = await resolveUrl(foto.url) }),
+          ])
+          if (cancelled) return
           setWerkbonItems(wbItems)
           setFotos(wbFotos)
         }
@@ -512,7 +509,6 @@ export function WerkbonDetail() {
       const safeName = sanitizeStorageFilename(file.name)
       const storagePath = `werkbon-afbeeldingen/${itemId}/${Date.now()}-${safeName}`
       const uploadedPath = await uploadFile(resizedFile, storagePath)
-      const displayUrl = await resolveUrl(uploadedPath)
 
       const afb = await createWerkbonAfbeelding({
         werkbon_item_id: itemId,
@@ -520,8 +516,9 @@ export function WerkbonDetail() {
         type: 'overig',
         omschrijving: file.name,
       })
-      // Gebruik display URL voor directe weergave, DB heeft het storage path
-      afb.url = displayUrl
+      // De DB houdt het storage-pad, het scherm een link; die pas na de insert
+      // opvragen, anders kent api/bestand het bestand nog niet.
+      afb.url = await toonbareUploadUrl(uploadedPath, resized)
       setWerkbonItems((prev) => prev.map((item) =>
         item.id === itemId
           ? { ...item, afbeeldingen: [...item.afbeeldingen, afb] }
@@ -650,8 +647,6 @@ export function WerkbonDetail() {
             uploadFile(file, pdfStoragePath),
             fase3Actief ? getImageBlobRatio(pngBlob) : Promise.resolve(null),
           ])
-          const displayUrl = await resolveUrl(uploadedPngPath)
-
           const afb = await createWerkbonAfbeelding({
             werkbon_item_id: itemId,
             url: uploadedPngPath,
@@ -659,7 +654,7 @@ export function WerkbonDetail() {
             omschrijving: file.name,
             layout: makeLayout('pdf', nieuweAfbeeldingen.length, ratio, { pdf_bron_url: uploadedPdfPath }),
           })
-          afb.url = displayUrl
+          afb.url = await toonbareUploadUrl(uploadedPngPath, pngBlob)
           nieuweAfbeeldingen.push(afb)
         } catch (err) {
           logger.error('Fout bij verwerken PDF:', err)
@@ -683,7 +678,6 @@ export function WerkbonDetail() {
           uploadFile(resizedFile, storagePath),
           fase3Actief ? getImageBlobRatio(resized) : Promise.resolve(null),
         ])
-        const displayUrl = await resolveUrl(uploadedPath)
 
         const afb = await createWerkbonAfbeelding({
           werkbon_item_id: itemId,
@@ -692,7 +686,7 @@ export function WerkbonDetail() {
           omschrijving: file.name,
           layout: makeLayout('foto', nieuweAfbeeldingen.length, ratio),
         })
-        afb.url = displayUrl
+        afb.url = await toonbareUploadUrl(uploadedPath, resized)
         nieuweAfbeeldingen.push(afb)
       } catch (err) {
         logger.error('Fout bij uploaden afbeelding:', err)
@@ -948,7 +942,6 @@ export function WerkbonDetail() {
         const safeName = sanitizeStorageFilename(file.name)
         const storagePath = `werkbon-fotos/${werkbonId}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}-${safeName}`
         const uploadedPath = await uploadFile(resizedFile, storagePath)
-        const displayUrl = await resolveUrl(uploadedPath)
         const foto = await createWerkbonFoto({
           user_id: userId,
           werkbon_id: werkbonId,
@@ -956,7 +949,7 @@ export function WerkbonDetail() {
           url: uploadedPath,
           omschrijving: file.name,
         })
-        foto.url = displayUrl
+        foto.url = await toonbareUploadUrl(uploadedPath, resized)
         setFotos((prev) => [...prev, foto])
         uploaded++
       } catch (err) {

@@ -25,7 +25,7 @@ import {
   getMontageAfspraak, updateMontageAfspraak,
 } from '@/services/supabaseService'
 import { uploadFile } from '@/services/storageService'
-import { resolveWerkbonUrl, resizeWerkbonImage, opmerkingenMetAfronder } from '@/utils/werkbonMedia'
+import { resolveWerkbonUrl, resizeWerkbonImage, opmerkingenMetAfronder, toonbareUploadUrl } from '@/utils/werkbonMedia'
 import { bufferWerkbonFeedback, clearWerkbonFeedback, flushWerkbonFeedbackQueue } from '@/utils/werkbonOfflineQueue'
 import { sanitizeStorageFilename } from '@/utils/storageHelpers'
 import { useFeatureAan } from '@/contexts/FeatureFlagsContext'
@@ -156,14 +156,11 @@ export function WerkbonMonteurView() {
           wb.offerte_id ? getOfferte(wb.offerte_id).catch(() => null) : Promise.resolve(null),
         ])
         if (cancelled) return
-        for (const item of wbItems) {
-          for (const afb of item.afbeeldingen) {
-            afb.url = await resolveUrl(afb.url)
-          }
-        }
-        for (const foto of wbFotos) {
-          foto.url = await resolveUrl(foto.url)
-        }
+        await Promise.all([
+          ...wbItems.flatMap((item) => item.afbeeldingen.map(async (afb) => { afb.url = await resolveUrl(afb.url) })),
+          ...wbFotos.map(async (foto) => { foto.url = await resolveUrl(foto.url) }),
+        ])
+        if (cancelled) return
         setWerkbonItems(wbItems)
         setFotos(wbFotos)
         setKlant(wbKlant)
@@ -277,7 +274,6 @@ export function WerkbonMonteurView() {
         const safeName = sanitizeStorageFilename(file.name)
         const storagePath = `werkbon-fotos/${werkbon.id}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}-${safeName}`
         const uploadedPath = await uploadFile(resizedFile, storagePath)
-        const displayUrl = await resolveUrl(uploadedPath)
         const foto = await createWerkbonFoto({
           user_id: userId,
           werkbon_id: werkbon.id,
@@ -285,7 +281,7 @@ export function WerkbonMonteurView() {
           url: uploadedPath,
           omschrijving: file.name,
         })
-        foto.url = displayUrl
+        foto.url = await toonbareUploadUrl(uploadedPath, resized)
         setFotos((prev) => [...prev, foto])
         uploaded++
       } catch (err) {

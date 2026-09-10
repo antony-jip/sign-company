@@ -20,6 +20,16 @@ export async function resolveWerkbonUrl(url: string): Promise<string> {
   }
 }
 
+/**
+ * De URL om een net geüpload bestand te tonen. Pas aanroepen nadat de rij is
+ * opgeslagen. Lukt ondertekenen niet, dan het lokale bestand: wie iets
+ * toevoegt, ziet het altijd meteen terug.
+ */
+export async function toonbareUploadUrl(pad: string, lokaal: Blob): Promise<string> {
+  const url = await resolveWerkbonUrl(pad)
+  return url || URL.createObjectURL(lokaal)
+}
+
 /** Schaalt een afbeelding terug tot maxWidth en levert een JPEG-blob (kwaliteit 0.8). */
 export function resizeWerkbonImage(file: File, maxWidth: number): Promise<Blob> {
   return new Promise((resolve, reject) => {

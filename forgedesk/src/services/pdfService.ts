@@ -29,7 +29,7 @@ export async function resolveImageToBase64(urlOrPath: string, timeoutMs = 8000):
 
     // Resolve storage path to public URL if needed
     let fetchUrl = urlOrPath
-    if (!urlOrPath.startsWith('http')) {
+    if (!urlOrPath.startsWith('http') && !urlOrPath.startsWith('blob:')) {
       const { downloadFile } = await import('@/services/storageService')
       fetchUrl = await downloadFile(urlOrPath)
       if (!fetchUrl) return null
