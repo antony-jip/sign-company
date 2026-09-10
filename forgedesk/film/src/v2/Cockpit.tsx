@@ -9,7 +9,8 @@ import { TeamCard } from '@/components/projects/cockpit/TeamCard'
 import { ActiesCard } from '@/components/projects/cockpit/ActiesCard'
 import type { ActivityEvent } from '@/components/projects/cockpit/ActiviteitFeed'
 import { AppVenster } from './DesktopChrome'
-import { project, klant, contact, offerte, offerteItems, montage, medewerkers, portaalItemOfferte, portaalItemFoto, portaalItemFactuur, werkbonNummer } from '../mockData'
+import { project, klant, contact, offerte, offerteItems, montage, medewerkers, portaalItemOfferte, portaalItemFoto, portaalItemFactuur, werkbonNummer, taakBellen } from '../mockData'
+import { typ } from '../kern/Typ'
 import { euro } from '../kern/Typ'
 import { vlak, veer, ease } from '../tijd'
 import { MailComposer, PANEEL_B } from './schermen/MailComposer'
@@ -30,6 +31,7 @@ export type CockpitStand = {
   meldingen?: number
   composer?: { op: number; dichtOp: number; typOp: number; bijlageOp: number; opvolgenOp: number; verzendOp: number; kiezerOp?: number; kiesOp?: number }
   werkbon?: { dialoogOp: number; klaarOp: number }
+  taak?: { dialoogOp: number; typOp: number; kiesOp: number; klaarOp: number }
   // Blokken die nog niet zichtbaar zijn (openvouwen), ms waarop elk opkomt.
   blokOp?: Partial<Record<'kop' | 'fase' | 'briefing' | 'grid' | 'portaal' | 'tijd' | 'klant' | 'team' | 'acties', number>>
 }
@@ -109,6 +111,33 @@ export const Cockpit: React.FC<{ t: number; stand: CockpitStand }> = ({ t, stand
             </div>
           )
         })()}
+        {stand.taak && t >= stand.taak.dialoogOp && t < stand.taak.klaarOp + 300 && (() => {
+          const k = stand.taak
+          const inP = veer(t, k.dialoogOp, { demping: 16, duurMs: 600 })
+          const zicht = t < k.klaarOp ? vlak(t, k.dialoogOp, k.dialoogOp + 200) : 1 - vlak(t, k.klaarOp, k.klaarOp + 250)
+          const titel = typ(taakBellen.titel, t, k.typOp, 34)
+          const gekozen = t >= k.kiesOp
+          const kleuren = ['bg-[hsl(var(--status-green-bg))] text-[#3A7D52]', 'bg-[hsl(var(--status-blue-bg))] text-[#3A5A9A]']
+          return (
+            <div style={{ position: 'absolute', inset: 0, zIndex: 40, backgroundColor: 'rgba(0,0,0,0.30)', backdropFilter: 'blur(3px)', opacity: zicht, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div className="bg-card rounded-modal shadow-elevation-lg w-[560px] p-6" style={{ transform: `translateY(${(1 - inP) * 24}px) scale(${0.96 + inP * 0.04})` }}>
+                <h2 className="font-heading text-[18px] font-bold text-foreground">Nieuwe taak</h2>
+                <div className="mt-4 h-11 rounded-md border border-input bg-background px-3 flex items-center text-[15px] text-foreground">{titel || <span className="text-muted-foreground">Titel van de taak</span>}{titel.length > 0 && titel.length < taakBellen.titel.length && <span className="text-flame ml-px">|</span>}</div>
+                <p className="mt-4 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Toewijzen aan</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {medewerkers.map((mw, i) => {
+                    const sel = gekozen && mw.naam === 'Sanne'
+                    return <span key={mw.id} data-doel={mw.naam === 'Sanne' ? 'taak-sanne' : undefined} className={`inline-flex items-center h-8 px-3 rounded-full text-[13px] font-medium ${kleuren[i % 2]} ${sel ? 'ring-2 ring-petrol' : ''}`}>{mw.naam}</span>
+                  })}
+                </div>
+                <div className="mt-5 flex items-center justify-end gap-2">
+                  <span className="h-9 px-4 rounded-lg border border-border text-[13px] font-medium text-foreground inline-flex items-center">Annuleren</span>
+                  <span data-doel="taak-toevoegen" className="h-9 px-4 rounded-lg bg-petrol text-white text-[13px] font-semibold inline-flex items-center" style={{ opacity: titel.length > 3 && gekozen ? 1 : 0.5 }}>Taak toevoegen</span>
+                </div>
+              </div>
+            </div>
+          )
+        })()}
         {stand.werkbon && t >= stand.werkbon.dialoogOp && t < stand.werkbon.klaarOp + 2600 && (() => {
           const w = stand.werkbon
           const open = t < w.klaarOp
@@ -182,13 +211,13 @@ export const Cockpit: React.FC<{ t: number; stand: CockpitStand }> = ({ t, stand
         {/* Overzicht: twee kolommen */}
         <div className="flex gap-8 px-8 py-6">
           <div className="flex-1 min-w-0 space-y-6">
-            <Blok t={t} op={op.fase}><ProjectFaseBar status={stand.status} onStatusChange={() => {}} totaalBedrag={heeftOfferte ? offerte.subtotaal : undefined} deadline={project.eind_datum} /></Blok>
-            <Blok t={t} op={op.briefing}><BriefingCard beschrijving={project.beschrijving} projectNaam={project.naam} klantNaam={klant.bedrijfsnaam} onSave={noop} /></Blok>
+            <Blok t={t} op={op.fase}><div data-doel="blok-fase"><ProjectFaseBar status={stand.status} onStatusChange={() => {}} totaalBedrag={heeftOfferte ? offerte.subtotaal : undefined} deadline={project.eind_datum} /></div></Blok>
+            <Blok t={t} op={op.briefing}><div data-doel="blok-briefing"><BriefingCard beschrijving={project.beschrijving} projectNaam={project.naam} klantNaam={klant.bedrijfsnaam} onSave={noop} /></div></Blok>
             <Blok t={t} op={op.grid}>
-              <TakenOfferteGrid taken={[]} offertes={offertes} montageAfspraken={montages} medewerkers={medewerkers} projectId={project.id} onNewTaak={() => {}} onNewOfferte={() => {}} onNewMontage={() => {}} onTaakStatusChange={noop} />
+              <div data-doel="blok-grid"><TakenOfferteGrid taken={stand.taak && t >= stand.taak.klaarOp ? [taakBellen] : []} offertes={offertes} montageAfspraken={montages} medewerkers={medewerkers} projectId={project.id} onNewTaak={() => {}} onNewOfferte={() => {}} onNewMontage={() => {}} onTaakStatusChange={noop} /></div>
             </Blok>
             <Blok t={t} op={op.portaal}>
-              <div className="rounded-2xl overflow-hidden ring-1 ring-border/60 bg-card">
+              <div data-doel="blok-portaal" className="rounded-2xl overflow-hidden ring-1 ring-border/60 bg-card">
                 <div className="flex items-center justify-between px-5 py-3.5 text-white" style={{ background: 'linear-gradient(135deg, #1A535C, #143F46)' }}>
                   <div className="flex items-center gap-3">
                     <span className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center"><MonitorSmartphone className="h-4 w-4" /></span>
@@ -232,7 +261,7 @@ export const Cockpit: React.FC<{ t: number; stand: CockpitStand }> = ({ t, stand
 
           <div className="w-[380px] flex-shrink-0 space-y-6">
             <Blok t={t} op={op.tijd}>
-              <div className="doen-slate-surface rounded-2xl p-5">
+              <div data-doel="blok-tijd" className="doen-slate-surface rounded-2xl p-5">
                 <div className="flex items-baseline justify-between mb-3">
                   <h3 className="font-heading text-[15px] font-bold text-foreground">Tijd<span className="text-flame">.</span></h3>
                   <span className="doen-subtitel">hoelang wordt er gewerkt?</span>
@@ -254,9 +283,9 @@ export const Cockpit: React.FC<{ t: number; stand: CockpitStand }> = ({ t, stand
               </div>
             </Blok>
             <Blok t={t} op={op.klant}>
-              <KlantCard klant={klant} project={{ ...project, contactpersoon_id: contact.id }} contactpersonen={[contact]} onContactpersoonChange={noop} onContactpersoonAdd={noop} onMail={() => {}} />
+              <div data-doel="blok-klant"><KlantCard klant={klant} project={{ ...project, contactpersoon_id: contact.id }} contactpersonen={[contact]} onContactpersoonChange={noop} onContactpersoonAdd={noop} onMail={() => {}} /></div>
             </Blok>
-            <Blok t={t} op={op.team}><TeamCard teamLeden={['mw-2']} medewerkers={medewerkers} onChange={noop} /></Blok>
+            <Blok t={t} op={op.team}><div data-doel="blok-team"><TeamCard teamLeden={['mw-2']} medewerkers={medewerkers} onChange={noop} /></div></Blok>
             <Blok t={t} op={op.acties}>
               <div style={{ position: 'relative' }}>
                 <ActiesCard onOfferte={() => {}} onWerkbon={() => {}} onMontage={() => {}} onFactuur={() => {}} onPakbon={() => {}} onBevestiging={() => {}} onTePlannen={() => {}} />

@@ -13,6 +13,18 @@
       "bestand": "muziek-b.mp3",
       "omschrijving": "Punchy, moderne pop-tech, 124 bpm, meer drive.",
       "prompt": "Punchy energetic pop-tech instrumental for a fast product demo, 124 bpm, four-on-the-floor kick, snappy claps, bright arpeggiated synths, funky bass, big confident feel, satisfying final hit, no vocals, instrumental"
+    },
+    {
+      "id": "muziek-c",
+      "bestand": "muziek-c.mp3",
+      "omschrijving": "Hip, glossy future-pop, 122 bpm, vrolijk en zelfverzekerd.",
+      "prompt": "Glossy uplifting future-pop instrumental for a premium software launch film, 122 bpm, bright shimmering synth chords, bouncy sidechained bass, tight modern drums with finger snaps and claps, playful plucked melody hook, euphoric lifts every 8 bars, sparkling risers, joyful confident and modern, clean hi-fi mix, no vocals, instrumental"
+    },
+    {
+      "id": "muziek-d",
+      "bestand": "muziek-d.mp3",
+      "omschrijving": "Feelgood indie-dance, 120 bpm, gitaar plus synth, warm en hip.",
+      "prompt": "Feel-good indie dance instrumental for a hip tech brand video, 120 bpm, funky clean guitar chops, warm analog synth pads, punchy kick and crisp hi-hats, groovy bass, handclaps, bright optimistic summer energy, catchy melodic hook, modern polished mix, no vocals, instrumental"
     }
   ],
   "sfx": [

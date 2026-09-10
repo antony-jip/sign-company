@@ -44,6 +44,7 @@ export const Belofte: React.FC<Props> = ({ t, op, uit, tekst, kernwoord, selectO
   const gekleurd = t >= selVan + SEL_MS + 167
   const uitlegOp = laatsteLanding + 267
   const uitP = vlak(t, uit - UIT_MS, uit, ease.exit)
+  const kaartP = vlak(t, op - 60, op + 260, ease.enter)
   const lang = tekst.length > 34
   const size = lang ? f.belofteSize[1] : f.belofteSize[0]
   const woordP = (i: number) => vlak(t, op + i * WOORD_STAP_MS, op + i * WOORD_STAP_MS + WOORD_MS, ease.enter)
@@ -54,6 +55,9 @@ export const Belofte: React.FC<Props> = ({ t, op, uit, tekst, kernwoord, selectO
   )
   return (
     <div style={{ position: 'absolute', left: f.belofteZijkant, right: f.belofteZijkant, ...(positie === 'boven' ? { top: f.belofteBoven } : { bottom: f.belofteOnder }), zIndex: 40, opacity: 1 - uitP, transform: `translateY(${-uitP * 10}px)`, filter: uitP > 0 ? `blur(${uitP * 3}px)` : undefined, fontFamily: fonts.kop, fontWeight: 700, fontSize: size, lineHeight: 1.04, letterSpacing: '-0.035em', color: grond, textShadow: licht ? '0 4px 24px rgba(0,0,0,0.35)' : undefined, textWrap: 'balance' as never }}>
+    {/* Glaskaart: de belofte zweeft als een kaart boven de wereld, zodat hij
+        nooit met UI eronder vecht (HIGHEND: floating card op aurora). */}
+    <div style={licht ? undefined : { display: 'inline-block', maxWidth: '100%', padding: `${size * 0.28}px ${size * 0.42}px`, borderRadius: size * 0.42, backgroundColor: 'rgba(255,255,255,0.78)', backdropFilter: 'blur(22px) saturate(1.3)', WebkitBackdropFilter: 'blur(22px) saturate(1.3)', boxShadow: '0 30px 70px -30px rgba(26,83,92,0.35), 0 0 0 1px rgba(255,255,255,0.9) inset, 0 1px 0 rgba(255,255,255,1) inset', opacity: kaartP, transform: `translateY(${(1 - kaartP) * 12}px)` }}>
       {lijst.slice(0, eersteKern).map((w, i) => woordje(w, i, false))}
       <span style={{ position: 'relative', display: 'inline', whiteSpace: 'nowrap', color: gekleurd ? merk.flame : grond, padding: '0 0.06em' }}>
         {lijst.slice(eersteKern, laatsteKern + 1).map((w, k) => woordje(w, eersteKern + k, eersteKern + k === laatsteKern))}
@@ -63,8 +67,9 @@ export const Belofte: React.FC<Props> = ({ t, op, uit, tekst, kernwoord, selectO
       {laatsteKern < lijst.length - 1 ? ' ' : null}
       {lijst.slice(laatsteKern + 1).map((w, k) => woordje(w, laatsteKern + 1 + k, laatsteKern + 1 + k === lijst.length - 1))}
       {uitleg && (
-        <div style={{ marginTop: size * 0.22, fontFamily: fonts.body, fontWeight: 500, fontSize: size * 0.36, lineHeight: 1.3, letterSpacing: '-0.005em', color: licht ? 'rgba(255,255,255,0.85)' : merk.tekstSec, ...woordStijl(vlak(t, uitlegOp, uitlegOp + 400, ease.enter), 10, 3) }}>{uitleg}</div>
+        <div style={{ marginTop: size * 0.16, fontFamily: fonts.body, fontWeight: 500, fontSize: size * 0.36, lineHeight: 1.3, letterSpacing: '-0.005em', color: licht ? 'rgba(255,255,255,0.85)' : merk.tekstSec, ...woordStijl(vlak(t, uitlegOp, uitlegOp + 400, ease.enter), 10, 3) }}>{uitleg}</div>
       )}
+    </div>
     </div>
   )
 }

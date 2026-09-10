@@ -47,14 +47,41 @@ export const useHuidigeCamera = () => useContext(CameraCtx)
 export const MIDDEN_Y = 860
 export const naarFilm = (cam: Camera, wx: number, wy: number) => ({ x: 540 + (wx - cam.x) * cam.zoom, y: MIDDEN_Y + (wy - cam.y) * cam.zoom })
 
-export const Wereld: React.FC<{ camera: Camera; children: ReactNode; grond?: string }> = ({ camera, children, grond = merk.pagina }) => {
+// Aurora: vier zachte kleurvlekken (flame, petrol, zand, petrol-licht) die
+// traag drijven en licht meebewegen met de camera. Het licht, wazige
+// gradiëntveld van moderne SaaS-launchfilms, in de kleuren van doen.
+const VLEKKEN: { kleur: string; alpha: string; x: number; y: number; r: number; fase: number; periode: number }[] = [
+  { kleur: merk.flame, alpha: '3A', x: 0.18, y: 0.22, r: 720, fase: 0.3, periode: 13000 },
+  { kleur: merk.petrol, alpha: '36', x: 0.84, y: 0.30, r: 780, fase: 2.1, periode: 16000 },
+  { kleur: merk.zand, alpha: '70', x: 0.30, y: 0.86, r: 700, fase: 4.0, periode: 14500 },
+  { kleur: merk.petrolLight, alpha: 'FF', x: 0.78, y: 0.88, r: 760, fase: 1.2, periode: 12000 },
+]
+export const Aurora: React.FC<{ t: number; camera: Camera; zicht: number }> = ({ t, camera, zicht }) => {
+  const f = useFormaat()
+  if (zicht <= 0) return null
+  const px = -camera.x * 0.05, py = -camera.y * 0.05
+  return (
+    <div style={{ position: 'absolute', inset: 0, opacity: zicht, overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', inset: -200, filter: 'blur(70px)' }}>
+        {VLEKKEN.map((v, i) => {
+          const dx = Math.sin((t / v.periode) * Math.PI * 2 + v.fase) * 90
+          const dy = Math.cos((t / (v.periode * 1.3)) * Math.PI * 2 + v.fase) * 70
+          return <div key={i} style={{ position: 'absolute', left: 200 + f.b * v.x - v.r + dx + px, top: 200 + f.h * v.y - v.r + dy + py, width: v.r * 2, height: v.r * 2, borderRadius: '50%', background: `radial-gradient(circle, ${v.kleur}${v.alpha} 0%, ${v.kleur}00 68%)` }} />
+        })}
+      </div>
+    </div>
+  )
+}
+
+export const Wereld: React.FC<{ camera: Camera; children: ReactNode; grond?: string; t?: number }> = ({ camera, children, grond = merk.pagina, t = 0 }) => {
   const f = useFormaat()
   const zoom = camera.zoom * f.zoomFactor
   return (
   <CameraCtx.Provider value={camera}>
     <AbsoluteFill style={{ backgroundColor: grond, overflow: 'hidden' }}>
-      {/* Zachte petrol-gloed die meebeweegt met de camera, als omgevingslicht */}
-      <div style={{ position: 'absolute', left: f.middenX - 900, top: f.middenY - 900, width: 1800, height: 1800, borderRadius: '50%', background: `radial-gradient(circle, ${merk.petrol}2E 0%, ${merk.petrol}0F 40%, transparent 68%)` }} />
+      <Aurora t={t} camera={camera} zicht={grond === 'transparent' ? 0 : 1} />
+      {/* Licht vignet: de randen iets dieper, het midden blijft open */}
+      {grond !== 'transparent' && <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(ellipse at 50% 45%, transparent 55%, ${merk.petrol}14 100%)` }} />}
       <div style={{ position: 'absolute', left: f.middenX, top: f.middenY, width: 0, height: 0, transform: `scale(${zoom}) translate(${-camera.x}px, ${-camera.y}px)`, transformOrigin: '0 0' }}>
         {children}
       </div>
@@ -84,6 +111,9 @@ type SchermProps = {
   rotatie?: number
 }
 
+const RADIUS = 28
+const RAND = `linear-gradient(135deg, ${merk.flame} 0%, ${merk.zand} 38%, ${merk.petrol} 72%, ${merk.flame} 100%)`
+
 // Vaste fase per scherm, zodat de ambient drift per venster anders loopt.
 const faseVan = (id: string) => { let h = 0; for (const c of id) h = (h * 31 + c.charCodeAt(0)) % 997; return (h / 997) * Math.PI * 2 }
 
@@ -92,6 +122,7 @@ const faseVan = (id: string) => { let h = 0; for (const c of id) h = (h * 31 + c
 // secundaire laag (kantel 2-3 f later), gloed en drift zijn ambient.
 export const Scherm: React.FC<SchermProps> = ({ id, x, y, t = 0, diepte = 0, kantel = 0, schaduwKantel = kantel, breedte = SCHERM_B, hoogte = SCHERM_H, children, zicht = 1, gloed = 0, extraSchaal = 1, rotatie = 0 }) => {
   const schaal = extraSchaal / (1 + diepte * 0.22)
+  const rand = Math.max(0, Math.min(1, gloed))
   const blur = diepte * 2.6
   const dim = 1 - Math.min(0.12, diepte * 0.08)
   const fase = faseVan(id)
@@ -102,18 +133,27 @@ export const Scherm: React.FC<SchermProps> = ({ id, x, y, t = 0, diepte = 0, kan
   const dx = Math.cos((t / 4100) * Math.PI * 2 + fase) * drift * 0.5
   return (
     <div data-scherm={id} style={{ position: 'absolute', left: x - breedte / 2, top: y - hoogte / 2, width: breedte, height: hoogte, opacity: zicht, perspective: 2600 }}>
-      {gloed > 0 && <div style={{ position: 'absolute', left: '50%', top: '50%', width: breedte * 1.5, height: hoogte * 1.5, transform: `translate(-50%,-50%) scale(${0.96 + 0.04 * adem})`, borderRadius: '50%', background: `radial-gradient(closest-side, ${merk.petrol}40, transparent)`, opacity: gloed * adem, filter: 'blur(30px)' }} />}
+      {gloed > 0 && <div style={{ position: 'absolute', left: '50%', top: '50%', width: breedte * 1.5, height: hoogte * 1.5, transform: `translate(-50%,-50%) scale(${0.96 + 0.04 * adem})`, borderRadius: '50%', background: `radial-gradient(closest-side, ${merk.petrol}30, transparent)`, opacity: gloed * adem, filter: 'blur(30px)' }} />}
       <div style={{
-        position: 'absolute', inset: 0, borderRadius: 22,
+        position: 'absolute', inset: 0, borderRadius: RADIUS,
         transform: `translate(${dx}px, ${dy}px) scale(${schaal}) rotateY(${schaduwKantel}deg) rotate(${rotatie}deg)`, transformOrigin: 'center',
-        boxShadow: '0 24px 48px -12px rgba(120,90,50,.20), 0 80px 120px -40px rgba(120,90,50,.28)',
+        boxShadow: '0 30px 60px -20px rgba(26,83,92,.22), 0 100px 160px -60px rgba(26,83,92,.32)',
+      }} />
+      {/* Lichtrand: een dunne gradiëntlijn (flame, zand, petrol) om het paneel,
+          met dezelfde gradiënt als zachte gloed erachter. Sterk op het actieve
+          scherm, zwak op de rest. */}
+      <div style={{
+        position: 'absolute', inset: -3, borderRadius: RADIUS + 3, background: RAND,
+        transform: `translate(${dx}px, ${dy}px) scale(${schaal}) rotateY(${kantel}deg) rotate(${rotatie}deg)`, transformOrigin: 'center',
+        filter: 'blur(22px)', opacity: rand * 0.55 * adem,
       }} />
       <div style={{
-        position: 'absolute', inset: 0, borderRadius: 22, overflow: 'hidden', backgroundColor: merk.wit,
+        position: 'absolute', inset: 0, borderRadius: RADIUS, overflow: 'hidden', backgroundColor: merk.wit,
         transform: `translate(${dx}px, ${dy}px) scale(${schaal}) rotateY(${kantel}deg) rotate(${rotatie}deg)`, transformOrigin: 'center',
         filter: `blur(${blur}px) brightness(${dim})`,
         boxShadow: '0 2px 4px rgba(70,55,40,.04), 0 0 0 1px rgba(255,255,255,.6) inset',
       }}>
+        <div style={{ position: 'absolute', inset: 0, zIndex: 5, pointerEvents: 'none', borderRadius: RADIUS, padding: 2, background: RAND, opacity: 0.35 + rand * 0.65, WebkitMask: 'linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }} />
         <div style={{ width: breedte / SCHERM_SCHAAL, height: hoogte / SCHERM_SCHAAL, transform: `scale(${SCHERM_SCHAAL})`, transformOrigin: '0 0' }}>
           {children}
         </div>

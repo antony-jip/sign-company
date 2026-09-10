@@ -16,5 +16,5 @@ export const COPY = {
   mailUitProject: { tekst: 'Tekening erbij. Zonder zoeken', kernwoord: 'Zonder zoeken', uitleg: 'Uit project pakt de tekening, Opvolgen staat aan.' },
   factuur: { tekst: 'Factuur eruit. Betaald', kernwoord: 'Betaald', uitleg: 'Versturen, klant klikt Betaal nu, factuur springt op betaald.' },
   alles: { tekst: 'Eén project. Alles erin', kernwoord: 'Alles erin' },
-  eindkaart: { regel: 'Van mail tot betaald. In één app.', url: 'app.doen.team', sub: '30 dagen gratis, maandelijks opzegbaar' },
+  eindkaart: { regel: 'slim gedaan', url: '', sub: '' },
 } as const

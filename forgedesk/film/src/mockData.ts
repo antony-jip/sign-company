@@ -104,3 +104,13 @@ export const notificatieCheckAkkoord: Notificatie = {
   id: 'n-4', type: 'offerte_check_afgehandeld', titel: 'Sanne heeft je offerte gecheckt: akkoord',
   bericht: `${offerte.nummer} · ${offerte.titel}`, link: '/offertes/o-1/bewerken', gelezen: false, created_at: nu,
 }
+
+export const taakBellen = {
+  id: 't-1', project_id: 'p-1', titel: 'Even telefonisch contact opnemen', beschrijving: 'Pieter bellen over de kleur van de letters.',
+  status: 'todo', prioriteit: 'medium', toegewezen_aan: 'Sanne', toegewezen_aan_id: 'mw-2', deadline: '2026-09-16', geschatte_tijd: 15, created_at: nu, updated_at: nu,
+} as unknown as Taak
+
+export const notificatieTaak: Notificatie = {
+  id: 'n-5', type: 'taak_toegewezen', titel: 'Antony heeft je een taak toegewezen',
+  bericht: `${taakBellen.titel} · ${project.naam}`, link: '/taken', gelezen: false, created_at: nu,
+}
