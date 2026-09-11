@@ -932,9 +932,11 @@ export function OffertePubliekPagina() {
   const isWijzigingGevraagd = offerte.status === 'wijziging_gevraagd'
   const kanActie = !isVerlopen && !isGeaccepteerd && !isAfgewezen && !isGefactureerd
   // Een verlopen offerte houdt bij een aanvraag zijn status (zie
-  // offerte-wijziging), dus de aanvraag lezen we af aan het tijdstip.
+  // offerte-wijziging), dus de aanvraag lezen we af aan het tijdstip: ná het
+  // einde van de laatste geldige dag. Een wijzigingsverzoek van die laatste dag
+  // telt niet, en een datumvergelijking in UTC viel net na middernacht verkeerd.
   const nieuweVersieGevraagd = isVerlopen && !!offerte.wijziging_ingediend_op
-    && offerte.wijziging_ingediend_op.slice(0, 10) >= offerte.geldig_tot
+    && new Date(offerte.wijziging_ingediend_op).getTime() > new Date(`${offerte.geldig_tot}T23:59:59`).getTime()
   const dagenOver = dagenTotVerlopen(offerte.geldig_tot)
   const bijnaVerlopen = !isVerlopen && dagenOver >= 0 && dagenOver <= 7
 

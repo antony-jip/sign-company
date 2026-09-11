@@ -109,7 +109,11 @@ export function PortaalFeedItemOfferte({
     : null
   const akkoordOpOffertepagina = !!offertePaginaUrl && item.type !== 'opdrachtbevestiging'
   const toonAkkoordKnop = !isAfgehandeld && kanGoedkeuren
-  const naamVoorAkkoord = (klantNaam || naam).trim()
+  // De portaalnaam komt uit localStorage en kan een halve invoer zijn ("J"):
+  // de naambalk in het portaal verdwijnt na de eerste letter. Dan vragen we
+  // hier alsnog een volledige naam, anders blijft de knop voorgoed uit.
+  const portaalNaamBruikbaar = klantNaam.trim().length >= 2
+  const naamVoorAkkoord = (portaalNaamBruikbaar ? klantNaam : naam).trim()
 
   // Het portaal draait token-based zonder Supabase-sessie, dus de PDF wordt hier
   // in de browser gebouwd uit /api/offerte-publiek. Die respons is al gefilterd
@@ -378,7 +382,7 @@ export function PortaalFeedItemOfferte({
                 <p className="text-sm" style={{ color: 'hsl(var(--foreground))' }}>
                   Akkoord geven op {item.titel}?
                 </p>
-                {!klantNaam && (
+                {!portaalNaamBruikbaar && (
                   <input
                     type="text"
                     value={naam}
