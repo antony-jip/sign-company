@@ -1034,8 +1034,9 @@ export function OffertePubliekPagina() {
           <h1 className={`${klantLabel ? 'mt-1' : 'mt-10'} break-words text-[28px] font-bold leading-[1.15] tracking-[-0.3px] text-[#1A1A1A] md:text-[34px]`}>
             {offerte.titel || `Offerte ${offerte.nummer}`}
           </h1>
-          {/* Het scheidingsteken hoort bij het deel erna, zodat een smal scherm
-              nooit afbreekt met een losse punt aan het eind van de regel. */}
+          {/* Op een telefoon staat de geldigheid op een eigen regel, zonder
+              scheidingsteken: een losse punt aan het begin of eind van een
+              regel oogt als een fout. */}
           <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-[#6B6B66]">
             <span className="font-mono">{offerte.nummer}</span>
             <span className="whitespace-nowrap">
@@ -1043,8 +1044,8 @@ export function OffertePubliekPagina() {
               <span className="font-mono">{formatDate(offerte.created_at)}</span>
             </span>
             {offerte.geldig_tot && (
-              <span className={`whitespace-nowrap ${bijnaVerlopen ? 'text-[#C0451A]' : ''}`}>
-                <span aria-hidden className="mr-2 text-[#C9C8C3]">·</span>
+              <span className={`w-full whitespace-nowrap sm:w-auto ${bijnaVerlopen ? 'text-[#C0451A]' : ''}`}>
+                <span aria-hidden className="mr-2 hidden text-[#C9C8C3] sm:inline">·</span>
                 Geldig tot <span className="font-mono">{formatDate(offerte.geldig_tot)}</span>
                 {bijnaVerlopen && (dagenOver === 0 ? ' (vandaag de laatste dag)' : ` (nog ${dagenOver} ${dagenOver === 1 ? 'dag' : 'dagen'})`)}
               </span>
