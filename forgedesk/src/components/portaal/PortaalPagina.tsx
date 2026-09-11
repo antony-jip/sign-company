@@ -136,9 +136,16 @@ export function PortaalPagina() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [data, setData] = useState<PortaalApiResponse | null>(null)
+  // Alleen een bevestigde, volledige naam telt. De naambalk zette voorheen elke
+  // toetsaanslag direct als naam en verdween dan, zodat er "J" bleef staan bij
+  // elk bericht en akkoord; zo'n halve waarde van eerder negeren we hier.
   const [klantNaam, setKlantNaam] = useState(() => {
-    try { return localStorage.getItem('doen_portaal_klant_naam') || '' } catch (err) { return '' }
+    try {
+      const opgeslagen = (localStorage.getItem('doen_portaal_klant_naam') || '').trim()
+      return opgeslagen.length >= 2 ? opgeslagen : ''
+    } catch (err) { return '' }
   })
+  const [naamInvoer, setNaamInvoer] = useState('')
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
   const { markBekeken } = useBekekenTracker(token)
 
@@ -147,6 +154,11 @@ export function PortaalPagina() {
       try { localStorage.setItem('doen_portaal_klant_naam', klantNaam) } catch (err) { /* ignore */ }
     }
   }, [klantNaam])
+
+  function bevestigNaam() {
+    const naam = naamInvoer.trim()
+    if (naam.length >= 2) setKlantNaam(naam)
+  }
 
   const fetchPortaal = useCallback(async () => {
     if (!token) return
@@ -370,22 +382,36 @@ export function PortaalPagina() {
         </div>
       </main>
 
-      {/* Klant naam prompt (eerste keer) */}
+      {/* Klant naam prompt (eerste keer). De naam telt pas na Enter, de knop
+          of het verlaten van het veld, zodat de balk niet na de eerste letter
+          verdwijnt. */}
       {!klantNaam && rawItems.length > 0 && (
-        <div
-          className="fixed bottom-0 left-0 right-0 py-3 px-4 flex items-center justify-center gap-3"
+        <form
+          onSubmit={(e) => { e.preventDefault(); bevestigNaam() }}
+          className="fixed bottom-0 left-0 right-0 py-3 px-4 flex items-center justify-center gap-2 sm:gap-3"
           style={{ backgroundColor: 'hsl(var(--card))', borderTop: '0.5px solid #E8E6E1', boxShadow: '0 -2px 12px rgba(0,0,0,0.04)' }}
         >
-          <span className="text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>Uw naam:</span>
+          <label htmlFor="portaal-klant-naam" className="text-sm shrink-0" style={{ color: 'hsl(var(--muted-foreground))' }}>Uw naam:</label>
           <input
+            id="portaal-klant-naam"
             type="text"
-            value={klantNaam}
-            onChange={(e) => setKlantNaam(e.target.value)}
-            placeholder="Vul uw naam in"
-            className="px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-petrol/30 focus:border-petrol"
+            value={naamInvoer}
+            onChange={(e) => setNaamInvoer(e.target.value)}
+            onBlur={bevestigNaam}
+            placeholder="Voor- en achternaam"
+            autoComplete="name"
+            className="min-w-0 px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-petrol/30 focus:border-petrol"
             style={{ borderColor: '#E8E6E1', maxWidth: 200 }}
           />
-        </div>
+          <button
+            type="submit"
+            disabled={naamInvoer.trim().length < 2}
+            className="shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium text-white transition-opacity disabled:opacity-40"
+            style={{ backgroundColor: '#1A535C' }}
+          >
+            Opslaan
+          </button>
+        </form>
       )}
 
       {/* Lightbox */}
