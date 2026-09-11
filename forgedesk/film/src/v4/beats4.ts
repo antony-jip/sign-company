@@ -29,72 +29,72 @@ export const H1 = {
 export const H2 = {
   dollyOp: 31800, dollyTot: 33000, kaartOp: 31900, kaartUit: 33700,
   regelsOp: 33400,
-  // Push 1,4x op de marge (rechts), rijen lichten op, hold; dan door naar het urenblok.
-  pushOp: 35500, pushTot: 35900, rijOp: 35900, rijStap: 800,
-  urenPushOp: 39800, urenPushTot: 40200, urenLabelOp: 40300, urenLabelUit: 42000, pullOp: 42000, pullTot: 42400,
-  belofteOp: 42800, belofteUit: 45000,
-  meldingOp: 45200, meldingUit: 47000, checkAkkoordOp: 45200,
-  klikVerstuur: 47600, keuzeOp: 47780, klikPortaal: 48600, flapOp: 48900,
-  statusVlucht: 49600, statusOp: 49700, statusLand: 50300,
-  eind: 51800,
+  // Push 1,4x op de marge (rechts), korte hold, dan door naar het urenblok.
+  pushOp: 35500, pushTot: 35900, rijOp: 35900, rijStap: 600,
+  urenPushOp: 37600, urenPushTot: 38000, urenLabelOp: 38100, urenLabelUit: 39600, pullOp: 39600, pullTot: 40000,
+  belofteOp: 40400, belofteUit: 42600,
+  meldingOp: 42800, meldingUit: 44600, checkAkkoordOp: 42800,
+  klikVerstuur: 45200, keuzeOp: 45380, klikPortaal: 46200, flapOp: 46500,
+  statusVlucht: 47200, statusOp: 47300, statusLand: 47900,
+  eind: 49400,
 } as const
 
 // H3 portaal (je klant, desktop): offerte komt binnen in het klantportaal, Bekijken,
 // naam, handtekening met push, Bevestigen, terug naar het project, melding, statuswoord, belofte.
 export const H3 = {
-  dollyOp: 51800, dollyTot: 53000, kaartOp: 51900, kaartUit: 54100,
-  kaartZichtOp: 53200, klikBekijken: 54900, publiekOp: 55000,
-  naamOp: 55600, pushOp: 56600, pushTot: 57000, tekenOp: 57000, vinkOp: 58900, pullOp: 59100, pullTot: 59500,
-  klikBevestig: 60100, klaarOp: 60440,
-  terugOp: 61500, terugTot: 62700,
-  meldingOp: 62800, meldingUit: 64800,
-  statusVlucht: 64400, statusOp: 64500, statusLand: 65100,
-  belofteOp: 65500, belofteUit: 67700,
-  eind: 68000,
+  dollyOp: 49400, dollyTot: 50600, kaartOp: 49500, kaartUit: 51700,
+  kaartZichtOp: 50800, klikBekijken: 52500, publiekOp: 52600,
+  naamOp: 53200, pushOp: 54200, pushTot: 54600, tekenOp: 54600, vinkOp: 56500, pullOp: 56700, pullTot: 57100,
+  klikBevestig: 57700, klaarOp: 58040,
+  terugOp: 59100, terugTot: 60300,
+  meldingOp: 60400, meldingUit: 62400,
+  statusVlucht: 62000, statusOp: 62100, statusLand: 62700,
+  belofteOp: 63100, belofteUit: 65300,
+  eind: 65600,
 } as const
 
 // H4 planning (jij): eerst een werkbon vanuit het project (Acties, Werkbon maken),
 // dan dolly naar de planning, montagekaart slepen, dialoog met de werkbon gekoppeld, statuswoord, belofte.
 export const H4 = {
-  klikWerkbon: 68700, werkbonDialoogOp: 68850, klikWerkbonMaken: 70300, werkbonKlaarOp: 70580,
-  dollyOp: 71900, dollyTot: 73100, kaartOp: 72000, kaartUit: 73800,
-  sleepOp: 74600, landOp: 76000,
-  dialoogOp: 76250, klikKoppel: 77500, koppelOp: 77580, klikInplannen: 78700, klaarOp: 78900,
-  statusVlucht: 79800, statusOp: 79900, statusLand: 80500,
-  belofteOp: 80900, belofteUit: 83100,
-  eind: 83400,
+  klikWerkbon: 66300, werkbonDialoogOp: 66450, klikWerkbonMaken: 67900, werkbonKlaarOp: 68180,
+  dollyOp: 69500, dollyTot: 70700, kaartOp: 69600, kaartUit: 71400,
+  sleepOp: 72200, landOp: 73600,
+  dialoogOp: 73850, klikKoppel: 75100, koppelOp: 75180, klikInplannen: 76300, klaarOp: 76500,
+  statusVlucht: 77400, statusOp: 77500, statusLand: 78100,
+  belofteOp: 78500, belofteUit: 80700,
+  eind: 81000,
 } as const
 
 // H5 werkbon (je monteur): 3D-telefoon, na-foto, handtekening, statuswoord, belofte.
 export const H5 = {
-  dollyOp: 83400, dollyTot: 84600, kaartOp: 83500, kaartUit: 85300,
-  klikNaFoto: 86700, fotoOp: 87150, tekenOp: 88400,
-  statusVlucht: 90900, statusOp: 91000, statusLand: 91600,
-  belofteOp: 92000, belofteUit: 94200,
-  eind: 94500,
+  dollyOp: 81000, dollyTot: 82200, kaartOp: 81100, kaartUit: 82900,
+  klikNaFoto: 84300, fotoOp: 84750, tekenOp: 86000,
+  statusVlucht: 88500, statusOp: 88600, statusLand: 89200,
+  belofteOp: 89600, belofteUit: 91800,
+  eind: 92100,
 } as const
 
 // H6 betaald (jij): financieel-tab, factuur maken, versturen, melding betaald met push, statuswoord, belofte.
 export const H6 = {
-  dollyOp: 94500, dollyTot: 95700, kaartOp: 94600, kaartUit: 96400,
-  klikFinancieel: 96300, financieelOp: 96500, klikFactuurMaken: 97500, factuurOp: 97900,
-  klikVerstuur: 99100, verstuurdOp: 99400,
+  dollyOp: 92100, dollyTot: 93300, kaartOp: 92200, kaartUit: 94000,
+  klikFinancieel: 93900, financieelOp: 94100, klikFactuurMaken: 95100, factuurOp: 95500,
+  klikVerstuur: 96700, verstuurdOp: 97000,
   // Koppelingen: de factuur gaat vanzelf naar de boekhouding (Exact, Moneybird, e-Boekhouden) en Mollie int.
-  koppelingOp: 100100, koppelingUit: 102700,
-  meldingOp: 102800, meldingUit: 104800, pushOp: 102800, pushTot: 103200, betaaldOp: 103000, pullOp: 104600, pullTot: 105000,
-  statusVlucht: 105200, statusOp: 105300, statusLand: 105900,
-  belofteOp: 106300, belofteUit: 108500,
-  eind: 109000,
+  koppelingOp: 97700, koppelingUit: 100300,
+  meldingOp: 100400, meldingUit: 102400, pushOp: 100400, pushTot: 100800, betaaldOp: 100600, pullOp: 102200, pullTot: 102600,
+  statusVlucht: 102800, statusOp: 102900, statusLand: 103500,
+  belofteOp: 103900, belofteUit: 106100,
+  eind: 106600,
 } as const
 
 // Slot: zachte overgang, Daan (jouw slimme collega, powered by Claude) in drie
 // 50/50-frames met links de zin en rechts de echte UI, dan het grid rond het
 // logo en de eindkaart. Geen gevel meer.
 export const S = {
-  overgangOp: 109000, overgangTot: 110200,
-  introOp: 110000, introNaamOp: 110900, introUit: 113600,
-  frameOp: 113800, frameDuur: 4600, frameUit: 127600,
-  gridOp: 128000, puntValt: 128200, belofteOp: 128700, belofteUit: 131400, gridUit: 131500,
-  eindkaartOp: 131600, regelOp: 132100, urlOp: 132700,
-  eind: 135800,
+  overgangOp: 106600, overgangTot: 107800,
+  introOp: 107600, introNaamOp: 108500, introUit: 111200,
+  frameOp: 111400, frameDuur: 4600, frameUit: 125200,
+  gridOp: 125600, puntValt: 125800, belofteOp: 126300, belofteUit: 129000, gridUit: 129100,
+  eindkaartOp: 129200, regelOp: 129700, urlOp: 130300,
+  eind: 133400,
 } as const

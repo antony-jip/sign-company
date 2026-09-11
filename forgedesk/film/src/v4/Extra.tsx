@@ -73,7 +73,7 @@ export const Gevel4: React.FC<{ t: number; zicht: number; aanOp: number; width: 
 // valt daar weg.
 export type Klank4 = { ms: number; bestand: 'klik' | 'landing' | 'inslag' | 'zwiep' | 'ding'; volume?: number }
 // Muziek: muziek-e (MiniMax, emotionele opbouw met climax); muziek-f is de warme indie-variant.
-export const MUZIEK = 'audio/muziek-e.mp3'
+export const MUZIEK = 'audio/muziek-g.mp3'
 export const Geluid4: React.FC<{ klanken: Klank4[]; muziekUitOp: number; totMs: number }> = ({ klanken, muziekUitOp, totMs }) => (
   <>
     <Sequence from={0} durationInFrames={msNaarFrames(totMs)} name="muziek">
