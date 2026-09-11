@@ -6,18 +6,22 @@ import { fonts } from '../fonts'
 // app-Tailwind-config, easings uit MOTION.md, tijden in ms.
 export const thema = {
   kleur: {
-    flame: merk.flame,
+    // Lichte Flame uit de v4-brief voor het lampje en het kernwoord; de app-UI
+    // houdt merk.flame (#D24620).
+    flame: '#F15025',
+    flameApp: merk.flame,
     petrol: merk.petrol,
     petrolLicht: merk.petrolLight,
     creme: merk.pagina,
     wit: merk.wit,
     ink: merk.ink,
     tekstSec: merk.tekstSec,
-    // Nacht: dezelfde toon als het dark-theme van de app (190 35% 5%).
-    nacht: '#081619',
-    nachtLaag: '#0C2328',
-    // Uitgeschakeld acrylaat van het bord.
-    acrylUit: '#071417',
+    // Lichte studio (SaaS-look): crème grond, zachte kleurvlekken.
+    studio: merk.pagina,
+    studioLaag: '#F1EDE4',
+    // Acrylaat van het bord: mat grijs-wit uit, helder wit aan.
+    acrylUit: '#E4E2DC',
+    acrylAan: '#FFFFFF',
     // Warm licht van het bord als het aan staat.
     lichtWarm: '#FFF4E2',
   },

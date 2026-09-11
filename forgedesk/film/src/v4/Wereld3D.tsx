@@ -16,7 +16,7 @@ import { thema } from './thema'
 
 // Maten in wereld-eenheden.
 export const BORD = { b: 12, h: 4.0, d: 0.9 }
-export const VLAK = { b: 11.2, h: 3.3, z: BORD.d / 2 + 0.01 }
+export const VLAK = { b: 11.2, h: 3.3, z: BORD.d / 2 + 0.03 }
 export const LOGO = { b: 8.5, z: VLAK.z + 0.012 }
 const logoH = LOGO.b * (LOGO_VIEWBOX.h / LOGO_VIEWBOX.b)
 // Wereldpositie van de punt in het logo (logo gecentreerd op 0,0).
@@ -117,7 +117,7 @@ const Kaartjes: React.FC<{ t: number; tex: Texturen }> = ({ t, tex }) => {
 const Bord: React.FC<{ t: number; tex: Texturen }> = ({ t, tex }) => {
   const licht = logoLicht(t)
   const behuizing = useMemo(() => new THREE.Color(thema.kleur.petrol), [])
-  const acryl = useMemo(() => new THREE.Color(thema.kleur.acrylUit), [])
+  const acryl = useMemo(() => new THREE.Color(thema.kleur.acrylUit).lerp(new THREE.Color(thema.kleur.acrylAan), licht), [licht])
   const lijst = useMemo(() => new THREE.Color(thema.kleur.petrol).lerp(new THREE.Color(thema.kleur.petrolLicht), 0.18), [])
   const warm = useMemo(() => new THREE.Color(thema.kleur.lichtWarm), [])
   return (
@@ -128,26 +128,26 @@ const Bord: React.FC<{ t: number; tex: Texturen }> = ({ t, tex }) => {
         <meshStandardMaterial color={behuizing} roughness={0.55} metalness={0.12} />
       </mesh>
       {/* Lijst: een iets grotere, dunne rand aan de voorkant */}
-      <mesh position={[0, 0, BORD.d / 2 - 0.04]}>
+      <mesh position={[0, 0, BORD.d / 2 - 0.02]}>
         <boxGeometry args={[BORD.b + 0.12, BORD.h + 0.12, 0.08]} />
         <meshStandardMaterial color={lijst} roughness={0.4} metalness={0.25} />
       </mesh>
       {/* Acrylaat voorkant: donker als het bord uit is, warm als het aan is */}
       <mesh position={[0, 0, VLAK.z]}>
         <planeGeometry args={[VLAK.b, VLAK.h]} />
-        <meshStandardMaterial color={acryl} emissive={warm} emissiveIntensity={licht * 0.03} roughness={0.9} metalness={0} />
+        <meshStandardMaterial color={acryl} emissive={warm} emissiveIntensity={licht * 0.55} roughness={0.85} metalness={0} />
       </mesh>
       {/* Logo-gloed (geblurde kopie, additief) en het logo zelf */}
       <mesh position={[0, 0, LOGO.z - 0.004]}>
         <planeGeometry args={[LOGO.b * 1.08, logoH * 1.08]} />
-        <meshBasicMaterial map={tex.logoGloed} transparent opacity={licht * 0.22} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
+        <meshBasicMaterial map={tex.logoGloed} transparent opacity={licht * 0.35} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
       </mesh>
       <mesh position={[0, 0, LOGO.z]}>
         <planeGeometry args={[LOGO.b, logoH]} />
         <meshBasicMaterial map={tex.logo} transparent opacity={licht} depthWrite={false} toneMapped={false} />
       </mesh>
       {/* Warm licht uit het bord op de omgeving als het aan staat */}
-      <pointLight position={[0, 1.2, 3.0]} color={thema.kleur.lichtWarm} intensity={licht * 5} distance={12} decay={2} />
+      <pointLight position={[0, 1.2, 3.0]} color={thema.kleur.lichtWarm} intensity={licht * 3} distance={12} decay={2} />
     </group>
   )
 }
@@ -191,10 +191,10 @@ export const Wereld3D: React.FC<{ t: number; tex: Texturen; width: number; heigh
   return (
     <ThreeCanvas width={width} height={height} dpr={1} gl={{ alpha: true, antialias: true, toneMapping: THREE.NoToneMapping }} camera={{ fov: thema.camera.fov, near: 0.1, far: 100, position: [0, 0.15, 11.6] }}>
       <CameraRig t={t} />
-      {/* Nacht: koel strijklicht van boven, warm straatlicht van onderen, weinig ambient */}
-      <ambientLight intensity={0.22} color="#9FB8BF" />
-      <directionalLight position={[-6, 9, 6]} intensity={1.3} color="#C9DDE3" />
-      <directionalLight position={[8, -6, 5]} intensity={0.35} color="#F2D6B0" />
+      {/* Lichte studio: zacht hemellicht, hoofdlicht van linksboven, warm invullicht */}
+      <hemisphereLight intensity={1.1} color="#FFFFFF" groundColor="#D8D2C4" />
+      <directionalLight position={[-6, 9, 8]} intensity={1.6} color="#FFFFFF" />
+      <directionalLight position={[8, -4, 6]} intensity={0.5} color="#F7E3C8" />
       <pointLight position={[0, 0, 3]} color="#FFFFFF" intensity={inslagFlits * 22} distance={12} decay={2} />
       <Bord t={t} tex={tex} />
       <Kaartjes t={t} tex={tex} />

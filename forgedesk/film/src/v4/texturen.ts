@@ -60,14 +60,14 @@ const rondeRect = (ctx: CanvasRenderingContext2D, x: number, y: number, b: numbe
 }
 
 // Logo: 6x de viewBox, letters in warm wit. De punt blijft leeg (dat is de bol).
-const tekenLogo = (blur: number) => {
+const tekenLogo = (blur: number, kleur = thema.kleur.petrol) => {
   const s = 6
   const c = document.createElement('canvas'); c.width = LOGO_VIEWBOX.b * s; c.height = LOGO_VIEWBOX.h * s
   const ctx = c.getContext('2d')!
   ctx.clearRect(0, 0, c.width, c.height)
   if (blur > 0) ctx.filter = `blur(${blur}px)`
   ctx.save(); ctx.scale(s, s); ctx.translate(-LOGO_VIEWBOX.x, -LOGO_VIEWBOX.y)
-  ctx.fillStyle = thema.kleur.lichtWarm
+  ctx.fillStyle = kleur
   for (const d of LOGO_LETTERS) ctx.fill(new Path2D(d))
   ctx.restore()
   return canvasTextuur(c)
@@ -114,7 +114,7 @@ export const maakTexturen = async (): Promise<Texturen> => {
   await fontsKlaar
   const kaarten: Record<string, THREE.CanvasTexture> = {}
   for (const k of TOOL_KAARTEN) kaarten[k.id] = await tekenKaart(k)
-  return { logo: tekenLogo(0), logoGloed: tekenLogo(14), gloed: tekenGloed(), kaarten }
+  return { logo: tekenLogo(0), logoGloed: tekenLogo(18, thema.kleur.lichtWarm), gloed: tekenGloed(), kaarten }
 }
 
 // Hook: houdt de render vast tot alle texturen er zijn.
