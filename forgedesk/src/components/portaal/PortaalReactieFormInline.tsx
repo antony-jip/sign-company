@@ -123,7 +123,7 @@ export function PortaalReactieFormInline({
   return (
     <div className="ml-4 space-y-3 rounded-xl bg-[#FFFFFF] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.03)] md:ml-6">
       <div className="flex items-center justify-between gap-3">
-        <p className="min-w-0 truncate text-xs font-medium text-[#6B6B66]">Uw reactie op {itemTitel}</p>
+        <p className="min-w-0 truncate text-xs font-medium text-[#6B6B66]">Je reactie op {itemTitel}</p>
         <button
           type="button"
           onClick={onClose}
@@ -148,8 +148,8 @@ export function PortaalReactieFormInline({
             handleSubmit()
           }
         }}
-        placeholder="Typ uw reactie"
-        aria-label={`Uw reactie op ${itemTitel}`}
+        placeholder="Typ je reactie"
+        aria-label={`Je reactie op ${itemTitel}`}
         rows={2}
         className={`${invoerVeld} resize-none`}
         style={{ minHeight: 72 }}

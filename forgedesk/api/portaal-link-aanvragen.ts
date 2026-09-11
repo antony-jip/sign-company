@@ -128,7 +128,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!portaal) {
       // Geef altijd succes terug om geen info te lekken
-      return res.status(200).json({ success: true, message: 'Als het e-mailadres bekend is, ontvangt u een nieuwe link.' })
+      return res.status(200).json({ success: true, message: 'Als het e-mailadres bekend is, ontvang je een nieuwe link.' })
     }
 
     // Haal klant email op via project
@@ -139,7 +139,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .single()
 
     if (!project?.klant_id) {
-      return res.status(200).json({ success: true, message: 'Als het e-mailadres bekend is, ontvangt u een nieuwe link.' })
+      return res.status(200).json({ success: true, message: 'Als het e-mailadres bekend is, ontvang je een nieuwe link.' })
     }
 
     // Controleer of email overeenkomt met klant
@@ -151,7 +151,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!klant || klant.email?.toLowerCase() !== email.toLowerCase()) {
       // Geef altijd succes terug om geen info te lekken
-      return res.status(200).json({ success: true, message: 'Als het e-mailadres bekend is, ontvangt u een nieuwe link.' })
+      return res.status(200).json({ success: true, message: 'Als het e-mailadres bekend is, ontvang je een nieuwe link.' })
     }
 
     // Bewust gesloten portaal (actief=false) blijft dicht — dat heropenen is
@@ -167,7 +167,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           link: `/projecten/${portaal.project_id}?tab=portaal`,
           project_id: portaal.project_id,
         })
-      return res.status(200).json({ success: true, message: 'Als het e-mailadres bekend is, ontvangt u een nieuwe link.' })
+      return res.status(200).json({ success: true, message: 'Als het e-mailadres bekend is, ontvang je een nieuwe link.' })
     }
 
     // Email matcht en portaal is alleen verlopen — verleng tot minimaal 30
@@ -224,7 +224,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         from: `"${(bedrijfsnaam || 'doen.').replace(/"/g, '')}" <noreply@doen.team>`,
         to: email,
         replyTo: bedrijfsProfiel?.bedrijfs_email || undefined,
-        subject: projectInfo?.naam ? `Uw nieuwe portaallink voor ${projectInfo.naam}` : 'Uw nieuwe portaallink',
+        subject: projectInfo?.naam ? `Je nieuwe portaallink voor ${projectInfo.naam}` : 'Je nieuwe portaallink',
         html,
       })
     } catch (mailErr) {
@@ -253,7 +253,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
       .then(() => {}, () => {})
 
-    return res.status(200).json({ success: true, message: 'Als het e-mailadres bekend is, ontvangt u een nieuwe link.' })
+    return res.status(200).json({ success: true, message: 'Als het e-mailadres bekend is, ontvang je een nieuwe link.' })
   } catch (error) {
     console.error('portaal-link-aanvragen error:', error)
     Sentry.captureException(error, { tags: { route: 'portaal-link-aanvragen' } })

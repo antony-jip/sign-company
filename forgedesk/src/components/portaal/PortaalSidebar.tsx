@@ -88,7 +88,7 @@ export function PortaalSidebar({
       {toonContactblok && (
         <Paneel className="!p-5">
           <p className="font-semibold text-[#1A1A1A]">Vragen?</p>
-          <p className="mt-0.5 text-sm text-[#6B6B66]">{bedrijf.naam} helpt u graag verder.</p>
+          <p className="mt-0.5 text-sm text-[#6B6B66]">{bedrijf.naam} helpt je graag verder.</p>
           {(bedrijf.telefoon || bedrijf.email) && (
             <div className="mt-4">
               <ContactKnoppen telefoon={bedrijf.telefoon} email={bedrijf.email} onderwerp={project.naam || undefined} />

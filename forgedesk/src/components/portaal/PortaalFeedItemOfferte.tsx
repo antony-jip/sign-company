@@ -220,7 +220,7 @@ export function PortaalFeedItemOfferte({
         throw new Error(err.error || 'Akkoord geven lukte niet')
       }
       setConfirmOpen(false)
-      setFeedback({ type: 'success', tekst: 'Uw akkoord is ontvangen. Bedankt voor uw vertrouwen.' })
+      setFeedback({ type: 'success', tekst: 'Je akkoord is ontvangen. Bedankt voor je vertrouwen.' })
       onReactie()
     } catch (err) {
       setFeedback({
@@ -282,7 +282,7 @@ export function PortaalFeedItemOfferte({
             value={naam}
             onChange={(e) => setNaam(e.target.value)}
             placeholder="Voor- en achternaam"
-            aria-label="Uw naam"
+            aria-label="Je naam"
             autoComplete="name"
             autoFocus
             className={`${invoerVeld} max-w-xs`}

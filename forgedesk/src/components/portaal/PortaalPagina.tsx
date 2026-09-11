@@ -238,7 +238,7 @@ export function PortaalPagina() {
           <h1 className="text-xl font-bold tracking-[-0.3px] text-[#1A1A1A]">Deze link werkt niet meer</h1>
           <p className="mt-2 text-sm text-[#6B6B66]">
             {error === 'Portaal niet gevonden'
-              ? 'De link naar dit portaal is niet geldig. Neem contact op met het bedrijf dat u de link stuurde.'
+              ? 'De link naar dit portaal is niet geldig. Neem contact op met het bedrijf dat je de link stuurde.'
               : error || 'Er ging iets mis. Probeer het later opnieuw.'}
           </p>
         </div>
@@ -324,7 +324,7 @@ export function PortaalPagina() {
 
       <main className={`mx-auto w-full max-w-5xl flex-1 px-4 pt-8 md:px-8 md:pt-12 ${toonNaambalk ? 'pb-32' : 'pb-16'}`}>
         <header className="mb-8">
-          <p className="text-sm text-[#6B6B66]">Uw project bij {bedrijf.naam}</p>
+          <p className="text-sm text-[#6B6B66]">Je project bij {bedrijf.naam}</p>
           <div className="mt-1 flex flex-wrap items-baseline gap-x-4 gap-y-1">
             <h1 className="break-words text-[28px] font-bold leading-[1.15] tracking-[-0.3px] text-[#1A1A1A] md:text-[34px]">
               {project?.naam || 'Klantportaal'}
@@ -376,7 +376,7 @@ export function PortaalPagina() {
         >
           <div className="mx-auto flex max-w-5xl items-center gap-3 md:px-4">
             <label htmlFor="portaal-klant-naam" className="hidden shrink-0 text-sm text-[#6B6B66] sm:inline">
-              Hoe mogen we u noemen?
+              Hoe mogen we je noemen?
             </label>
             <input
               id="portaal-klant-naam"
@@ -384,9 +384,9 @@ export function PortaalPagina() {
               value={naamInvoer}
               onChange={(e) => setNaamInvoer(e.target.value)}
               onBlur={bevestigNaam}
-              placeholder="Uw naam"
+              placeholder="Je naam"
               autoComplete="name"
-              aria-label="Uw naam"
+              aria-label="Je naam"
               className={`${invoerVeld} h-11 max-w-xs py-0`}
             />
             <button type="submit" disabled={naamInvoer.trim().length < 2} className={`${knopPetrol} h-11 shrink-0`}>

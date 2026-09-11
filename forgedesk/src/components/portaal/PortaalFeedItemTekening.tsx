@@ -75,7 +75,7 @@ export function PortaalFeedItemTekening({
       setRevisieTekst('')
       setFeedback({
         type: 'success',
-        tekst: type === 'goedkeuring' ? 'Uw goedkeuring is ontvangen.' : 'Uw revisieverzoek is verstuurd.',
+        tekst: type === 'goedkeuring' ? 'Je goedkeuring is ontvangen.' : 'Je revisieverzoek is verstuurd.',
       })
       onReactie()
     } catch (err) {

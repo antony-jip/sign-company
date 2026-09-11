@@ -180,7 +180,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .maybeSingle()
       if (gekoppeldeOfferte) {
         return res.status(409).json({
-          error: 'Open de offerte om akkoord te geven. Daar ziet u de volledige offerte en ondertekent u.',
+          error: 'Open de offerte om akkoord te geven. Daar zie je de volledige offerte en onderteken je.',
           offerte_pagina: true,
         })
       }
@@ -190,7 +190,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // geen akkoord waar je later iets mee kunt.
     if (type === 'goedkeuring' && (item.type === 'offerte' || item.type === 'opdrachtbevestiging')
       && (!klant_naam || klant_naam.trim().length < 2)) {
-      return res.status(400).json({ error: 'Vul uw naam in om akkoord te geven.' })
+      return res.status(400).json({ error: 'Vul je naam in om akkoord te geven.' })
     }
 
     // Sla reactie op

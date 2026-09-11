@@ -87,7 +87,7 @@ export function HandtekeningVeld({ onChange, className, breedte = 600, hoogte = 
         />
         {!heeftStreek && (
           <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-[#9B9B95]">
-            Teken hier uw handtekening
+            Teken hier je handtekening
           </span>
         )}
       </div>

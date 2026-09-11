@@ -63,7 +63,7 @@ export function PortaalFeed({
       <div className="rounded-xl bg-[#FFFFFF] px-6 py-10 text-center shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
         <p className="text-sm text-[#6B6B66]">
           {isPublic
-            ? 'Hier verschijnen offertes, tekeningen en facturen zodra ze voor u klaarstaan.'
+            ? 'Hier verschijnen offertes, tekeningen en facturen zodra ze voor je klaarstaan.'
             : 'Nog geen items in het portaal. Voeg een item toe via de knop hierboven.'}
         </p>
       </div>

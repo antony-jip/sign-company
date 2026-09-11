@@ -561,10 +561,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const bedrijfsnaam = bedrijfsProfiel?.bedrijfsnaam || ''
 
         const html = buildPortalEmailHtml({
-          heading: 'Bedankt voor uw akkoord',
+          heading: 'Bedankt voor je akkoord',
           itemTitel: `${offerte.nummer}${offerte.titel ? ` — ${offerte.titel}` : ''}`,
           beschrijving: `Geaccepteerd door ${naam.trim()} op ${formatDate(new Date())}${offerte.totaal ? ` · ${formatCurrency(offerte.subtotaal ?? offerte.totaal)} excl. btw` : ''}`,
-          quote: 'We nemen zo snel mogelijk contact met u op over de vervolgstappen.',
+          quote: 'We nemen zo snel mogelijk contact met je op over de vervolgstappen.',
           extraHtml: handtekening
             ? `<p style="margin: 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 13px; color: #5A5A55;">Digitaal ondertekend door ${escapeHtml(naam.trim())} op ${escapeHtml(formatDate(new Date()))}</p>`
             : undefined,

@@ -63,7 +63,7 @@ export function PortaalVerlopen({ token, bedrijfsnaam, telefoon, email, logoUrl,
             <>
               <p><StatusWoord kleur={STATUS_KLEUR.goed} groot>Aanvraag verstuurd</StatusWoord></p>
               <p className="mt-2 text-sm text-[#6B6B66]">
-                Als het e-mailadres bij ons bekend is, ontvangt u binnenkort een nieuwe link.
+                Als het e-mailadres bij ons bekend is, ontvang je binnenkort een nieuwe link.
               </p>
             </>
           ) : (
@@ -74,7 +74,7 @@ export function PortaalVerlopen({ token, bedrijfsnaam, telefoon, email, logoUrl,
               </p>
               <form onSubmit={handleAanvragen} className="mt-6 space-y-3">
                 <label htmlFor="portaal-link-email" className="block text-sm font-medium text-[#1A1A1A]">
-                  Uw e-mailadres
+                  Je e-mailadres
                 </label>
                 <input
                   id="portaal-link-email"
@@ -99,7 +99,7 @@ export function PortaalVerlopen({ token, bedrijfsnaam, telefoon, email, logoUrl,
         {(telefoon || email) && (
           <Paneel>
             <p className="font-semibold text-[#1A1A1A]">Liever direct contact?</p>
-            <p className="mt-0.5 text-sm text-[#6B6B66]">{bedrijfsnaam || 'Het bedrijf'} helpt u graag verder.</p>
+            <p className="mt-0.5 text-sm text-[#6B6B66]">{bedrijfsnaam || 'Het bedrijf'} helpt je graag verder.</p>
             <div className="mt-4">
               <ContactKnoppen telefoon={telefoon} email={email} />
             </div>

@@ -16,7 +16,7 @@ export function PortaalGesloten({ bedrijfsnaam, telefoon, email, logoUrl, kopKle
         <Paneel>
           <p><StatusWoord kleur={STATUS_KLEUR.neutraal} groot>Dit portaal is gesloten</StatusWoord></p>
           <p className="mt-2 text-sm text-[#6B6B66]">
-            Neem contact op met {bedrijfsnaam || 'het bedrijf'} voor vragen over uw project.
+            Neem contact op met {bedrijfsnaam || 'het bedrijf'} voor vragen over je project.
           </p>
           {(telefoon || email) && (
             <div className="mt-5">
