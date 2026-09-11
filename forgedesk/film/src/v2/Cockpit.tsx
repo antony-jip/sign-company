@@ -37,6 +37,8 @@ export type CockpitStand = {
   // Ms waarop een knop ingedrukt wordt (klik-landing, dus klikX + 80). Wat hier
   // ontbreekt wordt uit werkbon/taak afgeleid; de rest doet zonder waarde niets.
   klikOp?: Partial<Record<'offerteMaken' | 'factuurMaken' | 'werkbonMaken' | 'taakToevoegen' | 'taakSanne' | 'inklokken', number>>
+  // Pagina-inhoud omhoog geschoven (px), alsof de gebruiker scrolt. Kop en rail blijven staan.
+  scrollY?: number
 }
 
 const noop = async () => {}
@@ -228,6 +230,7 @@ export const Cockpit: React.FC<{ t: number; stand: CockpitStand }> = ({ t, stand
           )
         })()}
         {/* Kop */}
+        <div style={stand.scrollY ? { transform: `translateY(${-stand.scrollY}px)` } : undefined}>
         <Blok t={t} op={op.kop} className="px-8 pt-6 relative">
           <div style={kopC.laag('kop')}>
             <div className="flex items-center gap-2 text-[12px] text-muted-foreground">
@@ -266,8 +269,9 @@ export const Cockpit: React.FC<{ t: number; stand: CockpitStand }> = ({ t, stand
           </div>
         </Blok>
 
+        </div>
         {/* Overzicht: twee kolommen */}
-        <div className="flex gap-8 px-8 py-6">
+        <div className="flex gap-8 px-8 py-6" style={stand.scrollY ? { transform: `translateY(${-stand.scrollY}px)` } : undefined}>
           <div className="flex-1 min-w-0 space-y-6">
             <Blok t={t} op={op.fase}><div data-doel="blok-fase"><ProjectFaseBar status={stand.status} onStatusChange={() => {}} totaalBedrag={heeftOfferte ? offerte.subtotaal : undefined} deadline={project.eind_datum} /></div></Blok>
             <Blok t={t} op={op.briefing}><div data-doel="blok-briefing"><BriefingCard beschrijving={project.beschrijving} projectNaam={project.naam} klantNaam={klant.bedrijfsnaam} onSave={noop} /></div></Blok>

@@ -43,7 +43,17 @@ const PUNT_MIDDEN = { x: 0, y: 0, z: 1.3 }
 // als prelude op de duik (stap 2).
 export const cameraStand = (t: number) => {
   const push = vlak(t, O.pushOp, O.eind, thema.ease.inUit)
-  return { x: 0, y: 0.15, z: lerp(11.6, 10.9, push), fov: thema.camera.fov }
+  // Duik (10-12 s): de camera pusht door het logo heen, easeInOutCubic.
+  const duik = vlak(t, O.eind, O.eind + 2000, Easing.inOut(Easing.cubic))
+  return { x: 0, y: 0.15, z: lerp(lerp(11.6, 10.9, push), 3.2, duik), fov: thema.camera.fov }
+}
+
+// Wereldpunt naar filmpixel (camera recht vooruit, lookAt origin benaderd).
+export const projecteer = (t: number, p: { x: number; y: number; z: number }) => {
+  const c = cameraStand(t)
+  const focal = 540 / Math.tan((c.fov / 2) * (Math.PI / 180))
+  const d = c.z - p.z
+  return { x: 960 + (p.x / d) * focal, y: 540 - ((p.y - c.y * 0.35) / d) * focal }
 }
 
 const CameraRig: React.FC<{ t: number }> = ({ t }) => {
@@ -56,7 +66,7 @@ const CameraRig: React.FC<{ t: number }> = ({ t }) => {
 }
 
 // Logo komt strak op: geen lichtbak, geen flikker, gewoon 450 ms ease-out.
-export const logoLicht = (t: number) => vlak(t, O.logoOp, O.logoOp + 450, thema.ease.uit)
+export const logoLicht = (t: number) => vlak(t, O.logoOp, O.logoOp + 450, thema.ease.uit) * (1 - vlak(t, O.eind + 900, O.eind + 1500, thema.ease.exit))
 
 // Stand van de punt: positie, schaal, gloed.
 export const puntStand = (t: number) => {
@@ -71,7 +81,7 @@ export const puntStand = (t: number) => {
   const adem = t >= O.puntOp && t < O.puntValt ? 1 + Math.sin((t / 700) * Math.PI * 2) * 0.04 : 1
   const spike = t >= O.inslagOp ? 1 + Math.sin(inslag * Math.PI) * 0.5 : 1
   const land = t >= O.puntLandt ? 1 + (1 - landing) * 0.25 : 1
-  const schaal = (t < O.puntOp ? 0 : op) * adem * spike * land
+  const schaal = (t < O.puntOp ? 0 : op) * adem * spike * land * (t >= O.eind + 1000 ? 0 : 1)
   const gloed = t < O.puntOp ? 0 : 0.55 * op + Math.sin(inslag * Math.PI) * 0.6 + (t >= O.puntLandt ? 0.25 * (1 - landing) : 0)
   return { x, y, z, schaal, gloed }
 }

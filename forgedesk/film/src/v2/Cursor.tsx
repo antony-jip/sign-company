@@ -112,7 +112,7 @@ const SPOOR_SNELHEID = 600
 type Stand = { x: number; y: number; spoor: Positie[] }
 const zelfdePunt = (a: Positie, b: Positie) => Math.abs(a.x - b.x) < 0.05 && Math.abs(a.y - b.y) < 0.05
 
-export const Cursor: React.FC<{ t: number; stappen: CursorStap[]; zichtVan?: number; zichtTot?: number }> = ({ t, stappen, zichtVan = 0, zichtTot = Infinity }) => {
+export const Cursor: React.FC<{ t: number; stappen: CursorStap[]; zichtVan?: number; zichtTot?: number; vorm?: 'pijl' | 'punt'; kleur?: string }> = ({ t, stappen, zichtVan = 0, zichtTot = Infinity, vorm = 'pijl', kleur = merk.flame }) => {
   const [pos, setPos] = useState<Stand | null>(null)
   const formaat = useFormaat()
   const hermeet = useHermeet()
@@ -146,6 +146,28 @@ export const Cursor: React.FC<{ t: number; stappen: CursorStap[]; zichtVan?: num
   const ring = (p: number, basis: number, sterkte: number, dikte: number) => {
     const s = lerp(0.3, 1.9, p) * basis
     return <div style={{ position: 'absolute', left: -s / 2, top: -s / 2, width: s, height: s, borderRadius: '50%', border: `${dikte}px solid ${merk.flame}`, opacity: (1 - p) * sterkte }} />
+  }
+  if (vorm === 'punt') {
+    // De punt (v4): een Flame-bol als cursor. Klik: 1,4x en terug in 120 ms.
+    // Aankomst zonder klik (landing op een statuswoord): één pulse.
+    const PUNT = 40
+    let s = 1
+    if (klikOp > 0) {
+      const klikP = vlak(t, klikOp, klikOp + 120, ease.uiUit)
+      s = t < klikOp ? 1 : t < klikOp + 120 ? lerp(1, 1.4, Math.sin(klikP * Math.PI)) : 1
+    } else {
+      const landP = vlak(t, aankomst, aankomst + 320, ease.uiUit)
+      s = t >= aankomst && landP < 1 ? 1 + Math.sin(landP * Math.PI) * 0.28 : 1
+    }
+    return (
+      <div style={{ position: 'absolute', left: pos.x, top: pos.y, width: 0, height: 0, zIndex: 80, pointerEvents: 'none', opacity: zicht }}>
+        {klikOp > 0 && t >= klikOp && rip1 < 1 && <div style={{ position: 'absolute', left: -lerp(0.3, 1.9, rip1) * 32, top: -lerp(0.3, 1.9, rip1) * 32, width: lerp(0.3, 1.9, rip1) * 64, height: lerp(0.3, 1.9, rip1) * 64, borderRadius: '50%', border: `${3 - rip1 * 2}px solid ${kleur}`, opacity: (1 - rip1) * 0.8 }} />}
+        {pos.spoor.map((sp, k) => (
+          <div key={k} style={{ position: 'absolute', left: sp.x - pos.x - PUNT / 2, top: sp.y - pos.y - PUNT / 2, width: PUNT, height: PUNT, borderRadius: '50%', backgroundColor: kleur, opacity: SPOOR_OPACITY[k] }} />
+        ))}
+        <div style={{ position: 'absolute', left: -PUNT / 2, top: -PUNT / 2, width: PUNT, height: PUNT, borderRadius: '50%', transform: `scale(${s})`, background: `radial-gradient(circle at 36% 32%, #FFC7A8 0%, ${kleur} 45%, #C93E12 100%)`, boxShadow: '0 10px 24px -6px rgba(210,70,32,0.5)' }} />
+      </div>
+    )
   }
   return (
     <div style={{ position: 'absolute', left: pos.x, top: pos.y, width: 0, height: 0, zIndex: 80, pointerEvents: 'none', opacity: zicht }}>

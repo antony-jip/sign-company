@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { createContext, useContext } from 'react'
 import { Search, Bell, Plus, X } from 'lucide-react'
 import { DASHBOARD_ITEM, ALLE_MODULES, SETTINGS_ITEM } from '@/lib/navigatie'
 import { staticFile, Img } from 'remotion'
@@ -7,6 +8,8 @@ import { staticFile, Img } from 'remotion'
 // Ontwerpmaat 1280 x 960 (4:3). Alles binnenin rendert op css-px.
 export const VENSTER_B = 1440
 export const VENSTER_H = 1080
+// Ander vensterformaat per film (v4 gebruikt 16:10), zonder de schermen aan te passen.
+export const VensterCtx = createContext<{ b: number; h: number }>({ b: VENSTER_B, h: VENSTER_H })
 
 const RAIL = [DASHBOARD_ITEM, ...ALLE_MODULES.filter(m => ['Projecten', 'Offertes', 'Klanten', 'Werkbonnen', 'Maatjes', 'Planning', 'Taken', 'Email', 'Portaal'].includes(m.label))]
 
@@ -20,8 +23,10 @@ type Props = {
   klasse?: string
 }
 
-export const AppVenster: React.FC<Props> = ({ actief, moduleTitel, tabs = [], meldingen = 4, mailOngelezen = 0, children, klasse }) => (
-  <div className={`bg-background text-foreground flex ${klasse ?? ''}`} style={{ width: VENSTER_B, height: VENSTER_H, fontFamily: 'Inter, sans-serif', overflow: 'hidden' }}>
+export const AppVenster: React.FC<Props> = ({ actief, moduleTitel, tabs = [], meldingen = 4, mailOngelezen = 0, children, klasse }) => {
+  const venster = useContext(VensterCtx)
+  return (
+  <div className={`bg-background text-foreground flex ${klasse ?? ''}`} style={{ width: venster.b, height: venster.h, fontFamily: 'Inter, sans-serif', overflow: 'hidden' }}>
     {/* Rail */}
     <aside className="doen-sidebar flex flex-col items-center flex-shrink-0 border-r border-border" style={{ width: 64 }}>
       <div className="flex items-center justify-center" style={{ height: 68 }}>
@@ -80,4 +85,5 @@ export const AppVenster: React.FC<Props> = ({ actief, moduleTitel, tabs = [], me
       <div className="flex-1 min-h-0 relative overflow-hidden">{children}</div>
     </div>
   </div>
-)
+  )
+}

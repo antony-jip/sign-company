@@ -18,3 +18,23 @@ export const O = {
   pushOp: 9400,
   eind: 10000,
 } as const
+
+// Duik en H1 mail (jij). Camera beweegt alleen tussen hoofdstukken (dolly 1,2 s).
+export const H1 = {
+  // Duik: de opening-camera pusht door het logo, het mailscherm komt uit de diepte.
+  duikOp: 10000, duikTot: 12000,
+  kaartOp: 10300, kaartUit: 12100,
+  // Mailbox staat, hold 1,5 s.
+  mailOp: 12000,
+  // Punt naar "Project aanmaken"; klik landt op 14200 (cursorstap = klik - 780).
+  klikProject: 14200, projectOp: 14500,
+  // Hold 1,0 s, dan dolly naar het project-paneel.
+  dollyOp: 15200, dollyTot: 16400, cockpitOp: 16300,
+  // Belofte 0,4 s na de landing, 2,2 s.
+  belofteOp: 16800, belofteUit: 19000,
+  // Rondleiding: drie labels van 1,4 s.
+  rondOp: 19000, rondStap: 1400,
+  // Punt vliegt naar het statuswoord (aankomst 700 ms later), hold, einde H1.
+  statusVlucht: 23200, statusOp: 23300, statusLand: 23900,
+  eind: 25800,
+} as const
