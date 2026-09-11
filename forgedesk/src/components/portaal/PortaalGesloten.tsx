@@ -1,50 +1,31 @@
-import { Building2, XCircle } from 'lucide-react'
+import { ContactKnoppen, KlantKop, MogelijkGemaaktDoor, Paneel, StatusWoord, STATUS_KLEUR } from '@/components/klantpagina/Klantstijl'
 
 interface PortaalGeslotenProps {
   bedrijfsnaam: string
   telefoon?: string
   email?: string
   logoUrl?: string
+  kopKleur?: string
 }
 
-export function PortaalGesloten({ bedrijfsnaam, telefoon, email, logoUrl }: PortaalGeslotenProps) {
+export function PortaalGesloten({ bedrijfsnaam, telefoon, email, logoUrl, kopKleur }: PortaalGeslotenProps) {
   return (
-    <div className="min-h-screen bg-[#F8F7F5] flex items-center justify-center p-4">
-      <div className="max-w-md w-full text-center space-y-6">
-        {logoUrl && (
-          <img src={logoUrl} alt={bedrijfsnaam} className="h-10 w-auto mx-auto object-contain" />
-        )}
-        <div className="w-16 h-16 rounded-full bg-[#FDE8E4] flex items-center justify-center mx-auto">
-          <XCircle className="w-8 h-8 text-[#C0451A]" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold tracking-[-0.3px] text-[#1A1A1A] mb-2">
-            Dit portaal is gesloten<span className="text-[#D24620]">.</span>
-          </h1>
-          <p className="text-[#6B6B66]">
-            Neem contact op met {bedrijfsnaam || 'het bedrijf'} voor vragen.
+    <div className="min-h-screen bg-[#F8F7F5]">
+      <KlantKop kleur={kopKleur} logoUrl={logoUrl} bedrijfsnaam={bedrijfsnaam} breedte="max-w-[760px]" />
+      <main className="mx-auto max-w-[760px] space-y-10 px-4 py-10 md:px-8 md:py-14">
+        <Paneel>
+          <p><StatusWoord kleur={STATUS_KLEUR.neutraal} groot>Dit portaal is gesloten</StatusWoord></p>
+          <p className="mt-2 text-sm text-[#6B6B66]">
+            Neem contact op met {bedrijfsnaam || 'het bedrijf'} voor vragen over uw project.
           </p>
-        </div>
-
-        {(bedrijfsnaam || telefoon || email) && (
-          <div className="bg-[#FFFFFF] rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.03)] p-6 text-left space-y-3">
-            <div className="flex items-center gap-2 text-[#1A1A1A] font-medium">
-              <Building2 className="w-4 h-4 text-[#6B6B66]" />
-              <span>{bedrijfsnaam || 'Contactgegevens'}</span>
+          {(telefoon || email) && (
+            <div className="mt-5">
+              <ContactKnoppen telefoon={telefoon} email={email} />
             </div>
-            {telefoon && (
-              <p className="text-sm text-[#6B6B66]">
-                Tel: <a href={`tel:${telefoon}`} className="text-[#1A535C] hover:underline">{telefoon}</a>
-              </p>
-            )}
-            {email && (
-              <p className="text-sm text-[#6B6B66]">
-                Email: <a href={`mailto:${email}`} className="text-[#1A535C] hover:underline">{email}</a>
-              </p>
-            )}
-          </div>
-        )}
-      </div>
+          )}
+        </Paneel>
+        <MogelijkGemaaktDoor />
+      </main>
     </div>
   )
 }

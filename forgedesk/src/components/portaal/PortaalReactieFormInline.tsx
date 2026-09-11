@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import { Loader2, Camera, X } from 'lucide-react'
+import { invoerVeld, knopPetrol, tekstLink } from '@/components/klantpagina/Klantstijl'
 
 interface PortaalReactieFormInlineProps {
   token: string
@@ -92,7 +93,6 @@ export function PortaalReactieFormInline({
         fotoUrl = uploadResult.url
       }
 
-      // Submit reaction
       const response = await fetch('/api/portaal-reactie', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -121,20 +121,16 @@ export function PortaalReactieFormInline({
   }
 
   return (
-    <div
-      className="ml-6 rounded-lg p-4 space-y-3"
-      style={{ backgroundColor: 'hsl(var(--background))', border: '0.5px solid #E8E6E1' }}
-    >
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-medium" style={{ color: 'hsl(var(--muted-foreground))' }}>
-          Uw reactie op: {itemTitel}
-        </p>
+    <div className="ml-4 space-y-3 rounded-xl bg-[#FFFFFF] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.03)] md:ml-6">
+      <div className="flex items-center justify-between gap-3">
+        <p className="min-w-0 truncate text-xs font-medium text-[#6B6B66]">Uw reactie op {itemTitel}</p>
         <button
+          type="button"
           onClick={onClose}
-          className="p-1 rounded hover:bg-muted transition-colors"
+          className="rounded-lg p-1 text-[#9B9B95] transition-colors hover:bg-[#F8F7F5]"
           aria-label="Sluiten"
         >
-          <X className="w-3.5 h-3.5" style={{ color: '#A0A098' }} />
+          <X className="h-4 w-4" />
         </button>
       </div>
 
@@ -152,45 +148,43 @@ export function PortaalReactieFormInline({
             handleSubmit()
           }
         }}
-        placeholder="Typ uw reactie..."
+        placeholder="Typ uw reactie"
+        aria-label={`Uw reactie op ${itemTitel}`}
         rows={2}
-        className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-petrol/30 focus:border-petrol resize-none"
-        style={{ borderColor: '#E8E6E1', minHeight: 60 }}
+        className={`${invoerVeld} resize-none`}
+        style={{ minHeight: 72 }}
         autoFocus
       />
 
-      {/* Foto preview */}
       {fotoPreview && (
         <div className="relative inline-block">
           <img
             src={fotoPreview}
-            alt="Preview"
-            className="w-20 h-20 object-cover rounded-lg border"
-            style={{ borderColor: '#E8E6E1' }}
+            alt="Voorbeeld van de foto"
+            className="h-20 w-20 rounded-lg object-cover"
           />
           <button
+            type="button"
             onClick={removeFoto}
-            className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center"
+            aria-label="Foto verwijderen"
+            className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#1A1A1A] text-white"
           >
-            <X className="w-3 h-3" />
+            <X className="h-3 w-3" />
           </button>
         </div>
       )}
 
-      {error && (
-        <p className="text-xs text-red-600">{error}</p>
-      )}
+      {error && <p className="text-xs text-[#C0451A]">{error}</p>}
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
         {kanFotoToevoegen && (
           <>
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm transition-colors hover:bg-muted"
-              style={{ color: 'hsl(var(--muted-foreground))' }}
+              className={tekstLink}
             >
-              <Camera className="w-4 h-4" />
+              <Camera className="h-4 w-4" />
               Foto toevoegen
             </button>
             {/* Geen capture-attribuut: dat forceert op veel telefoons de camera
@@ -210,13 +204,13 @@ export function PortaalReactieFormInline({
         )}
         <div className="flex-1" />
         <button
+          type="button"
           onClick={handleSubmit}
           disabled={loading || (!bericht.trim() && !foto)}
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors disabled:opacity-50 hover:opacity-90"
-          style={{ backgroundColor: '#1A535C' }}
+          className={knopPetrol}
         >
-          {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-          Verstuur
+          {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+          Versturen
         </button>
       </div>
     </div>

@@ -1,12 +1,5 @@
-import {
-  Calendar,
-  Phone,
-  Mail,
-  Globe,
-  FileText,
-  ChevronDown,
-} from 'lucide-react'
-import { useState } from 'react'
+import { FileText, Globe } from 'lucide-react'
+import { ContactKnoppen, Etiket, Paneel, StatusWoord, tekstLink } from '@/components/klantpagina/Klantstijl'
 
 interface PortaalSidebarProps {
   project: {
@@ -25,7 +18,6 @@ interface PortaalSidebarProps {
   montage?: { datum: string; start_tijd?: string } | null
   documenten?: { naam: string; url: string; type?: string }[]
   toonContact?: boolean
-  isMobiel?: boolean
 }
 
 function formatDatum(dateStr: string): string {
@@ -36,31 +28,29 @@ function formatDatum(dateStr: string): string {
   }).format(new Date(dateStr))
 }
 
-function StatusBadge({ status }: { status: string }) {
-  // Interne projectstatussen → klantvriendelijke labels. Voorheen viel alles
-  // buiten actief/afgerond terug op "actief." — de klant zag nooit voortgang.
+/**
+ * Interne projectstatussen als klantvriendelijke woorden. Voorheen viel alles
+ * buiten actief/afgerond terug op "actief." en zag de klant nooit voortgang.
+ */
+export function ProjectStatus({ status }: { status: string }) {
   const map: Record<string, { color: string; label: string }> = {
-    gepland: { color: '#8A7A4A', label: 'gepland' },
-    'te-plannen': { color: '#8A7A4A', label: 'gepland' },
-    'in-review': { color: '#3A5A9A', label: 'in voorbereiding' },
-    'akkoord-klant': { color: '#3A7D52', label: 'akkoord' },
-    actief: { color: '#1A535C', label: 'in productie' },
-    ingepland: { color: '#1A535C', label: 'montage ingepland' },
-    'on-hold': { color: '#8A7A4A', label: 'gepauzeerd' },
-    'te-factureren': { color: '#3A7D52', label: 'afgerond' },
-    gefactureerd: { color: '#3A7D52', label: 'afgerond' },
-    afgerond: { color: '#3A7D52', label: 'afgerond' },
-    offerte: { color: '#D24620', label: 'offerte' },
-    lopend: { color: '#1A535C', label: 'lopend' },
-    productie: { color: '#1A535C', label: 'in productie' },
-    montage: { color: '#1A535C', label: 'montage' },
+    gepland: { color: '#8A7A4A', label: 'Gepland' },
+    'te-plannen': { color: '#8A7A4A', label: 'Gepland' },
+    'in-review': { color: '#3A5A9A', label: 'In voorbereiding' },
+    'akkoord-klant': { color: '#3A7D52', label: 'Akkoord' },
+    actief: { color: '#1A535C', label: 'In productie' },
+    ingepland: { color: '#1A535C', label: 'Montage ingepland' },
+    'on-hold': { color: '#8A7A4A', label: 'Gepauzeerd' },
+    'te-factureren': { color: '#3A7D52', label: 'Afgerond' },
+    gefactureerd: { color: '#3A7D52', label: 'Afgerond' },
+    afgerond: { color: '#3A7D52', label: 'Afgerond' },
+    offerte: { color: '#D24620', label: 'Offerte' },
+    lopend: { color: '#1A535C', label: 'Lopend' },
+    productie: { color: '#1A535C', label: 'In productie' },
+    montage: { color: '#1A535C', label: 'Montage' },
   }
-  const s = map[status?.toLowerCase()] || { color: '#1A535C', label: 'in behandeling' }
-  return (
-    <span className="inline-flex items-baseline text-xs font-semibold" style={{ color: s.color }}>
-      {s.label}<span style={{ color: '#D24620' }}>.</span>
-    </span>
-  )
+  const s = map[status?.toLowerCase()] || { color: '#1A535C', label: 'In behandeling' }
+  return <StatusWoord kleur={s.color}>{s.label}</StatusWoord>
 }
 
 export function PortaalSidebar({
@@ -69,180 +59,73 @@ export function PortaalSidebar({
   montage,
   documenten = [],
   toonContact = true,
-  isMobiel = false,
 }: PortaalSidebarProps) {
-  const [open, setOpen] = useState(!isMobiel)
+  const planning = [
+    project.start_datum ? { label: 'Start', waarde: formatDatum(project.start_datum) } : null,
+    montage ? { label: 'Montage', waarde: `${formatDatum(montage.datum)}${montage.start_tijd ? ` · ${montage.start_tijd}` : ''}` } : null,
+    project.deadline ? { label: 'Oplevering', waarde: formatDatum(project.deadline) } : null,
+  ].filter((r): r is { label: string; waarde: string } => r !== null)
+  const toonContactblok = toonContact && (bedrijf.telefoon || bedrijf.email)
 
-  if (isMobiel) {
-    return (
-      <div className="rounded-[10px] border" style={{ borderColor: '#E8E6E1', backgroundColor: 'hsl(var(--card))' }}>
-        <button
-          onClick={() => setOpen(o => !o)}
-          className="w-full flex items-center justify-between px-4 py-3 text-left"
-        >
-          <span className="text-sm font-semibold" style={{ color: '#1A535C' }}>
-            Projectinfo
-          </span>
-          <ChevronDown
-            className="w-4 h-4 transition-transform"
-            style={{ color: '#A0A098', transform: open ? 'rotate(180deg)' : undefined }}
-          />
-        </button>
-        {open && <SidebarContent project={project} bedrijf={bedrijf} montage={montage} documenten={documenten} toonContact={toonContact} />}
-      </div>
-    )
-  }
+  if (planning.length === 0 && !toonContactblok && documenten.length === 0) return null
 
   return (
-    <aside className="space-y-5 sticky top-6">
-      <SidebarContent project={project} bedrijf={bedrijf} montage={montage} documenten={documenten} toonContact={toonContact} />
-    </aside>
-  )
-}
-
-function SidebarContent({
-  project,
-  bedrijf,
-  montage,
-  documenten,
-  toonContact,
-}: Omit<PortaalSidebarProps, 'isMobiel'>) {
-  const heeftPlanning = project.start_datum || montage || project.deadline
-
-  return (
-    <div className="space-y-5 px-4 pb-4">
-      {/* Planning */}
-      {heeftPlanning && (
-        <div className="space-y-2">
-          <h3
-            className="text-xs font-semibold uppercase tracking-wider"
-            style={{ color: '#A0A098' }}
-          >
-            Planning
-          </h3>
-          <div className="space-y-1.5">
-            {project.start_datum && (
-              <PlanningRij label="Start" datum={formatDatum(project.start_datum)} />
-            )}
-            {montage && (
-              <PlanningRij
-                label="Montage"
-                datum={formatDatum(montage.datum)}
-                tijd={montage.start_tijd || undefined}
-              />
-            )}
-            {project.deadline && (
-              <PlanningRij label="Oplevering" datum={formatDatum(project.deadline)} />
-            )}
-          </div>
-          {project.status && (
-            <div className="pt-1">
-              <StatusBadge status={project.status} />
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Contact */}
-      {toonContact && (bedrijf.telefoon || bedrijf.email) && (
-        <div className="space-y-2">
-          <h3
-            className="text-xs font-semibold uppercase tracking-wider"
-            style={{ color: '#A0A098' }}
-          >
-            Contact
-          </h3>
-          <div className="space-y-1.5" style={{ fontSize: 13 }}>
-            <p className="font-medium" style={{ color: 'hsl(var(--foreground))' }}>{bedrijf.naam}</p>
-            {bedrijf.telefoon && (
-              <a
-                href={`tel:${bedrijf.telefoon}`}
-                className="flex items-center gap-2 hover:opacity-70 transition-opacity"
-                style={{ color: 'hsl(var(--muted-foreground))' }}
-              >
-                <Phone className="w-3.5 h-3.5 flex-shrink-0" />
-                {bedrijf.telefoon}
-              </a>
-            )}
-            {bedrijf.email && (
-              <a
-                href={`mailto:${bedrijf.email}`}
-                className="flex items-center gap-2 hover:opacity-70 transition-opacity"
-                style={{ color: 'hsl(var(--muted-foreground))' }}
-              >
-                <Mail className="w-3.5 h-3.5 flex-shrink-0" />
-                {bedrijf.email}
-              </a>
-            )}
-            {bedrijf.website && (
-              <a
-                href={bedrijf.website.startsWith('http') ? bedrijf.website : `https://${bedrijf.website}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 hover:opacity-70 transition-opacity"
-                style={{ color: 'hsl(var(--muted-foreground))' }}
-              >
-                <Globe className="w-3.5 h-3.5 flex-shrink-0" />
-                {bedrijf.website.replace(/^https?:\/\//, '')}
-              </a>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Documenten */}
-      {documenten && documenten.length > 0 && (
-        <div className="space-y-2">
-          <h3
-            className="text-xs font-semibold uppercase tracking-wider"
-            style={{ color: '#A0A098' }}
-          >
-            Documenten
-          </h3>
-          <div className="space-y-1">
-            {documenten.map((doc, i) => (
-              <a
-                key={i}
-                href={doc.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 py-1.5 px-2 rounded-md hover:bg-muted transition-colors"
-                style={{ fontSize: 13, color: '#1A535C' }}
-              >
-                <FileText className="w-3.5 h-3.5 flex-shrink-0" />
-                <span className="truncate">{doc.naam}</span>
-              </a>
+    <aside className="space-y-4 md:sticky md:top-6 md:self-start">
+      {planning.length > 0 && (
+        <Paneel className="!p-5">
+          <Etiket className="mb-3">Planning</Etiket>
+          <dl className="space-y-2 text-sm">
+            {planning.map((rij) => (
+              <div key={rij.label} className="flex items-baseline justify-between gap-3">
+                <dt className="text-[#6B6B66]">{rij.label}</dt>
+                <dd className="text-right font-mono text-[#1A1A1A]">{rij.waarde}</dd>
+              </div>
             ))}
-          </div>
-        </div>
+          </dl>
+        </Paneel>
       )}
 
-      {/* Footer — subtiel, zonder uitgaande link: dit is het portaal van het
-          bedrijf richting hún klant, geen reclamevlak voor de tool */}
-      <div className="pt-4 border-t" style={{ borderColor: '#E8E6E1' }}>
-        <p className="text-center" style={{ fontSize: 11, color: '#9B9B95' }}>
-          mogelijk gemaakt door{' '}
-          <span style={{ fontFamily: '"Instrument Sans", sans-serif', fontWeight: 800 }}>
-            doen<span style={{ color: '#D24620' }}>.</span>
-          </span>
-        </p>
-      </div>
-    </div>
-  )
-}
+      {toonContactblok && (
+        <Paneel className="!p-5">
+          <p className="font-semibold text-[#1A1A1A]">Vragen?</p>
+          <p className="mt-0.5 text-sm text-[#6B6B66]">{bedrijf.naam} helpt u graag verder.</p>
+          <div className="mt-4">
+            <ContactKnoppen telefoon={bedrijf.telefoon} email={bedrijf.email} onderwerp={project.naam || undefined} />
+          </div>
+          {bedrijf.website && (
+            <a
+              href={bedrijf.website.startsWith('http') ? bedrijf.website : `https://${bedrijf.website}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`${tekstLink} mt-4`}
+            >
+              <Globe className="h-4 w-4" />
+              {bedrijf.website.replace(/^https?:\/\//, '')}
+            </a>
+          )}
+        </Paneel>
+      )}
 
-function PlanningRij({ label, datum, tijd }: { label: string; datum: string; tijd?: string }) {
-  return (
-    <div className="flex items-center gap-2">
-      <Calendar className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#A0A098' }} />
-      <span className="text-xs" style={{ color: 'hsl(var(--muted-foreground))' }}>{label}:</span>
-      <span
-        className="text-xs font-medium"
-        style={{ color: 'hsl(var(--foreground))', fontFamily: "'DM Mono', monospace" }}
-      >
-        {datum}
-        {tijd && <span className="ml-1" style={{ color: '#9B9B95' }}>{tijd}</span>}
-      </span>
-    </div>
+      {documenten.length > 0 && (
+        <Paneel className="!p-5">
+          <Etiket className="mb-2">Documenten</Etiket>
+          <ul className="space-y-1">
+            {documenten.map((doc, i) => (
+              <li key={i}>
+                <a
+                  href={doc.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 py-1.5 text-sm text-[#1A535C] underline-offset-4 hover:underline"
+                >
+                  <FileText className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">{doc.naam}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </Paneel>
+      )}
+    </aside>
   )
 }

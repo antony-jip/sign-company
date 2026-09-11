@@ -346,6 +346,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       docStyle = data
     }
 
+    // Dezelfde kop als het projectportaal: kopkleur en logo komen uit de
+    // portaalinstellingen, zodat offertepagina en portaal één huisstijl tonen.
+    // Zelfde volgorde als portaal-get: eerst de organisatie, dan de maker.
+    let portaalInstellingen: Record<string, unknown> | null = null
+    if (offerteOrgId) {
+      const { data } = await supabaseAdmin
+        .from('app_settings')
+        .select('portaal_instellingen')
+        .eq('organisatie_id', offerteOrgId)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      portaalInstellingen = (data?.portaal_instellingen as Record<string, unknown> | null) ?? null
+    }
+    if (!portaalInstellingen) {
+      const { data } = await supabaseAdmin
+        .from('app_settings')
+        .select('portaal_instellingen')
+        .eq('user_id', offerte.user_id)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      portaalInstellingen = (data?.portaal_instellingen as Record<string, unknown> | null) ?? null
+    }
+    const huisstijl = {
+      kop_kleur: typeof portaalInstellingen?.portaal_header_kleur === 'string' ? portaalInstellingen.portaal_header_kleur : null,
+      logo_tonen: portaalInstellingen?.bedrijfslogo_op_portaal !== false,
+    }
+
     // Merge status update in return data
     const safeOfferte = pick({ ...offerte, ...updates, ...claimUpdates }, OFFERTE_VELDEN)
 
@@ -356,6 +385,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       klant: klant || null,
       docStyle: docStyle || null,
       contactpersoon,
+      huisstijl,
     })
   } catch (error: unknown) {
     console.error('offerte-publiek error:', error)

@@ -74,7 +74,6 @@ export function PortaalFeedItem({
 
   return (
     <div className="space-y-2">
-      {/* Item card */}
       {itemType === 'offerte' && (
         <PortaalFeedItemOfferte
           item={item}
@@ -121,22 +120,18 @@ export function PortaalFeedItem({
 
       {/* Internal note indicator */}
       {!isPublic && item.bericht_type === 'notitie_intern' && (
-        <div
-          className="rounded-[10px] px-4 py-3"
-          style={{ backgroundColor: '#FFFBEB', border: '0.5px solid #FDE68A' }}
-        >
-          <p className="text-xs font-medium" style={{ color: '#92400E' }}>
+        <div className="rounded-xl bg-[#F5F2E8] px-4 py-3">
+          <p className="text-xs font-medium text-[#8A7A4A]">
             Interne notitie (niet zichtbaar voor klant)
           </p>
           {item.bericht_tekst && (
-            <p className="mt-1 text-sm whitespace-pre-wrap" style={{ color: '#78350F' }}>
+            <p className="mt-1 whitespace-pre-wrap text-sm text-[#5C5130]">
               {item.bericht_tekst}
             </p>
           )}
         </div>
       )}
 
-      {/* Reacties */}
       {item.reacties && item.reacties.length > 0 && (
         <div className="space-y-2">
           {item.reacties.map((r) => (
@@ -153,7 +148,6 @@ export function PortaalFeedItem({
         </div>
       )}
 
-      {/* Inline reactie form */}
       {showReactieForm && isPublic && kanBerichtenSturen && (
         <PortaalReactieFormInline
           token={token}

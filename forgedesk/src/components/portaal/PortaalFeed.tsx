@@ -60,10 +60,10 @@ export function PortaalFeed({
 
   if (sorted.length === 0) {
     return (
-      <div className="text-center py-12">
-        <p className="text-sm" style={{ color: '#6B6B66' }}>
+      <div className="rounded-xl bg-[#FFFFFF] px-6 py-10 text-center shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+        <p className="text-sm text-[#6B6B66]">
           {isPublic
-            ? 'Er zijn nog geen items gedeeld.'
+            ? 'Hier verschijnen offertes, tekeningen en facturen zodra ze voor u klaarstaan.'
             : 'Nog geen items in het portaal. Voeg een item toe via de knop hierboven.'}
         </p>
       </div>
@@ -71,7 +71,7 @@ export function PortaalFeed({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {sorted.map((item) => (
         <PortaalFeedItem
           key={item.id}

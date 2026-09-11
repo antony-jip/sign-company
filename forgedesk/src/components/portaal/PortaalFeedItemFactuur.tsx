@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import { Download, Loader2 } from 'lucide-react'
+import { Kaart, StatusWoord, STATUS_KLEUR, knopPrimair, tekstLink } from '@/components/klantpagina/Klantstijl'
 
 interface PortaalFeedItemFactuurProps {
   item: {
@@ -18,20 +19,6 @@ interface PortaalFeedItemFactuurProps {
 
 function formatBedrag(bedrag: number): string {
   return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(bedrag)
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, { color: string; label: string }> = {
-    verstuurd: { color: '#C0451A', label: 'te betalen' },
-    betaald: { color: '#3A7D52', label: 'betaald' },
-    goedgekeurd: { color: '#3A7D52', label: 'betaald' },
-  }
-  const s = map[status] || map.verstuurd
-  return (
-    <span className="inline-flex items-baseline text-xs font-semibold flex-shrink-0" style={{ color: s.color }}>
-      {s.label}<span style={{ color: '#D24620' }}>.</span>
-    </span>
-  )
 }
 
 export function PortaalFeedItemFactuur({
@@ -53,12 +40,10 @@ export function PortaalFeedItemFactuur({
     setIsDownloading(true)
     setDownloadError(null)
     try {
-      // Haal factuur data op via het portaal endpoint
       const resp = await fetch(`/api/factuur-portaal?token=${encodeURIComponent(token)}&factuur_id=${encodeURIComponent(factuurId)}`)
       if (!resp.ok) throw new Error('Factuur ophalen mislukt')
       const data = await resp.json()
 
-      // Genereer PDF in huisstijl
       const { generateFactuurPDF } = await import('@/services/pdfService')
 
       const factuurData = {
@@ -117,78 +102,49 @@ export function PortaalFeedItemFactuur({
     }
   }, [item.factuur_id, item.mollie_payment_url, token])
 
+  const kanBetalen = !isBetaald && !!item.mollie_payment_url
+  const kanDownloaden = !!item.factuur_id && !!token
+  const heeftActies = kanBetalen || kanDownloaden || !!onVragenStellen
+
   return (
-    <div>
-      <div className="h-1 rounded-t-[10px]" style={{ backgroundColor: '#2D6B48' }} />
-      <div
-        className="rounded-b-[10px] bg-white"
-        style={{ border: '0.5px solid #E8E6E1' }}
-      >
-        <div className="px-5 py-4">
-          <div className="flex items-start justify-between gap-3">
-            <p
-              className="font-semibold"
-              style={{ fontSize: 15, color: 'hsl(var(--foreground))' }}
-            >
-              {item.titel}
-            </p>
-            <StatusBadge status={item.status} />
-          </div>
-
-          {item.bedrag != null && (
-            <p
-              className="mt-2 text-lg font-medium"
-              style={{ color: 'hsl(var(--foreground))', fontFamily: "'DM Mono', monospace" }}
-            >
-              {formatBedrag(item.bedrag)}
-            </p>
-          )}
-
-          {item.omschrijving && (
-            <p className="mt-1 text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>
-              {item.omschrijving}
-            </p>
-          )}
-        </div>
-
-        <div className="px-5 py-3 border-t flex items-center gap-2" style={{ borderColor: '#F0EEEA' }}>
-          {!isBetaald && item.mollie_payment_url && (
-            <a
-              href={item.mollie_payment_url}
-              className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors hover:opacity-90"
-              style={{ backgroundColor: '#D24620' }}
-            >
+    <Kaart
+      etiket="Factuur"
+      status={isBetaald
+        ? <StatusWoord kleur={STATUS_KLEUR.goed}>Betaald</StatusWoord>
+        : <StatusWoord kleur={STATUS_KLEUR.aandacht}>Te betalen</StatusWoord>}
+      acties={heeftActies ? (
+        <>
+          {kanBetalen && (
+            <a href={item.mollie_payment_url!} className={knopPrimair}>
               Betalen
             </a>
           )}
-          {item.factuur_id && token && (
-            <button
-              onClick={handleDownloadPDF}
-              disabled={isDownloading}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted disabled:opacity-50"
-              style={{ backgroundColor: 'hsl(var(--background))', border: '0.5px solid #E8E6E1', color: 'hsl(var(--muted-foreground))' }}
-            >
-              {isDownloading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-              PDF
+          {kanDownloaden && (
+            <button type="button" onClick={handleDownloadPDF} disabled={isDownloading} className={tekstLink}>
+              {isDownloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+              PDF downloaden
             </button>
           )}
           {onVragenStellen && (
-            <button
-              onClick={onVragenStellen}
-              className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted"
-              style={{ backgroundColor: 'hsl(var(--background))', border: '0.5px solid #E8E6E1', color: 'hsl(var(--muted-foreground))' }}
-            >
+            <button type="button" onClick={onVragenStellen} className={tekstLink}>
               Vragen stellen
             </button>
           )}
-        </div>
-
-        {downloadError && (
-          <p className="px-5 pb-3 text-sm font-medium" style={{ color: '#C0451A' }}>
-            {downloadError}
-          </p>
-        )}
-      </div>
-    </div>
+        </>
+      ) : undefined}
+    >
+      <h3 className="break-words text-[17px] font-semibold leading-snug tracking-[-0.2px] text-[#1A1A1A]">
+        {item.titel}
+      </h3>
+      {item.omschrijving && (
+        <p className="mt-0.5 text-sm text-[#6B6B66]">{item.omschrijving}</p>
+      )}
+      {item.bedrag != null && (
+        <p className="mt-3 font-mono text-xl font-semibold text-[#1A1A1A]">{formatBedrag(item.bedrag)}</p>
+      )}
+      {downloadError && (
+        <p className="mt-3 text-sm font-medium text-[#C0451A]">{downloadError}</p>
+      )}
+    </Kaart>
   )
 }

@@ -1,3 +1,5 @@
+import { Kaart, tekstLink } from '@/components/klantpagina/Klantstijl'
+
 interface PortaalFeedItemBerichtProps {
   item: {
     id: string
@@ -30,58 +32,38 @@ export function PortaalFeedItemBericht({
   onImageClick,
 }: PortaalFeedItemBerichtProps) {
   return (
-    <div>
-      <div className="h-1 rounded-t-[10px]" style={{ backgroundColor: 'hsl(var(--muted-foreground))' }} />
-      <div
-        className="rounded-b-[10px] bg-white"
-        style={{ border: '0.5px solid #E8E6E1' }}
-      >
-        <div className="px-5 py-4">
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <p className="text-sm font-medium" style={{ color: 'hsl(var(--foreground))' }}>
-              {bedrijfNaam || item.titel}
-            </p>
-            <span
-              className="text-xs flex-shrink-0"
-              style={{ color: '#9B9B95', fontFamily: "'DM Mono', monospace" }}
-            >
-              {formatTijd(item.created_at)}
-            </span>
-          </div>
+    <Kaart
+      etiket="Bericht"
+      status={<span className="font-mono text-xs text-[#9B9B95]">{formatTijd(item.created_at)}</span>}
+      acties={onVragenStellen ? (
+        <button type="button" onClick={onVragenStellen} className={tekstLink}>
+          Reageren
+        </button>
+      ) : undefined}
+    >
+      <p className="text-sm font-medium text-[#1A1A1A]">{bedrijfNaam || item.titel}</p>
 
-          {item.bericht_tekst && (
-            <p
-              className="whitespace-pre-wrap"
-              style={{ fontSize: 14, color: '#3A3A35', lineHeight: 1.7 }}
-            >
-              {item.bericht_tekst}
-            </p>
-          )}
+      {item.bericht_tekst && (
+        <p className="mt-2 whitespace-pre-wrap text-[15px] leading-relaxed text-[#3A3A35]">
+          {item.bericht_tekst}
+        </p>
+      )}
 
-          {item.foto_url && (
-            <div className="mt-3">
-              <img
-                src={item.foto_url}
-                alt="Bijlage"
-                className="max-w-full max-h-[300px] object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                onClick={() => onImageClick?.(item.foto_url!)}
-              />
-            </div>
-          )}
-        </div>
-
-        {onVragenStellen && (
-          <div className="px-5 py-3 border-t" style={{ borderColor: '#F0EEEA' }}>
-            <button
-              onClick={onVragenStellen}
-              className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted"
-              style={{ backgroundColor: 'hsl(var(--background))', border: '0.5px solid #E8E6E1', color: 'hsl(var(--muted-foreground))' }}
-            >
-              Reactie
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
+      {item.foto_url && (
+        <button
+          type="button"
+          onClick={() => onImageClick?.(item.foto_url!)}
+          aria-label="Bijlage groter bekijken"
+          className="mt-3 block overflow-hidden rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1A535C]"
+        >
+          <img
+            src={item.foto_url}
+            alt="Bijlage bij bericht"
+            loading="lazy"
+            className="max-h-[300px] max-w-full object-cover transition-opacity hover:opacity-90"
+          />
+        </button>
+      )}
+    </Kaart>
   )
 }

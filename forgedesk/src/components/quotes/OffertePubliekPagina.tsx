@@ -12,14 +12,13 @@ import {
   Download,
   FileText,
   Loader2,
-  Mail,
-  Phone,
   X,
 } from 'lucide-react'
 import { toast, Toaster } from 'sonner'
 import { logger } from '@/utils/logger'
 import { HandtekeningVeld } from '@/components/shared/HandtekeningVeld'
 import { PortaalLightbox } from '@/components/portaal/PortaalLightbox'
+import { ContactKnoppen, Gezicht, KlantKop, MogelijkGemaaktDoor, Paneel, StatusWoord } from '@/components/klantpagina/Klantstijl'
 import { getMeetellendeVarianten, nettoStuksprijs } from '@/utils/offerteTotalen'
 import { bijlageSoort, klantSpecs, veiligeTerugUrl, voornaam, type KlantSpec } from '@/utils/offerteKlantpagina'
 
@@ -113,6 +112,11 @@ interface Contactpersoon {
   naam: string
   functie?: string | null
   foto_url?: string | null
+}
+
+interface Huisstijl {
+  kop_kleur?: string | null
+  logo_tonen?: boolean
 }
 
 type VerzoekModus = 'wijziging' | 'nieuw'
@@ -247,47 +251,8 @@ function groepeerBtwMetSelectie(
 
 // ============ ONDERDELEN ============
 
-function Gezicht({ naam, fotoUrl, grootte }: { naam: string; fotoUrl?: string | null; grootte: number }) {
-  const [fotoKapot, setFotoKapot] = useState(false)
-  const delen = naam.trim().split(/\s+/).filter(Boolean)
-  const initialen = `${delen[0]?.[0] ?? ''}${delen.length > 1 ? delen[delen.length - 1][0] : ''}`.toUpperCase()
-
-  if (fotoUrl && !fotoKapot) {
-    return (
-      <img
-        src={fotoUrl}
-        alt={naam}
-        onError={() => setFotoKapot(true)}
-        className="shrink-0 rounded-full object-cover"
-        style={{ width: grootte, height: grootte }}
-      />
-    )
-  }
-  return (
-    <span
-      aria-hidden
-      className="inline-flex shrink-0 items-center justify-center rounded-full bg-[#1A535C] font-semibold text-white"
-      style={{ width: grootte, height: grootte, fontSize: Math.round(grootte * 0.36) }}
-    >
-      {initialen}
-    </span>
-  )
-}
-
 function StatusKop({ kleur, children }: { kleur: string; children: React.ReactNode }) {
-  return (
-    <p className="text-base font-bold tracking-[-0.3px]" style={{ color: kleur }}>
-      {children}<span className="text-[#D24620]">.</span>
-    </p>
-  )
-}
-
-function Paneel({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return (
-    <section className={`rounded-xl bg-[#FFFFFF] p-6 shadow-[0_1px_3px_rgba(0,0,0,0.03)] md:p-8 ${className}`}>
-      {children}
-    </section>
-  )
+  return <p><StatusWoord kleur={kleur} groot>{children}</StatusWoord></p>
 }
 
 function Sheet({ titel, onClose, children }: { titel: string; onClose: () => void; children: React.ReactNode }) {
@@ -555,6 +520,7 @@ export function OffertePubliekPagina() {
   const [docStyle, setDocStyle] = useState<Record<string, unknown> | null>(null)
   const [klant, setKlant] = useState<Klant | null>(null)
   const [contactpersoon, setContactpersoon] = useState<Contactpersoon | null>(null)
+  const [huisstijl, setHuisstijl] = useState<Huisstijl>({})
   const [isLoading, setIsLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [fadeIn, setFadeIn] = useState(false)
@@ -623,6 +589,7 @@ export function OffertePubliekPagina() {
         setDocStyle(data.docStyle || null)
         setKlant(data.klant)
         setContactpersoon(data.contactpersoon || null)
+        setHuisstijl(data.huisstijl || {})
         // De contactpersoon van de klant tekent meestal zelf; vooraf invullen
         // scheelt typen, en het veld blijft aanpasbaar.
         setAcceptNaam(data.klant?.contactpersoon || '')
@@ -1004,36 +971,28 @@ export function OffertePubliekPagina() {
     <div className={`min-h-screen bg-[#F8F7F5] transition-opacity duration-500 ${fadeIn ? 'opacity-100' : 'opacity-0'}`}>
       <Toaster position="top-center" richColors />
 
-      <div className={`mx-auto max-w-[760px] px-4 pt-6 md:px-8 md:pt-10 ${kanActie ? 'pb-32 md:pb-16' : 'pb-16'}`}>
-
+      {/* Dezelfde kop als het portaal: kopkleur en logo uit de portaalinstellingen. */}
+      <KlantKop
+        kleur={huisstijl.kop_kleur}
+        logoUrl={huisstijl.logo_tonen === false ? undefined : bedrijf?.logo_url}
+        bedrijfsnaam={bedrijf?.bedrijfsnaam}
+        breedte="max-w-[760px]"
+      >
         {terugUrl && (
-          <a
-            href={terugUrl}
-            className="mb-6 inline-flex items-center gap-1 text-sm text-[#6B6B66] transition-colors hover:text-[#1A1A1A]"
-          >
+          <a href={terugUrl} className="inline-flex items-center gap-1 font-medium hover:underline underline-offset-4">
             <ChevronLeft className="h-4 w-4" />
-            Terug naar portaal
+            <span className="hidden sm:inline">Terug naar portaal</span>
+            <span className="sm:hidden">Portaal</span>
           </a>
         )}
+      </KlantKop>
 
-        {/* ── Kop: van wie, voor wie, wat ── */}
+      <div className={`mx-auto max-w-[760px] px-4 pt-8 md:px-8 md:pt-12 ${kanActie ? 'pb-32 md:pb-16' : 'pb-16'}`}>
+
+        {/* ── Kop: voor wie, wat, van wie ── */}
         <header>
-          {bedrijf?.logo_url ? (
-            <img
-              src={bedrijf.logo_url}
-              alt={bedrijf.bedrijfsnaam || 'Bedrijfslogo'}
-              className="h-12 w-auto max-w-[220px] object-contain object-left md:h-14"
-            />
-          ) : bedrijf?.bedrijfsnaam ? (
-            <p className="text-xl font-extrabold tracking-[-0.3px] text-[#1A1A1A]">{bedrijf.bedrijfsnaam}</p>
-          ) : (
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#1A535C]">
-              <FileText className="h-6 w-6 text-white" />
-            </div>
-          )}
-
-          {klantLabel && <p className="mt-10 text-sm text-[#6B6B66]">Offerte voor {klantLabel}</p>}
-          <h1 className={`${klantLabel ? 'mt-1' : 'mt-10'} break-words text-[28px] font-bold leading-[1.15] tracking-[-0.3px] text-[#1A1A1A] md:text-[34px]`}>
+          <p className="text-sm text-[#6B6B66]">{klantLabel ? `Offerte voor ${klantLabel}` : 'Offerte'}</p>
+          <h1 className="mt-1 break-words text-[28px] font-bold leading-[1.15] tracking-[-0.3px] text-[#1A1A1A] md:text-[34px]">
             {offerte.titel || `Offerte ${offerte.nummer}`}
           </h1>
           {/* Op een telefoon staat de geldigheid op een eigen regel, zonder
@@ -1299,28 +1258,7 @@ export function OffertePubliekPagina() {
                   {contactVoornaam ? `${contactVoornaam} helpt u graag verder.` : `${bedrijf?.bedrijfsnaam || 'We'} ${bedrijf?.bedrijfsnaam ? 'helpt' : 'helpen'} u graag verder.`}
                 </p>
               </div>
-              {(telefoon || email) && (
-                <div className="flex flex-wrap gap-2">
-                  {telefoon && (
-                    <a
-                      href={`tel:${telefoon.replace(/[^\d+]/g, '')}`}
-                      className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#F8F7F5] px-4 text-sm font-medium text-[#1A535C] transition-colors hover:bg-[#F1F0EC]"
-                    >
-                      <Phone className="h-4 w-4" />
-                      Bellen
-                    </a>
-                  )}
-                  {email && (
-                    <a
-                      href={`mailto:${email}?subject=${encodeURIComponent(`Offerte ${offerte.nummer}`)}`}
-                      className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#F8F7F5] px-4 text-sm font-medium text-[#1A535C] transition-colors hover:bg-[#F1F0EC]"
-                    >
-                      <Mail className="h-4 w-4" />
-                      Mailen
-                    </a>
-                  )}
-                </div>
-              )}
+              <ContactKnoppen telefoon={telefoon} email={email} onderwerp={`Offerte ${offerte.nummer}`} />
             </div>
           </Paneel>
         )}
@@ -1338,6 +1276,9 @@ export function OffertePubliekPagina() {
           <p>{bedrijf?.bedrijfsnaam}{bedrijf?.kvk_nummer ? ` · KvK ${bedrijf.kvk_nummer}` : ''}</p>
           {bedrijf?.bedrijfs_adres && <p>{bedrijf.bedrijfs_adres}</p>}
           {bedrijf?.bedrijfs_telefoon && <p>{bedrijf.bedrijfs_telefoon}</p>}
+          <div className="pt-4">
+            <MogelijkGemaaktDoor />
+          </div>
         </footer>
       </div>
 

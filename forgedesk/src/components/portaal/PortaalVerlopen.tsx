@@ -1,6 +1,15 @@
 import { useState } from 'react'
-import { Clock, Building2, Send, CheckCircle2, Loader2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Loader2 } from 'lucide-react'
+import {
+  ContactKnoppen,
+  KlantKop,
+  MogelijkGemaaktDoor,
+  Paneel,
+  StatusWoord,
+  STATUS_KLEUR,
+  invoerVeld,
+  knopPetrol,
+} from '@/components/klantpagina/Klantstijl'
 
 interface PortaalVerlopenProps {
   token: string
@@ -8,9 +17,10 @@ interface PortaalVerlopenProps {
   telefoon?: string
   email?: string
   logoUrl?: string
+  kopKleur?: string
 }
 
-export function PortaalVerlopen({ token, bedrijfsnaam, telefoon, email, logoUrl }: PortaalVerlopenProps) {
+export function PortaalVerlopen({ token, bedrijfsnaam, telefoon, email, logoUrl, kopKleur }: PortaalVerlopenProps) {
   const [aanvraagEmail, setAanvraagEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [verzonden, setVerzonden] = useState(false)
@@ -45,82 +55,61 @@ export function PortaalVerlopen({ token, bedrijfsnaam, telefoon, email, logoUrl 
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F7F5] flex items-center justify-center p-4">
-      <div className="max-w-md w-full text-center space-y-6">
-        {logoUrl && (
-          <img src={logoUrl} alt={bedrijfsnaam} className="h-10 w-auto mx-auto object-contain" />
-        )}
-        <div className="w-16 h-16 rounded-full bg-[#FDE8E4] flex items-center justify-center mx-auto">
-          <Clock className="w-8 h-8 text-[#C0451A]" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold tracking-[-0.3px] text-[#1A1A1A] mb-2">
-            Deze link is verlopen<span className="text-[#D24620]">.</span>
-          </h1>
-          <p className="text-[#6B6B66]">
-            Neem contact op met {bedrijfsnaam || 'het bedrijf'} voor een nieuwe link, of vraag er hieronder een aan.
-          </p>
-        </div>
-
-        <div className="bg-[#FFFFFF] rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.03)] p-6 text-left">
+    <div className="min-h-screen bg-[#F8F7F5]">
+      <KlantKop kleur={kopKleur} logoUrl={logoUrl} bedrijfsnaam={bedrijfsnaam} breedte="max-w-[760px]" />
+      <main className="mx-auto max-w-[760px] space-y-6 px-4 py-10 md:px-8 md:py-14">
+        <Paneel>
           {verzonden ? (
-            <div className="text-center space-y-3">
-              <CheckCircle2 className="w-10 h-10 text-[#2D6B48] mx-auto" />
-              <p className="text-sm text-[#6B6B66]">
-                Als het e-mailadres bekend is, ontvangt u binnenkort een nieuwe link.
+            <>
+              <p><StatusWoord kleur={STATUS_KLEUR.goed} groot>Aanvraag verstuurd</StatusWoord></p>
+              <p className="mt-2 text-sm text-[#6B6B66]">
+                Als het e-mailadres bij ons bekend is, ontvangt u binnenkort een nieuwe link.
               </p>
-            </div>
+            </>
           ) : (
-            <form onSubmit={handleAanvragen} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-[#1A1A1A] mb-1">
+            <>
+              <p><StatusWoord kleur={STATUS_KLEUR.aandacht} groot>Deze link is verlopen</StatusWoord></p>
+              <p className="mt-2 text-sm text-[#6B6B66]">
+                Vraag hieronder een nieuwe link aan, of neem contact op met {bedrijfsnaam || 'het bedrijf'}.
+              </p>
+              <form onSubmit={handleAanvragen} className="mt-6 space-y-3">
+                <label htmlFor="portaal-link-email" className="block text-sm font-medium text-[#1A1A1A]">
                   Uw e-mailadres
                 </label>
                 <input
+                  id="portaal-link-email"
                   type="email"
                   value={aanvraagEmail}
                   onChange={(e) => setAanvraagEmail(e.target.value)}
                   placeholder="naam@bedrijf.nl"
-                  className="w-full px-3 py-2 border border-[#EBEBEB] rounded-lg text-sm text-[#1A1A1A] placeholder:text-[#9B9B95] focus:outline-none focus:ring-2 focus:ring-[#1A535C] focus:border-transparent"
+                  autoComplete="email"
+                  className={invoerVeld}
                   required
                 />
-              </div>
-              {fout && <p className="text-sm text-[#C0451A]">{fout}</p>}
-              <Button
-                type="submit"
-                className="w-full bg-[#D24620] text-white hover:bg-[#D9481F]"
-                disabled={loading}
-              >
-                {loading ? (
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                ) : (
-                  <Send className="w-4 h-4 mr-2" />
-                )}
-                Nieuwe link aanvragen
-              </Button>
-            </form>
+                {fout && <p className="text-sm text-[#C0451A]">{fout}</p>}
+                <button type="submit" disabled={loading} className={`${knopPetrol} h-12 w-full text-base`}>
+                  {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                  Nieuwe link aanvragen
+                </button>
+              </form>
+            </>
           )}
-        </div>
+        </Paneel>
 
-        {(bedrijfsnaam || telefoon || email) && (
-          <div className="bg-[#FFFFFF] rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.03)] p-6 text-left space-y-3">
-            <div className="flex items-center gap-2 text-[#1A1A1A] font-medium">
-              <Building2 className="w-4 h-4 text-[#6B6B66]" />
-              <span>{bedrijfsnaam || 'Contactgegevens'}</span>
+        {(telefoon || email) && (
+          <Paneel>
+            <p className="font-semibold text-[#1A1A1A]">Liever direct contact?</p>
+            <p className="mt-0.5 text-sm text-[#6B6B66]">{bedrijfsnaam || 'Het bedrijf'} helpt u graag verder.</p>
+            <div className="mt-4">
+              <ContactKnoppen telefoon={telefoon} email={email} />
             </div>
-            {telefoon && (
-              <p className="text-sm text-[#6B6B66]">
-                Tel: <a href={`tel:${telefoon}`} className="text-[#1A535C] hover:underline">{telefoon}</a>
-              </p>
-            )}
-            {email && (
-              <p className="text-sm text-[#6B6B66]">
-                Email: <a href={`mailto:${email}`} className="text-[#1A535C] hover:underline">{email}</a>
-              </p>
-            )}
-          </div>
+          </Paneel>
         )}
-      </div>
+
+        <div className="pt-4">
+          <MogelijkGemaaktDoor />
+        </div>
+      </main>
     </div>
   )
 }
