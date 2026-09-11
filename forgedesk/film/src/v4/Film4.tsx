@@ -16,7 +16,7 @@ import { Planning } from '../v2/schermen/Planning'
 import { PortaalKlant } from '../v2/schermen/PortaalKlant'
 import { WerkbonTelefoon } from '../v2/schermen/WerkbonTelefoon'
 import { H1, H2, H3, H4, H5, H6, O, S } from './beats4'
-import { Gevel4, Geluid4, Koppelingen, Melding4, Telefoon4, TELEFOON4, type Klank4 } from './Extra'
+import { DaanBlok, Gevel4, Geluid4, Koppelingen, Melding4, Telefoon4, TELEFOON4, type Klank4 } from './Extra'
 import { camera4, Paneel, PANEEL_SCHAAL, Ruimte, type CameraStop4 } from './Ruimte'
 import { Hoofdstukkaart, Rondleiding4, Statuswoord } from './Tekst'
 import { useTexturen } from './texturen'
@@ -51,7 +51,7 @@ const STOPS: Stop[] = [
   dolly(H5.dollyOp, 'telefoon'),
   dolly(H6.dollyOp, 'cockpit'),
   push(H6.pushOp, 'cockpit', 1.4, 180, -200), push(H6.pullOp, 'cockpit', 1),
-  { ms: S.pullbackOp, x: 6500, y: 0, zoom: 0.12, duurMs: 1500, paneel: 'cockpit' },
+  { ms: S.overgangOp, x: PLEK.cockpit.x, y: PLEK.cockpit.y, zoom: 0.86, duurMs: 1200, paneel: 'cockpit' },
 ]
 
 // Diepte per paneel: 0 als het actief is, 1 als het een hoofdstuk verder ligt;
@@ -113,7 +113,7 @@ const KLANKEN: Klank4[] = [
   ...CURSOR.filter((c) => c.klik).map((c): Klank4 => ({ ms: c.ms + 780, bestand: 'klik', volume: 0.6 })),
   ...[H1, H2, H3, H4, H5, H6].map((h): Klank4 => ({ ms: h.statusLand, bestand: 'landing', volume: 0.55 })),
   ...[H1, H2, H3, H4, H5, H6].map((h): Klank4 => ({ ms: h.dollyOp, bestand: 'zwiep', volume: 0.35 })),
-  { ms: H3.terugOp, bestand: 'zwiep', volume: 0.35 }, { ms: S.pullbackOp, bestand: 'zwiep', volume: 0.4 },
+  { ms: H3.terugOp, bestand: 'zwiep', volume: 0.35 }, { ms: S.overgangOp, bestand: 'zwiep', volume: 0.4 },
   { ms: S.bordAan, bestand: 'ding', volume: 0.7 }, { ms: S.puntValt + 700, bestand: 'landing', volume: 0.6 },
 ]
 
@@ -132,7 +132,7 @@ export const Film4: React.FC = () => {
 
   // Duik: het mailpaneel komt uit de diepte terwijl de 3D-camera door het logo pusht.
   const duikP = vlak(t, H1.duikOp + 600, H1.duikTot, thema.ease.camera)
-  const ruimteZicht = vlak(t, H1.duikOp + 600, H1.duikOp + 1100) * (1 - vlak(t, S.ruimteUit, S.ruimteWeg))
+  const ruimteZicht = vlak(t, H1.duikOp + 600, H1.duikOp + 1100) * (1 - vlak(t, S.overgangOp, S.overgangTot, thema.ease.inUit))
   const d = (naam: PaneelNaam) => diepteVan(t, naam)
   const diepteMail = Math.max(d('mail'), (1 - duikP) * 1.6)
 
@@ -167,12 +167,13 @@ export const Film4: React.FC = () => {
   const inTelefoon = t >= H5.dollyOp - 300
 
   // Slot
-  const gevelZicht = vlak(t, S.gevelOp, S.gevelOp + 900)
+  const daanP = vlak(t, S.daanOp, S.daanOp + 800, thema.ease.inUit)
+  const gevelZicht = vlak(t, S.gevelOp, S.gevelOp + 1000, thema.ease.inUit) * (1 - daanP)
   const gridZicht = Math.min(vlak(t, S.gridOp, S.gridOp + 300), 1 - vlak(t, S.gridUit, S.gridUit + 300, thema.ease.exit))
-  const eindGrond = vlak(t, S.eindkaartOp, S.eindkaartOp + 700, thema.ease.inUit)
+  const eindGrond = 0
   const logoBreedte = 640
   const puntXY = logoPuntPositie(logoBreedte, width / 2, height / 2 - 40)
-  const lettersP = veer(t, S.lettersOp, { demping: 16, duurMs: 800 })
+  const lettersP = veer(t, S.gridOp, { demping: 16, duurMs: 800 })
   const regelP = veer(t, S.regelOp, { demping: 18, duurMs: 800 })
   const urlP = veer(t, S.urlOp, { demping: 18, duurMs: 800 })
 
@@ -190,7 +191,7 @@ export const Film4: React.FC = () => {
       </div>
 
       {/* Slot: de gevel achter alles */}
-      {t >= S.gevelOp && t < S.eindkaartOp + 800 && <Gevel4 t={t} zicht={gevelZicht * (1 - eindGrond)} aanOp={S.bordAan} width={width} height={height} />}
+      {t >= S.gevelOp && t < S.puntValt + 900 && <Gevel4 t={t} zicht={gevelZicht} aanOp={S.bordAan} width={width} height={height} />}
 
       {/* Opening in 3D: tool-kaartjes, punt, inslag, logo; pusht weg in de duik */}
       {tex && openingZicht > 0 && (
@@ -201,7 +202,7 @@ export const Film4: React.FC = () => {
       <AbsoluteFill style={{ backgroundColor: thema.kleur.wit, opacity: inslagFlits * 0.22, pointerEvents: 'none' }} />
 
       {/* De ruimte met de app-panelen */}
-      {t >= H1.duikOp + 600 && t < S.ruimteWeg && (
+      {t >= H1.duikOp + 600 && t < S.overgangTot + 100 && (
         <Ruimte cam={cam} zicht={ruimteZicht}>
           {inMail && (
             <Paneel id="mail" plek={PLEK.mail} diepte={diepteMail}>
@@ -264,7 +265,7 @@ export const Film4: React.FC = () => {
       <Belofte t={t} op={H4.belofteOp} uit={H4.belofteUit} tekst="Eén sleep. De montage staat" kernwoord="staat" positie="boven" />
       <Belofte t={t} op={H5.belofteOp} uit={H5.belofteUit} tekst="Werkbon op locatie. Niets overtypen" kernwoord="Niets overtypen" positie="boven" />
       <Belofte t={t} op={H6.belofteOp} uit={H6.belofteUit} tekst="Factuur eruit. Betaald" kernwoord="Betaald" positie="boven" />
-      <Belofte t={t} op={S.belofteOp} uit={S.belofteUit} tekst="Eén project. Alles erin" kernwoord="Alles erin" positie="onder" licht />
+      <Belofte t={t} op={S.belofteOp} uit={S.belofteUit} tekst="Eén project. Alles erin" kernwoord="Alles erin" positie="onder" />
 
       {/* Rondleiding op de projectpagina */}
       {t >= H1.rondOp - 100 && t < H1.klikTaak && <Rondleiding4 t={t} op={H1.rondOp} stap={H1.rondStap} stappen={[{ doel: 'blok-briefing', tekst: 'briefing' }, { doel: 'blok-grid', tekst: 'offerte', deel: 'rechts' }, { doel: 'blok-portaal', tekst: 'portaal' }]} />}
@@ -287,37 +288,33 @@ export const Film4: React.FC = () => {
       <Statuswoord t={t} op={H3.statusOp} uit={H3.eind - 100} woord="getekend" />
       <Statuswoord t={t} op={H4.statusOp} uit={H4.eind - 100} woord="ingepland" />
       <Statuswoord t={t} op={H5.statusOp} uit={H5.eind - 100} woord="gedaan" />
-      <Statuswoord t={t} op={H6.statusOp} uit={S.puntVlucht - 100} woord="betaald" />
+      <Statuswoord t={t} op={H6.statusOp} uit={S.overgangOp} weg={S.puntVlucht + 900} woord="betaald" />
 
-      {/* Slot: modulegrid rond het logo */}
-      {t >= S.gridOp && t < S.gridUit + 400 && (
-        <div style={{ position: 'absolute', inset: 0, zIndex: 12, pointerEvents: 'none', opacity: gridZicht }}>
-          <AbsoluteFill style={{ backgroundColor: thema.kleur.petrol, opacity: 0.72 }} />
-          <LogoDoen breedte={520} x={width / 2} y={height / 2 - 40} kleur={merk.wit} stand={() => ({ op: 1, dy: 0 })} />
-          {MODULES.map((naam, i) => {
+      {/* Slot: Daan, powered by Claude */}
+      <DaanBlok t={t} op={S.daanOp} tekstOp={S.daanTekstOp} regelOp={S.daanRegelOp} regelStap={S.daanRegelStap} uit={S.daanUit} width={width} height={height} />
+
+      {/* Slot: het logo met de modules eromheen; het logo blijft staan voor de eindkaart */}
+      {t >= S.gridOp && (
+        <div style={{ position: 'absolute', inset: 0, zIndex: 12, pointerEvents: 'none' }}>
+          <div style={{ opacity: Math.min(1, lettersP * 1.2) }}>
+            <LogoDoen breedte={logoBreedte} x={width / 2} y={height / 2 - 40} kleur={thema.kleur.petrol} stand={(i) => (i === 4 ? { op: 0, dy: 0 } : { op: 1, dy: (1 - lettersP) * 24 })} />
+          </div>
+          <span data-doel="wordmark-punt" style={{ position: 'absolute', left: puntXY.x, top: puntXY.y, width: 1, height: 1 }} />
+          {gridZicht > 0 && MODULES.map((naam, i) => {
             const m = ALLE_MODULES.find((x) => x.label === naam)
             if (!m) return null
-            const op = S.gridOp + 200 + i * 70
+            const op = S.gridOp + 300 + i * 70
             const p = veer(t, op, { demping: 16, duurMs: 500 })
             const hoek = -Math.PI / 2 + (i / MODULES.length) * Math.PI * 2
-            const x = width / 2 + Math.cos(hoek) * 700, y = height / 2 - 40 + Math.sin(hoek) * 330
+            const x = width / 2 + Math.cos(hoek) * 720, y = height / 2 - 40 + Math.sin(hoek) * 340
             const Icon = m.icon
             return (
-              <div key={naam} style={{ position: 'absolute', left: x, top: y, transform: `translate(-50%, -50%) translate(${(1 - p) * -Math.cos(hoek) * 24}px, ${(1 - p) * -Math.sin(hoek) * 24}px) scale(${0.96 + p * 0.04})`, opacity: Math.min(1, p * 1.4), display: 'flex', alignItems: 'center', gap: 14, padding: '14px 24px 14px 16px', borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.92)', boxShadow: '0 20px 50px -20px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.6)', fontFamily: thema.fonts.kop, fontWeight: 700, fontSize: 30, letterSpacing: '-0.02em', color: thema.kleur.ink, whiteSpace: 'nowrap' }}>
+              <div key={naam} style={{ position: 'absolute', left: x, top: y, opacity: Math.min(1, p * 1.4) * gridZicht, transform: `translate(-50%, -50%) translate(${(1 - p) * -Math.cos(hoek) * 24}px, ${(1 - p) * -Math.sin(hoek) * 24}px) scale(${0.96 + p * 0.04})`, display: 'flex', alignItems: 'center', gap: 14, padding: '14px 24px 14px 16px', borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.86)', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)', boxShadow: '0 24px 60px -24px rgba(26,83,92,0.35), 0 0 0 1px rgba(255,255,255,0.9) inset', fontFamily: thema.fonts.kop, fontWeight: 700, fontSize: 30, letterSpacing: '-0.02em', color: thema.kleur.ink, whiteSpace: 'nowrap' }}>
                 <span style={{ width: 46, height: 46, borderRadius: 14, backgroundColor: `${m.color}1A`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon size={24} color={m.color} strokeWidth={2} /></span>
                 {naam.toLowerCase()}<span style={{ color: thema.kleur.flame }}>.</span>
               </div>
             )
           })}
-        </div>
-      )}
-
-      {/* Eindkaart: crème, logo, punt valt als laatste, slotregel, url */}
-      <AbsoluteFill style={{ backgroundColor: thema.kleur.studio, opacity: eindGrond, zIndex: 14 }} />
-      {t >= S.lettersOp && (
-        <div style={{ position: 'absolute', inset: 0, zIndex: 15, pointerEvents: 'none' }}>
-          <LogoDoen breedte={logoBreedte} x={width / 2} y={height / 2 - 40} kleur={thema.kleur.petrol} stand={(i) => (i === 4 ? { op: 0, dy: 0 } : { op: Math.min(1, lettersP * 1.2), dy: (1 - lettersP) * 24 })} />
-          <span data-doel="wordmark-punt" style={{ position: 'absolute', left: puntXY.x, top: puntXY.y, width: 1, height: 1 }} />
           <div style={{ position: 'absolute', left: 0, right: 0, top: height / 2 + 120, textAlign: 'center', fontFamily: thema.fonts.kop, fontWeight: 600, fontSize: 64, letterSpacing: '-0.02em', color: thema.kleur.petrol, opacity: vlak(t, S.regelOp, S.regelOp + 250), transform: `translateY(${(1 - regelP) * 24}px)` }}>slim gedaan<FlameDot /></div>
           <div style={{ position: 'absolute', left: 0, right: 0, top: height / 2 + 215, textAlign: 'center', fontFamily: thema.fonts.body, fontWeight: 500, fontSize: 30, letterSpacing: '0.01em', color: thema.kleur.tekstSec, opacity: 0.9 * vlak(t, S.urlOp, S.urlOp + 250), transform: `translateY(${(1 - urlP) * 16}px)` }}>doen.team</div>
         </div>

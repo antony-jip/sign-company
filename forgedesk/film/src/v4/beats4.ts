@@ -87,12 +87,13 @@ export const H6 = {
   eind: 109000,
 } as const
 
-// Slot: camera terug uit de ruimte, gevel, punt zet het bord aan, modulegrid, eindkaart.
+// Slot: zachte overgang naar de gevel, de punt zet het bord aan, Daan (powered by
+// Claude), modulegrid rond het logo, het logo loopt door in de eindkaart.
 export const S = {
-  pullbackOp: 109000, pullbackTot: 110500,
-  gevelOp: 110000, ruimteUit: 110800, ruimteWeg: 111600,
-  puntVlucht: 111500, bordAan: 112200,
-  gridOp: 114600, belofteOp: 115400, belofteUit: 117900, gridUit: 117900,
-  eindkaartOp: 118000, lettersOp: 118200, puntValt: 119000, regelOp: 119600, urlOp: 120200,
-  eind: 123000,
+  overgangOp: 109000, overgangTot: 110200, gevelOp: 109300,
+  puntVlucht: 110600, bordAan: 111300,
+  daanOp: 113500, daanTekstOp: 114000, daanRegelOp: 114700, daanRegelStap: 550, daanUit: 121000,
+  gridOp: 121600, puntValt: 121800, belofteOp: 122300, belofteUit: 125000, gridUit: 125100,
+  eindkaartOp: 125200, regelOp: 125700, urlOp: 126300,
+  eind: 129400,
 } as const

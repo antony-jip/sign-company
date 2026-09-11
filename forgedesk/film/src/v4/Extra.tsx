@@ -78,8 +78,10 @@ export const Geluid4: React.FC<{ klanken: Klank4[]; muziekUitOp: number; totMs: 
       <Audio src={staticFile('audio/muziek-c.mp3')} volume={(f) => {
         const ms = (f / 30) * 1000
         const inP = Math.min(1, ms / 1000)
-        const uitP = 1 - vlak(ms, muziekUitOp - 250, muziekUitOp + 150, thema.ease.exit)
-        return 0.32 * inP * uitP
+        // Valt weg als het bord aangaat, blijft daarna als zacht bed onder Daan en het slot.
+        const uitP = 1 - 0.7 * vlak(ms, muziekUitOp - 250, muziekUitOp + 150, thema.ease.exit)
+        const eindP = 1 - vlak(ms, totMs - 2500, totMs - 200)
+        return 0.32 * inP * uitP * eindP
       }} />
     </Sequence>
     {klanken.map((k, i) => (
@@ -112,6 +114,42 @@ export const Koppelingen: React.FC<{ t: number; op: number; uit: number }> = ({ 
             )
           })}
         </div>
+      </div>
+    </div>
+  )
+}
+
+// Daan (slot): de assistent in doen., powered by Claude. Vier dingen die hij
+// echt doet in de app (mail lezen, offertetekst en follow-up schrijven,
+// threads samenvatten, 's nachts de dag teruglezen).
+const DAAN_REGELS = [
+  'leest je mail en zet de aanvraag klaar',
+  'schrijft je offertetekst en je follow-up',
+  'vat een hele mailthread samen in twee zinnen',
+  'leest \'s nachts de dag terug en zet voorstellen klaar',
+]
+export const DaanBlok: React.FC<{ t: number; op: number; tekstOp: number; regelOp: number; regelStap: number; uit: number; width: number; height: number }> = ({ t, op, tekstOp, regelOp, regelStap, uit, width, height }) => {
+  if (t < op || t > uit + 400) return null
+  const zicht = Math.min(vlak(t, op, op + 500), 1 - vlak(t, uit, uit + 400, thema.ease.exit))
+  const inP = veer(t, tekstOp, { demping: 18, duurMs: 700 })
+  const subP = vlak(t, tekstOp + 250, tekstOp + 650, thema.ease.enter)
+  if (zicht <= 0) return null
+  return (
+    <div style={{ position: 'absolute', inset: 0, zIndex: 13, pointerEvents: 'none', opacity: zicht, fontFamily: thema.fonts.kop }}>
+      <div style={{ position: 'absolute', left: width * 0.10, top: height * 0.5, transform: `translateY(-50%) translateY(${(1 - inP) * 24}px)`, opacity: Math.min(1, inP * 1.3) }}>
+        <div style={{ fontSize: 200, fontWeight: 700, lineHeight: 0.95, letterSpacing: '-0.05em', color: thema.kleur.petrol }}>daan<span style={{ color: thema.kleur.flame }}>.</span></div>
+        <div style={{ marginTop: 18, fontSize: 34, fontWeight: 600, letterSpacing: '-0.01em', color: thema.kleur.petrol, opacity: 0.6 * subP, transform: `translateY(${(1 - subP) * 8}px)` }}>powered by Claude</div>
+      </div>
+      <div style={{ position: 'absolute', left: width * 0.47, right: width * 0.07, top: height * 0.5, transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', gap: 26 }}>
+        {DAAN_REGELS.map((regel, i) => {
+          const p = veer(t, regelOp + i * regelStap, { demping: 17, duurMs: 600 })
+          return (
+            <div key={regel} style={{ display: 'flex', alignItems: 'center', gap: 22, opacity: Math.min(1, p * 1.3), transform: `translateX(${(1 - p) * 28}px)`, padding: '20px 30px', borderRadius: 26, backgroundColor: 'rgba(255,255,255,0.78)', backdropFilter: 'blur(22px) saturate(1.3)', WebkitBackdropFilter: 'blur(22px) saturate(1.3)', boxShadow: '0 30px 70px -30px rgba(26,83,92,0.3), 0 0 0 1px rgba(255,255,255,0.9) inset' }}>
+              <span style={{ width: 18, height: 18, borderRadius: '50%', backgroundColor: thema.kleur.flame, flexShrink: 0 }} />
+              <span style={{ fontSize: 40, fontWeight: 600, letterSpacing: '-0.025em', lineHeight: 1.15, color: thema.kleur.petrol }}>{regel}</span>
+            </div>
+          )
+        })}
       </div>
     </div>
   )

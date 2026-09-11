@@ -30,11 +30,11 @@ export const Hoofdstukkaart: React.FC<{ t: number; op: number; uit: number; numm
 
 // Statuswoord onderin: groot, lowercase; de punt (cursor) landt als laatste
 // teken op data-doel="status-punt". Het woord zelf heeft dus geen punt.
-export const Statuswoord: React.FC<{ t: number; op: number; uit: number; woord: string }> = ({ t, op, uit, woord }) => {
-  if (t < op || t > uit + 300) return null
+export const Statuswoord: React.FC<{ t: number; op: number; uit: number; woord: string; weg?: number }> = ({ t, op, uit, woord, weg }) => {
+  if (t < op || t > (weg ?? uit + 300)) return null
   const inP = veer(t, op, { demping: 18, duurMs: 600 })
   const zicht = Math.min(vlak(t, op, op + 220), 1 - vlak(t, uit, uit + 250, thema.ease.exit))
-  if (zicht <= 0) return null
+  if (zicht <= 0 && weg === undefined) return null
   return (
     <div style={{ position: 'absolute', left: 0, right: 0, bottom: 72, zIndex: 66, pointerEvents: 'none', display: 'flex', justifyContent: 'center', opacity: zicht, transform: `translateY(${(1 - inP) * 26}px)`, fontFamily: thema.fonts.kop, fontWeight: 700, fontSize: 120, lineHeight: 1, letterSpacing: '-0.045em', color: thema.kleur.petrol }}>
       <span style={{ position: 'relative', display: 'inline-block', padding: '18px 76px 18px 44px', borderRadius: 44, backgroundColor: 'rgba(255,255,255,0.78)', backdropFilter: 'blur(22px) saturate(1.3)', WebkitBackdropFilter: 'blur(22px) saturate(1.3)', boxShadow: '0 30px 70px -30px rgba(26,83,92,0.35), 0 0 0 1px rgba(255,255,255,0.9) inset' }}>
