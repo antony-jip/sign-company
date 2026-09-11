@@ -1,8 +1,7 @@
 import type { Metadata } from 'next'
 import Navbar from '@/components/Navbar'
 import Hero from '@/components/home/Hero'
-import Demo from '@/components/home/Demo'
-import DaanSpotlight from '@/components/home/DaanSpotlight'
+import FilmSectie from '@/components/home/FilmSectie'
 import { EigenGebruikBewijs } from '@/components/EigenGebruik'
 import PricingSection from '@/components/home/PricingSection'
 import FaqSection from '@/components/home/FaqSection'
@@ -40,8 +39,7 @@ export default function Home() {
             deze pagina. */}
         <Hero />
         <EigenGebruikBewijs />
-        <DaanSpotlight />
-        <Demo />
+        <FilmSectie />
         <PricingSection />
         <FaqSection />
         <CTASection />

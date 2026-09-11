@@ -17,7 +17,7 @@ import { softwareApplicationSchema } from '@/lib/structured-data'
 
 export const metadata: Metadata = paginaMeta({
   title: 'Demo · één klus van mail tot betaling | doen.',
-  description: 'Bekijk in twee minuten hoe één klus door doen. loopt: aanvraag, project, offerte, drukproef, klantportaal, planning en factuur. Gebouwd voor signmakers.',
+  description: 'Bekijk in twee minuten hoe één klus door doen. loopt: aanvraag, project, offerte, klantportaal, planning, werkbon en factuur. En wat Daan doet. Gebouwd voor signmakers.',
   pad: '/demo',
 })
 
@@ -25,10 +25,10 @@ export const metadata: Metadata = paginaMeta({
 const GEZIEN = [
   { title: 'Aanvraag wordt project', note: 'mail herkend, één klik en de klus staat' },
   { title: 'Offerte met marge en uren', note: 'inkoop, verkoop en winst lopen live mee' },
-  { title: 'Drukproef met versies', note: 'je weet altijd wat er ligt' },
-  { title: 'Klantportaal', note: 'de klant keurt zelf goed, geen mailtjes heen en weer' },
-  { title: 'Montageplanning', note: 'sleep de klus in de week, de monteur ziet het' },
-  { title: 'Factuur uit de offerte', note: 'met Mollie-betaallink, gegevens door naar Exact Online' },
+  { title: 'Klantportaal', note: 'de klant tekent zelf, jij ziet het meteen' },
+  { title: 'Werkbon en montageplanning', note: 'werkbon uit het project, sleep de klus in de week' },
+  { title: 'Factuur, betaald', note: 'Mollie-betaallink, door naar Exact Online, Moneybird of e-Boekhouden' },
+  { title: 'Daan', note: 'zet klant, project en offerte klaar, vat mail samen en schrijft het antwoord' },
 ]
 
 const ZEKERHEDEN = ['30 dagen gratis', 'geen contract', 'gratis onboarding']
@@ -49,8 +49,8 @@ export default function DemoPage() {
             </h1>
             <p className="mt-4 tekst-lead text-muted max-w-2xl">
               Twee minuten. Je ziet de aanvraag binnenkomen, het project ontstaan,
-              de offerte met marge en uren, de drukproef, het klantportaal, de montageplanning
-              en de factuur die eruit rolt.
+              de offerte met marge en uren, het klantportaal, de werkbon en de montageplanning,
+              de factuur die eruit rolt, en wat Daan ondertussen voor je doet.
             </p>
             <EigenGebruikNotitie className="mt-3" />
           </div>
