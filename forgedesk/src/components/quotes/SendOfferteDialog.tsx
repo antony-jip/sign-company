@@ -20,7 +20,7 @@ import {
   getPortaalItems,
 } from '@/services/supabaseService'
 import { zorgPubliekToken } from '@/services/offerteService'
-import { offertePaginaUrl } from '@/utils/offerteKlantpagina'
+import { klantLinkVoorMail, offertePaginaUrl } from '@/utils/offerteKlantpagina'
 import { sendEmail } from '@/services/gmailService'
 import { rondOfferteCheckAf } from '@/services/offerteCheckService'
 import { offerteVerzendTemplate } from '@/services/emailTemplateService'
@@ -239,8 +239,14 @@ export function SendOfferteDialog({
 
       // De mail linkt direct naar de offertepagina, met de terugweg naar het
       // portaal als dat er is. Een ontbrekend of verlopen token wordt vervangen.
-      const metToken = await zorgPubliekToken(offerte)
-      publiekeUrl = offertePaginaUrl(window.location.origin, metToken.publiek_token!, createdToken)
+      // Lukt dat niet, dan gaat de mail met de portaallink als die er is.
+      let metToken: typeof offerte = offerte
+      try {
+        metToken = await zorgPubliekToken(offerte)
+      } catch (err) {
+        logger.error('Publieke offertelink maken mislukt, mail linkt naar portaal:', err)
+      }
+      publiekeUrl = klantLinkVoorMail(window.location.origin, metToken, createdToken) ?? ''
 
       const klantNaam = resolveContactNaam(offerte, klant)
       const { subject, html, text } = offerteVerzendTemplate({

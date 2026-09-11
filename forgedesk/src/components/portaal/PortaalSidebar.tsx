@@ -65,7 +65,7 @@ export function PortaalSidebar({
     montage ? { label: 'Montage', waarde: `${formatDatum(montage.datum)}${montage.start_tijd ? ` · ${montage.start_tijd}` : ''}` } : null,
     project.deadline ? { label: 'Oplevering', waarde: formatDatum(project.deadline) } : null,
   ].filter((r): r is { label: string; waarde: string } => r !== null)
-  const toonContactblok = toonContact && (bedrijf.telefoon || bedrijf.email)
+  const toonContactblok = toonContact && !!(bedrijf.telefoon || bedrijf.email || bedrijf.website)
 
   if (planning.length === 0 && !toonContactblok && documenten.length === 0) return null
 
@@ -89,9 +89,11 @@ export function PortaalSidebar({
         <Paneel className="!p-5">
           <p className="font-semibold text-[#1A1A1A]">Vragen?</p>
           <p className="mt-0.5 text-sm text-[#6B6B66]">{bedrijf.naam} helpt u graag verder.</p>
-          <div className="mt-4">
-            <ContactKnoppen telefoon={bedrijf.telefoon} email={bedrijf.email} onderwerp={project.naam || undefined} />
-          </div>
+          {(bedrijf.telefoon || bedrijf.email) && (
+            <div className="mt-4">
+              <ContactKnoppen telefoon={bedrijf.telefoon} email={bedrijf.email} onderwerp={project.naam || undefined} />
+            </div>
+          )}
           {bedrijf.website && (
             <a
               href={bedrijf.website.startsWith('http') ? bedrijf.website : `https://${bedrijf.website}`}

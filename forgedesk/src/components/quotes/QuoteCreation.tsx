@@ -100,7 +100,7 @@ import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
 import { ResponsiveDialog } from '@/components/ui/responsive-dialog'
 import { useFunctie, useFunctieGetal } from '@/hooks/useFunctie'
 import { getOfferteCondities, getOfferteHandtekening, zorgPubliekToken } from '@/services/offerteService'
-import { offertePaginaUrl } from '@/utils/offerteKlantpagina'
+import { klantLinkVoorMail } from '@/utils/offerteKlantpagina'
 import type { OfferteConditie } from '@/types'
 import { rondOfferteCheckAf } from '@/services/offerteCheckService'
 import { useMedewerkers } from '@/contexts/MedewerkersContext'
@@ -1577,14 +1577,18 @@ export function QuoteCreation() {
               logger.error('Portaal aanmaken mislukt, mail linkt zonder portaal:', err)
             }
           }
-          let bekijkUrl: string | undefined
+          // Lukt het token niet (ophalen of schrijven), dan gaat de mail met
+          // de portaallink; zonder link is de mail niets waard.
+          let bekijkUrl = klantLinkVoorMail(window.location.origin, {}, portaalToken)
           if (savedOfferte) {
-            const metToken = await zorgPubliekToken(savedOfferte)
-            // Autosave-valkuil: een server-side update zonder deze ref geeft
-            // een vals conflict en stopt de autosave.
-            if (metToken.updated_at) lastKnownUpdatedAtRef.current = metToken.updated_at
-            if (metToken.publiek_token) {
-              bekijkUrl = offertePaginaUrl(window.location.origin, metToken.publiek_token, portaalToken)
+            try {
+              const metToken = await zorgPubliekToken(savedOfferte)
+              // Autosave-valkuil: een server-side update zonder deze ref geeft
+              // een vals conflict en stopt de autosave.
+              if (metToken.updated_at) lastKnownUpdatedAtRef.current = metToken.updated_at
+              bekijkUrl = klantLinkVoorMail(window.location.origin, metToken, portaalToken) ?? bekijkUrl
+            } catch (err) {
+              logger.error('Publieke offertelink maken mislukt, mail linkt naar portaal:', err)
             }
           }
 
@@ -1909,14 +1913,18 @@ export function QuoteCreation() {
         }
       }
 
-      let bekijkUrl: string | undefined
+      // Lukt het token niet (ophalen of schrijven), dan gaat de mail met de
+      // portaallink; zonder link is de mail niets waard.
+      let bekijkUrl = klantLinkVoorMail(window.location.origin, {}, portaalToken)
       if (savedOfferte) {
-        const metToken = await zorgPubliekToken(savedOfferte)
-        // Autosave-valkuil: een server-side update zonder deze ref geeft een
-        // vals conflict en stopt de autosave.
-        if (metToken.updated_at) lastKnownUpdatedAtRef.current = metToken.updated_at
-        if (metToken.publiek_token) {
-          bekijkUrl = offertePaginaUrl(window.location.origin, metToken.publiek_token, portaalToken)
+        try {
+          const metToken = await zorgPubliekToken(savedOfferte)
+          // Autosave-valkuil: een server-side update zonder deze ref geeft een
+          // vals conflict en stopt de autosave.
+          if (metToken.updated_at) lastKnownUpdatedAtRef.current = metToken.updated_at
+          bekijkUrl = klantLinkVoorMail(window.location.origin, metToken, portaalToken) ?? bekijkUrl
+        } catch (err) {
+          logger.error('Publieke offertelink maken mislukt, mail linkt naar portaal:', err)
         }
       }
 

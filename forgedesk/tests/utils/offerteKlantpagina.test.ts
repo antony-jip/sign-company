@@ -8,7 +8,25 @@ import {
   isLichteKleur,
   offertePaginaUrl,
   publiekTokenBruikbaar,
+  klantLinkVoorMail,
 } from '@/utils/offerteKlantpagina'
+
+describe('klantLinkVoorMail · nooit een link die op een 410 uitkomt', () => {
+  const nu = new Date('2026-09-11T12:00:00Z')
+
+  it('kiest de offertepagina met terugweg als het token geldig is', () => {
+    expect(klantLinkVoorMail('https://app.doen.team', { publiek_token: 'tok', publiek_token_verloopt_op: '2027-01-01T00:00:00Z' }, 'abcdefgh12345678', nu))
+      .toBe('https://app.doen.team/offerte-bekijken/tok?terug=%2Fportaal%2Fabcdefgh12345678')
+  })
+
+  it('valt terug op het portaal als het token verlopen of weg is', () => {
+    expect(klantLinkVoorMail('https://app.doen.team', { publiek_token: 'tok', publiek_token_verloopt_op: '2026-01-01T00:00:00Z' }, 'abcdefgh12345678', nu))
+      .toBe('https://app.doen.team/portaal/abcdefgh12345678')
+    expect(klantLinkVoorMail('https://app.doen.team', { publiek_token: null }, 'abcdefgh12345678', nu))
+      .toBe('https://app.doen.team/portaal/abcdefgh12345678')
+    expect(klantLinkVoorMail('https://app.doen.team', { publiek_token: null }, null, nu)).toBeUndefined()
+  })
+})
 
 describe('publiekTokenBruikbaar · geen dode link in de mail', () => {
   const nu = new Date('2026-09-11T12:00:00Z')

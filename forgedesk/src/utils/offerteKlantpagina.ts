@@ -102,3 +102,19 @@ export function offertePaginaUrl(origin: string, publiekToken: string, portaalTo
   const basis = `${origin}/offerte-bekijken/${publiekToken}`
   return portaalToken ? `${basis}?terug=${encodeURIComponent(`/portaal/${portaalToken}`)}` : basis
 }
+
+/**
+ * De link voor een mail: de offertepagina als het token bruikbaar is, anders
+ * het portaal. Liever een portaal dan een link die op een 410 uitkomt.
+ */
+export function klantLinkVoorMail(
+  origin: string,
+  offerte: { publiek_token?: string | null; publiek_token_verloopt_op?: string | null },
+  portaalToken?: string | null,
+  nu: Date = new Date(),
+): string | undefined {
+  if (publiekTokenBruikbaar(offerte.publiek_token, offerte.publiek_token_verloopt_op, nu)) {
+    return offertePaginaUrl(origin, offerte.publiek_token, portaalToken)
+  }
+  return portaalToken ? `${origin}/portaal/${portaalToken}` : undefined
+}
