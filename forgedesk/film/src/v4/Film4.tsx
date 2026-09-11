@@ -29,9 +29,12 @@ export const FILM4_DUUR_MS = S.eind
 
 // Panelen in de ruimte (wereld-px), op één rij. De dolly is een zijwaartse
 // beweging met echte parallax (translateZ).
+// De projectpagina staat drie keer in de rij (cockpit, cockpitB, cockpitC), zodat
+// elke dolly 2600 px is; er is er altijd maar één gemonteerd.
 const PLEK = {
   mail: { x: 0, y: 0 }, cockpit: { x: 2600, y: 0 }, editor: { x: 5200, y: 0 },
-  portaal: { x: 7800, y: 0 }, planning: { x: 10400, y: 0 }, telefoon: { x: 13000, y: 0 },
+  portaal: { x: 7800, y: 0 }, cockpitB: { x: 10400, y: 0 }, planning: { x: 13000, y: 0 },
+  telefoon: { x: 15600, y: 0 }, cockpitC: { x: 18200, y: 0 },
 }
 type PaneelNaam = keyof typeof PLEK
 const TEL_B = TELEFOON4.b * PANEEL_SCHAAL, TEL_H = TELEFOON4.h * PANEEL_SCHAAL
@@ -48,12 +51,12 @@ const STOPS: Stop[] = [
   push(H2.pushOp, 'editor', 1.4, 430, -40), push(H2.urenPushOp, 'editor', 1.4, 430, 140), push(H2.pullOp, 'editor', 1),
   dolly(H3.dollyOp, 'portaal'),
   push(H3.pushOp, 'portaal', 1.5, 440, -40), push(H3.pullOp, 'portaal', 1),
-  dolly(H3.terugOp, 'cockpit'),
+  dolly(H3.terugOp, 'cockpitB'),
   dolly(H4.dollyOp, 'planning'),
   dolly(H5.dollyOp, 'telefoon'),
-  dolly(H6.dollyOp, 'cockpit'),
-  push(H6.pushOp, 'cockpit', 1.4, 180, -200), push(H6.pullOp, 'cockpit', 1),
-  { ms: S.overgangOp, x: PLEK.cockpit.x, y: PLEK.cockpit.y, zoom: 0.86, duurMs: 1200, paneel: 'cockpit' },
+  dolly(H6.dollyOp, 'cockpitC'),
+  push(H6.pushOp, 'cockpitC', 1.4, 180, -200), push(H6.pullOp, 'cockpitC', 1),
+  { ms: S.overgangOp, x: PLEK.cockpitC.x, y: PLEK.cockpitC.y, zoom: 0.86, duurMs: 1200, paneel: 'cockpitC' },
 ]
 
 // Diepte per paneel: 0 als het actief is, 1 als het een hoofdstuk verder ligt;
@@ -80,6 +83,7 @@ const overdracht = projecteer(OVERDRACHT_MS, PUNT_THUIS)
 const k = (ms: number) => ms - 780
 const CURSOR: CursorStap[] = [
   { ms: OVERDRACHT_MS, doel: overdracht },
+  { ms: H1.mailOp + 200, doel: 'mail-item' },
   { ms: k(H1.klikProject), doel: 'project-aanmaken', klik: true },
   { ms: k(H1.klikTaak), doel: 'tekst:Taak', klik: true },
   { ms: k(H1.klikTaakSanne), doel: 'taak-sanne', klik: true },
@@ -95,7 +99,7 @@ const CURSOR: CursorStap[] = [
   { ms: k(H4.klikWerkbon), doel: 'acties-werkbon', klik: true },
   { ms: k(H4.klikWerkbonMaken), doel: 'werkbon-maken', klik: true },
   { ms: H4.sleepOp - 700, doel: 'planning-kaart' },
-  { ms: H4.sleepOp, doel: 'planning-donderdag' },
+  { ms: H4.landOp - 700, doel: 'planning-donderdag' },
   { ms: k(H4.klikKoppel), doel: 'montage-werkbon', klik: true },
   { ms: k(H4.klikInplannen), doel: 'montage-inplannen', klik: true },
   { ms: H4.statusVlucht, doel: 'status-punt' },
@@ -105,15 +109,20 @@ const CURSOR: CursorStap[] = [
   { ms: k(H6.klikFactuurMaken), doel: 'factuur-maken', klik: true },
   { ms: k(H6.klikVerstuur), doel: 'factuur-verstuur', klik: true },
   { ms: H6.statusVlucht, doel: 'status-punt' },
+]
+// Tweede cursorreeks in het slot: verschijnt bij de Daan-widget, klikt, en valt van boven in het logo.
+const CURSOR_SLOT: CursorStap[] = [
+  { ms: S.frameOp + 1200, doel: { x: 1330, y: 930 } },
   { ms: k(S.frameOp + 2300), doel: 'daan-verzend', klik: true },
   { ms: k(S.frameOp + 2 * S.frameDuur + 3400), doel: 'daan-aannemen', klik: true },
+  { ms: S.puntValt - 700, doel: { x: 960, y: -80 } },
   { ms: S.puntValt, doel: 'wordmark-punt' },
 ]
 
 // Geluid: tik op elke landing van de punt, diepere tik op elk statuswoord.
 const KLANKEN: Klank4[] = [
   { ms: O.inslagOp, bestand: 'inslag', volume: 0.7 }, { ms: O.puntLandt, bestand: 'landing', volume: 0.5 },
-  ...CURSOR.filter((c) => c.klik).map((c): Klank4 => ({ ms: c.ms + 780, bestand: 'klik', volume: 0.6 })),
+  ...[...CURSOR, ...CURSOR_SLOT].filter((c) => c.klik).map((c): Klank4 => ({ ms: c.ms + 780, bestand: 'klik', volume: 0.6 })),
   ...[H1, H2, H3, H4, H5, H6].map((h): Klank4 => ({ ms: h.statusLand, bestand: 'landing', volume: 0.55 })),
   ...[H1, H2, H3, H4, H5, H6].map((h): Klank4 => ({ ms: h.dollyOp, bestand: 'zwiep', volume: 0.35 })),
   { ms: H3.terugOp, bestand: 'zwiep', volume: 0.35 }, { ms: S.overgangOp, bestand: 'zwiep', volume: 0.4 },
@@ -170,11 +179,13 @@ export const Film4: React.FC = () => {
 
   // Zichtvensters per paneel (gemonteerd als ze in de buurt van de camera zijn).
   const inMail = t < H2.dollyOp
-  const inCockpit = t >= H1.dollyOp - 300
-  const inEditor = t >= H2.dollyOp - 300 && t < H4.dollyOp + 1400
-  const inPortaal = t >= H3.dollyOp - 300 && t < H5.dollyOp + 1400
-  const inPlanning = t >= H4.dollyOp - 300
-  const inTelefoon = t >= H5.dollyOp - 300
+  const inCockpit = t >= H1.dollyOp - 300 && t < H3.dollyOp + 1400
+  const inCockpitB = t >= H3.terugOp - 300 && t < H5.dollyOp + 1400
+  const inCockpitC = t >= H6.dollyOp - 300
+  const inEditor = t >= H2.dollyOp - 300 && t < H3.dollyOp + 1400
+  const inPortaal = t >= H3.dollyOp - 300 && t < H3.terugOp + 1400
+  const inPlanning = t >= H4.dollyOp - 300 && t < H5.dollyOp + 1400
+  const inTelefoon = t >= H5.dollyOp - 300 && t < H6.dollyOp + 1400
 
   // Slot
   const gridZicht = Math.min(vlak(t, S.gridOp, S.gridOp + 300), 1 - vlak(t, S.gridUit, S.gridUit + 300, thema.ease.exit))
@@ -216,6 +227,26 @@ export const Film4: React.FC = () => {
           )}
           {inCockpit && (
             <Paneel id="cockpit" plek={PLEK.cockpit} diepte={d('cockpit')}>
+              <div style={{ opacity: inFinancieel ? 1 - financieelP : 1 }}><Cockpit t={t} stand={cockpitStand} /></div>
+              {false && (
+                <div style={{ position: 'absolute', inset: 0, opacity: financieelP }}>
+                  <FinancieelTab t={t} stand={{ factuurOp: H6.factuurOp, verstuurdOp: H6.verstuurdOp, betaaldOp: H6.betaaldOp }} />
+                </div>
+              )}
+            </Paneel>
+          )}
+          {inCockpitB && (
+            <Paneel id="cockpitB" plek={PLEK.cockpitB} diepte={d('cockpitB')}>
+              <div style={{ opacity: inFinancieel ? 1 - financieelP : 1 }}><Cockpit t={t} stand={cockpitStand} /></div>
+              {false && (
+                <div style={{ position: 'absolute', inset: 0, opacity: financieelP }}>
+                  <FinancieelTab t={t} stand={{ factuurOp: H6.factuurOp, verstuurdOp: H6.verstuurdOp, betaaldOp: H6.betaaldOp }} />
+                </div>
+              )}
+            </Paneel>
+          )}
+          {inCockpitC && (
+            <Paneel id="cockpitC" plek={PLEK.cockpitC} diepte={d('cockpitC')}>
               <div style={{ opacity: inFinancieel ? 1 - financieelP : 1 }}><Cockpit t={t} stand={cockpitStand} /></div>
               {inFinancieel && (
                 <div style={{ position: 'absolute', inset: 0, opacity: financieelP }}>
@@ -288,11 +319,11 @@ export const Film4: React.FC = () => {
       <Melding4 t={t} op={H6.meldingOp} uit={H6.meldingUit} label="je klant" titel="Factuur FAC-2026-0118 betaald" tekst="€ 5.142,50 ontvangen van Van der Berg Interieur" />
 
       {/* Statuswoorden: de punt landt als laatste teken */}
-      <Statuswoord t={t} op={H1.statusOp} uit={H1.klikOfferteMaken - 800} woord="aangemaakt" />
-      <Statuswoord t={t} op={H2.statusOp} uit={H2.eind - 100} woord="verstuurd" />
-      <Statuswoord t={t} op={H3.statusOp} uit={H3.eind - 100} woord="getekend" />
-      <Statuswoord t={t} op={H4.statusOp} uit={H4.eind - 100} woord="ingepland" />
-      <Statuswoord t={t} op={H5.statusOp} uit={H5.eind - 100} woord="gedaan" />
+      <Statuswoord t={t} op={H1.statusOp} uit={H1.klikOfferteMaken - 800} weg={k(H1.klikOfferteMaken) + 100} woord="aangemaakt" />
+      <Statuswoord t={t} op={H2.statusOp} uit={H2.eind - 100} weg={k(H3.klikBekijken) + 100} woord="verstuurd" />
+      <Statuswoord t={t} op={H3.statusOp} uit={H3.eind - 100} weg={k(H4.klikWerkbon) + 100} woord="getekend" />
+      <Statuswoord t={t} op={H4.statusOp} uit={H4.eind - 100} weg={k(H5.klikNaFoto) + 100} woord="ingepland" />
+      <Statuswoord t={t} op={H5.statusOp} uit={H5.eind - 100} weg={k(H6.klikFinancieel) + 100} woord="gedaan" />
       <Statuswoord t={t} op={H6.statusOp} uit={S.overgangOp} woord="betaald" />
 
       {/* Slot: Daan, jouw slimme collega, powered by Claude. Intro, dan drie 50/50-frames. */}
@@ -340,7 +371,8 @@ export const Film4: React.FC = () => {
       )}
 
       {/* De punt als cursor, vanaf de overdracht uit de 3D-opening */}
-      {t >= OVERDRACHT_MS && <Cursor t={t} stappen={CURSOR} zichtVan={OVERDRACHT_MS} vorm="punt" kleur={thema.kleur.flame} />}
+      {t >= OVERDRACHT_MS && t < S.overgangOp + 400 && <Cursor t={t} stappen={CURSOR} zichtVan={OVERDRACHT_MS} zichtTot={S.overgangOp + 300} vorm="punt" kleur={thema.kleur.flame} />}
+      {t >= S.frameOp + 1200 && <Cursor t={t} stappen={CURSOR_SLOT} zichtVan={S.frameOp + 1200} vorm="punt" kleur={thema.kleur.flame} />}
 
       {/* Kleurgrade, grain 4 procent, vignet 15 procent */}
       <AbsoluteFill style={{ backgroundColor: thema.kleur.petrol, mixBlendMode: 'soft-light', opacity: 0.06, pointerEvents: 'none', zIndex: 90 }} />

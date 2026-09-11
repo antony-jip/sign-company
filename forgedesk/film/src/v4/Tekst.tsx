@@ -13,8 +13,8 @@ const Punt: React.FC<{ kleur?: string }> = ({ kleur = thema.kleur.flame }) => <s
 export const Hoofdstukkaart: React.FC<{ t: number; op: number; uit: number; nummer: number; totaal: number; woord: string; wie: string; extra?: string }> = ({ t, op, uit, nummer, totaal, woord, wie, extra }) => {
   if (t < op || t > uit + 300) return null
   const inP = veer(t, op, { demping: 18, duurMs: 600 })
-  const zicht = Math.min(vlak(t, op, op + 250), 1 - vlak(t, uit, uit + 250, thema.ease.exit))
-  const uitP = vlak(t, uit, uit + 250, thema.ease.exit)
+  const zicht = Math.min(vlak(t, op, op + 250), 1 - vlak(t, uit, uit + 175, thema.ease.exit))
+  const uitP = vlak(t, uit, uit + 175, thema.ease.exit)
   if (zicht <= 0) return null
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 70, pointerEvents: 'none', opacity: zicht, fontFamily: thema.fonts.kop }}>
@@ -33,7 +33,7 @@ export const Hoofdstukkaart: React.FC<{ t: number; op: number; uit: number; numm
 export const Statuswoord: React.FC<{ t: number; op: number; uit: number; woord: string; weg?: number }> = ({ t, op, uit, woord, weg }) => {
   if (t < op || t > (weg ?? uit + 300)) return null
   const inP = veer(t, op, { demping: 18, duurMs: 600 })
-  const zicht = Math.min(vlak(t, op, op + 220), 1 - vlak(t, uit, uit + 250, thema.ease.exit))
+  const zicht = Math.min(vlak(t, op, op + 220), 1 - vlak(t, uit, uit + 150, thema.ease.exit))
   if (zicht <= 0 && weg === undefined) return null
   return (
     <div style={{ position: 'absolute', left: 0, right: 0, bottom: 72, zIndex: 66, pointerEvents: 'none', display: 'flex', justifyContent: 'center', opacity: zicht, transform: `translateY(${(1 - inP) * 26}px)`, fontFamily: thema.fonts.kop, fontWeight: 700, fontSize: 120, lineHeight: 1, letterSpacing: '-0.045em', color: thema.kleur.petrol }}>

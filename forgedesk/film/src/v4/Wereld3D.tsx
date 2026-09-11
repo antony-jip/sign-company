@@ -66,7 +66,7 @@ const CameraRig: React.FC<{ t: number }> = ({ t }) => {
 }
 
 // Logo komt strak op: geen lichtbak, geen flikker, gewoon 450 ms ease-out.
-export const logoLicht = (t: number) => vlak(t, O.logoOp, O.logoOp + 450, thema.ease.uit) * (1 - vlak(t, O.eind + 900, O.eind + 1500, thema.ease.exit))
+export const logoLicht = (t: number) => vlak(t, O.logoOp, O.logoOp + 450, thema.ease.uit) * (1 - vlak(t, O.eind + 600, O.eind + 1100, thema.ease.exit))
 
 // Stand van de punt: positie, schaal, gloed.
 export const puntStand = (t: number) => {

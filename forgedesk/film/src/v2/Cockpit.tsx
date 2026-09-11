@@ -158,6 +158,9 @@ export const Cockpit: React.FC<{ t: number; stand: CockpitStand }> = ({ t, stand
     <AppVenster actief="Projecten" moduleTitel="Projecten" meldingen={stand.meldingen ?? 4} tabs={[{ label: 'Email' }, { label: 'Projecten' }, { label: klant.bedrijfsnaam, actief: true }]}>
       <style>{CASCADE_CSS}</style>
       <div className="absolute inset-0 overflow-hidden">
+        {/* Ankers: na het sluiten van een dialoog blijft de laatste knoppositie meetbaar voor de punt */}
+        {stand.taak && t >= stand.taak.klaarOp + 300 && <span data-doel="taak-toevoegen" style={{ position: 'absolute', left: '62%', top: '55%', width: 1, height: 1 }} />}
+        {stand.werkbon && t >= stand.werkbon.klaarOp + 300 && <span data-doel="werkbon-maken" style={{ position: 'absolute', left: '62%', top: '58%', width: 1, height: 1 }} />}
         {stand.composer && t >= stand.composer.op && t < stand.composer.dichtOp + 400 && (() => {
           const c = stand.composer
           const inP = veer(t, c.op, { demping: 20, duurMs: 700 })

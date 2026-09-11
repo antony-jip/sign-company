@@ -13,7 +13,7 @@ export const O = {
 // H1 mail (jij): duik, mailbox, project aanmaken, dolly naar het project,
 // belofte, rondleiding, taak toewijzen aan Sanne, statuswoord.
 export const H1 = {
-  duikOp: 10000, duikTot: 12000, kaartOp: 10300, kaartUit: 12100,
+  duikOp: 10000, duikTot: 12000, kaartOp: 11300, kaartUit: 12700,
   mailOp: 12000, klikProject: 14200, projectOp: 14500,
   dollyOp: 15200, dollyTot: 16400, cockpitOp: 15500,
   belofteOp: 16800, belofteUit: 19000,
@@ -47,7 +47,7 @@ export const H3 = {
   naamOp: 54100, pushOp: 53600, pushTot: 54000, tekenOp: 55300, vinkOp: 57200, pullOp: 57400, pullTot: 57800,
   klikBevestig: 58400, klaarOp: 58740,
   terugOp: 59800, terugTot: 61000,
-  meldingOp: 61100, meldingUit: 62600,
+  meldingOp: 59500, meldingUit: 62600,
   statusVlucht: 62700, statusOp: 62800, statusLand: 63400,
   belofteOp: 63800, belofteUit: 66000,
   eind: 66300,

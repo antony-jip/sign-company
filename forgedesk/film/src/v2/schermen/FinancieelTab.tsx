@@ -102,7 +102,7 @@ export const FinancieelTab: React.FC<{ t: number; stand: FinancieelStand }> = ({
                         <p className="text-[10px] text-muted-foreground -mt-0.5">incl btw</p>
                       </div>
                       {verstuurd ? (
-                        <span className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg bg-[#E8F2EC] text-[13px] font-semibold" style={{ color: '#3A7D52' }}><Check className="h-3.5 w-3.5" strokeWidth={2.5} />Verstuurd</span>
+                        <span data-doel="factuur-verstuur" className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg bg-[#E8F2EC] text-[13px] font-semibold" style={{ color: '#3A7D52' }}><Check className="h-3.5 w-3.5" strokeWidth={2.5} />Verstuurd</span>
                       ) : (
                         <span data-doel="factuur-verstuur" className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg bg-flame text-white text-[13px] font-semibold shadow-[0_2px_8px_rgba(210,70,32,0.25)]"><Send className="h-3.5 w-3.5" />Verstuur</span>
                       )}

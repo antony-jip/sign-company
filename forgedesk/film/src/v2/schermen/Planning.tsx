@@ -233,6 +233,7 @@ export const Planning: React.FC<{ t: number; stand: PlanningStand }> = ({ t, sta
             <KaartInhoud naam={project.naam} klant={klant.bedrijfsnaam} wacht="1d" />
           </div>
         )}
+        {stand.klaarOp !== undefined && t >= stand.klaarOp + 300 && <span data-doel="montage-inplannen" style={{ position: 'absolute', left: '58%', top: '62%', width: 1, height: 1 }} />}
         {/* Dialoog: nieuwe montage afspraak, met de werkbon gekoppeld */}
         {stand.dialoogOp !== undefined && t >= stand.dialoogOp && t < (stand.klaarOp ?? Infinity) + 300 && (() => {
           const dOp = stand.dialoogOp

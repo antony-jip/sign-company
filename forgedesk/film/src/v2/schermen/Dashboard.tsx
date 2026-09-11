@@ -209,7 +209,7 @@ export const Dashboard: React.FC<{ t: number; stand: DashboardStand }> = ({ t, s
                             <span className="block font-mono text-[11px] text-muted-foreground mt-0.5">{g.bron}</span>
                           </span>
                           {weg ? (
-                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#3A7D52]"><CheckSquare className="w-3.5 h-3.5" />Onthouden</span>
+                            <span data-doel="daan-aannemen" className="inline-flex items-center gap-1 text-xs font-semibold text-[#3A7D52]"><CheckSquare className="w-3.5 h-3.5" />Onthouden</span>
                           ) : (
                             <span className="flex items-center gap-2 flex-shrink-0">
                               <span data-doel={i === 0 ? 'daan-aannemen' : undefined} className="text-xs font-semibold text-white bg-flame px-3 py-1.5 rounded-md">Aannemen</span>

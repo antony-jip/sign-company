@@ -9,7 +9,7 @@ import { thema } from './thema'
 export const Melding4: React.FC<{ t: number; op: number; uit: number; titel: string; tekst: string; label: string }> = ({ t, op, uit, titel, tekst, label }) => {
   if (t < op || t > uit + 300) return null
   const inP = veer(t, op, { demping: 16, duurMs: 600 })
-  const zicht = Math.min(vlak(t, op, op + 200), 1 - vlak(t, uit, uit + 300, thema.ease.exit))
+  const zicht = Math.min(vlak(t, op, op + 200), 1 - vlak(t, uit, uit + 140, thema.ease.exit))
   if (zicht <= 0) return null
   return (
     <div style={{ position: 'absolute', right: 72, top: 64, zIndex: 68, pointerEvents: 'none', opacity: zicht, transform: `translateY(${(1 - inP) * -16}px) scale(${0.96 + inP * 0.04})`, transformOrigin: 'top right' }}>
@@ -178,8 +178,8 @@ export const DaanLinks: React.FC<{ t: number; frameOp: number; frameDuur: number
 export const Kader: React.FC<{ t: number; op: number; uit: number; focus?: { x: number; y: number; schaal: number }; centreer?: boolean; children: ReactNode }> = ({ t, op, uit, focus, centreer = false, children }) => {
   if (t < op - 100 || t > uit + 400) return null
   const inP = veer(t, op, { demping: 18, duurMs: 700 })
-  const zicht = Math.min(vlak(t, op, op + 250), 1 - vlak(t, uit, uit + 350, thema.ease.exit))
-  const uitP = vlak(t, uit, uit + 350, thema.ease.exit)
+  const zicht = Math.min(vlak(t, op, op + 250), 1 - vlak(t, uit, uit + 175, thema.ease.exit))
+  const uitP = vlak(t, uit, uit + 175, thema.ease.exit)
   if (zicht <= 0) return null
   const B = 848, H = 860
   return (
