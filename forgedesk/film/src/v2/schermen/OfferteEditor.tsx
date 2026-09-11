@@ -3,7 +3,6 @@ import { AppVenster } from '../DesktopChrome'
 import { offerte, offerteItems, klant, contact, project, medewerkers } from '../../mockData'
 import { getAvatarStyle } from '@/utils/medewerkerAvatar'
 import { typ, tel, euro } from '../../kern/Typ'
-import { Sparkles } from 'lucide-react'
 import { SplitFlap } from '../../kern/SplitFlap'
 import { veer, vlak } from '../../tijd'
 
@@ -15,7 +14,7 @@ import { veer, vlak } from '../../tijd'
 // Interne check (optioneel): menuOp opent het acties-menu, checkOp het dialoog
 // "Laten checken", checkVraagOp sluit het en zet de pil "Ter controle",
 // checkAkkoordOp maakt er "Gecheckt" van.
-export type EditorStand = { daanOp?: number; regelsOp: number; calculatieOp?: number; calculatieDichtOp?: number; verstuurTikOp: number; keuzeOp: number; keuzeTikOp: number; flapOp: number; menuOp?: number; checkOp?: number; checkVraagOp?: number; checkAkkoordOp?: number }
+export type EditorStand = { regelsOp: number; calculatieOp?: number; calculatieDichtOp?: number; verstuurTikOp: number; keuzeOp: number; keuzeTikOp: number; flapOp: number; menuOp?: number; checkOp?: number; checkVraagOp?: number; checkAkkoordOp?: number }
 
 type CalcRegel = { product: string; aantal: number; eenheid: string; inkoop: number; verkoop: number; urenveld?: string }
 
@@ -230,20 +229,7 @@ export const OfferteEditor: React.FC<{ t: number; stand: EditorStand }> = ({ t, 
                               )
                             })}
                           </div>
-                          {stand.daanOp === undefined ? (
-                            <p className="text-xs font-medium text-flame pt-2 pl-2">+ Beschrijving toevoegen</p>
-                          ) : (() => {
-                            // Daan schrijft het opzetje van de beschrijving (QuoteCreation: "Schrijf opzetje", "Daan schrijft…").
-                            const dOp = stand.daanOp
-                            const bezig = t >= dOp && t < dOp + 500
-                            const tekst = typ('Verlichte RVS doosletters van 60 cm met wit LED, gemonteerd op afstandhouders. Inclusief voeding, bekabeling en aansluiting op de bestaande groep.', t, dOp + 500, 14)
-                            return (
-                              <div className="pt-2 pl-2">
-                                <span data-doel="daan-opzetje" className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-[12px] font-semibold text-petrol bg-petrol/[0.08]"><Sparkles className="h-3.5 w-3.5 text-[#9B8EC4]" />{bezig ? 'Daan schrijft…' : t >= dOp + 500 ? 'Daan AI' : 'Schrijf opzetje'}</span>
-                                {t >= dOp + 500 && <p className="mt-2 text-sm text-foreground/90 leading-relaxed max-w-[60ch]">{tekst}<span className="text-flame" style={{ opacity: tekst.length < 150 ? 1 : 0 }}>|</span></p>}
-                              </div>
-                            )
-                          })()}
+                          <p className="text-xs font-medium text-flame pt-2 pl-2">+ Beschrijving toevoegen</p>
                         </div>
                         {/* Prijsberekening: Aantal x Prijs [Calculator] | BTW | Korting | = Totaal */}
                         <div className="px-4 py-2 bg-background/50">

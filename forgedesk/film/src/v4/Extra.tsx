@@ -71,19 +71,22 @@ export const Gevel4: React.FC<{ t: number; zicht: number; aanOp: number; width: 
 // Geluid v4: elke landing van de punt hetzelfde tikje, elk statuswoord een
 // diepere tik, inslag op de inslag. Muziek bouwt op tot het bord aangaat en
 // valt daar weg.
-export type Klank4 = { ms: number; bestand: 'klik' | 'landing' | 'inslag' | 'zwiep' | 'ding'; volume?: number }
+export type Klank4 = { ms: number; bestand: 'klik' | 'landing' | 'inslag' | 'zwiep' | 'ding' | 'flap' | 'pen'; volume?: number }
 // Muziek: muziek-e (MiniMax, emotionele opbouw met climax); muziek-f is de warme indie-variant.
 export const MUZIEK = 'audio/muziek-h.mp3'
-export const Geluid4: React.FC<{ klanken: Klank4[]; muziekUitOp: number; totMs: number }> = ({ klanken, muziekUitOp, totMs }) => (
+// dips: korte stiltes (muziek op 0,15) na de grote hits, 300 ms flanken (HIGHEND 19).
+export const Geluid4: React.FC<{ klanken: Klank4[]; muziekUitOp: number; totMs: number; dips?: [number, number][] }> = ({ klanken, muziekUitOp, totMs, dips = [] }) => (
   <>
     <Sequence from={0} durationInFrames={msNaarFrames(totMs)} name="muziek">
       <Audio src={staticFile(MUZIEK)} volume={(f) => {
         const ms = (f / 30) * 1000
         const inP = Math.min(1, ms / 1000)
-        // Valt weg als het bord aangaat, blijft daarna als zacht bed onder Daan en het slot.
-        const uitP = 1 - 0.7 * vlak(ms, muziekUitOp - 250, muziekUitOp + 150, thema.ease.exit)
+        // Zakt naar de helft bij het slot (Daan, grid, eindkaart) en fadet uit aan het eind.
+        const uitP = 1 - 0.5 * vlak(ms, muziekUitOp - 250, muziekUitOp + 150, thema.ease.exit)
         const eindP = 1 - vlak(ms, totMs - 2500, totMs - 200)
-        return 0.32 * inP * uitP * eindP
+        let dip = 1
+        for (const [van, tot] of dips) dip = Math.min(dip, 1 - 0.85 * Math.min(vlak(ms, van - 300, van), 1 - vlak(ms, tot, tot + 300)))
+        return 0.32 * inP * uitP * eindP * dip
       }} />
     </Sequence>
     {klanken.map((k, i) => (
@@ -125,9 +128,9 @@ export const Koppelingen: React.FC<{ t: number; op: number; uit: number }> = ({ 
 // "daan. powered by Claude". Daarna drie 50/50-frames: links de zin, rechts de
 // echte UI (Kader). Mensen moeten het zien, anders blijft AI een toverwoord.
 export const DAAN_FRAMES = [
-  { zin: 'leest je mail en zet de aanvraag klaar', kern: 'aanvraag' },
-  { zin: "leest 's nachts de dag terug en zet voorstellen klaar", kern: 'voorstellen' },
-  { zin: 'schrijft je offertetekst en je follow-up', kern: 'offertetekst' },
+  { zin: 'zet klant, project en offerte voor je klaar', kern: 'klaar' },
+  { zin: 'herkent de aanvraag in je mail', kern: 'aanvraag' },
+  { zin: "leest 's nachts de dag terug en onthoudt wat jij belangrijk vindt", kern: 'onthoudt' },
 ]
 const Kern: React.FC<{ zin: string; kern: string }> = ({ zin, kern }) => {
   const i = zin.indexOf(kern)
@@ -172,7 +175,7 @@ export const DaanLinks: React.FC<{ t: number; frameOp: number; frameDuur: number
   )
 }
 // Rechterkolom: een kader met echte UI, gefocust op een deel van het scherm.
-export const Kader: React.FC<{ t: number; op: number; uit: number; focus: { x: number; y: number; schaal: number }; children: ReactNode }> = ({ t, op, uit, focus, children }) => {
+export const Kader: React.FC<{ t: number; op: number; uit: number; focus?: { x: number; y: number; schaal: number }; centreer?: boolean; children: ReactNode }> = ({ t, op, uit, focus, centreer = false, children }) => {
   if (t < op - 100 || t > uit + 400) return null
   const inP = veer(t, op, { demping: 18, duurMs: 700 })
   const zicht = Math.min(vlak(t, op, op + 250), 1 - vlak(t, uit, uit + 350, thema.ease.exit))
@@ -181,9 +184,15 @@ export const Kader: React.FC<{ t: number; op: number; uit: number; focus: { x: n
   const B = 848, H = 860
   return (
     <div style={{ position: 'absolute', left: 1000, top: 110, width: B, height: H, zIndex: 12, pointerEvents: 'none', opacity: zicht, transform: `translateX(${(1 - inP) * 48 - uitP * 30}px) scale(${0.97 + inP * 0.03})`, borderRadius: 26, backgroundColor: thema.kleur.wit, boxShadow: '0 40px 90px -30px rgba(26,83,92,0.38), 0 120px 160px -80px rgba(26,83,92,0.30), 0 0 0 1px rgba(255,255,255,0.9) inset', overflow: 'hidden' }}>
-      <div style={{ position: 'absolute', left: 0, top: 0, transform: `translate(${-focus.x * focus.schaal}px, ${-focus.y * focus.schaal}px) scale(${focus.schaal})`, transformOrigin: '0 0' }}>
-        {children}
-      </div>
+      {centreer ? (
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#F1EFEA' }}>
+          <div style={{ transform: 'scale(1.16)' }}>{children}</div>
+        </div>
+      ) : focus ? (
+        <div style={{ position: 'absolute', left: 0, top: 0, transform: `translate(${-focus.x * focus.schaal}px, ${-focus.y * focus.schaal}px) scale(${focus.schaal})`, transformOrigin: '0 0' }}>
+          {children}
+        </div>
+      ) : children}
     </div>
   )
 }

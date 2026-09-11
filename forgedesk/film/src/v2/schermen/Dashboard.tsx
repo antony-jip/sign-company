@@ -8,7 +8,18 @@ import { vlak, veer } from '../../tijd'
 // Het dashboard (FORGEdeskDashboard) nagebouwd met dezelfde klassen: hero,
 // KPI-strip, briefing, Vandaag | Opvolgen en de rail rechts. De echte blokken
 // hangen aan DashboardDataContext, vandaar demo-data hier.
-export type DashboardStand = { mailOp: number }
+export type DashboardStand = {
+  mailOp: number
+  // "Vannacht geleerd." (VannachtGeleerdBlok): voorstellen van Daan om te onthouden;
+  // aannemenOp = ms waarop het eerste voorstel wordt aangenomen (toast "Daan onthoudt dit voortaan.").
+  geleerd?: boolean; aannemenOp?: number
+}
+
+const GELEERD = [
+  { tekst: 'Van der Berg Interieur wil altijd eerst een proef zien voordat we produceren.', bron: 'Van der Berg Interieur · uit 4 sporen' },
+  { tekst: 'Bakkerij Hendriks betaalt via automatische incasso, geen herinnering sturen.', bron: 'Bakkerij Hendriks · uit 2 sporen' },
+  { tekst: 'Offertes voor gemeenten altijd inclusief btw en als PDF.', bron: 'bedrijfsbreed' },
+]
 
 const MEDEWERKERS = [
   { id: 'mw-0', naam: 'Antony Bootsma' },
@@ -181,6 +192,41 @@ export const Dashboard: React.FC<{ t: number; stand: DashboardStand }> = ({ t, s
                   </div>
                 ))}
               </section>
+
+              {/* Vannacht geleerd. (VannachtGeleerdBlok) */}
+              {stand.geleerd && (() => {
+                const aangenomen = stand.aannemenOp !== undefined && t >= stand.aannemenOp
+                const toastP = stand.aannemenOp !== undefined ? Math.min(vlak(t, stand.aannemenOp + 80, stand.aannemenOp + 330), 1 - vlak(t, stand.aannemenOp + 2600, stand.aannemenOp + 2900)) : 0
+                return (
+                  <section className="doen-panel doen-wash rounded-xl px-7 py-4 relative">
+                    <Kop titel="Vannacht geleerd" sub="Daan stelt voor dit te onthouden." mb="mb-2" rechts={<span className="font-mono text-[12px] text-muted-foreground flex-shrink-0">{aangenomen ? '2 voorstellen' : '3 voorstellen'}</span>} />
+                    {GELEERD.map((g, i) => {
+                      const weg = aangenomen && i === 0
+                      return (
+                        <div key={g.tekst} className="flex items-center gap-4 py-2.5 border-b border-border/40 last:border-b-0" style={{ opacity: weg ? 0.45 : 1 }}>
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-sm text-foreground">{g.tekst}</span>
+                            <span className="block font-mono text-[11px] text-muted-foreground mt-0.5">{g.bron}</span>
+                          </span>
+                          {weg ? (
+                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#3A7D52]"><CheckSquare className="w-3.5 h-3.5" />Onthouden</span>
+                          ) : (
+                            <span className="flex items-center gap-2 flex-shrink-0">
+                              <span data-doel={i === 0 ? 'daan-aannemen' : undefined} className="text-xs font-semibold text-white bg-flame px-3 py-1.5 rounded-md">Aannemen</span>
+                              <span className="text-xs font-medium text-muted-foreground px-2 py-1.5">Afwijzen</span>
+                            </span>
+                          )}
+                        </div>
+                      )
+                    })}
+                    {toastP > 0 && (
+                      <div className="absolute right-6 -top-3 z-20 rounded-lg bg-card border border-border shadow-lg px-4 py-2.5 text-[13px] font-medium text-foreground" style={{ opacity: toastP, transform: `translateY(${(1 - toastP) * 6}px)` }}>
+                        Daan onthoudt dit voortaan<span className="text-flame">.</span>
+                      </div>
+                    )}
+                  </section>
+                )
+              })()}
 
               {/* Vandaag | Opvolgen */}
               <div className="grid grid-cols-12 gap-5">

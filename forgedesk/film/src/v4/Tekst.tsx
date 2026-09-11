@@ -18,7 +18,7 @@ export const Hoofdstukkaart: React.FC<{ t: number; op: number; uit: number; numm
   if (zicht <= 0) return null
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 70, pointerEvents: 'none', opacity: zicht, fontFamily: thema.fonts.kop }}>
-      <div style={{ position: 'absolute', left: 96, top: 72, fontSize: 40, fontWeight: 600, letterSpacing: '-0.02em', color: thema.kleur.petrol, opacity: 0.7, transform: `translateY(${(1 - inP) * 10}px)` }}>{nummer} / {totaal}</div>
+      <div style={{ position: 'absolute', left: 96, top: 72, fontSize: 52, fontWeight: 700, letterSpacing: '-0.02em', color: thema.kleur.petrol, opacity: 0.85, transform: `translateY(${(1 - inP) * 10}px)` }}>{nummer} / {totaal}</div>
       <div style={{ position: 'absolute', left: 0, right: 0, top: '50%', textAlign: 'center', transform: `translateY(-50%) translateY(${(1 - inP) * 24 - uitP * 10}px) scale(${0.96 + inP * 0.04})` }}>
         <div style={{ fontSize: 168, fontWeight: 700, lineHeight: 1, letterSpacing: '-0.045em', color: thema.kleur.petrol }}>{woord}<Punt /></div>
         <div style={{ marginTop: 22, fontSize: 44, fontWeight: 600, letterSpacing: '-0.015em', color: thema.kleur.petrol, opacity: 0.6, transform: `translateY(${(1 - vlak(t, op + 120, op + 520, thema.ease.enter)) * 10}px)` }}>{wie}</div>

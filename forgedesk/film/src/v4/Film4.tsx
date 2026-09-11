@@ -12,6 +12,7 @@ import { FORMATEN, FormaatCtx } from '../v2/formaat'
 import { FinancieelTab } from '../v2/schermen/FinancieelTab'
 import { MailApp } from '../v2/schermen/MailApp'
 import { Dashboard } from '../v2/schermen/Dashboard'
+import { DaanWidget } from './DaanWidget'
 import { OfferteEditor } from '../v2/schermen/OfferteEditor'
 import { Planning } from '../v2/schermen/Planning'
 import { PortaalKlant } from '../v2/schermen/PortaalKlant'
@@ -44,9 +45,9 @@ const STOPS: Stop[] = [
   dolly(0, 'mail'),
   dolly(H1.dollyOp, 'cockpit'),
   dolly(H2.dollyOp, 'editor'),
-  push(H2.pushOp, 'editor', 1.4, 520, -40), push(H2.urenPushOp, 'editor', 1.4, 520, 140), push(H2.pullOp, 'editor', 1),
+  push(H2.pushOp, 'editor', 1.4, 430, -40), push(H2.urenPushOp, 'editor', 1.4, 430, 140), push(H2.pullOp, 'editor', 1),
   dolly(H3.dollyOp, 'portaal'),
-  push(H3.pushOp, 'portaal', 1.5, 530, -40), push(H3.pullOp, 'portaal', 1),
+  push(H3.pushOp, 'portaal', 1.5, 440, -40), push(H3.pullOp, 'portaal', 1),
   dolly(H3.terugOp, 'cockpit'),
   dolly(H4.dollyOp, 'planning'),
   dolly(H5.dollyOp, 'telefoon'),
@@ -104,6 +105,8 @@ const CURSOR: CursorStap[] = [
   { ms: k(H6.klikFactuurMaken), doel: 'factuur-maken', klik: true },
   { ms: k(H6.klikVerstuur), doel: 'factuur-verstuur', klik: true },
   { ms: H6.statusVlucht, doel: 'status-punt' },
+  { ms: k(S.frameOp + 2300), doel: 'daan-verzend', klik: true },
+  { ms: k(S.frameOp + 2 * S.frameDuur + 3400), doel: 'daan-aannemen', klik: true },
   { ms: S.puntValt, doel: 'wordmark-punt' },
 ]
 
@@ -115,6 +118,11 @@ const KLANKEN: Klank4[] = [
   ...[H1, H2, H3, H4, H5, H6].map((h): Klank4 => ({ ms: h.dollyOp, bestand: 'zwiep', volume: 0.35 })),
   { ms: H3.terugOp, bestand: 'zwiep', volume: 0.35 }, { ms: S.overgangOp, bestand: 'zwiep', volume: 0.4 },
   { ms: S.puntValt + 700, bestand: 'landing', volume: 0.6 },
+  ...[H1.meldingTaakOp, H2.meldingOp, H3.meldingOp, H6.meldingOp].map((ms): Klank4 => ({ ms, bestand: 'ding', volume: 0.4 })),
+  { ms: H3.tekenOp, bestand: 'pen', volume: 0.45 }, { ms: H5.tekenOp, bestand: 'pen', volume: 0.45 },
+  { ms: H4.sleepOp, bestand: 'klik', volume: 0.4 }, { ms: H4.landOp, bestand: 'landing', volume: 0.5 },
+  { ms: H2.flapOp, bestand: 'flap', volume: 0.5 },
+  { ms: S.introNaamOp, bestand: 'landing', volume: 0.4 },
 ]
 
 const MODULES = ['Klanten', 'Projecten', 'Offertes', 'Planning', 'Werkbonnen', 'Portaal', 'Facturen', 'Email']
@@ -150,7 +158,9 @@ export const Film4: React.FC = () => {
     werkbon: { dialoogOp: H4.werkbonDialoogOp, klaarOp: H4.werkbonKlaarOp },
     klikOp: { offerteMaken: H1.klikOfferteMaken, taakToevoegen: H1.klikTaakToevoegen, taakSanne: H1.klikTaakSanne, werkbonMaken: H4.klikWerkbonMaken, factuurMaken: H6.klikFactuurMaken },
     // Rondleiding: de pagina scrolt 300 px omhoog voor het portaal-blok, en terug voor de taak.
-    scrollY: t < H1.klikTaak - 900 ? vlak(t, H1.rondOp + 2 * H1.rondStap - 700, H1.rondOp + 2 * H1.rondStap - 150, thema.ease.inUit) * 300 : (1 - vlak(t, H1.klikTaak - 900, H1.klikTaak - 400, thema.ease.inUit)) * 300,
+    scrollY: t < H1.klikTaak - 900 ? vlak(t, H1.rondOp + 2 * H1.rondStap - 700, H1.rondOp + 2 * H1.rondStap - 150, thema.ease.inUit) * 300
+      : t < H4.klikWerkbon - 1000 ? (1 - vlak(t, H1.klikTaak - 900, H1.klikTaak - 400, thema.ease.inUit)) * 300
+      : (vlak(t, H4.klikWerkbon - 900, H4.klikWerkbon - 400, thema.ease.inUit) - vlak(t, H4.werkbonKlaarOp + 400, H4.werkbonKlaarOp + 900, thema.ease.inUit)) * 300,
   }
   const editorStand = { regelsOp: H2.regelsOp, checkAkkoordOp: H2.checkAkkoordOp, verstuurTikOp: H2.klikVerstuur, keuzeOp: H2.keuzeOp, keuzeTikOp: H2.klikPortaal, flapOp: H2.flapOp }
   // Klantportaal op desktop: eerst de ontvangen offerte, na Bekijken de publieke pagina met handtekening.
@@ -178,7 +188,7 @@ export const Film4: React.FC = () => {
   return (
     <FormaatCtx.Provider value={F}>
     <AbsoluteFill data-film-root className="film-root" style={{ backgroundColor: thema.kleur.studio, fontFamily: thema.fonts.body }}>
-      <Geluid4 klanken={KLANKEN} muziekUitOp={S.eind + 5000} totMs={S.eind} />
+      <Geluid4 klanken={KLANKEN} muziekUitOp={S.overgangOp} totMs={S.eind} dips={[[O.inslagOp + 100, O.inslagOp + 1500], [H3.tekenOp + 1300, H3.tekenOp + 2200], [H6.meldingOp + 100, H6.meldingOp + 2400]]} />
       {/* Lichte studio: crème grond met zachte kleurvlekken (flame, petrol, zand) die traag ademen */}
       <AbsoluteFill style={{ background: `linear-gradient(180deg, ${thema.kleur.studio} 0%, ${thema.kleur.studioLaag} 100%)` }} />
       <div style={{ position: 'absolute', inset: -300, filter: 'blur(80px) saturate(1.3)' }}>
@@ -259,7 +269,7 @@ export const Film4: React.FC = () => {
       <Belofte t={t} op={H3.belofteOp} uit={H3.belofteUit} tekst="Klant tekent. Jij ziet het meteen" kernwoord="tekent" positie="boven" />
       <Belofte t={t} op={H4.belofteOp} uit={H4.belofteUit} tekst="Eén sleep. De montage staat" kernwoord="staat" positie="boven" />
       <Belofte t={t} op={H5.belofteOp} uit={H5.belofteUit} tekst="Werkbon op locatie. Niets overtypen" kernwoord="Niets overtypen" positie="boven" />
-      <Belofte t={t} op={H6.belofteOp} uit={H6.belofteUit} tekst="Factuur eruit. Betaald" kernwoord="Betaald" positie="boven" />
+      <Belofte t={t} op={H6.belofteOp} uit={H6.belofteUit} tekst="Factuur eruit. Geld binnen" kernwoord="Geld binnen" positie="boven" />
       <Belofte t={t} op={S.belofteOp} uit={S.belofteUit} tekst="Eén project. Alles erin" kernwoord="Alles erin" positie="onder" />
 
       {/* Rondleiding op de projectpagina */}
@@ -278,7 +288,7 @@ export const Film4: React.FC = () => {
       <Melding4 t={t} op={H6.meldingOp} uit={H6.meldingUit} label="je klant" titel="Factuur FAC-2026-0118 betaald" tekst="€ 5.142,50 ontvangen van Van der Berg Interieur" />
 
       {/* Statuswoorden: de punt landt als laatste teken */}
-      <Statuswoord t={t} op={H1.statusOp} uit={H1.eind - 100} woord="aangemaakt" />
+      <Statuswoord t={t} op={H1.statusOp} uit={H1.klikOfferteMaken - 800} woord="aangemaakt" />
       <Statuswoord t={t} op={H2.statusOp} uit={H2.eind - 100} woord="verstuurd" />
       <Statuswoord t={t} op={H3.statusOp} uit={H3.eind - 100} woord="getekend" />
       <Statuswoord t={t} op={H4.statusOp} uit={H4.eind - 100} woord="ingepland" />
@@ -290,14 +300,14 @@ export const Film4: React.FC = () => {
       <DaanLinks t={t} frameOp={S.frameOp} frameDuur={S.frameDuur} uit={S.frameUit} width={width} height={height} />
       {t >= S.frameOp - 200 && t < S.frameUit + 500 && (
         <VensterCtx.Provider value={{ b: 1600, h: 1000 }}>
-          <Kader t={t} op={S.frameOp} uit={S.frameOp + S.frameDuur} focus={{ x: 600, y: 100, schaal: 0.95 }}>
+          <Kader t={t} op={S.frameOp} uit={S.frameOp + S.frameDuur} centreer>
+            <DaanWidget t={t} stand={{ typOp: S.frameOp + 500, verzendOp: S.frameOp + 2300, denktOp: S.frameOp + 2400, planOp: S.frameOp + 3300, projectOp: S.frameOp + 4200, offerteOp: S.frameOp + 4900, linkOp: S.frameOp + 5100 }} />
+          </Kader>
+          <Kader t={t} op={S.frameOp + S.frameDuur} uit={S.frameOp + 2 * S.frameDuur} focus={{ x: 600, y: 100, schaal: 0.95 }}>
             <MailApp t={t} stand={{ gekozen: true, klantOp: 0 }} />
           </Kader>
-          <Kader t={t} op={S.frameOp + S.frameDuur} uit={S.frameOp + 2 * S.frameDuur} focus={{ x: 70, y: 310, schaal: 0.8 }}>
-            <Dashboard t={t} stand={{ mailOp: 0 }} />
-          </Kader>
-          <Kader t={t} op={S.frameOp + 2 * S.frameDuur} uit={S.frameUit} focus={{ x: 120, y: 150, schaal: 1.0 }}>
-            <OfferteEditor t={t} stand={{ regelsOp: S.frameOp - 4000, daanOp: S.frameOp + 2 * S.frameDuur + 900, verstuurTikOp: 1e9, keuzeOp: 1e9, keuzeTikOp: 1e9, flapOp: 1e9 }} />
+          <Kader t={t} op={S.frameOp + 2 * S.frameDuur} uit={S.frameUit} focus={{ x: 70, y: 310, schaal: 0.8 }}>
+            <Dashboard t={t} stand={{ mailOp: 0, geleerd: true, aannemenOp: S.frameOp + 2 * S.frameDuur + 3400 }} />
           </Kader>
         </VensterCtx.Provider>
       )}
