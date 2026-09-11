@@ -116,9 +116,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (offerte.status === 'afgewezen' || offerte.status === 'gefactureerd') {
       return res.status(400).json({ error: 'Deze offerte kan niet meer worden gewijzigd' })
     }
-    if (offerte.geldig_tot && offerte.geldig_tot < new Date().toISOString().split('T')[0]) {
-      return res.status(400).json({ error: 'Deze offerte is verlopen' })
-    }
+    // Een verlopen offerte mag wel een verzoek krijgen: de klant vraagt dan een
+    // nieuwe versie aan. Zonder die ingang liep de klantpagina daar dood.
+    const isVerlopen = !!offerte.geldig_tot && offerte.geldig_tot < new Date().toISOString().split('T')[0]
 
     const nu = new Date().toISOString()
     const afzender = naam?.trim() || 'Klant'
@@ -131,25 +131,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       updated_at: nu,
     }).eq('id', offerte.id)
 
-    // Maak notificatie aan
+    const titel = isVerlopen ? 'Nieuwe offerte gevraagd' : 'Wijziging aangevraagd'
+    const actie = isVerlopen
+      ? `vraagt een nieuwe versie van verlopen offerte ${offerte.nummer}`
+      : `heeft een wijziging aangevraagd voor offerte ${offerte.nummer}`
+
     await supabaseAdmin.from('notificaties').insert({
       id: crypto.randomUUID(),
       user_id: offerte.user_id,
       type: 'offerte_wijziging',
-      titel: 'Wijziging aangevraagd',
-      bericht: `${afzender} heeft een wijziging aangevraagd voor offerte ${offerte.nummer}`,
+      titel,
+      bericht: `${afzender} ${actie}`,
       link: `/offertes/${offerte.id}/detail`,
       gelezen: false,
       created_at: nu,
     })
 
-    // Stuur response direct terug — email async (fire-and-forget)
-    res.status(200).json({
-      success: true,
-      bericht: 'Wijziging aanvraag succesvol verstuurd',
-    })
-
-    // Email na response via Resend — blokkeert de klant niet
+    // Mail vóór de response: na res.json() bevriest Vercel de functie, dus een
+    // mail die daarna nog weg moest kwam nooit aan.
     try {
       const { data: emailSettings } = await supabaseAdmin.from('user_email_settings')
         .select('gmail_address')
@@ -161,10 +160,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const { sendDoenNotification } = await import('./_resend-notify.js')
         await sendDoenNotification({
           to: emailSettings.gmail_address,
-          subject: `Wijziging aangevraagd voor offerte ${offerte.nummer} — ${offerte.klant_naam || 'Klant'}`,
-          heading: `Wijziging aangevraagd voor offerte ${offerte.nummer}`,
+          subject: `${titel} voor offerte ${offerte.nummer} · ${offerte.klant_naam || 'Klant'}`,
+          heading: `${titel} voor offerte ${offerte.nummer}`,
           itemTitel: offerte.titel || offerte.nummer,
-          projectNaam: `${afzender} heeft een wijziging aangevraagd.`,
+          projectNaam: `${afzender} ${actie}.`,
           quote: opmerking.trim(),
           ctaUrl: `${APP_URL}/offertes/${offerte.id}/detail`,
           ctaLabel: 'Bekijk offerte in doen. →',
@@ -173,7 +172,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } catch (emailErr) {
       console.error('Email notificatie mislukt (niet blokkerend):', emailErr)
     }
-    return
+
+    return res.status(200).json({
+      success: true,
+      bericht: 'Verzoek verstuurd',
+    })
   } catch (error: unknown) {
     console.error('offerte-wijziging error:', error)
     const msg = error instanceof Error ? error.message : 'Er ging iets mis'
