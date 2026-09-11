@@ -79,18 +79,20 @@ export const H6 = {
   dollyOp: 94500, dollyTot: 95700, kaartOp: 94600, kaartUit: 96400,
   klikFinancieel: 96300, financieelOp: 96500, klikFactuurMaken: 97500, factuurOp: 97900,
   klikVerstuur: 99100, verstuurdOp: 99400,
-  meldingOp: 100600, meldingUit: 102600, pushOp: 100600, pushTot: 101000, betaaldOp: 100800, pullOp: 102400, pullTot: 102800,
-  statusVlucht: 103000, statusOp: 103100, statusLand: 103700,
-  belofteOp: 104100, belofteUit: 106300,
-  eind: 106800,
+  // Koppelingen: de factuur gaat vanzelf naar de boekhouding (Exact, Moneybird, e-Boekhouden) en Mollie int.
+  koppelingOp: 100100, koppelingUit: 102700,
+  meldingOp: 102800, meldingUit: 104800, pushOp: 102800, pushTot: 103200, betaaldOp: 103000, pullOp: 104600, pullTot: 105000,
+  statusVlucht: 105200, statusOp: 105300, statusLand: 105900,
+  belofteOp: 106300, belofteUit: 108500,
+  eind: 109000,
 } as const
 
 // Slot: camera terug uit de ruimte, gevel, punt zet het bord aan, modulegrid, eindkaart.
 export const S = {
-  pullbackOp: 106800, pullbackTot: 108300,
-  gevelOp: 107800, ruimteUit: 108600, ruimteWeg: 109400,
-  puntVlucht: 109300, bordAan: 110000,
-  gridOp: 112400, belofteOp: 113200, belofteUit: 115700, gridUit: 115700,
-  eindkaartOp: 115800, lettersOp: 116000, puntValt: 116800, regelOp: 117400, urlOp: 118000,
-  eind: 120800,
+  pullbackOp: 109000, pullbackTot: 110500,
+  gevelOp: 110000, ruimteUit: 110800, ruimteWeg: 111600,
+  puntVlucht: 111500, bordAan: 112200,
+  gridOp: 114600, belofteOp: 115400, belofteUit: 117900, gridUit: 117900,
+  eindkaartOp: 118000, lettersOp: 118200, puntValt: 119000, regelOp: 119600, urlOp: 120200,
+  eind: 123000,
 } as const

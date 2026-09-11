@@ -16,7 +16,7 @@ import { Planning } from '../v2/schermen/Planning'
 import { PortaalKlant } from '../v2/schermen/PortaalKlant'
 import { WerkbonTelefoon } from '../v2/schermen/WerkbonTelefoon'
 import { H1, H2, H3, H4, H5, H6, O, S } from './beats4'
-import { Gevel4, Geluid4, Melding4, Telefoon4, TELEFOON4, type Klank4 } from './Extra'
+import { Gevel4, Geluid4, Koppelingen, Melding4, Telefoon4, TELEFOON4, type Klank4 } from './Extra'
 import { camera4, Paneel, PANEEL_SCHAAL, Ruimte, type CameraStop4 } from './Ruimte'
 import { Hoofdstukkaart, Rondleiding4, Statuswoord } from './Tekst'
 import { useTexturen } from './texturen'
@@ -271,6 +271,9 @@ export const Film4: React.FC = () => {
 
       {/* Uren: grotere projecten met meerdere items, overzicht in je uren */}
       {t >= H2.urenLabelOp - 100 && t < H2.urenLabelUit + 400 && <Rondleiding4 t={t} op={H2.urenLabelOp} stap={H2.urenLabelUit - H2.urenLabelOp} stappen={[{ doel: 'uren-blok', tekst: 'overzicht in je uren' }]} />}
+
+      {/* Koppelingen: factuur naar de boekhouding, betaling via Mollie */}
+      <Koppelingen t={t} op={H6.koppelingOp} uit={H6.koppelingUit} />
 
       {/* Meldingen */}
       <Melding4 t={t} op={H1.meldingTaakOp} uit={H1.meldingTaakUit} label="je collega" titel="Antony heeft je een taak toegewezen" tekst="Even telefonisch contact opnemen · Gevelreclame Van der Berg Interieur" />

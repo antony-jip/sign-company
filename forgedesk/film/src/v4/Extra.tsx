@@ -89,3 +89,30 @@ export const Geluid4: React.FC<{ klanken: Klank4[]; muziekUitOp: number; totMs: 
     ))}
   </>
 )
+
+// Koppelingen (H6): de factuur gaat vanzelf naar de boekhouding, betaling via
+// Mollie. Glaskaart met chips, gestaggerd, 70 ms per chip.
+const KOPPELINGEN = ['Exact Online', 'Moneybird', 'e-Boekhouden', 'Mollie']
+export const Koppelingen: React.FC<{ t: number; op: number; uit: number }> = ({ t, op, uit }) => {
+  if (t < op || t > uit + 300) return null
+  const inP = veer(t, op, { demping: 18, duurMs: 600 })
+  const zicht = Math.min(vlak(t, op, op + 220), 1 - vlak(t, uit, uit + 300, thema.ease.exit))
+  if (zicht <= 0) return null
+  return (
+    <div style={{ position: 'absolute', left: 0, right: 0, bottom: 72, zIndex: 66, pointerEvents: 'none', display: 'flex', justifyContent: 'center', opacity: zicht, transform: `translateY(${(1 - inP) * 24}px)` }}>
+      <div style={{ padding: '26px 40px', borderRadius: 36, backgroundColor: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(22px) saturate(1.3)', WebkitBackdropFilter: 'blur(22px) saturate(1.3)', boxShadow: '0 30px 70px -30px rgba(26,83,92,0.35), 0 0 0 1px rgba(255,255,255,0.9) inset', textAlign: 'center' }}>
+        <div style={{ fontFamily: thema.fonts.kop, fontWeight: 700, fontSize: 56, lineHeight: 1.05, letterSpacing: '-0.035em', color: thema.kleur.petrol }}>gaat vanzelf naar je boekhouding<span style={{ color: thema.kleur.flame }}>.</span></div>
+        <div style={{ marginTop: 18, display: 'flex', justifyContent: 'center', gap: 14 }}>
+          {KOPPELINGEN.map((naam, i) => {
+            const p = veer(t, op + 250 + i * 70, { demping: 16, duurMs: 500 })
+            return (
+              <div key={naam} style={{ opacity: Math.min(1, p * 1.3), transform: `translateY(${(1 - p) * 10}px) scale(${0.96 + p * 0.04})`, display: 'flex', alignItems: 'center', gap: 10, padding: '10px 20px 10px 14px', borderRadius: 999, backgroundColor: thema.kleur.wit, boxShadow: '0 10px 30px -12px rgba(26,83,92,0.35), 0 0 0 1px rgba(26,83,92,0.10)', fontFamily: thema.fonts.kop, fontWeight: 700, fontSize: 26, letterSpacing: '-0.015em', color: thema.kleur.ink, whiteSpace: 'nowrap' }}>
+                <span style={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: naam === 'Mollie' ? thema.kleur.flame : thema.kleur.petrol }} />{naam}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
