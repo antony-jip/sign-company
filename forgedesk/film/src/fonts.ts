@@ -13,3 +13,6 @@ export const fonts = {
   body: body.fontFamily,
   mono: mono.fontFamily,
 } as const
+
+// Wacht tot de fonts geladen zijn (nodig voor canvas-texturen in 3D).
+export const fontsKlaar = Promise.all([kop.waitUntilDone(), body.waitUntilDone(), mono.waitUntilDone()])

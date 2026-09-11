@@ -12,11 +12,14 @@
   },
   "dependencies": {
     "@fal-ai/client": "^1.2.0",
+    "@react-three/fiber": "^8.18.0",
     "@remotion/cli": "4.0.471",
     "@remotion/google-fonts": "4.0.471",
     "@remotion/media": "4.0.471",
     "@remotion/tailwind": "4.0.471",
+    "@remotion/three": "^4.0.471",
     "@remotion/transitions": "4.0.471",
+    "@types/three": "^0.170.0",
     "autoprefixer": "^10.4.17",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
@@ -28,7 +31,8 @@
     "remotion": "4.0.471",
     "tailwind-merge": "^2.2.1",
     "tailwindcss": "^3.4.1",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "three": "^0.170.0"
   },
   "devDependencies": {
     "@radix-ui/react-checkbox": "^1.0.4",
