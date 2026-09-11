@@ -9,8 +9,7 @@ import { O } from './beats4'
 import { KAART_PX, TOOL_KAARTEN, type Texturen } from './texturen'
 import { thema } from './thema'
 
-// De 3D-wereld: een lichtreclamebord (petrol behuizing, acrylaat voorkant) met
-// het doen.-logo als verlicht paneel, één Flame-punt als lampje, en zes losse
+// De 3D-wereld: het doen.-logo als verlicht object in de ruimte (geen paneel eromheen), één Flame-punt als lampje, en zes losse
 // tool-kaartjes die ervoor zweven. Alles wordt uit t (ms) berekend; niets
 // beweegt uit zichzelf (geen useFrame).
 
@@ -18,7 +17,7 @@ import { thema } from './thema'
 // en een dunne dikte; de voorkant staat op z = 0.
 export const BORD = { b: 10.4, h: 3.5, d: 0.16, hoek: 0.34 }
 export const VLAK = { b: 10.4, h: 3.5, z: 0.006 }
-export const LOGO = { b: 7.2, z: VLAK.z + 0.012 }
+export const LOGO = { b: 8.8, z: VLAK.z + 0.012 }
 
 const rondeVorm = (b: number, h: number, r: number) => {
   const v = new THREE.Shape()
@@ -128,31 +127,12 @@ const Kaartjes: React.FC<{ t: number; tex: Texturen }> = ({ t, tex }) => {
 
 const Bord: React.FC<{ t: number; tex: Texturen }> = ({ t, tex }) => {
   const licht = logoLicht(t)
-  const acryl = useMemo(() => new THREE.Color(thema.kleur.acrylUit).lerp(new THREE.Color(thema.kleur.acrylAan), licht), [licht])
-  const zijkant = useMemo(() => new THREE.Color('#EFEDE8'), [])
-  const warm = useMemo(() => new THREE.Color(thema.kleur.lichtWarm), [])
-  // Dunne plaat met ronde hoeken; de voorkant wordt apart als vlak getekend.
-  const plaat = useMemo(() => new THREE.ExtrudeGeometry(rondeVorm(BORD.b, BORD.h, BORD.hoek), { depth: BORD.d, bevelEnabled: true, bevelSize: 0.015, bevelThickness: 0.015, bevelSegments: 3, curveSegments: 24 }), [])
-  const voorkant = useMemo(() => new THREE.ShapeGeometry(rondeVorm(VLAK.b - 0.03, VLAK.h - 0.03, BORD.hoek - 0.015), 24), [])
   return (
     <group>
-      {/* Slagschaduw: zacht, iets naar beneden */}
-      <mesh position={[0, -0.5, -0.5]}>
-        <planeGeometry args={[BORD.b * 1.32, BORD.h * 1.9]} />
-        <meshBasicMaterial map={tex.schaduw} transparent opacity={0.28} depthWrite={false} toneMapped={false} />
-      </mesh>
-      {/* Plaat */}
-      <mesh geometry={plaat} position={[0, 0, -BORD.d - 0.015]}>
-        <meshStandardMaterial color={zijkant} roughness={0.8} metalness={0} transparent opacity={0.55 + licht * 0.45} />
-      </mesh>
-      {/* Voorkant: mat grijs-wit als het bord uit is, helder wit met warme gloed als het aan is */}
-      <mesh geometry={voorkant} position={[0, 0, VLAK.z]}>
-        <meshStandardMaterial color={acryl} emissive={warm} emissiveIntensity={licht * 0.5} roughness={0.9} metalness={0} transparent opacity={0.62 + licht * 0.38} />
-      </mesh>
       {/* Logo-gloed (geblurde kopie, additief) en het logo zelf */}
       <mesh position={[0, 0, LOGO.z - 0.004]}>
         <planeGeometry args={[LOGO.b * 1.08, logoH * 1.08]} />
-        <meshBasicMaterial map={tex.logoGloed} transparent opacity={licht * 0.35} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
+        <meshBasicMaterial map={tex.logoGloed} transparent opacity={licht * 0.5} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
       </mesh>
       <mesh position={[0, 0, LOGO.z]}>
         <planeGeometry args={[LOGO.b, logoH]} />
