@@ -130,6 +130,7 @@ export const Koppelingen: React.FC<{ t: number; op: number; uit: number }> = ({ 
 export const DAAN_FRAMES = [
   { zin: 'zet klant, project en offerte voor je klaar', kern: 'klaar' },
   { zin: 'herkent de aanvraag in je mail', kern: 'aanvraag' },
+  { zin: 'vat je mails samen en schrijft het antwoord', kern: 'antwoord' },
   { zin: "leest 's nachts de dag terug en onthoudt wat jij belangrijk vindt", kern: 'onthoudt' },
 ]
 const Kern: React.FC<{ zin: string; kern: string }> = ({ zin, kern }) => {

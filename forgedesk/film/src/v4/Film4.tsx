@@ -114,7 +114,9 @@ const CURSOR: CursorStap[] = [
 const CURSOR_SLOT: CursorStap[] = [
   { ms: S.frameOp + 1200, doel: { x: 1330, y: 930 } },
   { ms: k(S.frameOp + 2300), doel: 'daan-verzend', klik: true },
-  { ms: k(S.frameOp + 2 * S.frameDuur + 3400), doel: 'daan-aannemen', klik: true },
+  { ms: k(S.frameOp + 2 * S.frameDuur + 1300), doel: 'daan-samenvatten', klik: true },
+  { ms: k(S.frameOp + 2 * S.frameDuur + 3300), doel: 'daan-concept', klik: true },
+  { ms: k(S.frameOp + 3 * S.frameDuur + 3400), doel: 'daan-aannemen', klik: true },
   { ms: S.puntValt - 700, doel: { x: 960, y: -80 } },
   { ms: S.puntValt, doel: 'wordmark-punt' },
 ]
@@ -337,8 +339,11 @@ export const Film4: React.FC = () => {
           <Kader t={t} op={S.frameOp + S.frameDuur} uit={S.frameOp + 2 * S.frameDuur} focus={{ x: 600, y: 100, schaal: 0.95 }}>
             <MailApp t={t} stand={{ gekozen: true, klantOp: 0 }} />
           </Kader>
-          <Kader t={t} op={S.frameOp + 2 * S.frameDuur} uit={S.frameUit} focus={{ x: 70, y: 310, schaal: 0.8 }}>
-            <Dashboard t={t} stand={{ mailOp: 0, geleerd: true, aannemenOp: S.frameOp + 2 * S.frameDuur + 3400 }} />
+          <Kader t={t} op={S.frameOp + 2 * S.frameDuur} uit={S.frameOp + 3 * S.frameDuur} focus={{ x: 600, y: 250, schaal: 0.95 }}>
+            <MailApp t={t} stand={{ gekozen: true, klantOp: 0, samenvatOp: S.frameOp + 2 * S.frameDuur + 1300, conceptOp: S.frameOp + 2 * S.frameDuur + 3300 }} />
+          </Kader>
+          <Kader t={t} op={S.frameOp + 3 * S.frameDuur} uit={S.frameUit} focus={{ x: 70, y: 310, schaal: 0.8 }}>
+            <Dashboard t={t} stand={{ mailOp: 0, geleerd: true, aannemenOp: S.frameOp + 3 * S.frameDuur + 3400 }} />
           </Kader>
         </VensterCtx.Provider>
       )}

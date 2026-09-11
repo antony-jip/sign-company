@@ -94,8 +94,8 @@ export const S = {
   overgangOp: 107300, overgangTot: 108500,
   introOp: 108300, introNaamOp: 109200, introUit: 111500,
   // Drie frames van 6 s: widget (Daan zet dit klaar), mail (aanvraagkaart), dashboard (vannacht geleerd).
-  frameOp: 112100, frameDuur: 6000, frameUit: 130100,
-  gridOp: 130500, puntValt: 130700, belofteOp: 131200, belofteUit: 133900, gridUit: 134000,
-  eindkaartOp: 134100, regelOp: 134600, urlOp: 135200,
-  eind: 138300,
+  frameOp: 112100, frameDuur: 6000, frameUit: 136100,
+  gridOp: 136500, puntValt: 136700, belofteOp: 137200, belofteUit: 139900, gridUit: 140000,
+  eindkaartOp: 140100, regelOp: 140600, urlOp: 141200,
+  eind: 144300,
 } as const

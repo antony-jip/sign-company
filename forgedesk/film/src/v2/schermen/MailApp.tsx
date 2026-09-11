@@ -2,6 +2,7 @@ import { Inbox, Send, FileEdit, Trash2, Archive, CheckCheck, Hourglass, Moon, Ca
 import { AppVenster } from '../DesktopChrome'
 import { klant, contact, mail, project } from '../../mockData'
 import { vlak } from '../../tijd'
+import { typ } from '../../kern/Typ'
 
 // De mail-app op desktop: mappenrail, lijst met split-tabs, lezer met bijlage
 // en aanvraagkaart, klantkaart rechts. Markup volgt EmailLayout en de
@@ -11,6 +12,9 @@ export type MailStand = {
   klantOp?: number          // ms waarop de klant is toegevoegd
   projectOp?: number        // ms waarop het project is aangemaakt
   bijlageOp?: number        // ms waarop de bijlage in het project zit
+  // Daan in de lezer (DaanBlok.tsx): samenvatting van de thread en een conceptantwoord.
+  samenvatOp?: number       // klik op Samenvatten; paneel "SAMENVATTING DOOR DAAN" 600 ms later
+  conceptOp?: number        // klik op Concept door Daan; het antwoord wordt 700 ms later getypt
 }
 
 const MAPPEN = [
@@ -115,11 +119,43 @@ export const MailApp: React.FC<{ t: number; stand: MailStand }> = ({ t, stand })
                   <div className="min-w-0 flex-1"><p className="truncate text-[13px] font-medium text-foreground">gevel-showroom.jpg</p><p className="text-[11px] text-muted-foreground">2,4 MB</p></div>
                 </div>
               </div>
-              {/* Daan */}
-              <div className="mt-5 flex items-center gap-1 text-[12.5px]">
-                <Sparkles className="mr-0.5 h-3.5 w-3.5 text-[#9B8EC4]" />
-                <span className="text-petrol font-medium">Samenvatten</span><span className="text-border">·</span><span className="text-petrol font-medium">Concept door Daan</span>
-              </div>
+              {/* Daan (DaanBlok.tsx): Samenvatten · Concept door Daan */}
+              {(() => {
+                const samenvat = stand.samenvatOp !== undefined && t >= stand.samenvatOp
+                const samenvatBezig = samenvat && t < stand.samenvatOp! + 600
+                const samenvatting = samenvat && !samenvatBezig
+                const concept = stand.conceptOp !== undefined && t >= stand.conceptOp
+                const conceptBezig = concept && t < stand.conceptOp! + 700
+                const conceptTekst = concept && !conceptBezig ? typ('Beste Pieter, dank voor je bericht en gefeliciteerd met de nieuwe showroom. Verlichte gevelletters en een lichtbak boven de ingang kunnen we zeker maken. Ik kom graag langs om de gevel op te meten; past donderdagochtend? Dan hebben jullie de offerte binnen een week. Met vriendelijke groet, Antony', t, stand.conceptOp! + 700, 12) : ''
+                const knop = 'inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-[12px] font-medium'
+                return (
+                  <>
+                    <div className="mt-5 flex items-center gap-1 text-[12.5px]">
+                      <Sparkles className="mr-0.5 h-3.5 w-3.5 text-[#9B8EC4]" />
+                      <span data-doel="daan-samenvatten" className={`${knop} ${samenvat ? 'bg-petrol/[0.06] text-petrol' : 'text-muted-foreground'}`}>{samenvatBezig && <Loader2 className="h-3.5 w-3.5" />}Samenvatten</span>
+                      <span className="text-border">·</span>
+                      <span data-doel="daan-concept" className={`${knop} ${concept ? 'bg-petrol/[0.06] text-petrol' : 'text-muted-foreground'}`}>{conceptBezig && <Loader2 className="h-3.5 w-3.5" />}Concept door Daan</span>
+                    </div>
+                    {samenvatting && (
+                      <div className="relative mt-3 rounded-lg border border-border bg-muted/30 px-3.5 py-3 pr-9 max-w-[640px]" style={{ opacity: vlak(t, stand.samenvatOp! + 600, stand.samenvatOp! + 850) }}>
+                        <span className="absolute top-2.5 right-2.5 text-muted-hex"><X className="h-3.5 w-3.5" /></span>
+                        <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">Samenvatting door Daan</p>
+                        <p className="text-[13.5px] leading-relaxed text-foreground">Pieter van der Berg vraagt gevelreclame voor de nieuwe showroom aan de Industrieweg: verlichte letters en een lichtbak boven de ingang.</p>
+                        <div className="mt-2 pt-2 border-t border-border/60 text-[12.5px] text-foreground/85">
+                          <p>· Opnemen op locatie plannen</p>
+                          <p>· Offerte met LED-letters en lichtbak</p>
+                        </div>
+                      </div>
+                    )}
+                    {concept && !conceptBezig && (
+                      <div className="mt-3 rounded-xl border border-border bg-card shadow-sm max-w-[640px]" style={{ opacity: vlak(t, stand.conceptOp! + 700, stand.conceptOp! + 950) }}>
+                        <div className="flex items-center gap-2 px-3.5 py-2 border-b border-border/60 text-[11px] text-muted-foreground"><Reply className="h-3.5 w-3.5" />Antwoord aan {contact.naam}<span className="ml-auto inline-flex items-center gap-1 text-petrol font-medium"><Sparkles className="h-3 w-3 text-[#9B8EC4]" />Concept door Daan</span></div>
+                        <p className="px-3.5 py-3 text-[13.5px] leading-relaxed text-foreground/90 whitespace-pre-wrap">{conceptTekst}<span className="text-flame" style={{ opacity: conceptTekst.length < 300 ? 1 : 0 }}>|</span></p>
+                      </div>
+                    )}
+                  </>
+                )
+              })()}
               {/* Aanvraagkaart, AanvraagKaart.tsx:281-357 */}
               <div className="relative mt-5 overflow-hidden rounded-xl doen-panel doen-wash max-w-[640px]">
                 <span className="absolute inset-y-0 left-0 w-[3px] bg-gradient-to-b from-flame to-flame/30" />
