@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { FileText, Download, Loader2, Eye } from 'lucide-react'
+import { Kaart, StatusWoord, STATUS_KLEUR, invoerVeld, knopPetrol, knopPrimair, tekstLink } from '@/components/klantpagina/Klantstijl'
 
 interface PortaalFeedItemTekeningProps {
   item: {
@@ -26,17 +27,9 @@ function formatFileSize(bytes: number): string {
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, { color: string; label: string }> = {
-    verstuurd: { color: '#3A5A9A', label: 'verstuurd' },
-    goedgekeurd: { color: '#3A7D52', label: 'goedgekeurd' },
-    revisie: { color: '#6A4A9A', label: 'revisie' },
-  }
-  const s = map[status] || map.verstuurd
-  return (
-    <span className="inline-flex items-baseline text-xs font-semibold flex-shrink-0" style={{ color: s.color }}>
-      {s.label}<span style={{ color: '#D24620' }}>.</span>
-    </span>
-  )
+  if (status === 'goedgekeurd') return <StatusWoord kleur={STATUS_KLEUR.goed}>Goedgekeurd</StatusWoord>
+  if (status === 'revisie') return <StatusWoord kleur={STATUS_KLEUR.wacht}>Revisie gevraagd</StatusWoord>
+  return <StatusWoord kleur={STATUS_KLEUR.open}>Ter goedkeuring</StatusWoord>
 }
 
 export function PortaalFeedItemTekening({
@@ -50,6 +43,7 @@ export function PortaalFeedItemTekening({
 }: PortaalFeedItemTekeningProps) {
   const [loading, setLoading] = useState(false)
   const [confirmAction, setConfirmAction] = useState<'goedkeuren' | 'revisie' | null>(null)
+  const [revisieTekst, setRevisieTekst] = useState('')
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; tekst: string } | null>(null)
   const isAfgehandeld = ['goedgekeurd', 'revisie'].includes(item.status)
   const images = (item.bestanden || []).filter(b => b.mime_type?.startsWith('image/'))
@@ -68,6 +62,9 @@ export function PortaalFeedItemTekening({
           portaal_item_id: item.id,
           type,
           klant_naam: klantNaam || undefined,
+          // De server weigert een revisie zonder toelichting. Voorheen stuurde
+          // deze knop er geen mee, dus "Ja, revisie" gaf altijd een foutmelding.
+          bericht: type === 'revisie' ? revisieTekst.trim() : undefined,
         }),
       })
       if (!response.ok) {
@@ -75,6 +72,7 @@ export function PortaalFeedItemTekening({
         throw new Error(err.error || 'Actie mislukt')
       }
       setConfirmAction(null)
+      setRevisieTekst('')
       setFeedback({
         type: 'success',
         tekst: type === 'goedkeuring' ? 'Uw goedkeuring is ontvangen.' : 'Uw revisieverzoek is verstuurd.',
@@ -90,177 +88,176 @@ export function PortaalFeedItemTekening({
     }
   }
 
-  return (
-    <div>
-      <div className="h-1 rounded-t-[10px]" style={{ backgroundColor: '#1A535C' }} />
-      <div
-        className="rounded-b-[10px] bg-white"
-        style={{ border: '0.5px solid #E8E6E1' }}
-      >
-        <div className="px-5 py-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="font-semibold" style={{ fontSize: 15, color: 'hsl(var(--foreground))' }}>
-                {item.titel}
-              </p>
-              {item.label && (
-                <span className="text-xs" style={{ color: '#1A535C', fontFamily: "'DM Mono', monospace" }}>
-                  {item.label}
-                </span>
-              )}
-            </div>
-            <StatusBadge status={item.status} />
-          </div>
+  const annuleren = (
+    <button
+      type="button"
+      onClick={() => setConfirmAction(null)}
+      disabled={loading}
+      className="text-sm font-medium text-[#6B6B66] transition-colors hover:text-[#1A1A1A] disabled:opacity-50"
+    >
+      Annuleren
+    </button>
+  )
 
-          {item.omschrijving && (
-            <p className="mt-1 text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>
-              {item.omschrijving}
-            </p>
-          )}
+  const vragenKnop = onVragenStellen && (
+    <button type="button" onClick={onVragenStellen} className={tekstLink}>
+      Vragen stellen
+    </button>
+  )
 
-          {/* Image previews */}
-          {images.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {images.map((img) => (
-                <img
-                  key={img.id}
-                  src={img.thumbnail_url || img.url}
-                  alt={img.bestandsnaam}
-                  className="w-24 h-24 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity border"
-                  style={{ borderColor: '#E8E6E1' }}
-                  onClick={() => onImageClick?.(img.url)}
-                />
-              ))}
-            </div>
-          )}
-
-          {/* PDF files · inline preview */}
-          {pdfFiles.length > 0 && (
-            <div className="mt-3 space-y-2">
-              {pdfFiles.map((f) => (
-                <div key={f.id}>
-                  <div
-                    className="flex items-center gap-2 py-2 px-3 rounded-lg"
-                    style={{ backgroundColor: 'hsl(var(--muted))', border: '0.5px solid #E8E6E1' }}
-                  >
-                    <FileText className="w-4 h-4 flex-shrink-0" style={{ color: '#C03A18' }} />
-                    <span className="truncate flex-1 text-sm" style={{ color: 'hsl(var(--foreground))' }}>{f.bestandsnaam}</span>
-                    {f.grootte != null && (
-                      <span style={{ fontSize: 11, color: '#A0A098', fontFamily: "'DM Mono', monospace" }}>
-                        {formatFileSize(f.grootte)}
-                      </span>
-                    )}
-                    <a
-                      href={f.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-colors hover:opacity-80 no-underline"
-                      style={{ backgroundColor: '#1A535C', color: '#fff' }}
-                    >
-                      <Eye className="w-3 h-3" />
-                      Bekijk
-                    </a>
-                    <a
-                      href={f.url}
-                      download={f.bestandsnaam}
-                      className="p-1 rounded hover:bg-muted transition-colors"
-                      title="Download"
-                    >
-                      <Download className="w-3.5 h-3.5" style={{ color: '#A0A098' }} />
-                    </a>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Other files */}
-          {otherFiles.length > 0 && (
-            <div className="mt-3 space-y-1">
-              {otherFiles.map((f) => (
-                <a
-                  key={f.id}
-                  href={f.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 py-1.5 px-2 rounded-md hover:bg-background transition-colors"
-                  style={{ fontSize: 13, color: '#1A535C' }}
-                >
-                  <FileText className="w-3.5 h-3.5 flex-shrink-0" />
-                  <span className="truncate flex-1">{f.bestandsnaam}</span>
-                  {f.grootte != null && (
-                    <span style={{ fontSize: 11, color: '#A0A098', fontFamily: "'DM Mono', monospace" }}>
-                      {formatFileSize(f.grootte)}
-                    </span>
-                  )}
-                  <Download className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#A0A098' }} />
-                </a>
-              ))}
-            </div>
-          )}
+  let acties: React.ReactNode = vragenKnop || undefined
+  if (!isAfgehandeld && kanGoedkeuren) {
+    if (confirmAction === 'goedkeuren') {
+      acties = (
+        <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-3">
+          <p className="w-full text-sm text-[#1A1A1A] sm:w-auto sm:flex-1">Tekening goedkeuren?</p>
+          <button type="button" onClick={() => handleAction('goedkeuring')} disabled={loading} className={knopPrimair}>
+            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+            Ja, goedkeuren
+          </button>
+          {annuleren}
         </div>
-
-        {feedback && (
-          <p
-            className="px-5 pb-3 text-sm font-medium"
-            style={{ color: feedback.type === 'success' ? '#3A7D52' : '#C0451A' }}
-          >
-            {feedback.tekst}
-          </p>
-        )}
-
-        {/* Actions */}
-        {!isAfgehandeld && kanGoedkeuren && (
-          <div className="px-5 py-3 border-t" style={{ borderColor: '#F0EEEA' }}>
-            {confirmAction ? (
-              <div className="flex items-center gap-2">
-                <p className="text-sm flex-1" style={{ color: 'hsl(var(--muted-foreground))' }}>
-                  {confirmAction === 'goedkeuren'
-                    ? 'Weet u zeker dat u deze tekening wilt goedkeuren?'
-                    : 'Wilt u een revisie aanvragen?'}
-                </p>
-                <button
-                  onClick={() => handleAction(confirmAction === 'goedkeuren' ? 'goedkeuring' : 'revisie')}
-                  disabled={loading}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white disabled:opacity-50"
-                  style={{ backgroundColor: confirmAction === 'goedkeuren' ? '#1A535C' : '#6A4A9A' }}
-                >
-                  {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {confirmAction === 'goedkeuren' ? 'Ja, goedkeuren' : 'Ja, revisie'}
-                </button>
-                <button
-                  onClick={() => setConfirmAction(null)}
-                  disabled={loading}
-                  className="px-3 py-2 rounded-lg text-sm hover:bg-background"
-                  style={{ color: 'hsl(var(--muted-foreground))' }}
-                >
-                  Annuleren
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setConfirmAction('goedkeuren')}
-                  className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-white hover:opacity-90"
-                  style={{ backgroundColor: '#1A535C' }}
-                >
-                  Goedkeuren
-                </button>
-                <button
-                  onClick={() => {
-                    setConfirmAction('revisie')
-                    onVragenStellen?.()
-                  }}
-                  className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium hover:bg-muted"
-                  style={{ backgroundColor: 'hsl(var(--background))', border: '0.5px solid #E8E6E1', color: 'hsl(var(--muted-foreground))' }}
-                >
-                  Revisie
-                </button>
-              </div>
-            )}
+      )
+    } else if (confirmAction === 'revisie') {
+      acties = (
+        <div className="w-full space-y-3">
+          <label htmlFor={`revisie-${item.id}`} className="block text-sm font-medium text-[#1A1A1A]">
+            Wat moet er anders?
+          </label>
+          <textarea
+            id={`revisie-${item.id}`}
+            value={revisieTekst}
+            onChange={(e) => setRevisieTekst(e.target.value)}
+            placeholder="Bijvoorbeeld: de letters mogen 10 cm hoger"
+            rows={3}
+            className={`${invoerVeld} resize-none`}
+            autoFocus
+          />
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+            <button
+              type="button"
+              onClick={() => handleAction('revisie')}
+              disabled={loading || !revisieTekst.trim()}
+              className={knopPetrol}
+            >
+              {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+              Revisie versturen
+            </button>
+            {annuleren}
           </div>
-        )}
-      </div>
-    </div>
+        </div>
+      )
+    } else {
+      acties = (
+        <>
+          <button type="button" onClick={() => setConfirmAction('goedkeuren')} className={knopPrimair}>
+            Goedkeuren
+          </button>
+          <button type="button" onClick={() => setConfirmAction('revisie')} className={tekstLink}>
+            Revisie aanvragen
+          </button>
+          {vragenKnop}
+        </>
+      )
+    }
+  }
+
+  return (
+    <Kaart etiket="Tekening" status={<StatusBadge status={item.status} />} acties={acties}>
+      <h3 className="break-words text-[17px] font-semibold leading-snug tracking-[-0.2px] text-[#1A1A1A]">
+        {item.titel}
+      </h3>
+      {item.label && <p className="mt-0.5 font-mono text-xs text-[#9B9B95]">{item.label}</p>}
+      {item.omschrijving && <p className="mt-1 text-sm text-[#6B6B66]">{item.omschrijving}</p>}
+
+      {images.length === 1 && (
+        <button
+          type="button"
+          onClick={() => onImageClick?.(images[0].url)}
+          aria-label={`${images[0].bestandsnaam} groter bekijken`}
+          className="mt-4 block w-full overflow-hidden rounded-lg bg-[#F8F7F5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1A535C]"
+        >
+          <img
+            src={images[0].thumbnail_url || images[0].url}
+            alt={images[0].bestandsnaam}
+            loading="lazy"
+            className="mx-auto max-h-[380px] w-full object-contain transition-opacity hover:opacity-90"
+          />
+        </button>
+      )}
+      {images.length > 1 && (
+        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {images.map((img) => (
+            <button
+              key={img.id}
+              type="button"
+              onClick={() => onImageClick?.(img.url)}
+              aria-label={`${img.bestandsnaam} groter bekijken`}
+              className="overflow-hidden rounded-lg bg-[#F8F7F5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1A535C]"
+            >
+              <img
+                src={img.thumbnail_url || img.url}
+                alt={img.bestandsnaam}
+                loading="lazy"
+                className="aspect-[4/3] w-full object-cover transition-opacity hover:opacity-90"
+              />
+            </button>
+          ))}
+        </div>
+      )}
+
+      {pdfFiles.length > 0 && (
+        <ul className="mt-4 space-y-2">
+          {pdfFiles.map((f) => (
+            <li key={f.id} className="flex items-center gap-3 rounded-lg bg-[#F8F7F5] px-3 py-2.5">
+              <FileText className="h-4 w-4 shrink-0 text-[#C0451A]" />
+              <span className="min-w-0 flex-1 truncate text-sm text-[#1A1A1A]">{f.bestandsnaam}</span>
+              {f.grootte != null && (
+                <span className="hidden font-mono text-[11px] text-[#9B9B95] sm:inline">{formatFileSize(f.grootte)}</span>
+              )}
+              <a href={f.url} target="_blank" rel="noopener noreferrer" className={tekstLink}>
+                <Eye className="h-3.5 w-3.5" />
+                Bekijken
+              </a>
+              <a
+                href={f.url}
+                download={f.bestandsnaam}
+                aria-label={`${f.bestandsnaam} downloaden`}
+                className="rounded p-1 text-[#9B9B95] transition-colors hover:text-[#1A535C]"
+              >
+                <Download className="h-4 w-4" />
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {otherFiles.length > 0 && (
+        <ul className="mt-3 space-y-1">
+          {otherFiles.map((f) => (
+            <li key={f.id}>
+              <a
+                href={f.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 py-1.5 text-sm text-[#1A535C] underline-offset-4 hover:underline"
+              >
+                <FileText className="h-3.5 w-3.5 shrink-0" />
+                <span className="min-w-0 flex-1 truncate">{f.bestandsnaam}</span>
+                {f.grootte != null && (
+                  <span className="font-mono text-[11px] text-[#9B9B95]">{formatFileSize(f.grootte)}</span>
+                )}
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {feedback && (
+        <p className={`mt-4 text-sm font-medium ${feedback.type === 'success' ? 'text-[#3A7D52]' : 'text-[#C0451A]'}`}>
+          {feedback.tekst}
+        </p>
+      )}
+    </Kaart>
   )
 }

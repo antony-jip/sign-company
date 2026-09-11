@@ -1,13 +1,12 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
-import { Loader2, AlertCircle } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { PortaalVerlopen } from './PortaalVerlopen'
 import { PortaalGesloten } from './PortaalGesloten'
-import { PortaalHeader } from './PortaalHeader'
-import { PortaalSidebar } from './PortaalSidebar'
+import { PortaalSidebar, ProjectStatus } from './PortaalSidebar'
 import { PortaalFeed } from './PortaalFeed'
 import { PortaalLightbox } from './PortaalLightbox'
-import { PortaalBackground } from './PortaalBackground'
+import { KlantKop, MogelijkGemaaktDoor, invoerVeld, knopPetrol } from '@/components/klantpagina/Klantstijl'
 
 // ── API Response Types ────────────────────────────────────────────────────
 
@@ -129,6 +128,10 @@ function useBekekenTracker(token: string | undefined) {
   return { markBekeken }
 }
 
+function formatDatum(dateStr: string): string {
+  return new Intl.DateTimeFormat('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(dateStr))
+}
+
 // ── Main Component ───────────────────────────────────────────────────────
 
 export function PortaalPagina() {
@@ -136,9 +139,16 @@ export function PortaalPagina() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [data, setData] = useState<PortaalApiResponse | null>(null)
+  // Alleen een bevestigde, volledige naam telt. De naambalk zette voorheen elke
+  // toetsaanslag direct als naam en verdween dan, zodat er "J" bleef staan bij
+  // elk bericht en akkoord; zo'n halve waarde van eerder negeren we hier.
   const [klantNaam, setKlantNaam] = useState(() => {
-    try { return localStorage.getItem('doen_portaal_klant_naam') || '' } catch (err) { return '' }
+    try {
+      const opgeslagen = (localStorage.getItem('doen_portaal_klant_naam') || '').trim()
+      return opgeslagen.length >= 2 ? opgeslagen : ''
+    } catch (err) { return '' }
   })
+  const [naamInvoer, setNaamInvoer] = useState('')
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
   const { markBekeken } = useBekekenTracker(token)
 
@@ -147,6 +157,11 @@ export function PortaalPagina() {
       try { localStorage.setItem('doen_portaal_klant_naam', klantNaam) } catch (err) { /* ignore */ }
     }
   }, [klantNaam])
+
+  function bevestigNaam() {
+    const naam = naamInvoer.trim()
+    if (naam.length >= 2) setKlantNaam(naam)
+  }
 
   const fetchPortaal = useCallback(async () => {
     if (!token) return
@@ -193,8 +208,9 @@ export function PortaalPagina() {
   // White-label: de browsertab toont het bedrijf, niet de tool
   useEffect(() => {
     const naam = data?.bedrijf?.naam || data?.bedrijfsnaam
-    if (naam) document.title = `${naam} — klantportaal`
-  }, [data?.bedrijf?.naam, data?.bedrijfsnaam])
+    const project = data?.project?.naam
+    if (naam) document.title = project ? `${project} · ${naam}` : `${naam} · klantportaal`
+  }, [data?.bedrijf?.naam, data?.bedrijfsnaam, data?.project?.naam])
 
   // Mark items as bekeken
   const unbekekenIds = useMemo(
@@ -209,44 +225,53 @@ export function PortaalPagina() {
   // ── Loading / Error / Expired / Closed ────────────────────────────────
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      <div className="flex min-h-screen items-center justify-center bg-[#F8F7F5]">
+        <Loader2 className="h-8 w-8 animate-spin text-[#9B9B95]" />
       </div>
     )
   }
 
   if (error || !data) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="text-center space-y-4">
-          <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto" />
-          <p className="text-foreground/70">{error || 'Portaal niet gevonden'}</p>
+      <div className="flex min-h-screen items-center justify-center bg-[#F8F7F5] p-4">
+        <div className="w-full max-w-md rounded-xl bg-[#FFFFFF] p-8 text-center shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+          <h1 className="text-xl font-bold tracking-[-0.3px] text-[#1A1A1A]">Deze link werkt niet meer</h1>
+          <p className="mt-2 text-sm text-[#6B6B66]">
+            {error === 'Portaal niet gevonden'
+              ? 'De link naar dit portaal is niet geldig. Neem contact op met het bedrijf dat u de link stuurde.'
+              : error || 'Er ging iets mis. Probeer het later opnieuw.'}
+          </p>
         </div>
       </div>
     )
   }
 
+  const instellingen = (data.instellingen || {}) as Record<string, unknown>
+  const toonContact = instellingen.contactgegevens_tonen !== false
+  const toonLogo = instellingen.bedrijfslogo_op_portaal !== false
+  const kopKleur = (instellingen.portaal_header_kleur as string | undefined) || undefined
+
   if (data.status === 'gesloten') {
-    const inst = (data.instellingen || {}) as Record<string, unknown>
     return (
       <PortaalGesloten
         bedrijfsnaam={data.bedrijfsnaam || ''}
-        telefoon={inst.contactgegevens_tonen !== false ? data.bedrijfs_telefoon : undefined}
-        email={inst.contactgegevens_tonen !== false ? data.bedrijfs_email : undefined}
-        logoUrl={inst.bedrijfslogo_op_portaal !== false ? data.logo_url : undefined}
+        telefoon={toonContact ? data.bedrijfs_telefoon : undefined}
+        email={toonContact ? data.bedrijfs_email : undefined}
+        logoUrl={toonLogo ? data.logo_url : undefined}
+        kopKleur={kopKleur}
       />
     )
   }
 
   if (data.status === 'verlopen') {
-    const inst = (data.instellingen || {}) as Record<string, unknown>
     return (
       <PortaalVerlopen
         token={data.token || token || ''}
         bedrijfsnaam={data.bedrijfsnaam || ''}
-        telefoon={inst.contactgegevens_tonen !== false ? data.bedrijfs_telefoon : undefined}
-        email={inst.contactgegevens_tonen !== false ? data.bedrijfs_email : undefined}
-        logoUrl={inst.bedrijfslogo_op_portaal !== false ? data.logo_url : undefined}
+        telefoon={toonContact ? data.bedrijfs_telefoon : undefined}
+        email={toonContact ? data.bedrijfs_email : undefined}
+        logoUrl={toonLogo ? data.logo_url : undefined}
+        kopKleur={kopKleur}
       />
     )
   }
@@ -258,18 +283,14 @@ export function PortaalPagina() {
 
   if (!bedrijf || !portaal) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="text-center space-y-4">
-          <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto" />
-          <p className="text-foreground/70">Portaal kon niet geladen worden</p>
+      <div className="flex min-h-screen items-center justify-center bg-[#F8F7F5] p-4">
+        <div className="w-full max-w-md rounded-xl bg-[#FFFFFF] p-8 text-center shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+          <p className="text-sm text-[#6B6B66]">Het portaal kon niet geladen worden. Probeer het later opnieuw.</p>
         </div>
       </div>
     )
   }
 
-  const instellingen = (data.instellingen || {}) as Record<string, unknown>
-  const toonContact = instellingen.contactgegevens_tonen !== false
-  const toonLogo = instellingen.bedrijfslogo_op_portaal !== false
   const kanOfferteGoedkeuren = instellingen.klant_kan_offerte_goedkeuren !== false
   const kanTekeningGoedkeuren = instellingen.klant_kan_tekening_goedkeuren !== false
   const kanBerichtenSturen = instellingen.klant_kan_berichten_sturen !== false
@@ -284,64 +305,41 @@ export function PortaalPagina() {
         .map(b => ({ naam: b.bestandsnaam, url: b.url, type: i.type }))
     )
 
+  const sidebar = (
+    <PortaalSidebar
+      project={project || { naam: '' }}
+      bedrijf={bedrijf}
+      montage={data.montage}
+      documenten={documenten}
+      toonContact={toonContact}
+    />
+  )
+  const toonNaambalk = !klantNaam && rawItems.length > 0
+
   return (
-    <div className="min-h-screen bg-background flex flex-col relative isolate">
-      <PortaalBackground />
-      <PortaalHeader
-        bedrijfNaam={bedrijf.naam}
-        logoUrl={toonLogo ? bedrijf.logo_url : undefined}
-        verlooptOp={portaal.verloopt_op}
-        projectNaam={project?.naam}
-        headerKleur={(instellingen.portaal_header_kleur as string | undefined) || '#1A535C'}
-      />
+    <div className="flex min-h-screen flex-col bg-[#F8F7F5]">
+      <KlantKop kleur={kopKleur} logoUrl={toonLogo ? bedrijf.logo_url : undefined} bedrijfsnaam={bedrijf.naam}>
+        <span className="hidden font-mono text-xs sm:inline">Geldig tot {formatDatum(portaal.verloopt_op)}</span>
+      </KlantKop>
 
-      {/* Project bar */}
-      {project && (
-        <div className="flex-shrink-0 border-b" style={{ borderColor: '#E8E6E1', backgroundColor: 'hsl(var(--card))' }}>
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-            <h1
-              className="text-base font-bold"
-              style={{ color: 'hsl(var(--foreground))', fontFamily: '"Instrument Sans", sans-serif' }}
-            >
-              {project.naam}
+      <main className={`mx-auto w-full max-w-5xl flex-1 px-4 pt-8 md:px-8 md:pt-12 ${toonNaambalk ? 'pb-32' : 'pb-16'}`}>
+        <header className="mb-8">
+          <p className="text-sm text-[#6B6B66]">Uw project bij {bedrijf.naam}</p>
+          <div className="mt-1 flex flex-wrap items-baseline gap-x-4 gap-y-1">
+            <h1 className="break-words text-[28px] font-bold leading-[1.15] tracking-[-0.3px] text-[#1A1A1A] md:text-[34px]">
+              {project?.naam || 'Klantportaal'}
             </h1>
+            {project?.status && <ProjectStatus status={project.status} />}
           </div>
-        </div>
-      )}
+          {portaal.instructie_tekst && (
+            <p className="mt-4 max-w-[62ch] whitespace-pre-wrap text-[15px] leading-relaxed text-[#3A3A35]">
+              {portaal.instructie_tekst}
+            </p>
+          )}
+        </header>
 
-      {/* Mobile sidebar (accordion) */}
-      <div className="md:hidden max-w-5xl mx-auto w-full px-4 pt-4">
-        <PortaalSidebar
-          project={project || { naam: '' }}
-          bedrijf={bedrijf}
-          montage={data.montage}
-          documenten={documenten}
-          toonContact={toonContact}
-          isMobiel
-        />
-      </div>
-
-      {/* Main content: feed + sidebar. Extra bottom-padding zolang de vaste
-          naam-balk in beeld is, zodat die de laatste kaart niet overlapt. */}
-      <main
-        className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 py-6"
-        style={{ paddingBottom: !klantNaam && rawItems.length > 0 ? 88 : undefined }}
-      >
-        <div className="flex gap-8">
-          {/* Feed */}
-          <div className="flex-1 min-w-0">
-            {/* Instruction text */}
-            {portaal.instructie_tekst && (
-              <div
-                className="rounded-[10px] px-5 py-4 mb-4"
-                style={{ backgroundColor: 'hsl(var(--card))', border: '0.5px solid #E8E6E1' }}
-              >
-                <p className="whitespace-pre-wrap" style={{ fontSize: 13, color: 'hsl(var(--muted-foreground))', lineHeight: 1.6 }}>
-                  {portaal.instructie_tekst}
-                </p>
-              </div>
-            )}
-
+        <div className="flex flex-col gap-8 md:flex-row md:items-start">
+          <div className="min-w-0 flex-1">
             <PortaalFeed
               items={rawItems}
               token={token!}
@@ -356,39 +354,48 @@ export function PortaalPagina() {
               onImageClick={(url) => setLightboxUrl(url)}
             />
           </div>
-
-          {/* Desktop sidebar */}
-          <div className="hidden md:block w-[260px] flex-shrink-0">
-            <PortaalSidebar
-              project={project || { naam: '' }}
-              bedrijf={bedrijf}
-              montage={data.montage}
-              documenten={documenten}
-              toonContact={toonContact}
-            />
-          </div>
+          <div className="w-full md:w-[280px] md:shrink-0">{sidebar}</div>
         </div>
+
+        <footer className="mt-12 space-y-1 text-center text-xs text-[#9B9B95]">
+          <p>{bedrijf.naam}</p>
+          <p className="sm:hidden">Portaal geldig tot {formatDatum(portaal.verloopt_op)}</p>
+          <div className="pt-4">
+            <MogelijkGemaaktDoor />
+          </div>
+        </footer>
       </main>
 
-      {/* Klant naam prompt (eerste keer) */}
-      {!klantNaam && rawItems.length > 0 && (
-        <div
-          className="fixed bottom-0 left-0 right-0 py-3 px-4 flex items-center justify-center gap-3"
-          style={{ backgroundColor: 'hsl(var(--card))', borderTop: '0.5px solid #E8E6E1', boxShadow: '0 -2px 12px rgba(0,0,0,0.04)' }}
+      {/* Klant naam prompt (eerste keer). De naam telt pas na Enter, de knop
+          of het verlaten van het veld, zodat de balk niet na de eerste letter
+          verdwijnt. */}
+      {toonNaambalk && (
+        <form
+          onSubmit={(e) => { e.preventDefault(); bevestigNaam() }}
+          className="fixed inset-x-0 bottom-0 z-40 border-t border-[#EBEBEB] bg-[#FFFFFF]/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.06)] backdrop-blur"
         >
-          <span className="text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>Uw naam:</span>
-          <input
-            type="text"
-            value={klantNaam}
-            onChange={(e) => setKlantNaam(e.target.value)}
-            placeholder="Vul uw naam in"
-            className="px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-petrol/30 focus:border-petrol"
-            style={{ borderColor: '#E8E6E1', maxWidth: 200 }}
-          />
-        </div>
+          <div className="mx-auto flex max-w-5xl items-center gap-3 md:px-4">
+            <label htmlFor="portaal-klant-naam" className="hidden shrink-0 text-sm text-[#6B6B66] sm:inline">
+              Hoe mogen we u noemen?
+            </label>
+            <input
+              id="portaal-klant-naam"
+              type="text"
+              value={naamInvoer}
+              onChange={(e) => setNaamInvoer(e.target.value)}
+              onBlur={bevestigNaam}
+              placeholder="Uw naam"
+              autoComplete="name"
+              aria-label="Uw naam"
+              className={`${invoerVeld} h-11 max-w-xs py-0`}
+            />
+            <button type="submit" disabled={naamInvoer.trim().length < 2} className={`${knopPetrol} h-11 shrink-0`}>
+              Opslaan
+            </button>
+          </div>
+        </form>
       )}
 
-      {/* Lightbox */}
       {lightboxUrl && (
         <PortaalLightbox
           images={[{ url: lightboxUrl, bestandsnaam: '' }]}

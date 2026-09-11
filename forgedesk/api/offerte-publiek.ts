@@ -240,8 +240,63 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .eq('offerte_id', offerte.id)
       .order('volgorde', { ascending: true })
 
-    const items = (rawItems || []).map((item: Record<string, unknown>) =>
-      zonderCalculatie(pick(item, ITEM_VELDEN) as Record<string, unknown>))
+    // Tekeningen en foto's staan als opslagpad in de private bucket. Zonder
+    // sessie kan de klantpagina (en de PDF die daar gebouwd wordt) er niet bij,
+    // dus hier een ondertekende URL. Alleen voor paden van de eigen organisatie:
+    // het pad staat vrij op de offerteregel, en met de service-rol kon een
+    // teamlid anders een werkende link maken naar bestanden van een andere org.
+    // De eigenaar staat in het pad zoals storage_pad_eigenaar (migratie 183)
+    // hem leest: een user-id in het eerste of het tweede segment.
+    const orgLeden = new Set<string>([String(offerte.user_id).toLowerCase()])
+    if (offerte.organisatie_id) {
+      const { data: leden } = await supabaseAdmin
+        .from('profiles')
+        .select('id')
+        .eq('organisatie_id', offerte.organisatie_id)
+      for (const lid of leden || []) orgLeden.add(String(lid.id).toLowerCase())
+    }
+    const UUID_PATROON = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    function padEigenaar(pad: string): string | null {
+      const [eerste, tweede] = pad.split('/')
+      if (eerste && UUID_PATROON.test(eerste)) return eerste.toLowerCase()
+      if (tweede && UUID_PATROON.test(tweede)) return tweede.toLowerCase()
+      return null
+    }
+    async function ondertekend(url: unknown): Promise<string | null> {
+      if (typeof url !== 'string' || !url) return null
+      if (url.startsWith('http') || url.startsWith('data:')) return url
+      const eigenaar = padEigenaar(url)
+      if (!eigenaar || !orgLeden.has(eigenaar) || url.split('/').includes('..')) return null
+      const { data, error } = await supabaseAdmin.storage.from('documenten-prive').createSignedUrl(url, 60 * 60 * 24)
+      if (error || !data?.signedUrl) {
+        console.error('[offerte-publiek] ondertekende URL mislukt:', error?.message)
+        return null
+      }
+      return data.signedUrl
+    }
+
+    const items = await Promise.all((rawItems || []).map(async (item: Record<string, unknown>) => {
+      const klantItem = zonderCalculatie(pick(item, ITEM_VELDEN) as Record<string, unknown>)
+      if (klantItem.bijlage_url) klantItem.bijlage_url = await ondertekend(klantItem.bijlage_url)
+      if (klantItem.foto_url && klantItem.foto_op_offerte) klantItem.foto_url = await ondertekend(klantItem.foto_url)
+      return klantItem
+    }))
+
+    // De maker als gezicht van de pagina. Alleen naam, functie en foto: bellen
+    // en mailen lopen via de bedrijfsgegevens, want een telefoonnummer in een
+    // persoonlijk profiel is niet vanzelf bedoeld voor klanten.
+    const { data: maker } = await supabaseAdmin
+      .from('profiles')
+      .select('voornaam, achternaam, functie, avatar_url')
+      .eq('id', offerte.user_id)
+      .maybeSingle()
+    const makerNaam = [maker?.voornaam, maker?.achternaam]
+      .map((deel) => (typeof deel === 'string' ? deel.trim() : ''))
+      .filter(Boolean)
+      .join(' ')
+    const contactpersoon = makerNaam
+      ? { naam: makerNaam, functie: maker?.functie || null, foto_url: maker?.avatar_url || null }
+      : null
 
     // Bedrijfsgegevens zijn org-breed: lees het profiel van de organisatie-
     // eigenaar i.p.v. de maker, zodat elk teamlid dezelfde gegevens toont.
@@ -291,6 +346,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       docStyle = data
     }
 
+    // Dezelfde kop als het projectportaal: kopkleur en logo komen uit de
+    // portaalinstellingen, zodat offertepagina en portaal één huisstijl tonen.
+    // Zelfde volgorde als portaal-get: eerst de organisatie, dan de maker.
+    let portaalInstellingen: Record<string, unknown> | null = null
+    if (offerteOrgId) {
+      const { data } = await supabaseAdmin
+        .from('app_settings')
+        .select('portaal_instellingen')
+        .eq('organisatie_id', offerteOrgId)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      portaalInstellingen = (data?.portaal_instellingen as Record<string, unknown> | null) ?? null
+    }
+    if (!portaalInstellingen) {
+      const { data } = await supabaseAdmin
+        .from('app_settings')
+        .select('portaal_instellingen')
+        .eq('user_id', offerte.user_id)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      portaalInstellingen = (data?.portaal_instellingen as Record<string, unknown> | null) ?? null
+    }
+    const huisstijl = {
+      kop_kleur: typeof portaalInstellingen?.portaal_header_kleur === 'string' ? portaalInstellingen.portaal_header_kleur : null,
+      logo_tonen: portaalInstellingen?.bedrijfslogo_op_portaal !== false,
+      // Dezelfde schakelaar die offerte-accepteren afdwingt.
+      akkoord_toegestaan: portaalInstellingen?.klant_kan_offerte_goedkeuren !== false,
+    }
+
     // Merge status update in return data
     const safeOfferte = pick({ ...offerte, ...updates, ...claimUpdates }, OFFERTE_VELDEN)
 
@@ -300,6 +386,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       bedrijf: profile || null,
       klant: klant || null,
       docStyle: docStyle || null,
+      contactpersoon,
+      huisstijl,
     })
   } catch (error: unknown) {
     console.error('offerte-publiek error:', error)

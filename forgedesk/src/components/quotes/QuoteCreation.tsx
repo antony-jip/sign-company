@@ -99,7 +99,8 @@ import { OfferteVervolgDialog } from './OfferteVervolgDialog'
 import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
 import { ResponsiveDialog } from '@/components/ui/responsive-dialog'
 import { useFunctie, useFunctieGetal } from '@/hooks/useFunctie'
-import { getOfferteCondities, getOfferteHandtekening } from '@/services/offerteService'
+import { getOfferteCondities, getOfferteHandtekening, zorgPubliekToken } from '@/services/offerteService'
+import { klantLinkVoorMail } from '@/utils/offerteKlantpagina'
 import type { OfferteConditie } from '@/types'
 import { rondOfferteCheckAf } from '@/services/offerteCheckService'
 import { useMedewerkers } from '@/contexts/MedewerkersContext'
@@ -1546,9 +1547,10 @@ export function QuoteCreation() {
 
       if (status === 'verzonden' && selectedKlant?.email) {
         try {
-          // Bepaal bekijk-URL via portaal (nieuw) of publiek_token (fallback)
+          // De mail linkt direct naar de offertepagina; met een project komt
+          // de offerte ook in het portaal en krijgt de link de terugweg mee.
           const savedOfferte = await getOfferte(savedOfferteId).catch(() => null)
-          let bekijkUrl: string | undefined
+          let portaalToken: string | undefined
 
           if (selectedProjectId && user?.id) {
             try {
@@ -1570,13 +1572,30 @@ export function QuoteCreation() {
                   volgorde: 0,
                 })
               }
-              bekijkUrl = `${window.location.origin}/portaal/${portaal.token}`
+              portaalToken = portaal.token
             } catch (err) {
-              logger.error('Portaal aanmaken mislukt, fallback naar publiek_token:', err)
+              logger.error('Portaal aanmaken mislukt, mail linkt zonder portaal:', err)
             }
           }
-          if (!bekijkUrl && savedOfferte?.publiek_token) {
-            bekijkUrl = `${window.location.origin}/offerte-bekijken/${savedOfferte.publiek_token}`
+          // Lukt het token niet (ophalen of schrijven), dan gaat de mail met
+          // de portaallink; zonder link is de mail niets waard.
+          let bekijkUrl = klantLinkVoorMail(window.location.origin, {}, portaalToken)
+          if (savedOfferte) {
+            // Autosave-valkuil: deze server-side update bumpt updated_at. De
+            // autosave blijft zolang buiten de deur en de ref wordt bijgewerkt,
+            // anders ziet de autosave een vals conflict en stopt hij.
+            const autosaveLiepAl = saveLockRef.current
+            saveLockRef.current = true
+            if (autoSaveTimerRef.current) { clearTimeout(autoSaveTimerRef.current); autoSaveTimerRef.current = null }
+            try {
+              const metToken = await zorgPubliekToken(savedOfferte)
+              if (metToken.updated_at) lastKnownUpdatedAtRef.current = metToken.updated_at
+              bekijkUrl = klantLinkVoorMail(window.location.origin, metToken, portaalToken) ?? bekijkUrl
+            } catch (err) {
+              logger.error('Publieke offertelink maken mislukt, mail linkt naar portaal:', err)
+            } finally {
+              saveLockRef.current = autosaveLiepAl
+            }
           }
 
           const { subject, html, text } = offerteVerzendTemplate({
@@ -1867,10 +1886,11 @@ export function QuoteCreation() {
         quoteId = editOfferteId || autoSaveIdRef.current
       }
 
-      // Bepaal bekijk-URL via portaal (nieuw) of publiek_token (fallback)
+      // De mail linkt direct naar de offertepagina; met een project komt de
+      // offerte ook in het portaal en krijgt de link de terugweg mee.
       const savedQuoteId = editOfferteId || autoSaveIdRef.current
       const savedOfferte = savedQuoteId ? await getOfferte(savedQuoteId).catch(() => null) : null
-      let bekijkUrl: string | undefined
+      let portaalToken: string | undefined
 
       if (selectedProjectId && user?.id && savedQuoteId) {
         try {
@@ -1893,15 +1913,31 @@ export function QuoteCreation() {
               volgorde: 0,
             })
           }
-          bekijkUrl = `${window.location.origin}/portaal/${portaal.token}`
+          portaalToken = portaal.token
         } catch (err) {
-          logger.error('Portaal aanmaken mislukt, fallback naar publieke link:', err)
+          logger.error('Portaal aanmaken mislukt, mail linkt zonder portaal:', err)
         }
       }
 
-      // Fallback: gebruik oude publiek_token link
-      if (!bekijkUrl && savedOfferte?.publiek_token) {
-        bekijkUrl = `${window.location.origin}/offerte-bekijken/${savedOfferte.publiek_token}`
+      // Lukt het token niet (ophalen of schrijven), dan gaat de mail met de
+      // portaallink; zonder link is de mail niets waard.
+      let bekijkUrl = klantLinkVoorMail(window.location.origin, {}, portaalToken)
+      if (savedOfferte) {
+        // Autosave-valkuil: deze server-side update bumpt updated_at. De
+        // autosave blijft zolang buiten de deur en de ref wordt bijgewerkt,
+        // anders ziet de autosave een vals conflict en stopt hij.
+        const autosaveLiepAl = saveLockRef.current
+        saveLockRef.current = true
+        if (autoSaveTimerRef.current) { clearTimeout(autoSaveTimerRef.current); autoSaveTimerRef.current = null }
+        try {
+          const metToken = await zorgPubliekToken(savedOfferte)
+          if (metToken.updated_at) lastKnownUpdatedAtRef.current = metToken.updated_at
+          bekijkUrl = klantLinkVoorMail(window.location.origin, metToken, portaalToken) ?? bekijkUrl
+        } catch (err) {
+          logger.error('Publieke offertelink maken mislukt, mail linkt naar portaal:', err)
+        } finally {
+          saveLockRef.current = autosaveLiepAl
+        }
       }
 
       const klantNaam = selectedKlant?.contactpersoon || selectedKlant?.bedrijfsnaam || ''

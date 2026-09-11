@@ -64,7 +64,7 @@ export const offerteOpvolgingCron = schedules.task({
         // Get all offertes with opvolging active, status verzonden/bekeken
         const { data: offertes } = await supabase
           .from("offertes")
-          .select("id, user_id, klant_id, project_id, nummer, titel, subtotaal, totaal, status, verstuurd_op, verzendwijze, opvolging_actief, opvolging_schema_id, bekeken_door_klant, aantal_keer_bekeken, publiek_token")
+          .select("id, user_id, klant_id, project_id, nummer, titel, subtotaal, totaal, status, verstuurd_op, verzendwijze, opvolging_actief, opvolging_schema_id, bekeken_door_klant, aantal_keer_bekeken, publiek_token, publiek_token_verloopt_op, geldig_tot, wijziging_ingediend_op")
           .in("user_id", userIds)
           .in("status", ["verzonden", "bekeken"])
           .or("opvolging_actief.is.null,opvolging_actief.eq.true");
@@ -182,6 +182,14 @@ export const offerteOpvolgingCron = schedules.task({
             continue;
           }
 
+          // Een verlopen offerte of een offerte waar de klant al een verzoek
+          // op deed, krijgt geen "u heeft nog niet gereageerd" meer.
+          const vandaag = now.toISOString().split("T")[0];
+          if ((offerte.geldig_tot && offerte.geldig_tot < vandaag) || offerte.wijziging_ingediend_op) {
+            totaalOvergeslagen++;
+            continue;
+          }
+
           const verstuurdOp = offerte.verstuurd_op
             ? new Date(offerte.verstuurd_op)
             : null;
@@ -235,18 +243,19 @@ export const offerteOpvolgingCron = schedules.task({
             const bedrijfsnaam = profile?.bedrijfsnaam || "";
             const projectNaam = project?.naam || "";
             // Build the correct link based on verzendwijze
+            // Zelfde link als de eerste mail: direct naar de offertepagina, met
+            // de terugweg naar het portaal als de offerte daarin staat.
+            // Een verlopen offertelink geeft een 410; dan liever het portaal.
+            const portaalId = portaalItemMap.get(offerte.id);
+            const pToken = portaalId ? portaalTokenMap.get(portaalId) : undefined;
+            const tokenBruikbaar = !!offerte.publiek_token
+              && (!offerte.publiek_token_verloopt_op || new Date(offerte.publiek_token_verloopt_op).getTime() > Date.now());
             let offerteLink = "";
-            if (offerte.verzendwijze === "via_portaal") {
-              // Portaal-sent: link to portaal page
-              const portaalId = portaalItemMap.get(offerte.id);
-              const pToken = portaalId ? portaalTokenMap.get(portaalId) : undefined;
-              if (pToken) {
-                offerteLink = `${appUrl}/portaal/${pToken}`;
-              }
-            }
-            // Fallback to publiek_token for PDF-sent or when portaal token not found
-            if (!offerteLink && offerte.publiek_token) {
+            if (tokenBruikbaar) {
               offerteLink = `${appUrl}/offerte-bekijken/${offerte.publiek_token}`;
+              if (pToken) offerteLink += `?terug=${encodeURIComponent(`/portaal/${pToken}`)}`;
+            } else if (pToken) {
+              offerteLink = `${appUrl}/portaal/${pToken}`;
             }
 
             const vars: Record<string, string> = {
@@ -454,6 +463,10 @@ interface OfferteRow {
   bekeken_door_klant?: boolean;
   aantal_keer_bekeken?: number;
   publiek_token?: string;
+  publiek_token_verloopt_op?: string | null;
+  geldig_tot?: string | null;
+  wijziging_ingediend_op?: string | null;
+  subtotaal?: number;
 }
 
 interface StapRow {

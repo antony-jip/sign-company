@@ -273,6 +273,20 @@ export class OfferteConflictError extends Error {
   }
 }
 
+/**
+ * Zorgt dat de offerte een bruikbare publieke link heeft voor in de mail. Een
+ * ontbrekend of verlopen token wordt vervangen; anders krijgt de klant een
+ * link die op een 410 uitkomt. Geeft de offerte terug zoals hij nu in de
+ * database staat, zodat de aanroeper zijn updated_at kan bijwerken.
+ */
+export async function zorgPubliekToken(offerte: Offerte): Promise<Offerte> {
+  const verlopen = !!offerte.publiek_token_verloopt_op
+    && new Date(offerte.publiek_token_verloopt_op).getTime() <= Date.now()
+  if (offerte.publiek_token && !verlopen) return offerte
+  const verlooptOp = new Date(Date.now() + 183 * 24 * 60 * 60 * 1000).toISOString()
+  return updateOfferte(offerte.id, { publiek_token: crypto.randomUUID(), publiek_token_verloopt_op: verlooptOp })
+}
+
 export async function updateOfferte(id: string, updates: Partial<Offerte>, expectedUpdatedAt?: string): Promise<Offerte> {
   assertId(id)
   if (isSupabaseConfigured() && supabase) {
