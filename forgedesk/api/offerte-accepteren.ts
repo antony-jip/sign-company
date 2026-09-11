@@ -231,8 +231,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (offerte.status === 'afgewezen' || offerte.status === 'gefactureerd') {
       return res.status(400).json({ error: 'Deze offerte kan niet meer worden geaccepteerd' })
     }
-    if (offerte.geldig_tot && offerte.geldig_tot < new Date().toISOString().split('T')[0]) {
+    // Ook een offerte die de verkoper zelf op 'verlopen' zette, met of zonder
+    // datum, is niet meer te accepteren.
+    if (offerte.status === 'verlopen' || (offerte.geldig_tot && offerte.geldig_tot < new Date().toISOString().split('T')[0])) {
       return res.status(400).json({ error: 'Deze offerte is verlopen' })
+    }
+
+    // De portaalinstelling "klant kan offerte goedkeuren" geldt voor de hele
+    // organisatie, dus ook hier. Zelfde bron en volgorde als offerte-publiek.
+    {
+      let instellingen: Record<string, unknown> | null = null
+      if (offerte.organisatie_id) {
+        const { data } = await supabaseAdmin
+          .from('app_settings')
+          .select('portaal_instellingen')
+          .eq('organisatie_id', offerte.organisatie_id)
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+        instellingen = (data?.portaal_instellingen as Record<string, unknown> | null) ?? null
+      }
+      if (!instellingen) {
+        const { data } = await supabaseAdmin
+          .from('app_settings')
+          .select('portaal_instellingen')
+          .eq('user_id', offerte.user_id)
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+        instellingen = (data?.portaal_instellingen as Record<string, unknown> | null) ?? null
+      }
+      if (instellingen?.klant_kan_offerte_goedkeuren === false) {
+        return res.status(403).json({ error: 'Akkoord geven via deze pagina staat uit. Neem contact op met het bedrijf.' })
+      }
     }
 
     const nu = new Date().toISOString()
@@ -397,9 +428,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.error('[offerte-accepteren] prospect naar klant mislukt:', prospectErr)
     }
 
-    // Fan-out naar maker + alle org-admins: een klant-akkoord mag in een team
-    // van 25 niet onzichtbaar blijven als de maker afwezig is.
+    // Fan-out naar maker, aanmaker van het portaal en alle org-admins: een
+    // klant-akkoord mag in een team van 25 niet onzichtbaar blijven als de
+    // maker afwezig is.
     const ontvangers = new Set<string>([offerte.user_id])
+    const portaalMakers = new Set<string>()
+    const portaalIds = [...new Set((portaalItems || []).map((pi) => pi.portaal_id as string).filter(Boolean))]
+    if (portaalIds.length > 0) {
+      const { data: portalen } = await supabaseAdmin
+        .from('project_portalen')
+        .select('user_id')
+        .in('id', portaalIds)
+      for (const p of portalen || []) {
+        if (p.user_id) {
+          ontvangers.add(p.user_id as string)
+          portaalMakers.add(p.user_id as string)
+        }
+      }
+    }
     {
       const { data: makerProfiel } = await supabaseAdmin
         .from('profiles')
@@ -441,11 +487,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }] : []),
     ]))
 
-    // Email via Resend — voor response zodat Vercel de function niet killt
+    // Email via Resend — voor response zodat Vercel de function niet killt.
+    // Naar de maker én de aanmaker van het portaal, als die verschillen.
     try {
-      const { data: emailSettings } = await supabaseAdmin.from('user_email_settings')
-        .select('gmail_address')
-        .eq('user_id', offerte.user_id).single()
+      const mailOntvangers = new Set<string>([offerte.user_id, ...portaalMakers])
+      const { data: emailRijen } = await supabaseAdmin.from('user_email_settings')
+        .select('user_id, gmail_address')
+        .in('user_id', [...mailOntvangers])
+      const adressen = [...new Set((emailRijen || []).map((r) => r.gmail_address as string).filter(Boolean))]
+      const emailSettings = adressen.length > 0 ? { gmail_address: adressen } : null
 
       if (emailSettings?.gmail_address) {
         const klantNaam = naam?.trim() || offerte.klant_naam || 'Klant'

@@ -73,10 +73,16 @@ export function voornaam(naam?: string | null): string {
 
 const STANDAARD_KOPKLEUR = '#1A535C'
 
-/** Kopkleur uit de portaalinstellingen; alles wat geen #rrggbb is valt terug op petrol. */
+/**
+ * Kopkleur uit de portaalinstellingen. De instellingen laten ook #rgb toe;
+ * die schrijven we uit, zodat isLichteKleur er op kan rekenen. Al het andere
+ * valt terug op petrol.
+ */
 export function kopKleur(ruw?: string | null): string {
   const kleur = typeof ruw === 'string' ? ruw.trim() : ''
-  return /^#[0-9a-fA-F]{6}$/.test(kleur) ? kleur : STANDAARD_KOPKLEUR
+  if (/^#[0-9a-fA-F]{6}$/.test(kleur)) return kleur
+  if (/^#[0-9a-fA-F]{3}$/.test(kleur)) return `#${kleur[1]}${kleur[1]}${kleur[2]}${kleur[2]}${kleur[3]}${kleur[3]}`
+  return STANDAARD_KOPKLEUR
 }
 
 /** Een lichte kopkleur (wit, geel) krijgt donkere tekst, anders valt de bedrijfsnaam weg. */

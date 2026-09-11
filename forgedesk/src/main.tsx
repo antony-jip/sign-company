@@ -41,9 +41,11 @@ if (SENTRY_DSN) {
       //
       // Zelfde les als in api/org-export.ts: een naamfilter mist per definitie
       // de volgende plek waar een URL opduikt.
-      const CAPABILITY_URL = /\/(betalen|goedkeuring|offerte-bekijken|formulier|portaal)\/[A-Za-z0-9_-]{8,}/g
+      // Ook de URL-gecodeerde vorm: de offertepagina draagt het portaal mee
+      // als ?terug=%2Fportaal%2F<token>.
+      const CAPABILITY_URL = /(\/|%2F)(betalen|goedkeuring|offerte-bekijken|formulier|portaal)(\/|%2F)[A-Za-z0-9_-]{8,}/gi
       const anonimiseerUrl = (tekst: string) =>
-        tekst.replace(CAPABILITY_URL, (_m, route) => `/${route}/[Filtered]`)
+        tekst.replace(CAPABILITY_URL, (_m, voor, route, na) => `${voor}${route}${na}[Filtered]`)
 
       const scrub = (val: unknown, depth = 0): unknown => {
         // Voorbij de diepte de ruwe waarde teruggeven laat het filter OPEN

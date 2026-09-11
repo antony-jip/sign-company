@@ -124,11 +124,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const nu = new Date().toISOString()
     const afzender = naam?.trim() || 'Klant'
 
-    // Een verlopen offerte houdt zijn status: 'wijziging_gevraagd' zou hem in de
-    // pipeline en de KPI's weer als open offerte laten meetellen. Het verzoek
-    // zelf staat wel vast en de verkoper krijgt de melding.
+    // Een verlopen offerte wordt 'verlopen', niet 'wijziging_gevraagd': dat
+    // laatste zou hem in pipeline en KPI's weer als open laten meetellen, en
+    // 'verzonden' laten staan hield de opvolgmails aan de gang. In de kolom
+    // Verlopen ziet de verkoper hem terug, met het verzoek erbij.
     await supabaseAdmin.from('offertes').update({
-      ...(isVerlopen ? {} : { status: 'wijziging_gevraagd' }),
+      status: isVerlopen ? 'verlopen' : 'wijziging_gevraagd',
       wijziging_opmerking: opmerking.trim(),
       wijziging_ingediend_op: nu,
       updated_at: nu,

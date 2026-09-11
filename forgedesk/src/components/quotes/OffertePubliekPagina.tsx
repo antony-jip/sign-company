@@ -117,6 +117,7 @@ interface Contactpersoon {
 interface Huisstijl {
   kop_kleur?: string | null
   logo_tonen?: boolean
+  akkoord_toegestaan?: boolean
 }
 
 type VerzoekModus = 'wijziging' | 'nieuw'
@@ -612,16 +613,23 @@ export function OffertePubliekPagina() {
     if (delen.length) document.title = delen.join(' · ')
   }, [offerteNummer, bedrijfsnaam])
 
+  // Sluiten wist de handtekening: het tekenveld komt leeg terug, en een
+  // onzichtbare oude streek mag nooit als handtekening meegaan.
+  const sluitAkkoord = useCallback(() => {
+    setShowAcceptModal(false)
+    setAcceptHandtekening(undefined)
+  }, [])
+
   useEffect(() => {
     if (!showAcceptModal && !verzoekModus) return
     const sluitOpEscape = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
-      setShowAcceptModal(false)
+      sluitAkkoord()
       setVerzoekModus(null)
     }
     window.addEventListener('keydown', sluitOpEscape)
     return () => window.removeEventListener('keydown', sluitOpEscape)
-  }, [showAcceptModal, verzoekModus])
+  }, [showAcceptModal, verzoekModus, sluitAkkoord])
 
   // Derived: check if offerte has optional items or variants
   const hasOptionalItems = useMemo(() => items.some(i => i.is_optioneel), [items])
@@ -892,18 +900,21 @@ export function OffertePubliekPagina() {
   }
 
   // ============ DERIVED STATE ============
-  const isVerlopen = !!offerte.geldig_tot && offerte.geldig_tot < vandaag
+  // Verlopen is ook wat de verkoper zelf op 'verlopen' zette, met of zonder datum.
+  const isVerlopen = offerte.status === 'verlopen' || (!!offerte.geldig_tot && offerte.geldig_tot < vandaag)
   const isGeaccepteerd = offerte.status === 'goedgekeurd'
   const isAfgewezen = offerte.status === 'afgewezen'
   const isGefactureerd = offerte.status === 'gefactureerd'
   const isWijzigingGevraagd = offerte.status === 'wijziging_gevraagd'
   const kanActie = !isVerlopen && !isGeaccepteerd && !isAfgewezen && !isGefactureerd
-  // Een verlopen offerte houdt bij een aanvraag zijn status (zie
-  // offerte-wijziging), dus de aanvraag lezen we af aan het tijdstip: ná het
-  // einde van de laatste geldige dag. Een wijzigingsverzoek van die laatste dag
-  // telt niet, en een datumvergelijking in UTC viel net na middernacht verkeerd.
+  // De portaalinstelling "klant kan offerte goedkeuren" geldt ook hier; de
+  // server weigert dan ook. Aanpassing vragen mag wel.
+  const akkoordToegestaan = huisstijl.akkoord_toegestaan !== false
+  // Een aanvraag op een verlopen offerte zet de status op 'verlopen' (zie
+  // offerte-wijziging). Een wijzigingsverzoek van vóór het verlopen telt niet.
   const nieuweVersieGevraagd = isVerlopen && !!offerte.wijziging_ingediend_op
-    && new Date(offerte.wijziging_ingediend_op).getTime() > new Date(`${offerte.geldig_tot}T23:59:59`).getTime()
+    && (offerte.status === 'verlopen'
+      || (!!offerte.geldig_tot && new Date(offerte.wijziging_ingediend_op).getTime() > new Date(`${offerte.geldig_tot}T23:59:59`).getTime()))
   const dagenOver = dagenTotVerlopen(offerte.geldig_tot)
   const bijnaVerlopen = !isVerlopen && dagenOver >= 0 && dagenOver <= 7
 
@@ -987,7 +998,7 @@ export function OffertePubliekPagina() {
         )}
       </KlantKop>
 
-      <div className={`mx-auto max-w-[760px] px-4 pt-8 md:px-8 md:pt-12 ${kanActie ? 'pb-32 md:pb-16' : 'pb-16'}`}>
+      <div className={`mx-auto max-w-[760px] px-4 pt-8 md:px-8 md:pt-12 ${kanActie && akkoordToegestaan ? 'pb-32 md:pb-16' : 'pb-16'}`}>
 
         {/* ── Kop: voor wie, wat, van wie ── */}
         <header>
@@ -1221,18 +1232,24 @@ export function OffertePubliekPagina() {
         {/* ── Besluit ── */}
         {kanActie && (
           <section className="mt-10">
-            <div className="hidden items-center justify-between gap-6 rounded-xl bg-[#FFFFFF] px-8 py-6 shadow-[0_1px_3px_rgba(0,0,0,0.03)] md:flex">
+            <div className={`${akkoordToegestaan ? 'hidden md:flex' : 'flex'} items-center justify-between gap-6 rounded-xl bg-[#FFFFFF] px-6 py-6 shadow-[0_1px_3px_rgba(0,0,0,0.03)] md:px-8`}>
               <div>
                 <p className="text-sm text-[#6B6B66]">{uwKeuze.length > 0 ? 'Totaal met uw keuze, excl. btw' : 'Totaal excl. btw'}</p>
                 <p className="font-mono text-2xl font-bold tracking-[-0.3px] text-[#1A1A1A]">{formatCurrency(totaalExclBedrag)}</p>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowAcceptModal(true)}
-                className="h-12 rounded-xl bg-[#D24620] px-8 text-base font-semibold text-white transition-colors hover:bg-[#BD3F1C]"
-              >
-                Akkoord geven
-              </button>
+              {akkoordToegestaan ? (
+                <button
+                  type="button"
+                  onClick={() => setShowAcceptModal(true)}
+                  className="h-12 rounded-xl bg-[#D24620] px-8 text-base font-semibold text-white transition-colors hover:bg-[#BD3F1C]"
+                >
+                  Akkoord geven
+                </button>
+              ) : (
+                <p className="max-w-[26ch] text-right text-sm text-[#6B6B66]">
+                  Akkoord geeft u aan {contactVoornaam || bedrijf?.bedrijfsnaam || 'ons'} persoonlijk, per mail of telefoon.
+                </p>
+              )}
             </div>
             <p className="mt-4 text-center text-sm text-[#6B6B66] md:text-right">
               Nog niet helemaal wat u zoekt?{' '}
@@ -1283,7 +1300,7 @@ export function OffertePubliekPagina() {
       </div>
 
       {/* ── Vaste besluitbalk op mobiel ── */}
-      {kanActie && (
+      {kanActie && akkoordToegestaan && (
         <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-4 border-t border-[#EBEBEB] bg-[#FFFFFF]/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.06)] backdrop-blur md:hidden">
           <div className="min-w-0">
             <p className="text-[11px] uppercase tracking-wider text-[#9B9B95]">Totaal excl. btw</p>
@@ -1301,7 +1318,7 @@ export function OffertePubliekPagina() {
 
       {/* ── Akkoord geven ── */}
       {showAcceptModal && (
-        <Sheet titel="Akkoord geven" onClose={() => setShowAcceptModal(false)}>
+        <Sheet titel="Akkoord geven" onClose={sluitAkkoord}>
           <div className="rounded-xl bg-[#F8F7F5] p-4">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">

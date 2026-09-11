@@ -64,7 +64,7 @@ export const offerteOpvolgingCron = schedules.task({
         // Get all offertes with opvolging active, status verzonden/bekeken
         const { data: offertes } = await supabase
           .from("offertes")
-          .select("id, user_id, klant_id, project_id, nummer, titel, subtotaal, totaal, status, verstuurd_op, verzendwijze, opvolging_actief, opvolging_schema_id, bekeken_door_klant, aantal_keer_bekeken, publiek_token, publiek_token_verloopt_op")
+          .select("id, user_id, klant_id, project_id, nummer, titel, subtotaal, totaal, status, verstuurd_op, verzendwijze, opvolging_actief, opvolging_schema_id, bekeken_door_klant, aantal_keer_bekeken, publiek_token, publiek_token_verloopt_op, geldig_tot, wijziging_ingediend_op")
           .in("user_id", userIds)
           .in("status", ["verzonden", "bekeken"])
           .or("opvolging_actief.is.null,opvolging_actief.eq.true");
@@ -178,6 +178,14 @@ export const offerteOpvolgingCron = schedules.task({
         for (const offerte of relevantOffertes as OfferteRow[]) {
           // Skip handmatig verstuurd (unless opvolging explicitly turned on)
           if (offerte.verzendwijze === "via_handmatig" && offerte.opvolging_actief !== true) {
+            totaalOvergeslagen++;
+            continue;
+          }
+
+          // Een verlopen offerte of een offerte waar de klant al een verzoek
+          // op deed, krijgt geen "u heeft nog niet gereageerd" meer.
+          const vandaag = now.toISOString().split("T")[0];
+          if ((offerte.geldig_tot && offerte.geldig_tot < vandaag) || offerte.wijziging_ingediend_op) {
             totaalOvergeslagen++;
             continue;
           }
@@ -456,6 +464,8 @@ interface OfferteRow {
   aantal_keer_bekeken?: number;
   publiek_token?: string;
   publiek_token_verloopt_op?: string | null;
+  geldig_tot?: string | null;
+  wijziging_ingediend_op?: string | null;
   subtotaal?: number;
 }
 

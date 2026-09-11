@@ -373,6 +373,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const huisstijl = {
       kop_kleur: typeof portaalInstellingen?.portaal_header_kleur === 'string' ? portaalInstellingen.portaal_header_kleur : null,
       logo_tonen: portaalInstellingen?.bedrijfslogo_op_portaal !== false,
+      // Dezelfde schakelaar die offerte-accepteren afdwingt.
+      akkoord_toegestaan: portaalInstellingen?.klant_kan_offerte_goedkeuren !== false,
     }
 
     // Merge status update in return data

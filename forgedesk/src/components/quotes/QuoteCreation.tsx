@@ -1581,14 +1581,20 @@ export function QuoteCreation() {
           // de portaallink; zonder link is de mail niets waard.
           let bekijkUrl = klantLinkVoorMail(window.location.origin, {}, portaalToken)
           if (savedOfferte) {
+            // Autosave-valkuil: deze server-side update bumpt updated_at. De
+            // autosave blijft zolang buiten de deur en de ref wordt bijgewerkt,
+            // anders ziet de autosave een vals conflict en stopt hij.
+            const autosaveLiepAl = saveLockRef.current
+            saveLockRef.current = true
+            if (autoSaveTimerRef.current) { clearTimeout(autoSaveTimerRef.current); autoSaveTimerRef.current = null }
             try {
               const metToken = await zorgPubliekToken(savedOfferte)
-              // Autosave-valkuil: een server-side update zonder deze ref geeft
-              // een vals conflict en stopt de autosave.
               if (metToken.updated_at) lastKnownUpdatedAtRef.current = metToken.updated_at
               bekijkUrl = klantLinkVoorMail(window.location.origin, metToken, portaalToken) ?? bekijkUrl
             } catch (err) {
               logger.error('Publieke offertelink maken mislukt, mail linkt naar portaal:', err)
+            } finally {
+              saveLockRef.current = autosaveLiepAl
             }
           }
 
@@ -1917,14 +1923,20 @@ export function QuoteCreation() {
       // portaallink; zonder link is de mail niets waard.
       let bekijkUrl = klantLinkVoorMail(window.location.origin, {}, portaalToken)
       if (savedOfferte) {
+        // Autosave-valkuil: deze server-side update bumpt updated_at. De
+        // autosave blijft zolang buiten de deur en de ref wordt bijgewerkt,
+        // anders ziet de autosave een vals conflict en stopt hij.
+        const autosaveLiepAl = saveLockRef.current
+        saveLockRef.current = true
+        if (autoSaveTimerRef.current) { clearTimeout(autoSaveTimerRef.current); autoSaveTimerRef.current = null }
         try {
           const metToken = await zorgPubliekToken(savedOfferte)
-          // Autosave-valkuil: een server-side update zonder deze ref geeft een
-          // vals conflict en stopt de autosave.
           if (metToken.updated_at) lastKnownUpdatedAtRef.current = metToken.updated_at
           bekijkUrl = klantLinkVoorMail(window.location.origin, metToken, portaalToken) ?? bekijkUrl
         } catch (err) {
           logger.error('Publieke offertelink maken mislukt, mail linkt naar portaal:', err)
+        } finally {
+          saveLockRef.current = autosaveLiepAl
         }
       }
 

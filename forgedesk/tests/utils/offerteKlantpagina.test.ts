@@ -59,7 +59,8 @@ describe('kopKleur en isLichteKleur · de kop van de klantpagina', () => {
     expect(kopKleur('#F15025')).toBe('#F15025')
     expect(kopKleur(' #ffffff ')).toBe('#ffffff')
     expect(kopKleur('red')).toBe('#1A535C')
-    expect(kopKleur('#fff')).toBe('#1A535C')
+    expect(kopKleur('#F15')).toBe('#FF1155')
+    expect(kopKleur('#1A5')).toBe('#11AA55')
     expect(kopKleur(undefined)).toBe('#1A535C')
   })
 

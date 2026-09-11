@@ -20,7 +20,7 @@ import {
   getPortaalItems,
 } from '@/services/supabaseService'
 import { zorgPubliekToken } from '@/services/offerteService'
-import { klantLinkVoorMail, offertePaginaUrl } from '@/utils/offerteKlantpagina'
+import { klantLinkVoorMail } from '@/utils/offerteKlantpagina'
 import { sendEmail } from '@/services/gmailService'
 import { rondOfferteCheckAf } from '@/services/offerteCheckService'
 import { offerteVerzendTemplate } from '@/services/emailTemplateService'
@@ -371,11 +371,7 @@ export function SendOfferteDialog({
     medewerkerNaam, checkBlokkade, checkDrempel,
   ])
 
-  const publiekeLink = offerte.publiek_token
-    ? offertePaginaUrl(window.location.origin, offerte.publiek_token, portaalToken)
-    : portaalToken
-      ? `${window.location.origin}/portaal/${portaalToken}`
-      : null
+  const publiekeLink = klantLinkVoorMail(window.location.origin, offerte, portaalToken) ?? null
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
