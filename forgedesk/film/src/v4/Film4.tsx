@@ -371,7 +371,11 @@ export const Film4: React.FC = () => {
             )
           })}
           <div style={{ position: 'absolute', left: 0, right: 0, top: height / 2 + 120, textAlign: 'center', fontFamily: thema.fonts.kop, fontWeight: 600, fontSize: 64, letterSpacing: '-0.02em', color: thema.kleur.petrol, opacity: vlak(t, S.regelOp, S.regelOp + 250), transform: `translateY(${(1 - regelP) * 24}px)` }}>slim gedaan<FlameDot /></div>
-          <div style={{ position: 'absolute', left: 0, right: 0, top: height / 2 + 215, textAlign: 'center', fontFamily: thema.fonts.body, fontWeight: 500, fontSize: 30, letterSpacing: '0.01em', color: thema.kleur.tekstSec, opacity: 0.9 * vlak(t, S.urlOp, S.urlOp + 250), transform: `translateY(${(1 - urlP) * 16}px)` }}>doen.team</div>
+          {/* Call to action: knop in Flame, daaronder de url */}
+          <div style={{ position: 'absolute', left: 0, right: 0, top: height / 2 + 236, display: "flex", justifyContent: "center", opacity: vlak(t, S.urlOp, S.urlOp + 250), transform: `translateY(${(1 - urlP) * 16}px) scale(${0.96 + urlP * 0.04})` }}>
+            <span style={{ padding: '18px 40px', borderRadius: 999, backgroundColor: thema.kleur.flame, color: thema.kleur.wit, fontFamily: thema.fonts.kop, fontWeight: 700, fontSize: 34, letterSpacing: '-0.02em', boxShadow: '0 18px 40px -14px rgba(241,80,37,0.55)' }}>Probeer nu 30 dagen gratis</span>
+          </div>
+          <div style={{ position: 'absolute', left: 0, right: 0, top: height / 2 + 336, textAlign: "center", fontFamily: thema.fonts.body, fontWeight: 500, fontSize: 28, letterSpacing: '0.01em', color: thema.kleur.tekstSec, opacity: 0.9 * vlak(t, S.urlOp + 400, S.urlOp + 650) }}>doen.team · maandelijks opzegbaar</div>
         </div>
       )}
 

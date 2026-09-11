@@ -97,5 +97,5 @@ export const S = {
   frameOp: 112100, frameDuur: 6000, frameUit: 136100,
   gridOp: 136500, puntValt: 136700, belofteOp: 137200, belofteUit: 139900, gridUit: 140000,
   eindkaartOp: 140100, regelOp: 140600, urlOp: 141200,
-  eind: 144300,
+  eind: 145500,
 } as const
