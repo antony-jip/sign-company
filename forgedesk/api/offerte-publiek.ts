@@ -242,16 +242,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Tekeningen en foto's staan als opslagpad in de private bucket. Zonder
     // sessie kan de klantpagina (en de PDF die daar gebouwd wordt) er niet bij,
-    // dus hier een ondertekende URL, zoals portaal-get dat ook doet.
+    // dus hier een ondertekende URL. Alleen voor paden van de eigen organisatie:
+    // het pad staat vrij op de offerteregel, en met de service-rol kon een
+    // teamlid anders een werkende link maken naar bestanden van een andere org.
+    // De eigenaar staat in het pad zoals storage_pad_eigenaar (migratie 183)
+    // hem leest: een user-id in het eerste of het tweede segment.
+    const orgLeden = new Set<string>([String(offerte.user_id).toLowerCase()])
+    if (offerte.organisatie_id) {
+      const { data: leden } = await supabaseAdmin
+        .from('profiles')
+        .select('id')
+        .eq('organisatie_id', offerte.organisatie_id)
+      for (const lid of leden || []) orgLeden.add(String(lid.id).toLowerCase())
+    }
+    const UUID_PATROON = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    function padEigenaar(pad: string): string | null {
+      const [eerste, tweede] = pad.split('/')
+      if (eerste && UUID_PATROON.test(eerste)) return eerste.toLowerCase()
+      if (tweede && UUID_PATROON.test(tweede)) return tweede.toLowerCase()
+      return null
+    }
     async function ondertekend(url: unknown): Promise<string | null> {
       if (typeof url !== 'string' || !url) return null
       if (url.startsWith('http') || url.startsWith('data:')) return url
-      const inPortaal = url.startsWith('portaal-bestanden/')
-      const bucket = inPortaal ? 'portaal-bestanden' : 'documenten-prive'
-      const pad = inPortaal ? url.slice('portaal-bestanden/'.length) : url
-      const { data, error } = await supabaseAdmin.storage.from(bucket).createSignedUrl(pad, 60 * 60 * 24)
+      const eigenaar = padEigenaar(url)
+      if (!eigenaar || !orgLeden.has(eigenaar) || url.split('/').includes('..')) return null
+      const { data, error } = await supabaseAdmin.storage.from('documenten-prive').createSignedUrl(url, 60 * 60 * 24)
       if (error || !data?.signedUrl) {
-        console.error('[offerte-publiek] ondertekende URL mislukt:', bucket, error?.message)
+        console.error('[offerte-publiek] ondertekende URL mislukt:', error?.message)
         return null
       }
       return data.signedUrl

@@ -118,14 +118,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     // Een verlopen offerte mag wel een verzoek krijgen: de klant vraagt dan een
     // nieuwe versie aan. Zonder die ingang liep de klantpagina daar dood.
-    const isVerlopen = !!offerte.geldig_tot && offerte.geldig_tot < new Date().toISOString().split('T')[0]
+    const isVerlopen = offerte.status === 'verlopen'
+      || (!!offerte.geldig_tot && offerte.geldig_tot < new Date().toISOString().split('T')[0])
 
     const nu = new Date().toISOString()
     const afzender = naam?.trim() || 'Klant'
 
-    // Update offerte
+    // Een verlopen offerte houdt zijn status: 'wijziging_gevraagd' zou hem in de
+    // pipeline en de KPI's weer als open offerte laten meetellen. Het verzoek
+    // zelf staat wel vast en de verkoper krijgt de melding.
     await supabaseAdmin.from('offertes').update({
-      status: 'wijziging_gevraagd',
+      ...(isVerlopen ? {} : { status: 'wijziging_gevraagd' }),
       wijziging_opmerking: opmerking.trim(),
       wijziging_ingediend_op: nu,
       updated_at: nu,

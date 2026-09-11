@@ -295,7 +295,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (offerteIds.length > 0) {
       const { data: offertes } = await supabaseAdmin
         .from('offertes')
-        .select('id, publiek_token, subtotaal, btw_bedrag, totaal')
+        .select('id, publiek_token, publiek_token_verloopt_op, subtotaal, btw_bedrag, totaal')
         .in('id', offerteIds)
       if (offertes) {
         for (const o of offertes) {
@@ -304,7 +304,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           } else if (o.totaal != null) {
             offerteBedragExclMap[o.id] = Number(o.totaal) - Number(o.btw_bedrag || 0)
           }
-          if (o.publiek_token) {
+          const linkVerlopen = !!o.publiek_token_verloopt_op && new Date(o.publiek_token_verloopt_op) < new Date()
+          if (o.publiek_token && !linkVerlopen) {
+            offerteTokenMap[o.id] = o.publiek_token
+          } else if (o.publiek_token) {
+            // Het portaal is actief, maar de offertelink was verlopen. De kaart
+            // stuurt de klant voor akkoord naar die link, dus zonder verlenging
+            // liep hij daar dood op een 410. Zelfde termijn als een nieuwe link.
+            const verlooptOp = new Date(Date.now() + 183 * 24 * 60 * 60 * 1000).toISOString()
+            await supabaseAdmin
+              .from('offertes')
+              .update({ publiek_token_verloopt_op: verlooptOp })
+              .eq('id', o.id)
             offerteTokenMap[o.id] = o.publiek_token
           } else {
             // Auto-generate publiek_token for offertes without one.

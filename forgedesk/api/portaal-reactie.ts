@@ -186,6 +186,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
+    // Een akkoord op een opdrachtbevestiging of losse offerte zonder naam is
+    // geen akkoord waar je later iets mee kunt.
+    if (type === 'goedkeuring' && (item.type === 'offerte' || item.type === 'opdrachtbevestiging')
+      && (!klant_naam || klant_naam.trim().length < 2)) {
+      return res.status(400).json({ error: 'Vul uw naam in om akkoord te geven.' })
+    }
+
     // Sla reactie op
     const { data: reactie, error: reactieError } = await supabaseAdmin
       .from('portaal_reacties')
