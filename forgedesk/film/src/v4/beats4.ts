@@ -87,13 +87,14 @@ export const H6 = {
   eind: 109000,
 } as const
 
-// Slot: zachte overgang naar de gevel, de punt zet het bord aan, Daan (powered by
-// Claude), modulegrid rond het logo, het logo loopt door in de eindkaart.
+// Slot: zachte overgang, Daan (jouw slimme collega, powered by Claude) in drie
+// 50/50-frames met links de zin en rechts de echte UI, dan het grid rond het
+// logo en de eindkaart. Geen gevel meer.
 export const S = {
-  overgangOp: 109000, overgangTot: 110200, gevelOp: 109300,
-  puntVlucht: 110600, bordAan: 111300,
-  daanOp: 113500, daanTekstOp: 114000, daanRegelOp: 114700, daanRegelStap: 550, daanUit: 121000,
-  gridOp: 121600, puntValt: 121800, belofteOp: 122300, belofteUit: 125000, gridUit: 125100,
-  eindkaartOp: 125200, regelOp: 125700, urlOp: 126300,
-  eind: 129400,
+  overgangOp: 109000, overgangTot: 110200,
+  introOp: 110000, introNaamOp: 110900, introUit: 113600,
+  frameOp: 113800, frameDuur: 4600, frameUit: 127600,
+  gridOp: 128000, puntValt: 128200, belofteOp: 128700, belofteUit: 131400, gridUit: 131500,
+  eindkaartOp: 131600, regelOp: 132100, urlOp: 132700,
+  eind: 135800,
 } as const

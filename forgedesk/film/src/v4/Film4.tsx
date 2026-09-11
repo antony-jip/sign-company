@@ -11,12 +11,13 @@ import { VensterCtx } from '../v2/DesktopChrome'
 import { FORMATEN, FormaatCtx } from '../v2/formaat'
 import { FinancieelTab } from '../v2/schermen/FinancieelTab'
 import { MailApp } from '../v2/schermen/MailApp'
+import { Dashboard } from '../v2/schermen/Dashboard'
 import { OfferteEditor } from '../v2/schermen/OfferteEditor'
 import { Planning } from '../v2/schermen/Planning'
 import { PortaalKlant } from '../v2/schermen/PortaalKlant'
 import { WerkbonTelefoon } from '../v2/schermen/WerkbonTelefoon'
 import { H1, H2, H3, H4, H5, H6, O, S } from './beats4'
-import { DaanBlok, Gevel4, Geluid4, Koppelingen, Melding4, Telefoon4, TELEFOON4, type Klank4 } from './Extra'
+import { DaanIntro, DaanLinks, Geluid4, Kader, Koppelingen, Melding4, Telefoon4, TELEFOON4, type Klank4 } from './Extra'
 import { camera4, Paneel, PANEEL_SCHAAL, Ruimte, type CameraStop4 } from './Ruimte'
 import { Hoofdstukkaart, Rondleiding4, Statuswoord } from './Tekst'
 import { useTexturen } from './texturen'
@@ -103,7 +104,6 @@ const CURSOR: CursorStap[] = [
   { ms: k(H6.klikFactuurMaken), doel: 'factuur-maken', klik: true },
   { ms: k(H6.klikVerstuur), doel: 'factuur-verstuur', klik: true },
   { ms: H6.statusVlucht, doel: 'status-punt' },
-  { ms: S.puntVlucht, doel: 'bord-punt' },
   { ms: S.puntValt, doel: 'wordmark-punt' },
 ]
 
@@ -114,7 +114,7 @@ const KLANKEN: Klank4[] = [
   ...[H1, H2, H3, H4, H5, H6].map((h): Klank4 => ({ ms: h.statusLand, bestand: 'landing', volume: 0.55 })),
   ...[H1, H2, H3, H4, H5, H6].map((h): Klank4 => ({ ms: h.dollyOp, bestand: 'zwiep', volume: 0.35 })),
   { ms: H3.terugOp, bestand: 'zwiep', volume: 0.35 }, { ms: S.overgangOp, bestand: 'zwiep', volume: 0.4 },
-  { ms: S.bordAan, bestand: 'ding', volume: 0.7 }, { ms: S.puntValt + 700, bestand: 'landing', volume: 0.6 },
+  { ms: S.puntValt + 700, bestand: 'landing', volume: 0.6 },
 ]
 
 const MODULES = ['Klanten', 'Projecten', 'Offertes', 'Planning', 'Werkbonnen', 'Portaal', 'Facturen', 'Email']
@@ -167,8 +167,6 @@ export const Film4: React.FC = () => {
   const inTelefoon = t >= H5.dollyOp - 300
 
   // Slot
-  const daanP = vlak(t, S.daanOp, S.daanOp + 800, thema.ease.inUit)
-  const gevelZicht = vlak(t, S.gevelOp, S.gevelOp + 1000, thema.ease.inUit) * (1 - daanP)
   const gridZicht = Math.min(vlak(t, S.gridOp, S.gridOp + 300), 1 - vlak(t, S.gridUit, S.gridUit + 300, thema.ease.exit))
   const eindGrond = 0
   const logoBreedte = 640
@@ -180,7 +178,7 @@ export const Film4: React.FC = () => {
   return (
     <FormaatCtx.Provider value={F}>
     <AbsoluteFill data-film-root className="film-root" style={{ backgroundColor: thema.kleur.studio, fontFamily: thema.fonts.body }}>
-      <Geluid4 klanken={KLANKEN} muziekUitOp={S.bordAan} totMs={S.eind} />
+      <Geluid4 klanken={KLANKEN} muziekUitOp={S.eind + 5000} totMs={S.eind} />
       {/* Lichte studio: crème grond met zachte kleurvlekken (flame, petrol, zand) die traag ademen */}
       <AbsoluteFill style={{ background: `linear-gradient(180deg, ${thema.kleur.studio} 0%, ${thema.kleur.studioLaag} 100%)` }} />
       <div style={{ position: 'absolute', inset: -300, filter: 'blur(80px) saturate(1.3)' }}>
@@ -189,9 +187,6 @@ export const Film4: React.FC = () => {
         <div style={{ position: 'absolute', left: 300 + width * 0.35 - 700, top: 300 + height * 0.9 - 700 + Math.sin(t / 14500) * 70, width: 1400, height: 1400, borderRadius: '50%', background: `radial-gradient(circle, ${merk.zand}66 0%, ${merk.zand}00 66%)` }} />
         <div style={{ position: 'absolute', left: 300 + width * 0.8 - 720, top: 300 + height * 0.9 - 720, width: 1440, height: 1440, borderRadius: '50%', background: `radial-gradient(circle, ${thema.kleur.petrolLicht}FF 0%, ${thema.kleur.petrolLicht}00 66%)` }} />
       </div>
-
-      {/* Slot: de gevel achter alles */}
-      {t >= S.gevelOp && t < S.puntValt + 900 && <Gevel4 t={t} zicht={gevelZicht} aanOp={S.bordAan} width={width} height={height} />}
 
       {/* Opening in 3D: tool-kaartjes, punt, inslag, logo; pusht weg in de duik */}
       {tex && openingZicht > 0 && (
@@ -288,10 +283,24 @@ export const Film4: React.FC = () => {
       <Statuswoord t={t} op={H3.statusOp} uit={H3.eind - 100} woord="getekend" />
       <Statuswoord t={t} op={H4.statusOp} uit={H4.eind - 100} woord="ingepland" />
       <Statuswoord t={t} op={H5.statusOp} uit={H5.eind - 100} woord="gedaan" />
-      <Statuswoord t={t} op={H6.statusOp} uit={S.overgangOp} weg={S.puntVlucht + 900} woord="betaald" />
+      <Statuswoord t={t} op={H6.statusOp} uit={S.overgangOp} woord="betaald" />
 
-      {/* Slot: Daan, powered by Claude */}
-      <DaanBlok t={t} op={S.daanOp} tekstOp={S.daanTekstOp} regelOp={S.daanRegelOp} regelStap={S.daanRegelStap} uit={S.daanUit} width={width} height={height} />
+      {/* Slot: Daan, jouw slimme collega, powered by Claude. Intro, dan drie 50/50-frames. */}
+      <DaanIntro t={t} op={S.introOp} naamOp={S.introNaamOp} uit={S.introUit} width={width} height={height} />
+      <DaanLinks t={t} frameOp={S.frameOp} frameDuur={S.frameDuur} uit={S.frameUit} width={width} height={height} />
+      {t >= S.frameOp - 200 && t < S.frameUit + 500 && (
+        <VensterCtx.Provider value={{ b: 1600, h: 1000 }}>
+          <Kader t={t} op={S.frameOp} uit={S.frameOp + S.frameDuur} focus={{ x: 600, y: 100, schaal: 0.95 }}>
+            <MailApp t={t} stand={{ gekozen: true, klantOp: 0 }} />
+          </Kader>
+          <Kader t={t} op={S.frameOp + S.frameDuur} uit={S.frameOp + 2 * S.frameDuur} focus={{ x: 70, y: 310, schaal: 0.8 }}>
+            <Dashboard t={t} stand={{ mailOp: 0 }} />
+          </Kader>
+          <Kader t={t} op={S.frameOp + 2 * S.frameDuur} uit={S.frameUit} focus={{ x: 120, y: 150, schaal: 1.0 }}>
+            <OfferteEditor t={t} stand={{ regelsOp: S.frameOp - 4000, daanOp: S.frameOp + 2 * S.frameDuur + 900, verstuurTikOp: 1e9, keuzeOp: 1e9, keuzeTikOp: 1e9, flapOp: 1e9 }} />
+          </Kader>
+        </VensterCtx.Provider>
+      )}
 
       {/* Slot: het logo met de modules eromheen; het logo blijft staan voor de eindkaart */}
       {t >= S.gridOp && (
@@ -324,8 +333,8 @@ export const Film4: React.FC = () => {
       {t >= OVERDRACHT_MS && <Cursor t={t} stappen={CURSOR} zichtVan={OVERDRACHT_MS} vorm="punt" kleur={thema.kleur.flame} />}
 
       {/* Kleurgrade, grain 4 procent, vignet 15 procent */}
-      <AbsoluteFill style={{ backgroundColor: thema.kleur.petrol, mixBlendMode: 'soft-light', opacity: 0.10, pointerEvents: 'none', zIndex: 90 }} />
-      <AbsoluteFill style={{ backgroundColor: '#F5D4A8', mixBlendMode: 'overlay', opacity: 0.06, pointerEvents: 'none', zIndex: 90 }} />
+      <AbsoluteFill style={{ backgroundColor: thema.kleur.petrol, mixBlendMode: 'soft-light', opacity: 0.06, pointerEvents: 'none', zIndex: 90 }} />
+      <AbsoluteFill style={{ backgroundColor: '#F5D4A8', mixBlendMode: 'overlay', opacity: 0.04, pointerEvents: 'none', zIndex: 90 }} />
       <AbsoluteFill style={{ backgroundImage: `url(${staticFile('sfeer/ruis.png')})`, backgroundSize: '256px 256px', backgroundPosition: `${(frame * 37) % 256}px ${(frame * 53) % 256}px`, mixBlendMode: 'overlay', opacity: thema.laag.grain, pointerEvents: 'none', zIndex: 90 }} />
       <AbsoluteFill style={{ background: `radial-gradient(ellipse at 50% 50%, transparent 52%, rgba(26,83,92,${thema.laag.vignet}) 100%)`, pointerEvents: 'none', zIndex: 90 }} />
     </AbsoluteFill>

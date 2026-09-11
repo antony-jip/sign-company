@@ -32,5 +32,6 @@ export const thema = {
   // De punt.
   punt: { straal: 0.393, klikSchaal: 1.4, klikMs: 120, vluchtMs: 600 },
   // Diepte-laag: grain 4 procent, vignet 15 procent.
-  laag: { grain: 0.04, vignet: 0.15 },
+  // Clean: grain 2 procent, vignet 10 procent.
+  laag: { grain: 0.02, vignet: 0.10 },
 } as const

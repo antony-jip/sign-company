@@ -25,6 +25,18 @@
       "bestand": "muziek-d.mp3",
       "omschrijving": "Feelgood indie-dance, 120 bpm, gitaar plus synth, warm en hip.",
       "prompt": "Feel-good indie dance instrumental for a hip tech brand video, 120 bpm, funky clean guitar chops, warm analog synth pads, punchy kick and crisp hi-hats, groovy bass, handclaps, bright optimistic summer energy, catchy melodic hook, modern polished mix, no vocals, instrumental"
+    },
+    {
+      "id": "muziek-e",
+      "bestand": "muziek-e.mp3",
+      "omschrijving": "Emotioneel en betekenisvol: intieme piano naar warme, moderne opbouw met climax. 112 bpm.",
+      "prompt": "Emotional cinematic product film soundtrack with a clear story arc, 112 bpm, 2 minutes 20 seconds. Opens intimate and hopeful with soft felt piano and a subtle warm synth pad, a gentle heartbeat-like kick enters after 15 seconds, builds gradually with warm plucked guitar, airy strings and a confident modern beat, a moment of quiet breath at two thirds, then a wide uplifting climax with full strings and layered synths, and a calm, proud resolution on piano at the end. Human, warm, meaningful, craftsmanship and pride, modern and clean mix, no vocals, instrumental"
+    },
+    {
+      "id": "muziek-f",
+      "bestand": "muziek-f.mp3",
+      "omschrijving": "Warm indie-cinematic, gitaar en piano, hoopvol met een grote lift. 116 bpm.",
+      "prompt": "Warm hopeful indie cinematic instrumental for a brand film about craftsmen and their work, 116 bpm, 2 minutes 20 seconds. Starts with a lone acoustic guitar motif and soft piano, gentle organic percussion joins, builds with warm bass, layered guitars and strings into an emotional, goosebump lift near the end, then a soft heartfelt outro. Storytelling, meaning, pride, forward motion, modern polished mix, no vocals, instrumental"
     }
   ],
   "sfx": [

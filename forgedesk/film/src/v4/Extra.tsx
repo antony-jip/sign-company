@@ -72,10 +72,12 @@ export const Gevel4: React.FC<{ t: number; zicht: number; aanOp: number; width: 
 // diepere tik, inslag op de inslag. Muziek bouwt op tot het bord aangaat en
 // valt daar weg.
 export type Klank4 = { ms: number; bestand: 'klik' | 'landing' | 'inslag' | 'zwiep' | 'ding'; volume?: number }
+// Muziek: muziek-e (MiniMax, emotionele opbouw met climax); muziek-f is de warme indie-variant.
+export const MUZIEK = 'audio/muziek-e.mp3'
 export const Geluid4: React.FC<{ klanken: Klank4[]; muziekUitOp: number; totMs: number }> = ({ klanken, muziekUitOp, totMs }) => (
   <>
     <Sequence from={0} durationInFrames={msNaarFrames(totMs)} name="muziek">
-      <Audio src={staticFile('audio/muziek-c.mp3')} volume={(f) => {
+      <Audio src={staticFile(MUZIEK)} volume={(f) => {
         const ms = (f / 30) * 1000
         const inP = Math.min(1, ms / 1000)
         // Valt weg als het bord aangaat, blijft daarna als zacht bed onder Daan en het slot.
@@ -119,37 +121,68 @@ export const Koppelingen: React.FC<{ t: number; op: number; uit: number }> = ({ 
   )
 }
 
-// Daan (slot): de assistent in doen., powered by Claude. Vier dingen die hij
-// echt doet in de app (mail lezen, offertetekst en follow-up schrijven,
-// threads samenvatten, 's nachts de dag teruglezen).
-const DAAN_REGELS = [
-  'leest je mail en zet de aanvraag klaar',
-  'schrijft je offertetekst en je follow-up',
-  'vat een hele mailthread samen in twee zinnen',
-  'leest \'s nachts de dag terug en zet voorstellen klaar',
+// Daan (slot). Intro: "doen. wordt ondersteund door jouw slimme collega." en
+// "daan. powered by Claude". Daarna drie 50/50-frames: links de zin, rechts de
+// echte UI (Kader). Mensen moeten het zien, anders blijft AI een toverwoord.
+export const DAAN_FRAMES = [
+  { zin: 'leest je mail en zet de aanvraag klaar', kern: 'aanvraag' },
+  { zin: "leest 's nachts de dag terug en zet voorstellen klaar", kern: 'voorstellen' },
+  { zin: 'schrijft je offertetekst en je follow-up', kern: 'offertetekst' },
 ]
-export const DaanBlok: React.FC<{ t: number; op: number; tekstOp: number; regelOp: number; regelStap: number; uit: number; width: number; height: number }> = ({ t, op, tekstOp, regelOp, regelStap, uit, width, height }) => {
+const Kern: React.FC<{ zin: string; kern: string }> = ({ zin, kern }) => {
+  const i = zin.indexOf(kern)
+  if (i < 0) return <>{zin}</>
+  return <>{zin.slice(0, i)}<span style={{ color: thema.kleur.flame }}>{kern}</span>{zin.slice(i + kern.length)}</>
+}
+export const DaanIntro: React.FC<{ t: number; op: number; naamOp: number; uit: number; width: number; height: number }> = ({ t, op, naamOp, uit, width, height }) => {
   if (t < op || t > uit + 400) return null
-  const zicht = Math.min(vlak(t, op, op + 500), 1 - vlak(t, uit, uit + 400, thema.ease.exit))
-  const inP = veer(t, tekstOp, { demping: 18, duurMs: 700 })
-  const subP = vlak(t, tekstOp + 250, tekstOp + 650, thema.ease.enter)
-  if (zicht <= 0) return null
+  const zicht = 1 - vlak(t, uit, uit + 400, thema.ease.exit)
+  const regelP = veer(t, op, { demping: 18, duurMs: 700 })
+  const naamP = veer(t, naamOp, { demping: 16, duurMs: 800 })
+  const subP = vlak(t, naamOp + 300, naamOp + 700, thema.ease.enter)
   return (
-    <div style={{ position: 'absolute', inset: 0, zIndex: 13, pointerEvents: 'none', opacity: zicht, fontFamily: thema.fonts.kop }}>
-      <div style={{ position: 'absolute', left: width * 0.10, top: height * 0.5, transform: `translateY(-50%) translateY(${(1 - inP) * 24}px)`, opacity: Math.min(1, inP * 1.3) }}>
-        <div style={{ fontSize: 200, fontWeight: 700, lineHeight: 0.95, letterSpacing: '-0.05em', color: thema.kleur.petrol }}>daan<span style={{ color: thema.kleur.flame }}>.</span></div>
-        <div style={{ marginTop: 18, fontSize: 34, fontWeight: 600, letterSpacing: '-0.01em', color: thema.kleur.petrol, opacity: 0.6 * subP, transform: `translateY(${(1 - subP) * 8}px)` }}>powered by Claude</div>
+    <div style={{ position: 'absolute', inset: 0, zIndex: 13, pointerEvents: 'none', opacity: zicht, fontFamily: thema.fonts.kop, textAlign: 'center' }}>
+      <div style={{ position: 'absolute', left: 0, right: 0, top: height * 0.30, fontSize: 60, fontWeight: 600, letterSpacing: '-0.025em', color: thema.kleur.petrol, opacity: Math.min(1, regelP * 1.3), transform: `translateY(${(1 - regelP) * 18}px)` }}>doen<span style={{ color: thema.kleur.flame }}>.</span> wordt ondersteund door jouw slimme collega<span style={{ color: thema.kleur.flame }}>.</span></div>
+      <div style={{ position: 'absolute', left: 0, right: 0, top: height * 0.42, fontSize: 220, fontWeight: 700, lineHeight: 1, letterSpacing: '-0.05em', color: thema.kleur.petrol, opacity: Math.min(1, naamP * 1.3), transform: `translateY(${(1 - naamP) * 30}px) scale(${0.96 + naamP * 0.04})` }}>daan<span style={{ color: thema.kleur.flame }}>.</span></div>
+      <div style={{ position: 'absolute', left: 0, right: 0, top: height * 0.42 + 250, fontSize: 36, fontWeight: 600, letterSpacing: '-0.01em', color: thema.kleur.petrol, opacity: 0.6 * subP, transform: `translateY(${(1 - subP) * 8}px)` }}>powered by Claude</div>
+      <div style={{ position: 'absolute', left: width, width: 0 }} />
+    </div>
+  )
+}
+// Linkerkolom van de 50/50-frames: "daan." klein bovenin, de zin groot.
+export const DaanLinks: React.FC<{ t: number; frameOp: number; frameDuur: number; uit: number; width: number; height: number }> = ({ t, frameOp, frameDuur, uit, width, height }) => {
+  if (t < frameOp || t > uit + 400) return null
+  const zicht = Math.min(vlak(t, frameOp, frameOp + 400), 1 - vlak(t, uit, uit + 400, thema.ease.exit))
+  const i = Math.min(DAAN_FRAMES.length - 1, Math.floor((t - frameOp) / frameDuur))
+  const van = frameOp + i * frameDuur
+  const inP = veer(t, van, { demping: 18, duurMs: 650 })
+  const uitP = i < DAAN_FRAMES.length - 1 ? vlak(t, van + frameDuur - 300, van + frameDuur, thema.ease.exit) : 0
+  const f = DAAN_FRAMES[i]
+  return (
+    <div style={{ position: 'absolute', left: width * 0.07, top: 0, width: width * 0.40, height, zIndex: 13, pointerEvents: 'none', opacity: zicht, fontFamily: thema.fonts.kop }}>
+      <div style={{ position: 'absolute', top: 72, fontSize: 64, fontWeight: 700, letterSpacing: '-0.04em', color: thema.kleur.petrol }}>daan<span style={{ color: thema.kleur.flame }}>.</span><span style={{ marginLeft: 22, fontSize: 26, fontWeight: 600, letterSpacing: '-0.01em', opacity: 0.55 }}>jouw slimme collega · powered by Claude</span></div>
+      <div style={{ position: 'absolute', top: 92, fontSize: 24, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: thema.kleur.petrol, opacity: 0.45, marginTop: 70 }}>wat doet daan?</div>
+      <div style={{ position: 'absolute', top: height * 0.5, transform: `translateY(-50%) translateY(${(1 - inP) * 26 - uitP * 14}px)`, opacity: Math.min(1, inP * 1.3) * (1 - uitP), fontSize: 76, fontWeight: 700, lineHeight: 1.06, letterSpacing: '-0.04em', color: thema.kleur.petrol, textWrap: 'balance' as never }}>
+        <Kern zin={f.zin} kern={f.kern} /><span style={{ color: thema.kleur.flame }}>.</span>
       </div>
-      <div style={{ position: 'absolute', left: width * 0.47, right: width * 0.07, top: height * 0.5, transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', gap: 26 }}>
-        {DAAN_REGELS.map((regel, i) => {
-          const p = veer(t, regelOp + i * regelStap, { demping: 17, duurMs: 600 })
-          return (
-            <div key={regel} style={{ display: 'flex', alignItems: 'center', gap: 22, opacity: Math.min(1, p * 1.3), transform: `translateX(${(1 - p) * 28}px)`, padding: '20px 30px', borderRadius: 26, backgroundColor: 'rgba(255,255,255,0.78)', backdropFilter: 'blur(22px) saturate(1.3)', WebkitBackdropFilter: 'blur(22px) saturate(1.3)', boxShadow: '0 30px 70px -30px rgba(26,83,92,0.3), 0 0 0 1px rgba(255,255,255,0.9) inset' }}>
-              <span style={{ width: 18, height: 18, borderRadius: '50%', backgroundColor: thema.kleur.flame, flexShrink: 0 }} />
-              <span style={{ fontSize: 40, fontWeight: 600, letterSpacing: '-0.025em', lineHeight: 1.15, color: thema.kleur.petrol }}>{regel}</span>
-            </div>
-          )
-        })}
+      <div style={{ position: 'absolute', bottom: 84, display: 'flex', gap: 12 }}>
+        {DAAN_FRAMES.map((_, k) => <span key={k} style={{ width: k === i ? 44 : 14, height: 14, borderRadius: 7, backgroundColor: k === i ? thema.kleur.flame : `${thema.kleur.petrol}33` }} />)}
+      </div>
+    </div>
+  )
+}
+// Rechterkolom: een kader met echte UI, gefocust op een deel van het scherm.
+export const Kader: React.FC<{ t: number; op: number; uit: number; focus: { x: number; y: number; schaal: number }; children: ReactNode }> = ({ t, op, uit, focus, children }) => {
+  if (t < op - 100 || t > uit + 400) return null
+  const inP = veer(t, op, { demping: 18, duurMs: 700 })
+  const zicht = Math.min(vlak(t, op, op + 250), 1 - vlak(t, uit, uit + 350, thema.ease.exit))
+  const uitP = vlak(t, uit, uit + 350, thema.ease.exit)
+  if (zicht <= 0) return null
+  const B = 848, H = 860
+  return (
+    <div style={{ position: 'absolute', left: 1000, top: 110, width: B, height: H, zIndex: 12, pointerEvents: 'none', opacity: zicht, transform: `translateX(${(1 - inP) * 48 - uitP * 30}px) scale(${0.97 + inP * 0.03})`, borderRadius: 26, backgroundColor: thema.kleur.wit, boxShadow: '0 40px 90px -30px rgba(26,83,92,0.38), 0 120px 160px -80px rgba(26,83,92,0.30), 0 0 0 1px rgba(255,255,255,0.9) inset', overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', left: 0, top: 0, transform: `translate(${-focus.x * focus.schaal}px, ${-focus.y * focus.schaal}px) scale(${focus.schaal})`, transformOrigin: '0 0' }}>
+        {children}
       </div>
     </div>
   )
