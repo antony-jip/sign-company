@@ -76,32 +76,9 @@ async function getPortaalInstellingen(orgId: string | null, userId: string): Pro
   return { ...INSTELLINGEN_DEFAULTS, ...((rij?.portaal_instellingen as Record<string, unknown>) || {}) }
 }
 
-// ---- Inline email template (Vercel bundelt geen lokale imports in api/) ----
 function escapeHtml(str: string): string {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 }
-
-function buildPortalEmailHtml(params: {
-  heading: string; itemTitel?: string; beschrijving?: string; ctaLabel?: string
-  ctaUrl?: string; bedrijfsnaam?: string; quote?: string; logoUrl?: string; primaireKleur?: string
-}): string {
-  const { heading, itemTitel, beschrijving, ctaLabel = 'Bekijk in portaal \u2192', ctaUrl, bedrijfsnaam, quote, logoUrl, primaireKleur } = params
-  const sage = primaireKleur || '#1A535C'
-  const sageLight = primaireKleur ? `${primaireKleur}18` : '#E8EEEF'
-  const bgOuter = '#F4F3F0', bgCard = '#FFFFFF', textDark = '#1A1A1A', textMuted = '#5A5A55', textLight = '#8A8A85', borderLight = '#E8E8E3'
-  const itemBlock = itemTitel ? `<tr><td style="padding: 0 0 16px 0;"><table width="100%" cellpadding="0" cellspacing="0" style="border: 1px solid ${borderLight}; border-radius: 8px;"><tr><td style="padding: 16px 20px; font-family: 'DM Sans', Arial, sans-serif; font-size: 15px; font-weight: 600; color: ${textDark};">${escapeHtml(itemTitel)}</td></tr>${beschrijving ? `<tr><td style="padding: 0 20px 16px 20px; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: ${textMuted}; line-height: 1.6;">${escapeHtml(beschrijving)}</td></tr>` : ''}</table></td></tr>` : ''
-  const quoteBlock = quote ? `<tr><td style="padding: 0 0 20px 0;"><table width="100%" cellpadding="0" cellspacing="0" style="background-color: ${sageLight}; border-radius: 8px; border-left: 4px solid ${sage};"><tr><td style="padding: 16px 20px; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: ${textDark}; font-style: italic; line-height: 1.6;">&ldquo;${escapeHtml(quote)}&rdquo;</td></tr></table></td></tr>` : ''
-  const groetBlock = bedrijfsnaam ? `<tr><td style="padding: 16px 0 0 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 14px; color: ${textMuted}; line-height: 1.8;">Met vriendelijke groet,<br/><strong style="color: ${textDark};">${escapeHtml(bedrijfsnaam)}</strong></td></tr>` : ''
-  const ctaBlock = ctaUrl ? `<tr><td style="padding: 8px 0 0 0;" align="center"><a href="${escapeHtml(ctaUrl)}" target="_blank" style="display: inline-block; background-color: ${sage}; color: #FFFFFF; font-family: 'DM Sans', Arial, sans-serif; font-size: 15px; font-weight: 600; text-decoration: none; padding: 14px 32px; border-radius: 8px; line-height: 1;">${escapeHtml(ctaLabel)}</a></td></tr>` : ''
-  const footerText = bedrijfsnaam ? `Verzonden namens ${escapeHtml(bedrijfsnaam)}` : ''
-  const logoHtml = logoUrl
-    ? `<img src="${escapeHtml(logoUrl)}" alt="${escapeHtml(bedrijfsnaam || '')}" style="max-height: 48px; max-width: 200px; object-fit: contain;" />`
-    : bedrijfsnaam
-    ? `<span style="font-family: 'DM Sans', Arial, sans-serif; font-size: 22px; color: ${textDark}; letter-spacing: -0.5px;"><strong>${escapeHtml(bedrijfsnaam)}</strong></span>`
-    : ''
-  return `<!DOCTYPE html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body style="margin: 0; padding: 0; background-color: ${bgOuter}; -webkit-font-smoothing: antialiased;"><table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: ${bgOuter}; padding: 40px 0;"><tr><td align="center"><table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%;"><tr><td style="padding: 0 0 24px 0; text-align: center;">${logoHtml}</td></tr></table><table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%; background-color: ${bgCard}; border-radius: 12px; box-shadow: 0 2px 16px rgba(0,0,0,0.04);"><tr><td style="padding: 40px 40px 36px 40px;"><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding: 0 0 24px 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 20px; font-weight: 700; color: ${textDark}; line-height: 1.3;">${escapeHtml(heading)}</td></tr>${itemBlock}${quoteBlock}${groetBlock}${ctaBlock}</table></td></tr></table><table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%;"><tr><td style="padding: 24px 0 0 0; text-align: center; font-family: 'DM Sans', Arial, sans-serif; font-size: 12px; color: ${textLight}; line-height: 1.6;">${footerText}</td></tr></table></td></tr></table></body></html>`
-}
-// ---- Einde inline email template ----
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
@@ -115,15 +92,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { token, portaal_item_id, type, bericht, klant_naam, bestanden, gekozen_items, gekozen_varianten, foto_url } = req.body as {
+    const { token, portaal_item_id, type, bericht, klant_naam, bestanden, foto_url } = req.body as {
       token: string
       portaal_item_id: string
       type: 'goedkeuring' | 'revisie' | 'bericht'
       bericht?: string
       klant_naam?: string
       bestanden?: string[] // URLs van geüploade bestanden
-      gekozen_items?: string[]
-      gekozen_varianten?: Record<string, string>
       foto_url?: string
     }
 
@@ -161,7 +136,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Valideer dat item bestaat en zichtbaar is
     const { data: item } = await supabaseAdmin
       .from('portaal_items')
-      .select('id, type, status, portaal_id, zichtbaar_voor_klant')
+      .select('id, type, status, portaal_id, zichtbaar_voor_klant, offerte_id')
       .eq('id', portaal_item_id)
       .eq('portaal_id', portaal.id)
       .single()
@@ -192,33 +167,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(409).json({ error: 'Dit item is al goedgekeurd.' })
     }
 
-    let offerteVooraf: { id: string; user_id: string | null; status: string; geldig_tot: string | null; nummer: string | null; titel: string | null } | null = null
-    if (type === 'goedkeuring' && item.type === 'offerte') {
-      const { data: itemMetOfferte } = await supabaseAdmin
-        .from('portaal_items')
-        .select('offerte_id')
-        .eq('id', portaal_item_id)
-        .single()
-
-      if (itemMetOfferte?.offerte_id) {
-        const { data: offerte } = await supabaseAdmin
-          .from('offertes')
-          .select('id, user_id, status, geldig_tot, nummer, titel')
-          .eq('id', itemMetOfferte.offerte_id)
-          .single()
-
-        if (offerte) {
-          if (offerte.status === 'goedgekeurd') {
-            return res.status(409).json({ error: 'Deze offerte is al geaccepteerd.' })
-          }
-          if (['afgewezen', 'gefactureerd'].includes(offerte.status)) {
-            return res.status(409).json({ error: 'Deze offerte kan niet meer geaccepteerd worden. Neem contact op met het bedrijf.' })
-          }
-          if (offerte.geldig_tot && new Date(offerte.geldig_tot) < new Date()) {
-            return res.status(410).json({ error: 'Deze offerte is verlopen. Vraag het bedrijf om een nieuwe versie.' })
-          }
-          offerteVooraf = offerte
-        }
+    // Een offerte met een eigen offertepagina krijgt alleen dáár akkoord. Die
+    // route legt de keuzes uit de opties vast, rekent het totaal opnieuw uit,
+    // vraagt naam en handtekening en zet project en klant door. Een akkoord via
+    // deze route sloeg dat allemaal over, en viel op de laatste geldige dag al
+    // om als verlopen omdat de datum als UTC-middernacht werd gelezen.
+    if (type === 'goedkeuring' && item.type === 'offerte' && item.offerte_id) {
+      const { data: gekoppeldeOfferte } = await supabaseAdmin
+        .from('offertes')
+        .select('id')
+        .eq('id', item.offerte_id)
+        .maybeSingle()
+      if (gekoppeldeOfferte) {
+        return res.status(409).json({
+          error: 'Open de offerte om akkoord te geven. Daar ziet u de volledige offerte en ondertekent u.',
+          offerte_pagina: true,
+        })
       }
     }
 
@@ -247,25 +211,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .from('portaal_items')
         .update({ status: newStatus, updated_at: new Date().toISOString() })
         .eq('id', portaal_item_id)
-    }
-
-    // Bij offerte goedkeuring: offerte status + keuzes bijwerken
-    let offerteUserId: string | null = null
-    if (type === 'goedkeuring' && offerteVooraf) {
-      const offerteUpdate: Record<string, unknown> = {
-        status: 'goedgekeurd',
-        geaccepteerd_door: klant_naam?.trim() || null,
-        geaccepteerd_op: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }
-      if (gekozen_items) offerteUpdate.gekozen_items = gekozen_items
-      if (gekozen_varianten) offerteUpdate.gekozen_varianten = gekozen_varianten
-      await supabaseAdmin.from('offertes').update(offerteUpdate).eq('id', offerteVooraf.id)
-
-      // Offerte-eigenaar kan verschillen van portaal-aanmaker
-      if (offerteVooraf.user_id && offerteVooraf.user_id !== portaal.user_id) {
-        offerteUserId = offerteVooraf.user_id
-      }
     }
 
     // Koppel eventuele bestanden aan de reactie
@@ -304,7 +249,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // in een team van 25 mag een klant-reactie niet onzichtbaar blijven
       // omdat de maker toevallig afwezig is.
       const ontvangers = new Set<string>([portaal.user_id])
-      if (offerteUserId) ontvangers.add(offerteUserId)
       const { data: makerProfiel } = await supabaseAdmin
         .from('profiles')
         .select('organisatie_id')
@@ -369,20 +313,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
           const recipients = [userEmail]
 
-          // Fix 2: ook offerte-eigenaar notificeren als die verschilt van portaal-aanmaker
-          if (offerteUserId) {
-            const { data: ownerEmail } = await supabaseAdmin
-              .from('user_email_settings')
-              .select('gmail_address')
-              .eq('user_id', offerteUserId)
-              .maybeSingle()
-            if (ownerEmail?.gmail_address && ownerEmail.gmail_address !== userEmail) {
-              recipients.push(ownerEmail.gmail_address)
-            }
-            // In-app notificatie voor de offerte-eigenaar gebeurt hierboven al
-            // in de fan-out; hier alleen nog de e-mail.
-          }
-
           for (const recipient of recipients) {
             await resendClient.emails.send({
               from: 'doen. <noreply@doen.team>',
@@ -398,77 +328,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     } catch (notifErr) {
       console.error('[portaal-reactie] notificatie/email error:', notifErr)
-    }
-
-    // --- Bevestigingsmail naar de klant bij offerte-akkoord (niet-blokkerend) ---
-    if (type === 'goedkeuring' && offerteVooraf) {
-      try {
-        const { data: projectVoorKlant } = await supabaseAdmin
-          .from('projecten')
-          .select('klant_id')
-          .eq('id', portaal.project_id)
-          .single()
-
-        let klantEmail: string | null = null
-        if (projectVoorKlant?.klant_id) {
-          const { data: klant } = await supabaseAdmin
-            .from('klanten')
-            .select('email')
-            .eq('id', projectVoorKlant.klant_id)
-            .maybeSingle()
-          klantEmail = klant?.email || null
-        }
-
-        if (klantEmail) {
-          // Bedrijfsbranding via org-eigenaar, zelfde patroon als factuur-portaal
-          let bedrijfUserId = portaal.user_id
-          const { data: profielRij } = await supabaseAdmin
-            .from('profiles')
-            .select('organisatie_id')
-            .eq('id', portaal.user_id)
-            .maybeSingle()
-          if (profielRij?.organisatie_id) {
-            const { data: org } = await supabaseAdmin
-              .from('organisaties')
-              .select('eigenaar_id')
-              .eq('id', profielRij.organisatie_id)
-              .maybeSingle()
-            if (org?.eigenaar_id) bedrijfUserId = org.eigenaar_id
-          }
-          const { data: bedrijfsProfiel } = await supabaseAdmin
-            .from('profiles')
-            .select('bedrijfsnaam, logo_url, bedrijfs_email')
-            .eq('id', bedrijfUserId)
-            .maybeSingle()
-          const bedrijfsnaam = bedrijfsProfiel?.bedrijfsnaam || ''
-
-          const html = buildPortalEmailHtml({
-            heading: 'Bedankt voor uw akkoord',
-            itemTitel: offerteVooraf.nummer
-              ? `${offerteVooraf.nummer}${offerteVooraf.titel ? ` — ${offerteVooraf.titel}` : ''}`
-              : offerteVooraf.titel || 'Offerte',
-            beschrijving: `Geaccepteerd${klant_naam?.trim() ? ` door ${klant_naam.trim()}` : ''}.`,
-            quote: 'We nemen zo snel mogelijk contact met u op over de vervolgstappen.',
-            bedrijfsnaam: bedrijfsnaam || undefined,
-            logoUrl: bedrijfsProfiel?.logo_url || undefined,
-          })
-
-          const { Resend } = await import('resend')
-          const resendClient = new Resend(process.env.RESEND_API_KEY)
-          await resendClient.emails.send({
-            from: `"${(bedrijfsnaam || 'doen.').replace(/"/g, '')}" <noreply@doen.team>`,
-            to: klantEmail,
-            replyTo: bedrijfsProfiel?.bedrijfs_email || undefined,
-            subject: offerteVooraf.nummer
-              ? `Bevestiging: offerte ${offerteVooraf.nummer} geaccepteerd`
-              : 'Bevestiging van uw akkoord',
-            html,
-          })
-          console.log('[portaal-reactie] klant-bevestiging verzonden naar:', klantEmail)
-        }
-      } catch (klantMailErr) {
-        console.warn('[portaal-reactie] klant-bevestiging mislukt:', klantMailErr)
-      }
     }
 
     // --- Trigger.dev: log activiteit (fire-and-forget, fallback naar directe insert) ---

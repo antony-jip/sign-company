@@ -15,6 +15,8 @@ interface PubliekeOfferteRegel {
   detail_regels?: unknown
   prijs_varianten?: unknown
   actieve_variant_id?: string
+  bijlage_url?: string | null
+  bijlage_type?: string | null
 }
 
 interface PubliekeOfferteRespons {
@@ -45,6 +47,7 @@ interface PubliekeOfferteRespons {
 interface PortaalFeedItemOfferteProps {
   item: {
     id: string
+    type?: string
     titel: string
     omschrijving?: string | null
     status: string
@@ -90,11 +93,23 @@ export function PortaalFeedItemOfferte({
 }: PortaalFeedItemOfferteProps) {
   const [loading, setLoading] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [naam, setNaam] = useState('')
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; tekst: string } | null>(null)
   const isAfgehandeld = ['goedgekeurd', 'geaccepteerd', 'betaald'].includes(item.status)
   const [pdfBezig, setPdfBezig] = useState(false)
   const [pdfFout, setPdfFout] = useState<string | null>(null)
   const offerteToken = item.offerte_publiek_token
+
+  // Een offerte met eigen pagina krijgt dáár akkoord: met de keuzes uit de
+  // opties, naam en handtekening. Zelfde tabblad, zodat "Terug naar portaal"
+  // op die pagina werkt. Een opdrachtbevestiging of een los geüploade offerte
+  // heeft geen akkoordpagina en wordt hieronder in het portaal bevestigd.
+  const offertePaginaUrl = offerteToken
+    ? `/offerte-bekijken/${offerteToken}?terug=${encodeURIComponent(`/portaal/${token}`)}`
+    : null
+  const akkoordOpOffertepagina = !!offertePaginaUrl && item.type !== 'opdrachtbevestiging'
+  const toonAkkoordKnop = !isAfgehandeld && kanGoedkeuren
+  const naamVoorAkkoord = (klantNaam || naam).trim()
 
   // Het portaal draait token-based zonder Supabase-sessie, dus de PDF wordt hier
   // in de browser gebouwd uit /api/offerte-publiek. Die respons is al gefilterd
@@ -150,6 +165,8 @@ export function PortaalFeedItemOfferte({
         prijs_varianten: regel.prijs_varianten,
         actieve_variant_id: regel.actieve_variant_id,
         is_optioneel: regel.is_optioneel,
+        bijlage_url: regel.bijlage_url || undefined,
+        bijlage_type: regel.bijlage_type || undefined,
         created_at: new Date().toISOString(),
       }))
 
@@ -184,6 +201,7 @@ export function PortaalFeedItemOfferte({
   }, [offerteToken])
 
   async function handleAccepteren() {
+    if (naamVoorAkkoord.length < 2) return
     setLoading(true)
     setFeedback(null)
     try {
@@ -194,12 +212,12 @@ export function PortaalFeedItemOfferte({
           token,
           portaal_item_id: item.id,
           type: 'goedkeuring',
-          klant_naam: klantNaam || undefined,
+          klant_naam: naamVoorAkkoord,
         }),
       })
       if (!response.ok) {
         const err = await response.json()
-        throw new Error(err.error || 'Kon niet accepteren')
+        throw new Error(err.error || 'Akkoord geven lukte niet')
       }
       setConfirmOpen(false)
       setFeedback({ type: 'success', tekst: 'Uw akkoord is ontvangen. Bedankt voor uw vertrouwen.' })
@@ -213,6 +231,16 @@ export function PortaalFeedItemOfferte({
       setLoading(false)
     }
   }
+
+  const vragenKnop = onVragenStellen && (
+    <button
+      onClick={onVragenStellen}
+      className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted"
+      style={{ backgroundColor: 'hsl(var(--background))', border: '0.5px solid #E8E6E1', color: 'hsl(var(--muted-foreground))' }}
+    >
+      Vragen stellen
+    </button>
+  )
 
   return (
     <div>
@@ -259,20 +287,19 @@ export function PortaalFeedItemOfferte({
             </div>
           )}
 
-          {/* Offerte bekijken link */}
           <div className="flex items-center flex-wrap gap-x-4 gap-y-1">
-            {offerteToken ? (
+            {/* Staat de akkoordknop er, dan opent die al de offerte; een tweede
+                link ernaast zou hetzelfde doen. */}
+            {offertePaginaUrl && !(akkoordOpOffertepagina && toonAkkoordKnop) ? (
               <a
-                href={`/offerte-bekijken/${offerteToken}`}
-                target="_blank"
-                rel="noopener noreferrer"
+                href={offertePaginaUrl}
                 className="inline-flex items-center gap-1.5 mt-2 text-sm hover:opacity-70 transition-opacity"
                 style={{ color: '#1A535C' }}
               >
-                <ExternalLink className="w-3.5 h-3.5" />
+                <FileText className="w-3.5 h-3.5" />
                 Offerte bekijken
               </a>
-            ) : item.bestanden && item.bestanden.length > 0 ? (
+            ) : !offertePaginaUrl && item.bestanden && item.bestanden.length > 0 ? (
               <a
                 href={item.bestanden[0].url}
                 target="_blank"
@@ -333,50 +360,65 @@ export function PortaalFeedItemOfferte({
           </p>
         )}
 
-        {/* Actions */}
-        {!isAfgehandeld && kanGoedkeuren && (
-          <div className="px-5 py-3 border-t flex items-center gap-2" style={{ borderColor: '#F0EEEA' }}>
-            {confirmOpen ? (
-              <div className="flex items-center gap-2 w-full">
-                <p className="text-sm flex-1" style={{ color: 'hsl(var(--muted-foreground))' }}>
-                  Weet u zeker dat u deze offerte wilt accepteren?
+        {toonAkkoordKnop && (
+          <div className="px-5 py-3 border-t flex flex-wrap items-center gap-2" style={{ borderColor: '#F0EEEA' }}>
+            {akkoordOpOffertepagina ? (
+              <>
+                <a
+                  href={offertePaginaUrl!}
+                  className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                  style={{ backgroundColor: '#D24620' }}
+                >
+                  Bekijken en akkoord geven
+                </a>
+                {vragenKnop}
+              </>
+            ) : confirmOpen ? (
+              <div className="w-full space-y-2">
+                <p className="text-sm" style={{ color: 'hsl(var(--foreground))' }}>
+                  Akkoord geven op {item.titel}?
                 </p>
-                <button
-                  onClick={handleAccepteren}
-                  disabled={loading}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors disabled:opacity-50"
-                  style={{ backgroundColor: '#1A535C' }}
-                >
-                  {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-                  Ja, accepteren
-                </button>
-                <button
-                  onClick={() => setConfirmOpen(false)}
-                  disabled={loading}
-                  className="px-3 py-2 rounded-lg text-sm transition-colors hover:bg-background"
-                  style={{ color: 'hsl(var(--muted-foreground))' }}
-                >
-                  Annuleren
-                </button>
+                {!klantNaam && (
+                  <input
+                    type="text"
+                    value={naam}
+                    onChange={(e) => setNaam(e.target.value)}
+                    placeholder="Uw naam"
+                    autoFocus
+                    className="w-full max-w-xs px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-petrol/30 focus:border-petrol"
+                    style={{ borderColor: '#E8E6E1' }}
+                  />
+                )}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleAccepteren}
+                    disabled={loading || naamVoorAkkoord.length < 2}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-opacity disabled:opacity-50"
+                    style={{ backgroundColor: '#D24620' }}
+                  >
+                    {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+                    Ja, akkoord geven
+                  </button>
+                  <button
+                    onClick={() => setConfirmOpen(false)}
+                    disabled={loading}
+                    className="px-3 py-2 rounded-lg text-sm transition-colors hover:bg-background"
+                    style={{ color: 'hsl(var(--muted-foreground))' }}
+                  >
+                    Annuleren
+                  </button>
+                </div>
               </div>
             ) : (
               <>
                 <button
                   onClick={() => setConfirmOpen(true)}
-                  className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors hover:opacity-90"
-                  style={{ backgroundColor: '#1A535C' }}
+                  className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                  style={{ backgroundColor: '#D24620' }}
                 >
-                  Accepteren
+                  Akkoord geven
                 </button>
-                {onVragenStellen && (
-                  <button
-                    onClick={onVragenStellen}
-                    className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted"
-                    style={{ backgroundColor: 'hsl(var(--background))', border: '0.5px solid #E8E6E1', color: 'hsl(var(--muted-foreground))' }}
-                  >
-                    Vragen stellen
-                  </button>
-                )}
+                {vragenKnop}
               </>
             )}
           </div>

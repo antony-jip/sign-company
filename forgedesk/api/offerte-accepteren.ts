@@ -1,10 +1,10 @@
 /**
  * Klant-akkoord op een publieke offerte-link.
  *
- * Body: { token, naam, gekozen_items?, gekozen_varianten?, handtekening?, via? }
+ * Body: { token, naam, handtekening, gekozen_items?, gekozen_varianten? }
  * - handtekening: PNG data-URL, max 200 kB, gaat naar offerte_handtekeningen
- *   (migratie 240). Verplicht (400 als hij ontbreekt), behalve als via 'portaal'
- *   is: daar geeft een ingelogde klant akkoord en is de portaalreactie het bewijs.
+ *   (migratie 240). Altijd verplicht: dit is de enige route waarlangs een klant
+ *   akkoord geeft, ook vanuit het portaal.
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createTransport } from 'nodemailer'
@@ -180,13 +180,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!(await enforceRateLimit(getClientIp(req), res))) return
 
   try {
-    const { token, naam, gekozen_items, gekozen_varianten, handtekening, via } = req.body as {
+    const { token, naam, gekozen_items, gekozen_varianten, handtekening } = req.body as {
       token: string
       naam: string
       gekozen_items?: string[]
       gekozen_varianten?: Record<string, string>
       handtekening?: string
-      via?: string
     }
 
     if (!token) return res.status(400).json({ error: 'Token is verplicht' })
@@ -195,11 +194,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     // Handtekening: PNG als data-URL, max 200 kB, opgeslagen in
     // offerte_handtekeningen (migratie 240). Server-side verplicht, zodat een
-    // akkoord zonder handtekening niet langs de publieke pagina heen kan.
-    // Uitzondering: via 'portaal', waar de klant ingelogd akkoord geeft en de
-    // portaalreactie het bewijs is.
+    // akkoord zonder handtekening niet langs de publieke pagina heen kan. De
+    // uitzondering voor via 'portaal' is weg: niemand stuurde die mee, en het
+    // was een open deur om de handtekening over te slaan.
     const MAX_HANDTEKENING_BYTES = 200 * 1024
-    if (handtekening === undefined && via !== 'portaal') {
+    if (handtekening === undefined) {
       return res.status(400).json({ error: 'Handtekening is verplicht' })
     }
     if (handtekening !== undefined) {
