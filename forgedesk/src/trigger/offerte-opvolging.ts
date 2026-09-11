@@ -235,18 +235,16 @@ export const offerteOpvolgingCron = schedules.task({
             const bedrijfsnaam = profile?.bedrijfsnaam || "";
             const projectNaam = project?.naam || "";
             // Build the correct link based on verzendwijze
+            // Zelfde link als de eerste mail: direct naar de offertepagina, met
+            // de terugweg naar het portaal als de offerte daarin staat.
+            const portaalId = portaalItemMap.get(offerte.id);
+            const pToken = portaalId ? portaalTokenMap.get(portaalId) : undefined;
             let offerteLink = "";
-            if (offerte.verzendwijze === "via_portaal") {
-              // Portaal-sent: link to portaal page
-              const portaalId = portaalItemMap.get(offerte.id);
-              const pToken = portaalId ? portaalTokenMap.get(portaalId) : undefined;
-              if (pToken) {
-                offerteLink = `${appUrl}/portaal/${pToken}`;
-              }
-            }
-            // Fallback to publiek_token for PDF-sent or when portaal token not found
-            if (!offerteLink && offerte.publiek_token) {
+            if (offerte.publiek_token) {
               offerteLink = `${appUrl}/offerte-bekijken/${offerte.publiek_token}`;
+              if (pToken) offerteLink += `?terug=${encodeURIComponent(`/portaal/${pToken}`)}`;
+            } else if (pToken) {
+              offerteLink = `${appUrl}/portaal/${pToken}`;
             }
 
             const vars: Record<string, string> = {
@@ -454,6 +452,7 @@ interface OfferteRow {
   bekeken_door_klant?: boolean;
   aantal_keer_bekeken?: number;
   publiek_token?: string;
+  subtotaal?: number;
 }
 
 interface StapRow {

@@ -1,5 +1,57 @@
 import { describe, it, expect } from 'vitest'
-import { veiligeTerugUrl, klantSpecs, bijlageSoort, voornaam } from '@/utils/offerteKlantpagina'
+import {
+  veiligeTerugUrl,
+  klantSpecs,
+  bijlageSoort,
+  voornaam,
+  kopKleur,
+  isLichteKleur,
+  offertePaginaUrl,
+  publiekTokenBruikbaar,
+} from '@/utils/offerteKlantpagina'
+
+describe('publiekTokenBruikbaar · geen dode link in de mail', () => {
+  const nu = new Date('2026-09-11T12:00:00Z')
+
+  it('keurt een ontbrekend of verlopen token af', () => {
+    expect(publiekTokenBruikbaar(null, null, nu)).toBe(false)
+    expect(publiekTokenBruikbaar('tok', '2026-09-10T12:00:00Z', nu)).toBe(false)
+  })
+
+  it('accepteert een geldig token, ook zonder vervaldatum', () => {
+    expect(publiekTokenBruikbaar('tok', '2027-03-01T00:00:00Z', nu)).toBe(true)
+    expect(publiekTokenBruikbaar('tok', null, nu)).toBe(true)
+  })
+})
+
+describe('offertePaginaUrl · de link in de offertemail', () => {
+  it('linkt direct naar de offerte', () => {
+    expect(offertePaginaUrl('https://app.doen.team', 'tok-1')).toBe('https://app.doen.team/offerte-bekijken/tok-1')
+  })
+
+  it('geeft met een portaal de terugweg mee die de offertepagina accepteert', () => {
+    const url = offertePaginaUrl('https://app.doen.team', 'tok-1', 'abcdef0123456789')
+    expect(url).toBe('https://app.doen.team/offerte-bekijken/tok-1?terug=%2Fportaal%2Fabcdef0123456789')
+    expect(veiligeTerugUrl(new URL(url).searchParams.get('terug'))).toBe('/portaal/abcdef0123456789')
+  })
+})
+
+describe('kopKleur en isLichteKleur · de kop van de klantpagina', () => {
+  it('neemt een geldige kleur over en valt anders terug op petrol', () => {
+    expect(kopKleur('#F15025')).toBe('#F15025')
+    expect(kopKleur(' #ffffff ')).toBe('#ffffff')
+    expect(kopKleur('red')).toBe('#1A535C')
+    expect(kopKleur('#fff')).toBe('#1A535C')
+    expect(kopKleur(undefined)).toBe('#1A535C')
+  })
+
+  it('herkent lichte koppen, zodat de tekst donker wordt', () => {
+    expect(isLichteKleur('#FFFFFF')).toBe(true)
+    expect(isLichteKleur('#F4D35E')).toBe(true)
+    expect(isLichteKleur('#1A535C')).toBe(false)
+    expect(isLichteKleur('#D24620')).toBe(false)
+  })
+})
 
 describe('veiligeTerugUrl · alleen een portaalpad als terugweg', () => {
   it('laat een portaalpad door', () => {

@@ -19,6 +19,8 @@ import {
   createPortaalItem,
   getPortaalItems,
 } from '@/services/supabaseService'
+import { zorgPubliekToken } from '@/services/offerteService'
+import { offertePaginaUrl } from '@/utils/offerteKlantpagina'
 import { sendEmail } from '@/services/gmailService'
 import { rondOfferteCheckAf } from '@/services/offerteCheckService'
 import { offerteVerzendTemplate } from '@/services/emailTemplateService'
@@ -26,7 +28,6 @@ import { vierMijlpaal, markeerEenmalig } from '@/lib/mijlpaal'
 import { generateOffertePDF } from '@/services/pdfService'
 import { generateFollowUpEmail } from '@/services/followUpService'
 import type { FollowUpContext } from '@/services/followUpService'
-import { offerteTokenExpiry } from '@/lib/tokenExpiry'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { useDocumentStyle } from '@/hooks/useDocumentStyle'
@@ -231,21 +232,15 @@ export function SendOfferteDialog({
             volgorde: 0,
           })
         }
-        publiekeUrl = `${window.location.origin}/portaal/${portaal.token}`
         createdToken = portaal.token
         setPortaalToken(portaal.token)
         onPortaalCreated?.(portaal.token)
-      } else {
-        let publiekToken = offerte.publiek_token
-        if (!publiekToken) {
-          publiekToken = crypto.randomUUID()
-          await updateOfferte(offerte.id, {
-            publiek_token: publiekToken,
-            publiek_token_verloopt_op: offerteTokenExpiry(),
-          })
-        }
-        publiekeUrl = `${window.location.origin}/offerte-bekijken/${publiekToken}`
       }
+
+      // De mail linkt direct naar de offertepagina, met de terugweg naar het
+      // portaal als dat er is. Een ontbrekend of verlopen token wordt vervangen.
+      const metToken = await zorgPubliekToken(offerte)
+      publiekeUrl = offertePaginaUrl(window.location.origin, metToken.publiek_token!, createdToken)
 
       const klantNaam = resolveContactNaam(offerte, klant)
       const { subject, html, text } = offerteVerzendTemplate({
@@ -370,10 +365,10 @@ export function SendOfferteDialog({
     medewerkerNaam, checkBlokkade, checkDrempel,
   ])
 
-  const publiekeLink = portaalToken
-    ? `${window.location.origin}/portaal/${portaalToken}`
-    : offerte.publiek_token
-      ? `${window.location.origin}/offerte-bekijken/${offerte.publiek_token}`
+  const publiekeLink = offerte.publiek_token
+    ? offertePaginaUrl(window.location.origin, offerte.publiek_token, portaalToken)
+    : portaalToken
+      ? `${window.location.origin}/portaal/${portaalToken}`
       : null
 
   return (
