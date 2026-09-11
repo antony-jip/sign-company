@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { logger } from '../../utils/logger'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
@@ -20,7 +20,13 @@ import {
   ExternalLink,
   Image,
   Send,
+  Monitor,
+  Smartphone,
+  PartyPopper,
+  ExternalLink as OpenExtern,
 } from 'lucide-react'
+import { STANDAARD_KLANTPAGINA_TEKSTEN } from '@/lib/klantpaginaTeksten'
+import { VOORBEELD_TOKEN, type VoorbeeldBericht } from '@/lib/offerteVoorbeeld'
 import { useAuth } from '@/contexts/AuthContext'
 import { getPortaalInstellingen, updatePortaalInstellingen, getDefaultPortaalInstellingen, getProfile } from '@/services/supabaseService'
 import type { PortaalInstellingen, PortaalEmailTemplate } from '@/types'
@@ -37,6 +43,48 @@ export function PortaalTab() {
   const [emailGekoppeld, setEmailGekoppeld] = useState<boolean | null>(null)
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [isSendingTest, setIsSendingTest] = useState<string | null>(null)
+  const [bedrijf, setBedrijf] = useState<VoorbeeldBericht['bedrijf']>({})
+  const [contactpersoon, setContactpersoon] = useState<VoorbeeldBericht['contactpersoon']>(null)
+  const [previewModus, setPreviewModus] = useState<'desktop' | 'mobiel'>('desktop')
+  const [previewKlaar, setPreviewKlaar] = useState(false)
+  const previewRef = useRef<HTMLIFrameElement>(null)
+
+  // De preview draait de echte offertepagina in een iframe en krijgt de
+  // instellingen via postMessage, zodat elke toetsaanslag meteen zichtbaar is.
+  const stuurNaarPreview = useCallback((extra?: Partial<VoorbeeldBericht>) => {
+    const venster = previewRef.current?.contentWindow
+    if (!venster) return
+    const bericht: VoorbeeldBericht = {
+      type: 'doen-offerte-voorbeeld',
+      huisstijl: {
+        kop_kleur: settings.portaal_header_kleur,
+        logo_tonen: settings.bedrijfslogo_op_portaal,
+        akkoord_toegestaan: settings.klant_kan_offerte_goedkeuren,
+        teksten: {
+          akkoord_intro: settings.offerte_akkoord_intro || '',
+          bedankt_kop: settings.offerte_bedankt_kop || '',
+          bedankt_tekst: settings.offerte_bedankt_tekst || '',
+        },
+      },
+      bedrijf: { ...bedrijf, logo_url: logoUrl },
+      contactpersoon,
+      ...extra,
+    }
+    venster.postMessage(bericht, window.location.origin)
+  }, [settings, bedrijf, logoUrl, contactpersoon])
+
+  useEffect(() => {
+    const opBericht = (e: MessageEvent) => {
+      if (e.origin !== window.location.origin || e.data?.type !== 'doen-offerte-voorbeeld-klaar') return
+      setPreviewKlaar(true)
+    }
+    window.addEventListener('message', opBericht)
+    return () => window.removeEventListener('message', opBericht)
+  }, [])
+
+  useEffect(() => {
+    if (previewKlaar) stuurNaarPreview()
+  }, [previewKlaar, stuurNaarPreview])
 
   useEffect(() => {
     if (!user?.id) return
@@ -61,6 +109,13 @@ export function PortaalTab() {
     // Haal logo op uit profiel
     getProfile(user.id).then((profile) => {
       if (profile?.logo_url) setLogoUrl(profile.logo_url)
+      setBedrijf({
+        bedrijfsnaam: profile?.bedrijfsnaam,
+        bedrijfs_telefoon: profile?.bedrijfs_telefoon,
+        bedrijfs_email: profile?.bedrijfs_email,
+      })
+      const naam = [profile?.voornaam, profile?.achternaam].filter(Boolean).join(' ')
+      setContactpersoon(naam ? { naam, functie: profile?.functie || null, foto_url: profile?.avatar_url || null } : null)
     })
   }, [user?.id])
 
@@ -429,7 +484,7 @@ export function PortaalTab() {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              De branding wordt overgenomen uit uw bedrijfsprofiel (Instellingen &gt; Bedrijf). Hier bepaalt u welke elementen zichtbaar zijn op het portaal.
+              De branding komt uit je bedrijfsprofiel (Instellingen &gt; Bedrijf). Hier bepaal je wat de klant ervan ziet.
             </p>
 
             {/* Logo preview */}
@@ -476,7 +531,7 @@ export function PortaalTab() {
             <div className="flex items-center justify-between">
               <div>
                 <Label className="text-sm font-medium">Bedrijfslogo tonen</Label>
-                <p className="text-xs text-muted-foreground">Toon uw logo op het klantportaal</p>
+                <p className="text-xs text-muted-foreground">Toon je logo op het klantportaal en de offertepagina</p>
               </div>
               <Switch
                 checked={settings.bedrijfslogo_op_portaal}
@@ -487,7 +542,7 @@ export function PortaalTab() {
             <div className="flex items-center justify-between">
               <div>
                 <Label className="text-sm font-medium">Header achtergrond</Label>
-                <p className="text-xs text-muted-foreground">Kleur van de bovenbalk op het klantportaal</p>
+                <p className="text-xs text-muted-foreground">Kleur van de bovenbalk op het portaal en de offertepagina</p>
               </div>
               <div className="flex items-center gap-2">
                 <input
@@ -518,6 +573,97 @@ export function PortaalTab() {
                 onCheckedChange={(v) => update('contactgegevens_tonen', v)}
               />
             </div>
+          </CardContent>
+        </Card>
+
+        <Separator className="my-6" />
+
+        {/* Offertepagina: teksten + live preview */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Offertepagina
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <p className="text-sm text-muted-foreground">
+              Dit ziet je klant als hij de offerte opent. Pas de teksten aan; de preview verandert mee. Leeg laten geeft de standaardtekst.
+            </p>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Tekst bij "Akkoord geven"</Label>
+                <Input
+                  value={settings.offerte_akkoord_intro || ''}
+                  onChange={(e) => update('offerte_akkoord_intro', e.target.value)}
+                  placeholder={STANDAARD_KLANTPAGINA_TEKSTEN.akkoord_intro}
+                  maxLength={140}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Kop van het bedankscherm</Label>
+                <Input
+                  value={settings.offerte_bedankt_kop || ''}
+                  onChange={(e) => update('offerte_bedankt_kop', e.target.value)}
+                  placeholder={STANDAARD_KLANTPAGINA_TEKSTEN.bedankt_kop}
+                  maxLength={60}
+                />
+              </div>
+              <div className="space-y-1.5 md:col-span-2">
+                <Label className="text-sm font-medium">Tekst op het bedankscherm</Label>
+                <Textarea
+                  value={settings.offerte_bedankt_tekst || ''}
+                  onChange={(e) => update('offerte_bedankt_tekst', e.target.value)}
+                  placeholder={STANDAARD_KLANTPAGINA_TEKSTEN.bedankt_tekst}
+                  rows={2}
+                  maxLength={300}
+                />
+                <p className="text-xs text-muted-foreground">Verschijnt met confetti zodra de klant heeft getekend, en daarna in het overzicht van de vervolgstappen.</p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="inline-flex rounded-lg border border-border p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setPreviewModus('desktop')}
+                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${previewModus === 'desktop' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  <Monitor className="h-3.5 w-3.5" /> Desktop
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewModus('mobiel')}
+                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${previewModus === 'mobiel' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  <Smartphone className="h-3.5 w-3.5" /> Telefoon
+                </button>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={() => stuurNaarPreview({ toonBedankt: true })} disabled={!previewKlaar}>
+                  <PartyPopper className="h-3.5 w-3.5 mr-1.5" />
+                  Bekijk het bedankscherm
+                </Button>
+                <Button type="button" variant="ghost" size="sm" onClick={() => window.open(`/offerte-bekijken/${VOORBEELD_TOKEN}`, '_blank')}>
+                  <OpenExtern className="h-3.5 w-3.5 mr-1.5" />
+                  Open groot
+                </Button>
+              </div>
+            </div>
+
+            <div className={`mx-auto overflow-hidden rounded-xl border border-border bg-[#F8F7F5] transition-all ${previewModus === 'mobiel' ? 'w-[390px] max-w-full' : 'w-full'}`}>
+              <iframe
+                ref={previewRef}
+                title="Preview van de offertepagina"
+                src={`/offerte-bekijken/${VOORBEELD_TOKEN}`}
+                className="block w-full"
+                style={{ height: previewModus === 'mobiel' ? 760 : 820, border: 0 }}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              De preview is een voorbeeldofferte met een verzonnen klant. Je eigen logo, kopkleur en teksten zijn wel echt. Wat je hier ziet gaat pas live na Opslaan.
+            </p>
           </CardContent>
         </Card>
       </div>

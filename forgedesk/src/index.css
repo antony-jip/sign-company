@@ -2149,8 +2149,17 @@ textarea:focus {
 /* ================================================================
    MOBILE UTILITIES
    ================================================================ */
-html, body, #root {
+html {
   overflow-x: hidden;
+  max-width: 100vw;
+  background-color: hsl(var(--background));
+}
+/* clip knipt net als hidden, maar maakt body en #root geen scrollcontainer.
+   Met hidden (en html dat al een overflow heeft) werd body zijn eigen
+   scrollcontainer en werkte position: sticky nergens in de app: het
+   akkoordpaneel op de klantpagina scrolde gewoon mee. */
+body, #root {
+  overflow-x: clip;
   max-width: 100vw;
   background-color: hsl(var(--background));
 }

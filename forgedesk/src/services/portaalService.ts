@@ -37,7 +37,7 @@ const DEFAULT_PORTAAL_INSTELLINGEN: PortaalInstellingen = {
   portaal_module_actief: true,
   portaal_standaard_actief: false,
   link_geldigheid_dagen: 30,
-  instructie_tekst: 'Bekijk de items hieronder en geef uw reactie.',
+  instructie_tekst: 'Bekijk de items hieronder en laat weten wat je ervan vindt.',
   klant_kan_offerte_goedkeuren: true,
   klant_kan_tekening_goedkeuren: true,
   klant_kan_bestanden_uploaden: true,
@@ -50,17 +50,20 @@ const DEFAULT_PORTAAL_INSTELLINGEN: PortaalInstellingen = {
   bedrijfskleuren_gebruiken: true,
   portaal_header_kleur: '#1A535C',
   contactgegevens_tonen: true,
+  offerte_akkoord_intro: '',
+  offerte_bedankt_kop: '',
+  offerte_bedankt_tekst: '',
   template_portaallink: {
-    onderwerp: 'Uw projectportaal bij {{bedrijfsnaam}}',
-    inhoud: 'Beste {{klant_naam}},\n\nU heeft een portaallink ontvangen voor project {{project_naam}}.\n\nKlik op de onderstaande link om uw portaal te openen:\n{{portaal_link}}\n\nMet vriendelijke groet,\n{{bedrijfsnaam}}',
+    onderwerp: 'Je projectportaal bij {{bedrijfsnaam}}',
+    inhoud: 'Beste {{klant_naam}},\n\nHierbij je portaallink voor project {{project_naam}}. Daar vind je offertes, tekeningen en facturen op één plek.\n\n{{portaal_link}}\n\nMet vriendelijke groet,\n{{bedrijfsnaam}}',
   },
   template_nieuw_item: {
     onderwerp: '{{bedrijfsnaam}} — nieuw {{item_type}} beschikbaar',
-    inhoud: 'Beste {{klant_naam}},\n\nEr is een nieuw {{item_type}} gedeeld voor project {{project_naam}}.\n\nBekijk het via uw portaal:\n{{portaal_link}}\n\nMet vriendelijke groet,\n{{bedrijfsnaam}}',
+    inhoud: 'Beste {{klant_naam}},\n\nEr staat een nieuw {{item_type}} voor je klaar voor project {{project_naam}}.\n\nBekijk het in je portaal:\n{{portaal_link}}\n\nMet vriendelijke groet,\n{{bedrijfsnaam}}',
   },
   template_herinnering: {
-    onderwerp: 'Herinnering: {{item_type}} wacht op uw reactie',
-    inhoud: 'Beste {{klant_naam}},\n\nU heeft nog niet gereageerd op het {{item_type}} voor project {{project_naam}}.\n\nBekijk het via uw portaal:\n{{portaal_link}}\n\nMet vriendelijke groet,\n{{bedrijfsnaam}}',
+    onderwerp: 'Herinnering: {{item_type}} wacht op je reactie',
+    inhoud: 'Beste {{klant_naam}},\n\nJe hebt nog niet gereageerd op het {{item_type}} voor project {{project_naam}}.\n\nBekijk het in je portaal:\n{{portaal_link}}\n\nMet vriendelijke groet,\n{{bedrijfsnaam}}',
   },
 }
 

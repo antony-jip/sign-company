@@ -2383,6 +2383,10 @@ export interface PortaalInstellingen {
   template_portaallink: PortaalEmailTemplate;
   template_nieuw_item: PortaalEmailTemplate;
   template_herinnering: PortaalEmailTemplate;
+  /** Teksten op de offertepagina; leeg = standaard (src/lib/klantpaginaTeksten.ts). */
+  offerte_akkoord_intro?: string;
+  offerte_bedankt_kop?: string;
+  offerte_bedankt_tekst?: string;
 }
 
 // ============ OFFERTE OPVOLGING ============

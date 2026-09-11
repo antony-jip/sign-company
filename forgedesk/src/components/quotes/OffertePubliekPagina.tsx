@@ -19,6 +19,10 @@ import { logger } from '@/utils/logger'
 import { HandtekeningVeld } from '@/components/shared/HandtekeningVeld'
 import { PortaalLightbox } from '@/components/portaal/PortaalLightbox'
 import { ContactKnoppen, Gezicht, KlantKop, MogelijkGemaaktDoor, Paneel, StatusWoord } from '@/components/klantpagina/Klantstijl'
+import { BedanktMoment } from '@/components/klantpagina/BedanktMoment'
+import { klantpaginaTeksten } from '@/lib/klantpaginaTeksten'
+import { OFFERTE_VOORBEELD, VOORBEELD_TOKEN, type VoorbeeldBericht } from '@/lib/offerteVoorbeeld'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { getMeetellendeVarianten, nettoStuksprijs } from '@/utils/offerteTotalen'
 import { bijlageSoort, klantSpecs, veiligeTerugUrl, voornaam, type KlantSpec } from '@/utils/offerteKlantpagina'
 
@@ -118,6 +122,7 @@ interface Huisstijl {
   kop_kleur?: string | null
   logo_tonen?: boolean
   akkoord_toegestaan?: boolean
+  teksten?: Partial<Record<'akkoord_intro' | 'bedankt_kop' | 'bedankt_tekst', string | null>> | null
 }
 
 type VerzoekModus = 'wijziging' | 'nieuw'
@@ -397,14 +402,14 @@ function OfferteRegel({
             type="button"
             onClick={() => onOpenAfbeelding(afbeelding.url, afbeelding.naam)}
             aria-label={`${afbeelding.naam} groter bekijken`}
-            className="mt-4 block w-full overflow-hidden rounded-lg bg-[#F8F7F5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1A535C]"
+            className="mt-5 block w-full overflow-hidden rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1A535C]"
           >
             <img
               src={afbeelding.url}
               alt={afbeelding.naam}
               loading="lazy"
               onError={(e) => { (e.currentTarget.parentElement as HTMLElement).style.display = 'none' }}
-              className="mx-auto max-h-[380px] w-full object-contain"
+              className="block w-full object-cover"
             />
           </button>
         ))}
@@ -500,7 +505,7 @@ function OfferteRegel({
             className="border-[#1A535C] data-[state=checked]:bg-[#1A535C] data-[state=checked]:text-white"
           />
           <span className="flex-1 text-sm font-medium text-[#1A1A1A]">
-            {isSelected ? 'Toegevoegd aan uw offerte' : 'Toevoegen aan uw offerte'}
+            {isSelected ? 'Toegevoegd aan je offerte' : 'Toevoegen aan je offerte'}
           </span>
         </label>
       )}
@@ -535,6 +540,11 @@ export function OffertePubliekPagina() {
   const [acceptHandtekening, setAcceptHandtekening] = useState<string | undefined>()
   const [acceptLoading, setAcceptLoading] = useState(false)
   const [netGeaccepteerd, setNetGeaccepteerd] = useState(false)
+  const [toonBedankt, setToonBedankt] = useState(false)
+  const sluitBedankt = useCallback(() => {
+    setToonBedankt(false)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [])
 
   // Wijziging form
   const [wijzigingNaam, setWijzigingNaam] = useState('')
@@ -547,12 +557,45 @@ export function OffertePubliekPagina() {
 
   const [lightbox, setLightbox] = useState<{ url: string; naam: string } | null>(null)
   const [pdfBezig, setPdfBezig] = useState(false)
+  // Breed scherm: offerte links, akkoord rechts in beeld. Smal: schuifkaart.
+  // Eén van beide rendert, zodat er nooit twee tekenvelden tegelijk bestaan.
+  const breed = useMediaQuery('(min-width: 1024px)')
+
+  // Preview vanuit Instellingen → Portaal: geen API, wel een voorbeeldofferte.
+  // Bedrijf, kopkleur en teksten komen via postMessage van de instellingenpagina,
+  // zodat de gebruiker ziet wat hij typt nog vóór hij opslaat.
+  const isVoorbeeld = token === VOORBEELD_TOKEN
+  useEffect(() => {
+    if (!isVoorbeeld) return
+    const opBericht = (e: MessageEvent<VoorbeeldBericht>) => {
+      if (e.origin !== window.location.origin || e.data?.type !== 'doen-offerte-voorbeeld') return
+      setHuisstijl(e.data.huisstijl || {})
+      setBedrijf({ bedrijfsnaam: e.data.bedrijf?.bedrijfsnaam, logo_url: e.data.bedrijf?.logo_url || undefined, bedrijfs_telefoon: e.data.bedrijf?.bedrijfs_telefoon, bedrijfs_email: e.data.bedrijf?.bedrijfs_email })
+      setContactpersoon(e.data.contactpersoon || null)
+      if (e.data.toonBedankt) setToonBedankt(true)
+    }
+    window.addEventListener('message', opBericht)
+    window.parent?.postMessage({ type: 'doen-offerte-voorbeeld-klaar' }, window.location.origin)
+    return () => window.removeEventListener('message', opBericht)
+  }, [isVoorbeeld])
 
   useEffect(() => {
     async function load() {
       if (!token) {
         setNotFound(true)
         setIsLoading(false)
+        return
+      }
+      if (isVoorbeeld) {
+        const items = OFFERTE_VOORBEELD.items as PubliekItem[]
+        setSelectedItems(new Set(items.filter((i) => i.soort !== 'tekst' && !i.is_optioneel).map((i) => i.id)))
+        setOfferte(OFFERTE_VOORBEELD.offerte as PubliekOfferte)
+        setItems(items)
+        setKlant(OFFERTE_VOORBEELD.klant)
+        setAcceptNaam(OFFERTE_VOORBEELD.klant.contactpersoon)
+        setWijzigingNaam(OFFERTE_VOORBEELD.klant.contactpersoon)
+        setIsLoading(false)
+        requestAnimationFrame(() => setFadeIn(true))
         return
       }
       try {
@@ -668,6 +711,11 @@ export function OffertePubliekPagina() {
   // Accepteren
   const handleAccepteren = useCallback(async () => {
     if (!token || acceptNaam.trim().length < 2 || !acceptHandtekening) return
+    if (isVoorbeeld) {
+      setShowAcceptModal(false)
+      setToonBedankt(true)
+      return
+    }
     setAcceptLoading(true)
     try {
       const resp = await fetch('/api/offerte-accepteren', {
@@ -694,18 +742,23 @@ export function OffertePubliekPagina() {
         geaccepteerd_op: new Date().toISOString(),
       } : prev)
       setNetGeaccepteerd(true)
-      window.scrollTo({ top: 0, behavior: 'smooth' })
+      setToonBedankt(true)
     } catch (err) {
       logger.error('Fout bij accepteren offerte:', err)
       toast.error('Er ging iets mis. Probeer het opnieuw.')
     } finally {
       setAcceptLoading(false)
     }
-  }, [token, acceptNaam, acceptHandtekening, selectedItems, selectedVariants, hasOptionalItems])
+  }, [token, isVoorbeeld, acceptNaam, acceptHandtekening, selectedItems, selectedVariants, hasOptionalItems])
 
   // Wijziging of nieuwe versie aanvragen
   const handleWijziging = useCallback(async () => {
     if (!token || wijzigingOpmerking.trim().length < 10) return
+    if (isVoorbeeld) {
+      setVerzoekModus(null)
+      toast.success('In de echte offerte gaat dit verzoek nu naar jou.')
+      return
+    }
     setWijzigingLoading(true)
     try {
       const resp = await fetch('/api/offerte-wijziging', {
@@ -726,7 +779,7 @@ export function OffertePubliekPagina() {
         wijziging_opmerking: wijzigingOpmerking.trim(),
         wijziging_ingediend_op: new Date().toISOString(),
       } : prev)
-      toast.success('Verstuurd. We komen bij u terug.')
+      toast.success('Verstuurd. We komen bij je terug.')
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (err) {
       logger.error('Fout bij wijziging aanvragen:', err)
@@ -734,7 +787,7 @@ export function OffertePubliekPagina() {
     } finally {
       setWijzigingLoading(false)
     }
-  }, [token, wijzigingNaam, wijzigingOpmerking, verzoekModus])
+  }, [token, isVoorbeeld, wijzigingNaam, wijzigingOpmerking, verzoekModus])
 
   // PDF download (client-side with jsPDF)
   const handleDownloadPDF = useCallback(async () => {
@@ -892,7 +945,7 @@ export function OffertePubliekPagina() {
           </div>
           <h2 className="text-xl font-bold tracking-[-0.3px] text-[#1A1A1A]">Deze link werkt niet meer</h2>
           <p className="text-sm text-[#6B6B66]">
-            De link naar deze offerte is niet geldig of verlopen. Neem contact op met het bedrijf dat u de offerte stuurde, dan ontvangt u een nieuwe link.
+            De link naar deze offerte is niet geldig of verlopen. Neem contact op met het bedrijf dat je de offerte stuurde, dan ontvang je een nieuwe link.
           </p>
         </div>
       </div>
@@ -937,11 +990,6 @@ export function OffertePubliekPagina() {
   const email = bedrijf?.bedrijfs_email
   const wijWie = contactVoornaam ? `${contactVoornaam} komt` : 'We komen'
 
-  const keuzeUitleg = hasOptionalItems && hasVariants
-    ? 'Kies hieronder de uitvoering en de opties die u wilt. Het totaal rekent direct mee.'
-    : hasOptionalItems
-    ? 'Vink de opties aan die u erbij wilt. Het totaal rekent direct mee.'
-    : 'Kies hieronder de uitvoering die u wilt. Het totaal rekent direct mee.'
 
   const uwKeuze = hasSelections
     ? items
@@ -972,74 +1020,31 @@ export function OffertePubliekPagina() {
     </button>
   )
 
+  // Bovenaan, naast de titel: de PDF is voor veel klanten hét document.
+  const pdfKnopGroot = (
+    <button
+      type="button"
+      onClick={handleDownloadPDF}
+      disabled={pdfBezig}
+      className="inline-flex h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-xl border-[1.5px] border-[#1A535C] bg-[#FFFFFF] px-4 text-sm font-semibold text-[#1A535C] transition-colors hover:bg-[#1A535C] hover:text-white disabled:opacity-50"
+    >
+      {pdfBezig ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+      Download PDF
+    </button>
+  )
+
+  const teksten = klantpaginaTeksten(huisstijl.teksten)
   const stappen = [
-    `${bedrijf?.bedrijfsnaam || 'We'} ${bedrijf?.bedrijfsnaam ? 'heeft' : 'hebben'} uw akkoord ontvangen.`,
-    `${contactVoornaam ? `${contactVoornaam} neemt` : 'We nemen'} contact met u op over de planning.`,
-    'Daarna gaan we voor u aan de slag.',
+    `${bedrijf?.bedrijfsnaam || 'We'} ${bedrijf?.bedrijfsnaam ? 'heeft' : 'hebben'} je akkoord ontvangen.`,
+    teksten.bedankt_tekst,
+    `${contactVoornaam ? `${contactVoornaam} neemt` : 'We nemen'} contact met je op over de planning.`,
   ]
 
-  return (
-    <div className={`min-h-screen bg-[#F8F7F5] transition-opacity duration-500 ${fadeIn ? 'opacity-100' : 'opacity-0'}`}>
-      <Toaster position="top-center" richColors />
-
-      {/* Dezelfde kop als het portaal: kopkleur en logo uit de portaalinstellingen. */}
-      <KlantKop
-        kleur={huisstijl.kop_kleur}
-        logoUrl={huisstijl.logo_tonen === false ? undefined : bedrijf?.logo_url}
-        bedrijfsnaam={bedrijf?.bedrijfsnaam}
-        breedte="max-w-[760px]"
-      >
-        {terugUrl && (
-          <a href={terugUrl} className="inline-flex items-center gap-1 font-medium hover:underline underline-offset-4">
-            <ChevronLeft className="h-4 w-4" />
-            <span className="hidden sm:inline">Terug naar portaal</span>
-            <span className="sm:hidden">Portaal</span>
-          </a>
-        )}
-      </KlantKop>
-
-      <div className={`mx-auto max-w-[760px] px-4 pt-8 md:px-8 md:pt-12 ${kanActie && akkoordToegestaan ? 'pb-32 md:pb-16' : 'pb-16'}`}>
-
-        {/* ── Kop: voor wie, wat, van wie ── */}
-        <header>
-          <p className="text-sm text-[#6B6B66]">{klantLabel ? `Offerte voor ${klantLabel}` : 'Offerte'}</p>
-          <h1 className="mt-1 break-words text-[28px] font-bold leading-[1.15] tracking-[-0.3px] text-[#1A1A1A] md:text-[34px]">
-            {offerte.titel || `Offerte ${offerte.nummer}`}
-          </h1>
-          {/* Op een telefoon staat de geldigheid op een eigen regel, zonder
-              scheidingsteken: een losse punt aan het begin of eind van een
-              regel oogt als een fout. */}
-          <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-[#6B6B66]">
-            <span className="font-mono">{offerte.nummer}</span>
-            <span className="whitespace-nowrap">
-              <span aria-hidden className="mr-2 text-[#C9C8C3]">·</span>
-              <span className="font-mono">{formatDate(offerte.created_at)}</span>
-            </span>
-            {offerte.geldig_tot && (
-              <span className={`w-full whitespace-nowrap sm:w-auto ${bijnaVerlopen ? 'text-[#C0451A]' : ''}`}>
-                <span aria-hidden className="mr-2 hidden text-[#C9C8C3] sm:inline">·</span>
-                Geldig tot <span className="font-mono">{formatDate(offerte.geldig_tot)}</span>
-                {bijnaVerlopen && (dagenOver === 0 ? ' (vandaag de laatste dag)' : ` (nog ${dagenOver} ${dagenOver === 1 ? 'dag' : 'dagen'})`)}
-              </span>
-            )}
-          </p>
-
-          {contactpersoon && (
-            <div className="mt-6 flex items-center gap-3">
-              <Gezicht naam={contactpersoon.naam} fotoUrl={contactpersoon.foto_url} grootte={40} />
-              <div className="min-w-0 text-sm leading-tight">
-                <p className="font-medium text-[#1A1A1A]">{contactpersoon.naam}</p>
-                <p className="mt-0.5 text-[#6B6B66]">
-                  {contactpersoon.functie || 'Uw contactpersoon'}{bedrijf?.bedrijfsnaam ? ` bij ${bedrijf.bedrijfsnaam}` : ''}
-                </p>
-              </div>
-            </div>
-          )}
-        </header>
-
-        {/* ── Stand van zaken ── */}
+  // Stand van zaken: op een breed scherm in de rechterkolom, anders onder de kop.
+  const standVanZaken = (
+    <div className="space-y-5">
         {(isGeaccepteerd || isGefactureerd) && (
-          <Paneel className="mt-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <Paneel className="animate-in fade-in slide-in-from-bottom-2 duration-500">
             <div className="flex items-start gap-4">
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#E8F2EC]">
                 <CheckCircle2 className="h-6 w-6 text-[#3A7D52]" />
@@ -1048,7 +1053,7 @@ export function OffertePubliekPagina() {
                 <StatusKop kleur="#3A7D52">Akkoord ontvangen</StatusKop>
                 <p className="mt-1 text-sm text-[#6B6B66]">
                   {offerte.geaccepteerd_op ? `Op ${formatDateTime(offerte.geaccepteerd_op)}` : 'Deze offerte is geaccepteerd'}
-                  {offerte.geaccepteerd_door ? ` door ${offerte.geaccepteerd_door}` : ''}. Bedankt voor uw vertrouwen.
+                  {offerte.geaccepteerd_door ? ` door ${offerte.geaccepteerd_door}` : ''}. Bedankt voor je vertrouwen.
                 </p>
               </div>
             </div>
@@ -1082,7 +1087,7 @@ export function OffertePubliekPagina() {
               {pdfKnop}
               {terugUrl && (
                 <a href={terugUrl} className="text-sm font-medium text-[#1A535C] underline-offset-4 hover:underline">
-                  Naar uw projectportaal
+                  Naar je projectportaal
                 </a>
               )}
             </div>
@@ -1090,11 +1095,11 @@ export function OffertePubliekPagina() {
         )}
 
         {isWijzigingGevraagd && (
-          <Paneel className="mt-8 animate-in fade-in duration-500">
+          <Paneel className="animate-in fade-in duration-500">
             <StatusKop kleur="#8A7A4A">Verzoek verstuurd</StatusKop>
             <p className="mt-1 text-sm text-[#6B6B66]">
               {offerte.wijziging_ingediend_op ? `Op ${formatDateTime(offerte.wijziging_ingediend_op)}. ` : ''}
-              {wijWie} bij u terug met een aangepaste offerte.
+              {wijWie} bij je terug met een aangepaste offerte.
             </p>
             {offerte.wijziging_opmerking && (
               <p className="mt-4 whitespace-pre-line border-l-2 border-[#EBEBEB] pl-4 text-sm italic text-[#6B6B66]">
@@ -1105,7 +1110,7 @@ export function OffertePubliekPagina() {
         )}
 
         {isVerlopen && !isGeaccepteerd && !isAfgewezen && !isGefactureerd && !isWijzigingGevraagd && (
-          <Paneel className="mt-8">
+          <Paneel>
             <div className="flex items-start gap-4">
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#FDE8E4]">
                 <Clock className="h-5 w-5 text-[#C0451A]" />
@@ -1114,12 +1119,12 @@ export function OffertePubliekPagina() {
                 <StatusKop kleur="#C0451A">Verlopen</StatusKop>
                 {nieuweVersieGevraagd ? (
                   <p className="mt-1 text-sm text-[#6B6B66]">
-                    Deze offerte was geldig tot <span className="font-mono">{formatDate(offerte.geldig_tot)}</span>. Uw aanvraag voor een nieuwe versie is verstuurd op {formatDateTime(offerte.wijziging_ingediend_op || '')}. {wijWie} bij u terug.
+                    Deze offerte was geldig tot <span className="font-mono">{formatDate(offerte.geldig_tot)}</span>. Je aanvraag voor een nieuwe versie is verstuurd op {formatDateTime(offerte.wijziging_ingediend_op || '')}. {wijWie} bij je terug.
                   </p>
                 ) : (
                   <>
                     <p className="mt-1 text-sm text-[#6B6B66]">
-                      Deze offerte was geldig tot <span className="font-mono">{formatDate(offerte.geldig_tot)}</span>. Vraag een nieuwe versie aan, dan {wijWie === 'We komen' ? 'komen we' : `komt ${contactVoornaam}`} bij u terug.
+                      Deze offerte was geldig tot <span className="font-mono">{formatDate(offerte.geldig_tot)}</span>. Vraag een nieuwe versie aan, dan {wijWie === 'We komen' ? 'komen we' : `komt ${contactVoornaam}`} bij je terug.
                     </p>
                     <button
                       type="button"
@@ -1136,26 +1141,226 @@ export function OffertePubliekPagina() {
         )}
 
         {isAfgewezen && (
-          <Paneel className="mt-8">
+          <Paneel>
             <StatusKop kleur="#6B6B66">Afgesloten</StatusKop>
             <p className="mt-1 text-sm text-[#6B6B66]">
-              Deze offerte is gesloten. Wilt u toch verder? Neem contact op, dan kijken we samen naar een nieuwe versie.
+              Deze offerte is gesloten. Wil je toch verder? Neem contact op, dan kijken we samen naar een nieuwe versie.
             </p>
           </Paneel>
         )}
+    </div>
+  )
+
+
+  const aanpassingLink = kanActie && (
+    <p className="text-sm text-[#6B6B66]">
+      Nog niet helemaal wat je zoekt?{' '}
+      <button
+        type="button"
+        onClick={() => openVerzoek('wijziging')}
+        className="font-medium text-[#1A535C] underline-offset-4 hover:underline"
+      >
+        Vraag een aanpassing aan
+      </button>
+    </p>
+  )
+
+  // Het akkoordformulier: op een breed scherm als vast paneel naast de
+  // offerte, op een smal scherm in de schuifkaart. Zelfde inhoud.
+  const akkoordFormulier = (
+    <>
+      <div className="rounded-xl bg-[#F8F7F5] p-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium text-[#1A1A1A]">{offerte.titel || `Offerte ${offerte.nummer}`}</p>
+            <p className="font-mono text-xs text-[#9B9B95]">{offerte.nummer}</p>
+          </div>
+          <div className="shrink-0 text-right">
+            <p className="font-mono text-xl font-bold text-[#1A1A1A]">{formatCurrency(totaalExclBedrag)}</p>
+            <p className="text-xs text-[#9B9B95]">
+              excl. btw{toonInclRegel ? ` · ${formatCurrency(totaalBedrag)} incl.` : ''}
+            </p>
+          </div>
+        </div>
+        {uwKeuze.length > 0 && (
+          <div className="mt-3 space-y-1 border-t border-[#EBEBEB] pt-3 text-xs text-[#6B6B66]">
+            <p className="font-medium text-[#1A1A1A]">Je keuze</p>
+            {uwKeuze.map(k => (
+              <div key={k.id} className="flex justify-between gap-3">
+                <span className="truncate">{k.tekst}</span>
+                <span className="shrink-0 font-mono">{formatCurrency(k.bedrag)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <label htmlFor="akkoord-naam" className="text-sm font-medium text-[#1A1A1A]">Je naam</label>
+        <Input
+          id="akkoord-naam"
+          value={acceptNaam}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAcceptNaam(e.target.value)}
+          placeholder="Voor- en achternaam"
+          autoComplete="name"
+          className="h-12"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <p className="text-sm font-medium text-[#1A1A1A]">Je handtekening</p>
+        <HandtekeningVeld onChange={setAcceptHandtekening} />
+      </div>
+
+      <p className="text-xs leading-relaxed text-[#6B6B66]">
+        Met je naam en handtekening geef je akkoord op deze offerte
+        {bedrijf?.bedrijfsnaam ? ` van ${bedrijf.bedrijfsnaam}` : ''}
+        {uwKeuze.length > 0 ? ', met je keuze hierboven' : ''}.
+      </p>
+
+      <button
+        type="button"
+        onClick={handleAccepteren}
+        disabled={acceptLoading || acceptNaam.trim().length < 2 || !acceptHandtekening}
+        className="flex h-12 w-full items-center justify-center rounded-xl bg-[#D24620] text-base font-semibold text-white transition-colors hover:bg-[#BD3F1C] disabled:bg-[#F1F0EC] disabled:text-[#9B9B95]"
+      >
+        {acceptLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Akkoord en ondertekenen'}
+      </button>
+
+      {klant?.email && (
+        <p className="text-center text-xs text-[#9B9B95]">Je ontvangt direct een bevestiging per mail.</p>
+      )}
+    </>
+  )
+
+  // Rechterkolom op een breed scherm: het besluit. Uitnodigend, niet dwingend:
+  // één zin, het bedrag, tekenen, klaar.
+  const besluitPaneel = kanActie && akkoordToegestaan && (
+    <section
+      aria-labelledby="besluit-kop"
+      className="space-y-5 rounded-xl bg-[#FFFFFF] p-6 shadow-[0_1px_2px_rgba(26,26,26,0.04),0_12px_32px_rgba(26,83,92,0.08)]"
+    >
+      <div>
+        <h2 id="besluit-kop" className="text-[22px] font-bold leading-tight tracking-[-0.3px] text-[#1A1A1A]">
+          Akkoord geven<span className="text-[#D24620]">.</span>
+        </h2>
+        <p className="mt-1 text-sm text-[#6B6B66]">{teksten.akkoord_intro}</p>
+      </div>
+      {akkoordFormulier}
+    </section>
+  )
+
+  // Geen kaart: één regel tekst met de knoppen eronder. De foto alleen als
+  // die er echt is; een initialen-cirkel zegt niets.
+  const contactBlok = (contactpersoon || telefoon || email) && (
+    <div className="flex flex-col gap-4 border-t border-[#EBEBEB] pt-6 sm:flex-row sm:items-center sm:justify-between lg:flex-col lg:items-start">
+      <div className="flex min-w-0 items-center gap-3">
+        {contactpersoon?.foto_url && <Gezicht naam={contactpersoon.naam} fotoUrl={contactpersoon.foto_url} grootte={44} />}
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-[#1A1A1A]">Vragen over deze offerte?</p>
+          <p className="mt-0.5 text-sm text-[#6B6B66]">
+            {contactpersoon ? `${contactpersoon.naam}${contactpersoon.functie ? `, ${contactpersoon.functie.toLowerCase()}` : ''}, helpt je graag verder.` : `${bedrijf?.bedrijfsnaam || 'We'} ${bedrijf?.bedrijfsnaam ? 'helpt' : 'helpen'} u graag verder.`}
+          </p>
+        </div>
+      </div>
+      <ContactKnoppen telefoon={telefoon} email={email} onderwerp={`Offerte ${offerte.nummer}`} />
+    </div>
+  )
+
+  return (
+    <div className={`min-h-screen bg-[#F8F7F5] transition-opacity duration-500 ${fadeIn ? 'opacity-100' : 'opacity-0'}`}>
+      <Toaster position="top-center" richColors />
+
+      {/* Dezelfde kop als het portaal: kopkleur en logo uit de portaalinstellingen. */}
+      <KlantKop
+        kleur={huisstijl.kop_kleur}
+        logoUrl={huisstijl.logo_tonen === false ? undefined : bedrijf?.logo_url}
+        bedrijfsnaam={bedrijf?.bedrijfsnaam}
+        breedte="max-w-[1240px]"
+      >
+        {terugUrl && (
+          <a href={terugUrl} className="inline-flex items-center gap-1 font-medium hover:underline underline-offset-4">
+            <ChevronLeft className="h-4 w-4" />
+            <span className="hidden sm:inline">Terug naar portaal</span>
+            <span className="sm:hidden">Portaal</span>
+          </a>
+        )}
+      </KlantKop>
+
+      {/* Breed: offerte links, besluit rechts en vast in beeld, zodat de klant
+          niet hoeft te scrollen om te tekenen. Smal: één kolom met vaste balk. */}
+      <div className={`mx-auto max-w-[1200px] px-4 pt-8 md:px-8 md:pt-12 lg:grid lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-x-14 lg:items-start ${kanActie && akkoordToegestaan && !breed ? 'pb-32' : 'pb-16'}`}>
+
+      {breed && (
+        <aside className="order-2 lg:sticky lg:top-8 space-y-6">
+          {besluitPaneel}
+          {kanActie && !akkoordToegestaan && (
+            <Paneel>
+              <StatusKop kleur="#1A535C">Akkoord geven</StatusKop>
+              <p className="mt-2 text-sm text-[#6B6B66]">
+                Akkoord geef je aan {contactVoornaam || bedrijf?.bedrijfsnaam || 'ons'} persoonlijk, per mail of telefoon.
+              </p>
+            </Paneel>
+          )}
+          {standVanZaken}
+          {aanpassingLink && <div className="px-1">{aanpassingLink}</div>}
+          {contactBlok}
+        </aside>
+      )}
+
+      <div className="order-1 min-w-0">
+
+        {/* ── Kop: voor wie, wat, van wie ── */}
+        <header>
+          <div className="flex items-center justify-between gap-6">
+            <p className="text-sm text-[#6B6B66]">{klantLabel ? `Offerte voor ${klantLabel}` : 'Offerte'}</p>
+            <div className="hidden sm:block">{pdfKnopGroot}</div>
+          </div>
+          <h1 className="mt-1 break-words text-[28px] font-bold leading-[1.15] tracking-[-0.3px] text-[#1A1A1A] md:text-[34px]">
+            {offerte.titel || `Offerte ${offerte.nummer}`}
+          </h1>
+          <div className="mt-4 sm:hidden">{pdfKnopGroot}</div>
+          {/* Op een telefoon staat de geldigheid op een eigen regel, zonder
+              scheidingsteken: een losse punt aan het begin of eind van een
+              regel oogt als een fout. */}
+          <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-[#6B6B66]">
+            <span className="font-mono">{offerte.nummer}</span>
+            <span className="whitespace-nowrap">
+              <span aria-hidden className="mr-2 text-[#C9C8C3]">·</span>
+              <span className="font-mono">{formatDate(offerte.created_at)}</span>
+            </span>
+            {offerte.geldig_tot && (
+              <span className={`w-full whitespace-nowrap sm:w-auto ${bijnaVerlopen ? 'text-[#C0451A]' : ''}`}>
+                <span aria-hidden className="mr-2 hidden text-[#C9C8C3] sm:inline">·</span>
+                Geldig tot <span className="font-mono">{formatDate(offerte.geldig_tot)}</span>
+                {bijnaVerlopen && (dagenOver === 0 ? ' (vandaag de laatste dag)' : ` (nog ${dagenOver} ${dagenOver === 1 ? 'dag' : 'dagen'})`)}
+              </span>
+            )}
+          </p>
+
+          {contactpersoon && (
+            <div className="mt-5 flex items-center gap-3 text-sm">
+              {contactpersoon.foto_url && <Gezicht naam={contactpersoon.naam} fotoUrl={contactpersoon.foto_url} grootte={36} />}
+              <p className="text-[#6B6B66]">
+                <span className="font-medium text-[#1A1A1A]">{contactpersoon.naam}</span>
+                {contactpersoon.functie ? `, ${contactpersoon.functie.toLowerCase()}` : ''}{bedrijf?.bedrijfsnaam ? ` bij ${bedrijf.bedrijfsnaam}` : ''}
+              </p>
+            </div>
+          )}
+        </header>
+
+        {!breed && standVanZaken}
 
         {/* ── Aanhef ── */}
         {offerte.intro_tekst && (
           <p className="mt-10 whitespace-pre-line text-[15px] leading-relaxed text-[#3A3A35]">{offerte.intro_tekst}</p>
         )}
 
-        {/* ── De offerte ── */}
-        <section className="mt-8 overflow-hidden rounded-xl bg-[#FFFFFF] shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+
+        {/* ── De offerte: geen kaart, het document zelf is de pagina ── */}
+        <section className="mt-10 border-t border-[#1A1A1A]/80 pt-8">
           {items.length > 0 && (
-            <div className="px-6 py-6 md:px-8 md:py-8">
-              {hasSelections && kanActie && (
-                <p className="mb-6 text-sm text-[#1A535C]">{keuzeUitleg}</p>
-              )}
+            <div>
               <div className="divide-y divide-[#EBEBEB]">
                 {items.map((item) => (
                   <OfferteRegel
@@ -1175,9 +1380,9 @@ export function OffertePubliekPagina() {
           )}
 
           {/* Totalen */}
-          <div className="border-t border-[#EBEBEB] bg-[#FBFAF8] px-6 py-6 md:px-8">
+          <div className="mt-8 border-t border-[#1A1A1A]/80 pt-6">
             <div className="flex flex-col-reverse gap-6 md:flex-row md:items-end md:justify-between">
-              <div>{pdfKnop}</div>
+              <div className="hidden md:block">{pdfKnop}</div>
               <div className="w-full space-y-2 md:max-w-xs">
                 {kortingBedrag > 0 && (
                   <>
@@ -1229,56 +1434,23 @@ export function OffertePubliekPagina() {
           <p className="mt-8 whitespace-pre-line text-[15px] leading-relaxed text-[#3A3A35]">{offerte.outro_tekst}</p>
         )}
 
-        {/* ── Besluit ── */}
-        {kanActie && (
-          <section className="mt-10">
-            <div className={`${akkoordToegestaan ? 'hidden md:flex' : 'flex'} items-center justify-between gap-6 rounded-xl bg-[#FFFFFF] px-6 py-6 shadow-[0_1px_3px_rgba(0,0,0,0.03)] md:px-8`}>
-              <div>
-                <p className="text-sm text-[#6B6B66]">{uwKeuze.length > 0 ? 'Totaal met uw keuze, excl. btw' : 'Totaal excl. btw'}</p>
-                <p className="font-mono text-2xl font-bold tracking-[-0.3px] text-[#1A1A1A]">{formatCurrency(totaalExclBedrag)}</p>
-              </div>
-              {akkoordToegestaan ? (
-                <button
-                  type="button"
-                  onClick={() => setShowAcceptModal(true)}
-                  className="h-12 rounded-xl bg-[#D24620] px-8 text-base font-semibold text-white transition-colors hover:bg-[#BD3F1C]"
-                >
-                  Akkoord geven
-                </button>
-              ) : (
-                <p className="max-w-[26ch] text-right text-sm text-[#6B6B66]">
-                  Akkoord geeft u aan {contactVoornaam || bedrijf?.bedrijfsnaam || 'ons'} persoonlijk, per mail of telefoon.
+        {/* ── Besluit op een smal scherm: alleen de tekstlink; de knop zit in de vaste balk ── */}
+        {!breed && kanActie && (
+          <section className="mt-8 space-y-4">
+            {!akkoordToegestaan && (
+              <Paneel>
+                <StatusKop kleur="#1A535C">Akkoord geven</StatusKop>
+                <p className="mt-2 text-sm text-[#6B6B66]">
+                  Akkoord geef je aan {contactVoornaam || bedrijf?.bedrijfsnaam || 'ons'} persoonlijk, per mail of telefoon.
                 </p>
-              )}
-            </div>
-            <p className="mt-4 text-center text-sm text-[#6B6B66] md:text-right">
-              Nog niet helemaal wat u zoekt?{' '}
-              <button
-                type="button"
-                onClick={() => openVerzoek('wijziging')}
-                className="font-medium text-[#1A535C] underline-offset-4 hover:underline"
-              >
-                Vraag een aanpassing aan
-              </button>
-            </p>
+              </Paneel>
+            )}
+            <div className="text-center">{aanpassingLink}</div>
           </section>
         )}
 
-        {/* ── Contact ── */}
-        {(contactpersoon || telefoon || email) && (
-          <Paneel className="mt-10">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-              {contactpersoon && <Gezicht naam={contactpersoon.naam} fotoUrl={contactpersoon.foto_url} grootte={48} />}
-              <div className="min-w-0 flex-1">
-                <p className="font-semibold text-[#1A1A1A]">Vragen over deze offerte?</p>
-                <p className="mt-0.5 text-sm text-[#6B6B66]">
-                  {contactVoornaam ? `${contactVoornaam} helpt u graag verder.` : `${bedrijf?.bedrijfsnaam || 'We'} ${bedrijf?.bedrijfsnaam ? 'helpt' : 'helpen'} u graag verder.`}
-                </p>
-              </div>
-              <ContactKnoppen telefoon={telefoon} email={email} onderwerp={`Offerte ${offerte.nummer}`} />
-            </div>
-          </Paneel>
-        )}
+        {/* ── Contact (smal scherm; breed staat hij rechts) ── */}
+        {!breed && contactBlok && <div className="mt-10">{contactBlok}</div>}
 
         {/* ── Voorwaarden ── */}
         {offerte.voorwaarden && (
@@ -1298,10 +1470,11 @@ export function OffertePubliekPagina() {
           </div>
         </footer>
       </div>
+      </div>
 
       {/* ── Vaste besluitbalk op mobiel ── */}
-      {kanActie && akkoordToegestaan && (
-        <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-4 border-t border-[#EBEBEB] bg-[#FFFFFF]/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.06)] backdrop-blur md:hidden">
+      {!breed && kanActie && akkoordToegestaan && (
+        <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-4 border-t border-[#EBEBEB] bg-[#FFFFFF]/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.06)] backdrop-blur">
           <div className="min-w-0">
             <p className="text-[11px] uppercase tracking-wider text-[#9B9B95]">Totaal excl. btw</p>
             <p className="truncate font-mono text-lg font-bold leading-tight text-[#1A1A1A]">{formatCurrency(totaalExclBedrag)}</p>
@@ -1317,69 +1490,9 @@ export function OffertePubliekPagina() {
       )}
 
       {/* ── Akkoord geven ── */}
-      {showAcceptModal && (
+      {!breed && showAcceptModal && (
         <Sheet titel="Akkoord geven" onClose={sluitAkkoord}>
-          <div className="rounded-xl bg-[#F8F7F5] p-4">
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-[#1A1A1A]">{offerte.titel || `Offerte ${offerte.nummer}`}</p>
-                <p className="font-mono text-xs text-[#9B9B95]">{offerte.nummer}</p>
-              </div>
-              <div className="shrink-0 text-right">
-                <p className="font-mono text-xl font-bold text-[#1A1A1A]">{formatCurrency(totaalExclBedrag)}</p>
-                <p className="text-xs text-[#9B9B95]">
-                  excl. btw{toonInclRegel ? ` · ${formatCurrency(totaalBedrag)} incl.` : ''}
-                </p>
-              </div>
-            </div>
-            {uwKeuze.length > 0 && (
-              <div className="mt-3 space-y-1 border-t border-[#EBEBEB] pt-3 text-xs text-[#6B6B66]">
-                <p className="font-medium text-[#1A1A1A]">Uw keuze</p>
-                {uwKeuze.map(k => (
-                  <div key={k.id} className="flex justify-between gap-3">
-                    <span className="truncate">{k.tekst}</span>
-                    <span className="shrink-0 font-mono">{formatCurrency(k.bedrag)}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <label htmlFor="akkoord-naam" className="text-sm font-medium text-[#1A1A1A]">Uw naam</label>
-            <Input
-              id="akkoord-naam"
-              value={acceptNaam}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAcceptNaam(e.target.value)}
-              placeholder="Voor- en achternaam"
-              autoComplete="name"
-              className="h-12"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-[#1A1A1A]">Uw handtekening</p>
-            <HandtekeningVeld onChange={setAcceptHandtekening} />
-          </div>
-
-          <p className="text-xs leading-relaxed text-[#6B6B66]">
-            Met uw naam en handtekening geeft u akkoord op deze offerte
-            {bedrijf?.bedrijfsnaam ? ` van ${bedrijf.bedrijfsnaam}` : ''}
-            {uwKeuze.length > 0 ? ', met uw keuze hierboven' : ''}.
-          </p>
-
-          <button
-            type="button"
-            onClick={handleAccepteren}
-            disabled={acceptLoading || acceptNaam.trim().length < 2 || !acceptHandtekening}
-            className="flex h-12 w-full items-center justify-center rounded-xl bg-[#D24620] text-base font-semibold text-white transition-colors hover:bg-[#BD3F1C] disabled:opacity-40"
-          >
-            {acceptLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Akkoord en ondertekenen'}
-          </button>
-
-          {klant?.email && (
-            <p className="text-center text-xs text-[#9B9B95]">U ontvangt direct een bevestiging per mail.</p>
-          )}
+          {akkoordFormulier}
         </Sheet>
       )}
 
@@ -1391,12 +1504,12 @@ export function OffertePubliekPagina() {
         >
           <p className="text-sm text-[#6B6B66]">
             {verzoekModus === 'nieuw'
-              ? `Deze offerte is verlopen. ${wijWie} bij u terug met een nieuwe versie.`
-              : `Laat weten wat u anders wilt. ${wijWie} bij u terug met een aangepaste offerte.`}
+              ? `Deze offerte is verlopen. ${wijWie} bij je terug met een nieuwe versie.`
+              : `Laat weten wat je anders wilt. ${wijWie} bij je terug met een aangepaste offerte.`}
           </p>
 
           <div className="space-y-2">
-            <label htmlFor="verzoek-bericht" className="text-sm font-medium text-[#1A1A1A]">Uw bericht</label>
+            <label htmlFor="verzoek-bericht" className="text-sm font-medium text-[#1A1A1A]">Je bericht</label>
             <textarea
               id="verzoek-bericht"
               value={wijzigingOpmerking}
@@ -1406,12 +1519,12 @@ export function OffertePubliekPagina() {
               autoFocus
             />
             {wijzigingOpmerking.trim().length > 0 && wijzigingOpmerking.trim().length < 10 && (
-              <p className="text-xs text-[#9B9B95]">Nog een paar woorden, dan kunnen we u goed helpen.</p>
+              <p className="text-xs text-[#9B9B95]">Nog een paar woorden, dan kunnen we je goed helpen.</p>
             )}
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="verzoek-naam" className="text-sm font-medium text-[#1A1A1A]">Uw naam</label>
+            <label htmlFor="verzoek-naam" className="text-sm font-medium text-[#1A1A1A]">Je naam</label>
             <Input
               id="verzoek-naam"
               value={wijzigingNaam}
@@ -1431,6 +1544,10 @@ export function OffertePubliekPagina() {
             {wijzigingLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Versturen'}
           </button>
         </Sheet>
+      )}
+
+      {toonBedankt && (
+        <BedanktMoment kop={teksten.bedankt_kop} tekst={teksten.bedankt_tekst} onSluiten={sluitBedankt} />
       )}
 
       {lightbox && (

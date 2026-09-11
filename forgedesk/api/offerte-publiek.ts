@@ -375,6 +375,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       logo_tonen: portaalInstellingen?.bedrijfslogo_op_portaal !== false,
       // Dezelfde schakelaar die offerte-accepteren afdwingt.
       akkoord_toegestaan: portaalInstellingen?.klant_kan_offerte_goedkeuren !== false,
+      // Eigen teksten op de offertepagina; de pagina vult lege velden met de standaard.
+      teksten: {
+        akkoord_intro: typeof portaalInstellingen?.offerte_akkoord_intro === 'string' ? portaalInstellingen.offerte_akkoord_intro : null,
+        bedankt_kop: typeof portaalInstellingen?.offerte_bedankt_kop === 'string' ? portaalInstellingen.offerte_bedankt_kop : null,
+        bedankt_tekst: typeof portaalInstellingen?.offerte_bedankt_tekst === 'string' ? portaalInstellingen.offerte_bedankt_tekst : null,
+      },
     }
 
     // Merge status update in return data
