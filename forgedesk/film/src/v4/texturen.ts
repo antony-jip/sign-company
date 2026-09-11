@@ -20,7 +20,7 @@ export type ToolKaartDef = { id: string; label: string; sub: string; Icon: typeo
 export const TOOL_KAARTEN: ToolKaartDef[] = [
   { id: 'mail', label: 'Mail', sub: '1.204 ongelezen', Icon: Mail, kleur: '#3A6B8C' },
   { id: 'excel', label: 'Excel', sub: 'offerte_v3_def2.xlsx', Icon: FileSpreadsheet, kleur: '#2D6B48' },
-  { id: 'whatsapp', label: 'WhatsApp', sub: 'klant: "en de prijs?"', Icon: MessageCircle, kleur: '#3A7D52' },
+  { id: 'whatsapp', label: 'WhatsApp', sub: 'tekening voor klant?', Icon: MessageCircle, kleur: '#3A7D52' },
   { id: 'agenda', label: 'Agenda', sub: 'montage, welke dag?', Icon: CalendarDays, kleur: '#9A5A48' },
   { id: 'werkbon', label: 'Werkbon', sub: 'papier, in de bus', Icon: ClipboardList, kleur: '#C44830' },
   { id: 'telefoon', label: 'Telefoon', sub: '3 gemiste oproepen', Icon: Phone, kleur: '#1A535C' },
@@ -99,9 +99,16 @@ const tekenKaart = async (k: ToolKaartDef) => {
   const c = document.createElement('canvas'); c.width = b; c.height = h
   const ctx = c.getContext('2d')!
   ctx.clearRect(0, 0, b, h)
-  rondeRect(ctx, 0, 0, b, h, 64); ctx.fillStyle = thema.kleur.wit; ctx.fill()
-  // Hairline toplicht
-  ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 3; rondeRect(ctx, 1.5, 1.5, b - 3, h - 3, 62); ctx.stroke()
+  // Glas: halfdoorzichtig wit met een lichte verloop-glans en een witte hairline
+  rondeRect(ctx, 0, 0, b, h, 64)
+  const glans = ctx.createLinearGradient(0, 0, b, h)
+  glans.addColorStop(0, 'rgba(255,255,255,0.86)'); glans.addColorStop(0.5, 'rgba(255,255,255,0.68)'); glans.addColorStop(1, 'rgba(255,255,255,0.78)')
+  ctx.fillStyle = glans; ctx.fill()
+  ctx.strokeStyle = 'rgba(255,255,255,0.95)'; ctx.lineWidth = 4; rondeRect(ctx, 2, 2, b - 4, h - 4, 62); ctx.stroke()
+  // Speculaire veeg linksboven
+  const veeg = ctx.createLinearGradient(0, 0, b * 0.6, h)
+  veeg.addColorStop(0, 'rgba(255,255,255,0.35)'); veeg.addColorStop(0.45, 'rgba(255,255,255,0)')
+  rondeRect(ctx, 0, 0, b, h, 64); ctx.fillStyle = veeg; ctx.fill()
   // Icoon-tegel
   const tegel = 200
   rondeRect(ctx, 64, (h - tegel) / 2, tegel, tegel, 48); ctx.fillStyle = `${k.kleur}1F`; ctx.fill()
