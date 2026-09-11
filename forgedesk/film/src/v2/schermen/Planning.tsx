@@ -1,6 +1,6 @@
 import { ChevronDown, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import { AppVenster } from '../DesktopChrome'
-import { klant, project, montage } from '../../mockData'
+import { klant, project, montage, werkbonNummer } from '../../mockData'
 import { moduleKleur } from '../../brand'
 import { ease, veer, vlak } from '../../tijd'
 
@@ -8,7 +8,11 @@ import { ease, veer, vlak } from '../../tijd'
 // MontagePlanningLayout, raster en blokken uit MontageTijdlijnView. Die
 // hangen aan drag-and-drop en Supabase, vandaar deze nabouw met dezelfde
 // klassen. Alle maten staan vast zodat de sleep uit t te berekenen is.
-export type PlanningStand = { sleepOp: number; landOp: number }
+export type PlanningStand = {
+  sleepOp: number; landOp: number
+  // Na de landing: dialoog "Nieuwe montage afspraak" met een werkbon-koppeling.
+  dialoogOp?: number; koppelOp?: number; klaarOp?: number
+}
 
 const ZIJ_B = 260
 const ZIJ_KOP_H = 44
@@ -201,7 +205,7 @@ export const Planning: React.FC<{ t: number; stand: PlanningStand }> = ({ t, sta
                           )}
                           {geland && (
                             <div className="relative" style={{ transform: `scale(${0.96 + 0.04 * landVeer})`, transformOrigin: 'top center', opacity: vlak(t, landOp, landOp + 120) }}>
-                              <TijdBlok titel={montage.titel} regels={[klant.bedrijfsnaam, `${montage.start_tijd} - ${montage.eind_tijd} · ${montage.monteurs[0]}`]} hoogte={4 * UUR_H} accent={planning.kleur} />
+                              <TijdBlok titel={montage.titel} regels={[klant.bedrijfsnaam, `${montage.start_tijd} - ${montage.eind_tijd} · ${montage.monteurs[0]}`, ...(stand.klaarOp !== undefined && t >= stand.klaarOp ? [`Werkbon ${werkbonNummer}`] : [])]} hoogte={4 * UUR_H} accent={planning.kleur} />
                             </div>
                           )}
                         </div>
@@ -229,6 +233,38 @@ export const Planning: React.FC<{ t: number; stand: PlanningStand }> = ({ t, sta
             <KaartInhoud naam={project.naam} klant={klant.bedrijfsnaam} wacht="1d" />
           </div>
         )}
+        {/* Dialoog: nieuwe montage afspraak, met de werkbon gekoppeld */}
+        {stand.dialoogOp !== undefined && t >= stand.dialoogOp && t < (stand.klaarOp ?? Infinity) + 300 && (() => {
+          const dOp = stand.dialoogOp
+          const inP = veer(t, dOp, { demping: 16, duurMs: 600 })
+          const zicht = stand.klaarOp !== undefined && t >= stand.klaarOp ? 1 - vlak(t, stand.klaarOp, stand.klaarOp + 250) : vlak(t, dOp, dOp + 200)
+          const gekoppeld = stand.koppelOp !== undefined && t >= stand.koppelOp
+          const veld = 'h-9 rounded-lg bg-muted/60 px-3 flex items-center text-[13px] text-foreground'
+          const label = 'text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground mb-1'
+          return (
+            <div className="absolute inset-0 z-40 flex items-center justify-center" style={{ opacity: zicht, backgroundColor: 'rgba(26,83,92,0.18)' }}>
+              <div className="bg-card rounded-2xl ring-1 ring-border/60 shadow-2xl" style={{ width: 620, padding: 24, transform: `scale(${0.96 + inP * 0.04}) translateY(${(1 - inP) * 10}px)` }}>
+                <h3 className="font-heading text-[18px] font-bold text-foreground">Nieuwe montage afspraak<span className="text-flame">.</span></h3>
+                <p className="text-[12px] text-muted-foreground mt-0.5">{montage.titel}</p>
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  <div className="col-span-2"><div className={label}>Project</div><div className={veld}>{project.naam}</div></div>
+                  <div><div className={label}>Datum</div><div className={veld}>donderdag 24 september 2026</div></div>
+                  <div className="grid grid-cols-2 gap-3"><div><div className={label}>Start</div><div className={veld}>{montage.start_tijd}</div></div><div><div className={label}>Eind</div><div className={veld}>{montage.eind_tijd}</div></div></div>
+                  <div><div className={label}>Monteurs</div><div className={veld}>{montage.monteurs[0]}</div></div>
+                  <div><div className={label}>Werkbon</div>
+                    <div data-doel="montage-werkbon" className={`${veld} justify-between ${gekoppeld ? 'ring-1 ring-petrol/40 bg-petrol/[0.06] font-medium' : ''}`}>
+                      <span className={gekoppeld ? 'text-foreground' : 'text-muted-foreground'}>{gekoppeld ? `${werkbonNummer} · ${montage.titel}` : 'Kies werkbon'}</span><ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-5 flex items-center justify-end gap-2">
+                  <span className="h-9 px-4 rounded-lg text-[13px] font-medium text-muted-foreground inline-flex items-center">Annuleren</span>
+                  <span data-doel="montage-inplannen" className="h-9 px-4 rounded-lg bg-flame text-white text-[13px] font-semibold inline-flex items-center">Inplannen</span>
+                </div>
+              </div>
+            </div>
+          )
+        })()}
       </div>
     </AppVenster>
   )

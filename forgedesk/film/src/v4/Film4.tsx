@@ -43,9 +43,9 @@ const STOPS: Stop[] = [
   dolly(0, 'mail'),
   dolly(H1.dollyOp, 'cockpit'),
   dolly(H2.dollyOp, 'editor'),
-  push(H2.pushOp, 'editor', 1.4, 520, -40), push(H2.pullOp, 'editor', 1),
+  push(H2.pushOp, 'editor', 1.4, 520, -40), push(H2.urenPushOp, 'editor', 1.4, 520, 140), push(H2.pullOp, 'editor', 1),
   dolly(H3.dollyOp, 'portaal'),
-  push(H3.pushOp, 'portaal', 1.5, 0, 140), push(H3.pullOp, 'portaal', 1),
+  push(H3.pushOp, 'portaal', 1.5, 530, -40), push(H3.pullOp, 'portaal', 1),
   dolly(H3.terugOp, 'cockpit'),
   dolly(H4.dollyOp, 'planning'),
   dolly(H5.dollyOp, 'telefoon'),
@@ -87,10 +87,15 @@ const CURSOR: CursorStap[] = [
   { ms: k(H2.klikVerstuur), doel: 'verstuur', klik: true },
   { ms: k(H2.klikPortaal), doel: 'via-portaal', klik: true },
   { ms: H2.statusVlucht, doel: 'status-punt' },
+  { ms: k(H3.klikBekijken), doel: 'offerte-bekijken', klik: true },
   { ms: k(H3.klikBevestig), doel: 'bevestigen', klik: true },
   { ms: H3.statusVlucht, doel: 'status-punt' },
+  { ms: k(H4.klikWerkbon), doel: 'acties-werkbon', klik: true },
+  { ms: k(H4.klikWerkbonMaken), doel: 'werkbon-maken', klik: true },
   { ms: H4.sleepOp - 700, doel: 'planning-kaart' },
   { ms: H4.sleepOp, doel: 'planning-donderdag' },
+  { ms: k(H4.klikKoppel), doel: 'montage-werkbon', klik: true },
+  { ms: k(H4.klikInplannen), doel: 'montage-inplannen', klik: true },
   { ms: H4.statusVlucht, doel: 'status-punt' },
   { ms: k(H5.klikNaFoto), doel: 'na-foto', klik: true },
   { ms: H5.statusVlucht, doel: 'status-punt' },
@@ -142,12 +147,16 @@ export const Film4: React.FC = () => {
     portaal: t >= H2.flapOp ? ['offerte'] : [], activiteiten: [], tab: 'Overzicht', meldingen: 0,
     blokOp: t < H2.dollyOp ? { kop: H1.cockpitOp, fase: H1.cockpitOp + 150, briefing: H1.cockpitOp + 300, grid: H1.cockpitOp + 450, portaal: H1.cockpitOp + 600, tijd: H1.cockpitOp + 250, klant: H1.cockpitOp + 400, team: H1.cockpitOp + 550, acties: H1.cockpitOp + 700 } : undefined,
     taak: { dialoogOp: H1.taakDialoogOp, typOp: H1.taakTypOp, kiesOp: H1.taakKiesOp, klaarOp: H1.taakKlaarOp },
-    klikOp: { offerteMaken: H1.klikOfferteMaken, taakToevoegen: H1.klikTaakToevoegen, taakSanne: H1.klikTaakSanne, factuurMaken: H6.klikFactuurMaken },
+    werkbon: { dialoogOp: H4.werkbonDialoogOp, klaarOp: H4.werkbonKlaarOp },
+    klikOp: { offerteMaken: H1.klikOfferteMaken, taakToevoegen: H1.klikTaakToevoegen, taakSanne: H1.klikTaakSanne, werkbonMaken: H4.klikWerkbonMaken, factuurMaken: H6.klikFactuurMaken },
     // Rondleiding: de pagina scrolt 300 px omhoog voor het portaal-blok, en terug voor de taak.
     scrollY: t < H1.klikTaak - 900 ? vlak(t, H1.rondOp + 2 * H1.rondStap - 700, H1.rondOp + 2 * H1.rondStap - 150, thema.ease.inUit) * 300 : (1 - vlak(t, H1.klikTaak - 900, H1.klikTaak - 400, thema.ease.inUit)) * 300,
   }
   const editorStand = { regelsOp: H2.regelsOp, checkAkkoordOp: H2.checkAkkoordOp, verstuurTikOp: H2.klikVerstuur, keuzeOp: H2.keuzeOp, keuzeTikOp: H2.klikPortaal, flapOp: H2.flapOp }
-  const portaalStand = { pagina: 'publiek' as const, projectStatus: 'in-review', kaarten: [], naamOp: H3.naamOp, tekenOp: H3.tekenOp, vinkOp: H3.vinkOp, tikOp: H3.klikBevestig, klaarOp: H3.klaarOp }
+  // Klantportaal op desktop: eerst de ontvangen offerte, na Bekijken de publieke pagina met handtekening.
+  const portaalStand = t < H3.publiekOp
+    ? { pagina: 'portaal' as const, projectStatus: 'in-review', kaarten: [{ soort: 'offerte' as const, status: 'verstuurd', op: H3.kaartZichtOp }] }
+    : { pagina: 'publiek' as const, projectStatus: 'in-review', kaarten: [], naamOp: H3.naamOp, tekenOp: H3.tekenOp, vinkOp: H3.vinkOp, tikOp: H3.klikBevestig, klaarOp: H3.klaarOp }
 
   // Zichtvensters per paneel (gemonteerd als ze in de buurt van de camera zijn).
   const inMail = t < H2.dollyOp
@@ -215,20 +224,13 @@ export const Film4: React.FC = () => {
             </Paneel>
           )}
           {inPortaal && (
-            <Paneel id="portaal" plek={PLEK.portaal} diepte={d('portaal')} breedte={TEL_B} hoogte={TEL_H} kaal vasteKantel={8}>
-              <Telefoon4>
-                <VensterCtx.Provider value={{ b: 1000, h: 952 }}>
-                  {/* Alleen de rechterkolom (naam, handtekening, Bevestigen) past op de telefoon */}
-                  <div style={{ transform: 'translateX(-496px) scale(0.886)', transformOrigin: '0 0' }}>
-                    <PortaalKlant t={t} stand={portaalStand} />
-                  </div>
-                </VensterCtx.Provider>
-              </Telefoon4>
+            <Paneel id="portaal" plek={PLEK.portaal} diepte={d('portaal')}>
+              <PortaalKlant t={t} stand={portaalStand} />
             </Paneel>
           )}
           {inPlanning && (
             <Paneel id="planning" plek={PLEK.planning} diepte={d('planning')}>
-              <Planning t={t} stand={{ sleepOp: H4.sleepOp, landOp: H4.landOp }} />
+              <Planning t={t} stand={{ sleepOp: H4.sleepOp, landOp: H4.landOp, dialoogOp: H4.dialoogOp, koppelOp: H4.koppelOp, klaarOp: H4.klaarOp }} />
             </Paneel>
           )}
           {inTelefoon && (
@@ -266,6 +268,9 @@ export const Film4: React.FC = () => {
 
       {/* Rondleiding op de projectpagina */}
       {t >= H1.rondOp - 100 && t < H1.klikTaak && <Rondleiding4 t={t} op={H1.rondOp} stap={H1.rondStap} stappen={[{ doel: 'blok-briefing', tekst: 'briefing' }, { doel: 'blok-grid', tekst: 'offerte', deel: 'rechts' }, { doel: 'blok-portaal', tekst: 'portaal' }]} />}
+
+      {/* Uren: grotere projecten met meerdere items, overzicht in je uren */}
+      {t >= H2.urenLabelOp - 100 && t < H2.urenLabelUit + 400 && <Rondleiding4 t={t} op={H2.urenLabelOp} stap={H2.urenLabelUit - H2.urenLabelOp} stappen={[{ doel: 'uren-blok', tekst: 'overzicht in je uren' }]} />}
 
       {/* Meldingen */}
       <Melding4 t={t} op={H1.meldingTaakOp} uit={H1.meldingTaakUit} label="je collega" titel="Antony heeft je een taak toegewezen" tekst="Even telefonisch contact opnemen · Gevelreclame Van der Berg Interieur" />

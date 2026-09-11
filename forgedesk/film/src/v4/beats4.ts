@@ -29,61 +29,68 @@ export const H1 = {
 export const H2 = {
   dollyOp: 31800, dollyTot: 33000, kaartOp: 31900, kaartUit: 33700,
   regelsOp: 33400,
-  pushOp: 35500, pushTot: 35900, rijOp: 35900, rijStap: 800, pullOp: 39800, pullTot: 40200,
-  belofteOp: 40600, belofteUit: 42800,
-  meldingOp: 43000, meldingUit: 44800, checkAkkoordOp: 43000,
-  klikVerstuur: 45400, keuzeOp: 45580, klikPortaal: 46400, flapOp: 46700,
-  statusVlucht: 47400, statusOp: 47500, statusLand: 48100,
-  eind: 49600,
+  // Push 1,4x op de marge (rechts), rijen lichten op, hold; dan door naar het urenblok.
+  pushOp: 35500, pushTot: 35900, rijOp: 35900, rijStap: 800,
+  urenPushOp: 39800, urenPushTot: 40200, urenLabelOp: 40300, urenLabelUit: 42000, pullOp: 42000, pullTot: 42400,
+  belofteOp: 42800, belofteUit: 45000,
+  meldingOp: 45200, meldingUit: 47000, checkAkkoordOp: 45200,
+  klikVerstuur: 47600, keuzeOp: 47780, klikPortaal: 48600, flapOp: 48900,
+  statusVlucht: 49600, statusOp: 49700, statusLand: 50300,
+  eind: 51800,
 } as const
 
-// H3 portaal (je klant): 3D-telefoon, naam, handtekening met push, bevestigen, terug, melding, statuswoord, belofte.
+// H3 portaal (je klant, desktop): offerte komt binnen in het klantportaal, Bekijken,
+// naam, handtekening met push, Bevestigen, terug naar het project, melding, statuswoord, belofte.
 export const H3 = {
-  dollyOp: 49600, dollyTot: 50800, kaartOp: 49700, kaartUit: 51900,
-  naamOp: 52300, pushOp: 53400, pushTot: 53800, tekenOp: 53800, vinkOp: 55700, pullOp: 55900, pullTot: 56300,
-  klikBevestig: 56900, klaarOp: 57240,
-  terugOp: 58300, terugTot: 59500,
-  meldingOp: 59600, meldingUit: 61600,
-  statusVlucht: 61200, statusOp: 61300, statusLand: 61900,
-  belofteOp: 62300, belofteUit: 64500,
-  eind: 64800,
+  dollyOp: 51800, dollyTot: 53000, kaartOp: 51900, kaartUit: 54100,
+  kaartZichtOp: 53200, klikBekijken: 54900, publiekOp: 55000,
+  naamOp: 55600, pushOp: 56600, pushTot: 57000, tekenOp: 57000, vinkOp: 58900, pullOp: 59100, pullTot: 59500,
+  klikBevestig: 60100, klaarOp: 60440,
+  terugOp: 61500, terugTot: 62700,
+  meldingOp: 62800, meldingUit: 64800,
+  statusVlucht: 64400, statusOp: 64500, statusLand: 65100,
+  belofteOp: 65500, belofteUit: 67700,
+  eind: 68000,
 } as const
 
-// H4 planning (jij): werkweek, montagekaart slepen, statuswoord, belofte.
+// H4 planning (jij): eerst een werkbon vanuit het project (Acties, Werkbon maken),
+// dan dolly naar de planning, montagekaart slepen, dialoog met de werkbon gekoppeld, statuswoord, belofte.
 export const H4 = {
-  dollyOp: 64800, dollyTot: 66000, kaartOp: 64900, kaartUit: 66700,
-  sleepOp: 67500, landOp: 68900,
-  statusVlucht: 70000, statusOp: 70100, statusLand: 70700,
-  belofteOp: 71100, belofteUit: 73300,
-  eind: 73600,
+  klikWerkbon: 68700, werkbonDialoogOp: 68850, klikWerkbonMaken: 70300, werkbonKlaarOp: 70580,
+  dollyOp: 71900, dollyTot: 73100, kaartOp: 72000, kaartUit: 73800,
+  sleepOp: 74600, landOp: 76000,
+  dialoogOp: 76250, klikKoppel: 77500, koppelOp: 77580, klikInplannen: 78700, klaarOp: 78900,
+  statusVlucht: 79800, statusOp: 79900, statusLand: 80500,
+  belofteOp: 80900, belofteUit: 83100,
+  eind: 83400,
 } as const
 
 // H5 werkbon (je monteur): 3D-telefoon, na-foto, handtekening, statuswoord, belofte.
 export const H5 = {
-  dollyOp: 73600, dollyTot: 74800, kaartOp: 73700, kaartUit: 75500,
-  klikNaFoto: 76900, fotoOp: 77350, tekenOp: 78600,
-  statusVlucht: 81100, statusOp: 81200, statusLand: 81800,
-  belofteOp: 82200, belofteUit: 84400,
-  eind: 84700,
+  dollyOp: 83400, dollyTot: 84600, kaartOp: 83500, kaartUit: 85300,
+  klikNaFoto: 86700, fotoOp: 87150, tekenOp: 88400,
+  statusVlucht: 90900, statusOp: 91000, statusLand: 91600,
+  belofteOp: 92000, belofteUit: 94200,
+  eind: 94500,
 } as const
 
 // H6 betaald (jij): financieel-tab, factuur maken, versturen, melding betaald met push, statuswoord, belofte.
 export const H6 = {
-  dollyOp: 84700, dollyTot: 85900, kaartOp: 84800, kaartUit: 86600,
-  klikFinancieel: 86500, financieelOp: 86700, klikFactuurMaken: 87700, factuurOp: 88100,
-  klikVerstuur: 89300, verstuurdOp: 89600,
-  meldingOp: 90800, meldingUit: 92800, pushOp: 90800, pushTot: 91200, betaaldOp: 91000, pullOp: 92600, pullTot: 93000,
-  statusVlucht: 93200, statusOp: 93300, statusLand: 93900,
-  belofteOp: 94300, belofteUit: 96500,
-  eind: 97000,
+  dollyOp: 94500, dollyTot: 95700, kaartOp: 94600, kaartUit: 96400,
+  klikFinancieel: 96300, financieelOp: 96500, klikFactuurMaken: 97500, factuurOp: 97900,
+  klikVerstuur: 99100, verstuurdOp: 99400,
+  meldingOp: 100600, meldingUit: 102600, pushOp: 100600, pushTot: 101000, betaaldOp: 100800, pullOp: 102400, pullTot: 102800,
+  statusVlucht: 103000, statusOp: 103100, statusLand: 103700,
+  belofteOp: 104100, belofteUit: 106300,
+  eind: 106800,
 } as const
 
 // Slot: camera terug uit de ruimte, gevel, punt zet het bord aan, modulegrid, eindkaart.
 export const S = {
-  pullbackOp: 97000, pullbackTot: 98500,
-  gevelOp: 98000, ruimteUit: 98800, ruimteWeg: 99600,
-  puntVlucht: 99500, bordAan: 100200,
-  gridOp: 102600, belofteOp: 103400, belofteUit: 105900, gridUit: 105900,
-  eindkaartOp: 106000, lettersOp: 106200, puntValt: 107000, regelOp: 107600, urlOp: 108200,
-  eind: 111000,
+  pullbackOp: 106800, pullbackTot: 108300,
+  gevelOp: 107800, ruimteUit: 108600, ruimteWeg: 109400,
+  puntVlucht: 109300, bordAan: 110000,
+  gridOp: 112400, belofteOp: 113200, belofteUit: 115700, gridUit: 115700,
+  eindkaartOp: 115800, lettersOp: 116000, puntValt: 116800, regelOp: 117400, urlOp: 118000,
+  eind: 120800,
 } as const

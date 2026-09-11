@@ -309,7 +309,7 @@ export const OfferteEditor: React.FC<{ t: number; stand: EditorStand }> = ({ t, 
                   </div>
                 </div>
                 <div className="h-px bg-[rgba(26,83,92,0.08)]" />
-                <div className="space-y-2" style={{ opacity: totaalUren > 0 ? 1 : 0.35 }}>
+                <div data-doel="uren-blok" className="space-y-2" style={{ opacity: totaalUren > 0 ? 1 : 0.35 }}>
                   <h4 className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70">Uren<span className="text-flame">.</span></h4>
                   <div className="space-y-1.5 text-[13px]">
                     {UREN_VELDEN.map((veld) => (
