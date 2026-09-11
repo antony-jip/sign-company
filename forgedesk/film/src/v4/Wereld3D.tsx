@@ -14,10 +14,22 @@ import { thema } from './thema'
 // tool-kaartjes die ervoor zweven. Alles wordt uit t (ms) berekend; niets
 // beweegt uit zichzelf (geen useFrame).
 
-// Maten in wereld-eenheden.
-export const BORD = { b: 12, h: 4.0, d: 0.9 }
-export const VLAK = { b: 11.2, h: 3.3, z: BORD.d / 2 + 0.03 }
-export const LOGO = { b: 8.5, z: VLAK.z + 0.012 }
+// Maten in wereld-eenheden. Het bord is één zwevend paneel met ronde hoeken
+// en een dunne dikte; de voorkant staat op z = 0.
+export const BORD = { b: 10.4, h: 3.5, d: 0.16, hoek: 0.34 }
+export const VLAK = { b: 10.4, h: 3.5, z: 0.006 }
+export const LOGO = { b: 7.2, z: VLAK.z + 0.012 }
+
+const rondeVorm = (b: number, h: number, r: number) => {
+  const v = new THREE.Shape()
+  const x = -b / 2, y = -h / 2
+  v.moveTo(x + r, y)
+  v.lineTo(x + b - r, y); v.absarc(x + b - r, y + r, r, -Math.PI / 2, 0, false)
+  v.lineTo(x + b, y + h - r); v.absarc(x + b - r, y + h - r, r, 0, Math.PI / 2, false)
+  v.lineTo(x + r, y + h); v.absarc(x + r, y + h - r, r, Math.PI / 2, Math.PI, false)
+  v.lineTo(x, y + r); v.absarc(x + r, y + r, r, Math.PI, Math.PI * 1.5, false)
+  return v
+}
 const logoH = LOGO.b * (LOGO_VIEWBOX.h / LOGO_VIEWBOX.b)
 // Wereldpositie van de punt in het logo (logo gecentreerd op 0,0).
 export const PUNT_THUIS = {
@@ -75,12 +87,12 @@ export const puntStand = (t: number) => {
 
 // Kaartje-posities (wereld), rust en fase voor het zweven.
 const KAART_PLEK: Record<string, { x: number; y: number; z: number; rot: number; fase: number }> = {
-  mail: { x: -3.9, y: 1.55, z: 2.8, rot: -0.08, fase: 0.1 },
-  excel: { x: 3.8, y: 1.75, z: 3.0, rot: 0.09, fase: 0.5 },
-  whatsapp: { x: -0.5, y: 2.35, z: 3.3, rot: 0.03, fase: 0.8 },
-  agenda: { x: -4.0, y: -1.7, z: 3.1, rot: 0.06, fase: 0.3 },
-  werkbon: { x: 3.9, y: -1.5, z: 2.6, rot: -0.06, fase: 0.7 },
-  telefoon: { x: 0.9, y: -2.45, z: 3.2, rot: 0.05, fase: 0.4 },
+  mail: { x: -3.7, y: 1.5, z: 2.8, rot: -0.08, fase: 0.1 },
+  excel: { x: 3.6, y: 1.7, z: 3.0, rot: 0.09, fase: 0.5 },
+  whatsapp: { x: -0.4, y: 2.3, z: 3.3, rot: 0.03, fase: 0.8 },
+  agenda: { x: -3.8, y: -1.6, z: 3.1, rot: 0.06, fase: 0.3 },
+  werkbon: { x: 3.7, y: -1.4, z: 2.6, rot: -0.06, fase: 0.7 },
+  telefoon: { x: 0.8, y: -2.3, z: 3.2, rot: 0.05, fase: 0.4 },
 }
 const KAART_B = 2.2, KAART_H = KAART_B * (KAART_PX.h / KAART_PX.b)
 
@@ -116,26 +128,26 @@ const Kaartjes: React.FC<{ t: number; tex: Texturen }> = ({ t, tex }) => {
 
 const Bord: React.FC<{ t: number; tex: Texturen }> = ({ t, tex }) => {
   const licht = logoLicht(t)
-  const behuizing = useMemo(() => new THREE.Color(thema.kleur.petrol), [])
   const acryl = useMemo(() => new THREE.Color(thema.kleur.acrylUit).lerp(new THREE.Color(thema.kleur.acrylAan), licht), [licht])
-  const lijst = useMemo(() => new THREE.Color(thema.kleur.petrol).lerp(new THREE.Color(thema.kleur.petrolLicht), 0.18), [])
+  const zijkant = useMemo(() => new THREE.Color('#EFEDE8'), [])
   const warm = useMemo(() => new THREE.Color(thema.kleur.lichtWarm), [])
+  // Dunne plaat met ronde hoeken; de voorkant wordt apart als vlak getekend.
+  const plaat = useMemo(() => new THREE.ExtrudeGeometry(rondeVorm(BORD.b, BORD.h, BORD.hoek), { depth: BORD.d, bevelEnabled: true, bevelSize: 0.015, bevelThickness: 0.015, bevelSegments: 3, curveSegments: 24 }), [])
+  const voorkant = useMemo(() => new THREE.ShapeGeometry(rondeVorm(VLAK.b - 0.03, VLAK.h - 0.03, BORD.hoek - 0.015), 24), [])
   return (
     <group>
-      {/* Behuizing */}
-      <mesh position={[0, 0, 0]}>
-        <boxGeometry args={[BORD.b, BORD.h, BORD.d]} />
-        <meshStandardMaterial color={behuizing} roughness={0.55} metalness={0.12} />
+      {/* Slagschaduw: zacht, iets naar beneden */}
+      <mesh position={[0, -0.5, -0.5]}>
+        <planeGeometry args={[BORD.b * 1.32, BORD.h * 1.9]} />
+        <meshBasicMaterial map={tex.schaduw} transparent opacity={0.28} depthWrite={false} toneMapped={false} />
       </mesh>
-      {/* Lijst: een iets grotere, dunne rand aan de voorkant */}
-      <mesh position={[0, 0, BORD.d / 2 - 0.02]}>
-        <boxGeometry args={[BORD.b + 0.12, BORD.h + 0.12, 0.08]} />
-        <meshStandardMaterial color={lijst} roughness={0.4} metalness={0.25} />
+      {/* Plaat */}
+      <mesh geometry={plaat} position={[0, 0, -BORD.d - 0.015]}>
+        <meshStandardMaterial color={zijkant} roughness={0.8} metalness={0} transparent opacity={0.55 + licht * 0.45} />
       </mesh>
-      {/* Acrylaat voorkant: donker als het bord uit is, warm als het aan is */}
-      <mesh position={[0, 0, VLAK.z]}>
-        <planeGeometry args={[VLAK.b, VLAK.h]} />
-        <meshStandardMaterial color={acryl} emissive={warm} emissiveIntensity={licht * 0.55} roughness={0.85} metalness={0} />
+      {/* Voorkant: mat grijs-wit als het bord uit is, helder wit met warme gloed als het aan is */}
+      <mesh geometry={voorkant} position={[0, 0, VLAK.z]}>
+        <meshStandardMaterial color={acryl} emissive={warm} emissiveIntensity={licht * 0.5} roughness={0.9} metalness={0} transparent opacity={0.62 + licht * 0.38} />
       </mesh>
       {/* Logo-gloed (geblurde kopie, additief) en het logo zelf */}
       <mesh position={[0, 0, LOGO.z - 0.004]}>
@@ -146,7 +158,7 @@ const Bord: React.FC<{ t: number; tex: Texturen }> = ({ t, tex }) => {
         <planeGeometry args={[LOGO.b, logoH]} />
         <meshBasicMaterial map={tex.logo} transparent opacity={licht} depthWrite={false} toneMapped={false} />
       </mesh>
-      {/* Warm licht uit het bord op de omgeving als het aan staat */}
+      {/* Warm licht uit het paneel op de omgeving als het aan staat */}
       <pointLight position={[0, 1.2, 3.0]} color={thema.kleur.lichtWarm} intensity={licht * 3} distance={12} decay={2} />
     </group>
   )
@@ -192,7 +204,7 @@ export const Wereld3D: React.FC<{ t: number; tex: Texturen; width: number; heigh
     <ThreeCanvas width={width} height={height} dpr={1} gl={{ alpha: true, antialias: true, toneMapping: THREE.NoToneMapping }} camera={{ fov: thema.camera.fov, near: 0.1, far: 100, position: [0, 0.15, 11.6] }}>
       <CameraRig t={t} />
       {/* Lichte studio: zacht hemellicht, hoofdlicht van linksboven, warm invullicht */}
-      <hemisphereLight intensity={1.1} color="#FFFFFF" groundColor="#D8D2C4" />
+      <hemisphereLight intensity={1.35} color="#FFFFFF" groundColor="#ECEDEA" />
       <directionalLight position={[-6, 9, 8]} intensity={1.6} color="#FFFFFF" />
       <directionalLight position={[8, -4, 6]} intensity={0.5} color="#F7E3C8" />
       <pointLight position={[0, 0, 3]} color="#FFFFFF" intensity={inslagFlits * 22} distance={12} decay={2} />

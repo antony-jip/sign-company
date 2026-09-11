@@ -20,7 +20,7 @@ export const thema = {
     studio: merk.pagina,
     studioLaag: '#F1EDE4',
     // Acrylaat van het bord: mat grijs-wit uit, helder wit aan.
-    acrylUit: '#E4E2DC',
+    acrylUit: '#FAF9F6',
     acrylAan: '#FFFFFF',
     // Warm licht van het bord als het aan staat.
     lichtWarm: '#FFF4E2',

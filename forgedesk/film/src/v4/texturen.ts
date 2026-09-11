@@ -33,6 +33,7 @@ export type Texturen = {
   logo: THREE.CanvasTexture
   logoGloed: THREE.CanvasTexture
   gloed: THREE.CanvasTexture
+  schaduw: THREE.CanvasTexture
   kaarten: Record<string, THREE.CanvasTexture>
 }
 
@@ -83,6 +84,15 @@ const tekenGloed = () => {
   return canvasTextuur(c)
 }
 
+// Zachte slagschaduw onder het paneel: geblurde afgeronde rechthoek in petrol.
+const tekenSchaduw = () => {
+  const c = document.createElement('canvas'); c.width = 1024; c.height = 512
+  const ctx = c.getContext('2d')!
+  ctx.filter = 'blur(38px)'
+  rondeRect(ctx, 120, 120, 784, 272, 40); ctx.fillStyle = `${thema.kleur.petrol}8C`; ctx.fill()
+  return canvasTextuur(c)
+}
+
 // Tool-kaartje: witte kaart, icoon in tint, naam en subregel.
 const tekenKaart = async (k: ToolKaartDef) => {
   const { b, h } = KAART_PX
@@ -114,7 +124,7 @@ export const maakTexturen = async (): Promise<Texturen> => {
   await fontsKlaar
   const kaarten: Record<string, THREE.CanvasTexture> = {}
   for (const k of TOOL_KAARTEN) kaarten[k.id] = await tekenKaart(k)
-  return { logo: tekenLogo(0), logoGloed: tekenLogo(18, thema.kleur.lichtWarm), gloed: tekenGloed(), kaarten }
+  return { logo: tekenLogo(0), logoGloed: tekenLogo(18, thema.kleur.lichtWarm), gloed: tekenGloed(), schaduw: tekenSchaduw(), kaarten }
 }
 
 // Hook: houdt de render vast tot alle texturen er zijn.
