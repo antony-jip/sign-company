@@ -55,16 +55,8 @@ const CameraRig: React.FC<{ t: number }> = ({ t }) => {
   return null
 }
 
-// Neon-flikker bij het aangaan: eerst twee korte dips, dan vol.
-export const logoLicht = (t: number) => {
-  if (t < O.logoOp) return 0
-  const d = t - O.logoOp
-  if (d < 140) return 0.65
-  if (d < 230) return 0.12
-  if (d < 380) return 0.85
-  if (d < 470) return 0.30
-  return lerp(0.55, 1, vlak(t, O.logoOp + 470, O.logoVol, thema.ease.uit))
-}
+// Logo komt strak op: geen lichtbak, geen flikker, gewoon 450 ms ease-out.
+export const logoLicht = (t: number) => vlak(t, O.logoOp, O.logoOp + 450, thema.ease.uit)
 
 // Stand van de punt: positie, schaal, gloed.
 export const puntStand = (t: number) => {
@@ -129,17 +121,11 @@ const Bord: React.FC<{ t: number; tex: Texturen }> = ({ t, tex }) => {
   const licht = logoLicht(t)
   return (
     <group>
-      {/* Logo-gloed (geblurde kopie, additief) en het logo zelf */}
-      <mesh position={[0, 0, LOGO.z - 0.004]}>
-        <planeGeometry args={[LOGO.b * 1.08, logoH * 1.08]} />
-        <meshBasicMaterial map={tex.logoGloed} transparent opacity={licht * 0.5} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
-      </mesh>
-      <mesh position={[0, 0, LOGO.z]}>
+      {/* Het logo: plat, zonder gloed of schaduw (het 3D-werk zit straks op de schermen) */}
+      <mesh position={[0, 0, LOGO.z]} scale={[0.97 + licht * 0.03, 0.97 + licht * 0.03, 1]}>
         <planeGeometry args={[LOGO.b, logoH]} />
         <meshBasicMaterial map={tex.logo} transparent opacity={licht} depthWrite={false} toneMapped={false} />
       </mesh>
-      {/* Warm licht uit het paneel op de omgeving als het aan staat */}
-      <pointLight position={[0, 1.2, 3.0]} color={thema.kleur.lichtWarm} intensity={licht * 3} distance={12} decay={2} />
     </group>
   )
 }
