@@ -240,8 +240,45 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .eq('offerte_id', offerte.id)
       .order('volgorde', { ascending: true })
 
-    const items = (rawItems || []).map((item: Record<string, unknown>) =>
-      zonderCalculatie(pick(item, ITEM_VELDEN) as Record<string, unknown>))
+    // Tekeningen en foto's staan als opslagpad in de private bucket. Zonder
+    // sessie kan de klantpagina (en de PDF die daar gebouwd wordt) er niet bij,
+    // dus hier een ondertekende URL, zoals portaal-get dat ook doet.
+    async function ondertekend(url: unknown): Promise<string | null> {
+      if (typeof url !== 'string' || !url) return null
+      if (url.startsWith('http') || url.startsWith('data:')) return url
+      const inPortaal = url.startsWith('portaal-bestanden/')
+      const bucket = inPortaal ? 'portaal-bestanden' : 'documenten-prive'
+      const pad = inPortaal ? url.slice('portaal-bestanden/'.length) : url
+      const { data, error } = await supabaseAdmin.storage.from(bucket).createSignedUrl(pad, 60 * 60 * 24)
+      if (error || !data?.signedUrl) {
+        console.error('[offerte-publiek] ondertekende URL mislukt:', bucket, error?.message)
+        return null
+      }
+      return data.signedUrl
+    }
+
+    const items = await Promise.all((rawItems || []).map(async (item: Record<string, unknown>) => {
+      const klantItem = zonderCalculatie(pick(item, ITEM_VELDEN) as Record<string, unknown>)
+      if (klantItem.bijlage_url) klantItem.bijlage_url = await ondertekend(klantItem.bijlage_url)
+      if (klantItem.foto_url && klantItem.foto_op_offerte) klantItem.foto_url = await ondertekend(klantItem.foto_url)
+      return klantItem
+    }))
+
+    // De maker als gezicht van de pagina. Alleen naam, functie en foto: bellen
+    // en mailen lopen via de bedrijfsgegevens, want een telefoonnummer in een
+    // persoonlijk profiel is niet vanzelf bedoeld voor klanten.
+    const { data: maker } = await supabaseAdmin
+      .from('profiles')
+      .select('voornaam, achternaam, functie, avatar_url')
+      .eq('id', offerte.user_id)
+      .maybeSingle()
+    const makerNaam = [maker?.voornaam, maker?.achternaam]
+      .map((deel) => (typeof deel === 'string' ? deel.trim() : ''))
+      .filter(Boolean)
+      .join(' ')
+    const contactpersoon = makerNaam
+      ? { naam: makerNaam, functie: maker?.functie || null, foto_url: maker?.avatar_url || null }
+      : null
 
     // Bedrijfsgegevens zijn org-breed: lees het profiel van de organisatie-
     // eigenaar i.p.v. de maker, zodat elk teamlid dezelfde gegevens toont.
@@ -300,6 +337,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       bedrijf: profile || null,
       klant: klant || null,
       docStyle: docStyle || null,
+      contactpersoon,
     })
   } catch (error: unknown) {
     console.error('offerte-publiek error:', error)
