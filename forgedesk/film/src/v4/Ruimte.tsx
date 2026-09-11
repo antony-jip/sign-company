@@ -51,23 +51,34 @@ type PaneelProps = {
   zicht?: number
   breedte?: number
   hoogte?: number
+  // Kaal: geen witte kaart (voor telefoons die hun eigen frame hebben).
+  kaal?: boolean
+  // Vaste kantel in graden, ook als het paneel actief is (3D-telefoon: 8).
+  vasteKantel?: number
   children: ReactNode
 }
 
 // Een paneel met echte UI: wit, ronde hoeken, een dunne lichte rand en een
 // zachte petrol-schaduw. Diepte gaat via translateZ, zodat de parallax in de
 // dolly echt is.
-export const Paneel: React.FC<PaneelProps> = ({ id, plek, diepte, kantel = 6, zicht = 1, breedte = PANEEL_B, hoogte = PANEEL_H, children }) => {
+export const Paneel: React.FC<PaneelProps> = ({ id, plek, diepte, kantel = 6, zicht = 1, breedte = PANEEL_B, hoogte = PANEEL_H, kaal = false, vasteKantel = 0, children }) => {
   const z = -diepte * 900
   const blur = Math.max(0, diepte - 0.15) * 7
+  const inhoud = (
+    <div style={{ width: breedte / PANEEL_SCHAAL, height: hoogte / PANEEL_SCHAAL, transform: `scale(${PANEEL_SCHAAL})`, transformOrigin: '0 0' }}>
+      {children}
+    </div>
+  )
   return (
-    <div data-scherm={id} style={{ position: 'absolute', left: plek.x - breedte / 2, top: plek.y - hoogte / 2, width: breedte, height: hoogte, opacity: zicht * (1 - Math.min(0.35, diepte * 0.3)), transform: `translateZ(${z}px) rotateY(${kantel * diepte}deg)`, transformOrigin: 'center', filter: blur > 0 ? `blur(${blur}px)` : undefined }}>
-      <div style={{ position: 'absolute', inset: 0, borderRadius: 26, boxShadow: '0 40px 90px -30px rgba(26,83,92,0.38), 0 120px 160px -80px rgba(26,83,92,0.30)' }} />
-      <div style={{ position: 'absolute', inset: 0, borderRadius: 26, overflow: 'hidden', backgroundColor: thema.kleur.wit, boxShadow: '0 0 0 1px rgba(255,255,255,0.9) inset, 0 1px 0 rgba(255,255,255,1) inset' }}>
-        <div style={{ width: breedte / PANEEL_SCHAAL, height: hoogte / PANEEL_SCHAAL, transform: `scale(${PANEEL_SCHAAL})`, transformOrigin: '0 0' }}>
-          {children}
-        </div>
-      </div>
+    <div data-scherm={id} style={{ position: 'absolute', left: plek.x - breedte / 2, top: plek.y - hoogte / 2, width: breedte, height: hoogte, opacity: zicht * (1 - Math.min(0.35, diepte * 0.3)), transform: `translateZ(${z}px) rotateY(${vasteKantel + kantel * diepte}deg)`, transformOrigin: 'center', filter: blur > 0 ? `blur(${blur}px)` : undefined }}>
+      {kaal ? inhoud : (
+        <>
+          <div style={{ position: 'absolute', inset: 0, borderRadius: 26, boxShadow: '0 40px 90px -30px rgba(26,83,92,0.38), 0 120px 160px -80px rgba(26,83,92,0.30)' }} />
+          <div style={{ position: 'absolute', inset: 0, borderRadius: 26, overflow: 'hidden', backgroundColor: thema.kleur.wit, boxShadow: '0 0 0 1px rgba(255,255,255,0.9) inset, 0 1px 0 rgba(255,255,255,1) inset' }}>
+            {inhoud}
+          </div>
+        </>
+      )}
     </div>
   )
 }

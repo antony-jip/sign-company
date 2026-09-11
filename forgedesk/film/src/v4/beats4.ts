@@ -1,40 +1,89 @@
-// Beats van de v4-film in absolute ms. Stap 1: alleen de opening (0-10 s).
+// Beats van de v4-film in absolute ms. Eén tijdlijn, één camera die alleen
+// tussen hoofdstukken beweegt (dolly 1,2 s). Kliks landen op klikX; de
+// cursorstap vertrekt op klikX - 780 (zie Cursor.tsx).
+
+// Opening (0-10 s): tool-kaartjes zweven, de punt trekt ze naar zich toe,
+// inslag, logo, belofte, prelude op de duik.
 export const O = {
-  // Buiten het bord, nacht, bord uit. Zes tool-kaartjes zweven, hold 2 s.
-  kaartjesOp: 0,
-  // De punt verschijnt in het midden van het bord.
-  puntOp: 2000,
-  // Kaartjes worden naar de punt getrokken (gestaggerd per kaartje).
-  trekVan: 2300,
-  // Inslag: alle kaartjes zijn binnen, flits, ring.
-  inslagOp: 4600,
-  // Logo licht op in het bord (met neon-flikker), vol op 5600.
-  logoOp: 4700, logoVol: 5600,
-  // De punt valt op zijn plek in het logo.
-  puntValt: 5600, puntLandt: 6300,
-  // Belofte: fade 300 ms, hold 2 s, weg.
-  belofteOp: 6600, belofteUit: 8900,
-  // Prelude op de duik: de camera begint heel licht te pushen.
-  pushOp: 9400,
-  eind: 10000,
+  kaartjesOp: 0, puntOp: 2000, trekVan: 2300, inslagOp: 4600,
+  logoOp: 4700, logoVol: 5600, puntValt: 5600, puntLandt: 6300,
+  belofteOp: 6600, belofteUit: 8900, pushOp: 9400, eind: 10000,
 } as const
 
-// Duik en H1 mail (jij). Camera beweegt alleen tussen hoofdstukken (dolly 1,2 s).
+// H1 mail (jij): duik, mailbox, project aanmaken, dolly naar het project,
+// belofte, rondleiding, taak toewijzen aan Sanne, statuswoord.
 export const H1 = {
-  // Duik: de opening-camera pusht door het logo, het mailscherm komt uit de diepte.
-  duikOp: 10000, duikTot: 12000,
-  kaartOp: 10300, kaartUit: 12100,
-  // Mailbox staat, hold 1,5 s.
-  mailOp: 12000,
-  // Punt naar "Project aanmaken"; klik landt op 14200 (cursorstap = klik - 780).
-  klikProject: 14200, projectOp: 14500,
-  // Hold 1,0 s, dan dolly naar het project-paneel.
+  duikOp: 10000, duikTot: 12000, kaartOp: 10300, kaartUit: 12100,
+  mailOp: 12000, klikProject: 14200, projectOp: 14500,
   dollyOp: 15200, dollyTot: 16400, cockpitOp: 16300,
-  // Belofte 0,4 s na de landing, 2,2 s.
   belofteOp: 16800, belofteUit: 19000,
-  // Rondleiding: drie labels van 1,4 s.
   rondOp: 19000, rondStap: 1400,
-  // Punt vliegt naar het statuswoord (aankomst 700 ms later), hold, einde H1.
-  statusVlucht: 23200, statusOp: 23300, statusLand: 23900,
-  eind: 25800,
+  klikTaak: 23900, taakDialoogOp: 24050, taakTypOp: 24400, klikTaakSanne: 26400, taakKiesOp: 26480, klikTaakToevoegen: 27300, taakKlaarOp: 27580,
+  meldingTaakOp: 27900, meldingTaakUit: 29700,
+  statusVlucht: 29600, statusOp: 29700, statusLand: 30300,
+  klikOfferteMaken: 31600,
+  eind: 31800,
+} as const
+
+// H2 offerte (jij): editor, regels, push op de marge, belofte, collega-melding, verstuur via portaal.
+export const H2 = {
+  dollyOp: 31800, dollyTot: 33000, kaartOp: 31900, kaartUit: 33700,
+  regelsOp: 33400,
+  pushOp: 35500, pushTot: 35900, rijOp: 35900, rijStap: 800, pullOp: 39800, pullTot: 40200,
+  belofteOp: 40600, belofteUit: 42800,
+  meldingOp: 43000, meldingUit: 44800, checkAkkoordOp: 43000,
+  klikVerstuur: 45400, keuzeOp: 45580, klikPortaal: 46400, flapOp: 46700,
+  statusVlucht: 47400, statusOp: 47500, statusLand: 48100,
+  eind: 49600,
+} as const
+
+// H3 portaal (je klant): 3D-telefoon, naam, handtekening met push, bevestigen, terug, melding, statuswoord, belofte.
+export const H3 = {
+  dollyOp: 49600, dollyTot: 50800, kaartOp: 49700, kaartUit: 51900,
+  naamOp: 52300, pushOp: 53400, pushTot: 53800, tekenOp: 53800, vinkOp: 55700, pullOp: 55900, pullTot: 56300,
+  klikBevestig: 56900, klaarOp: 57240,
+  terugOp: 58300, terugTot: 59500,
+  meldingOp: 59600, meldingUit: 61600,
+  statusVlucht: 61200, statusOp: 61300, statusLand: 61900,
+  belofteOp: 62300, belofteUit: 64500,
+  eind: 64800,
+} as const
+
+// H4 planning (jij): werkweek, montagekaart slepen, statuswoord, belofte.
+export const H4 = {
+  dollyOp: 64800, dollyTot: 66000, kaartOp: 64900, kaartUit: 66700,
+  sleepOp: 67500, landOp: 68900,
+  statusVlucht: 70000, statusOp: 70100, statusLand: 70700,
+  belofteOp: 71100, belofteUit: 73300,
+  eind: 73600,
+} as const
+
+// H5 werkbon (je monteur): 3D-telefoon, na-foto, handtekening, statuswoord, belofte.
+export const H5 = {
+  dollyOp: 73600, dollyTot: 74800, kaartOp: 73700, kaartUit: 75500,
+  klikNaFoto: 76900, fotoOp: 77350, tekenOp: 78600,
+  statusVlucht: 81100, statusOp: 81200, statusLand: 81800,
+  belofteOp: 82200, belofteUit: 84400,
+  eind: 84700,
+} as const
+
+// H6 betaald (jij): financieel-tab, factuur maken, versturen, melding betaald met push, statuswoord, belofte.
+export const H6 = {
+  dollyOp: 84700, dollyTot: 85900, kaartOp: 84800, kaartUit: 86600,
+  klikFinancieel: 86500, financieelOp: 86700, klikFactuurMaken: 87700, factuurOp: 88100,
+  klikVerstuur: 89300, verstuurdOp: 89600,
+  meldingOp: 90800, meldingUit: 92800, pushOp: 90800, pushTot: 91200, betaaldOp: 91000, pullOp: 92600, pullTot: 93000,
+  statusVlucht: 93200, statusOp: 93300, statusLand: 93900,
+  belofteOp: 94300, belofteUit: 96500,
+  eind: 97000,
+} as const
+
+// Slot: camera terug uit de ruimte, gevel, punt zet het bord aan, modulegrid, eindkaart.
+export const S = {
+  pullbackOp: 97000, pullbackTot: 98500,
+  gevelOp: 98000, ruimteUit: 98800, ruimteWeg: 99600,
+  puntVlucht: 99500, bordAan: 100200,
+  gridOp: 102600, belofteOp: 103400, belofteUit: 105900, gridUit: 105900,
+  eindkaartOp: 106000, lettersOp: 106200, puntValt: 107000, regelOp: 107600, urlOp: 108200,
+  eind: 111000,
 } as const

@@ -6,7 +6,8 @@ import { PortaalFeedItemAfbeelding } from '@/components/portaal/PortaalFeedItemA
 import { PortaalFeedItemFactuur } from '@/components/portaal/PortaalFeedItemFactuur'
 import { HandtekeningVeld } from '@/components/shared/HandtekeningVeld'
 import { Checkbox } from '@/components/ui/checkbox'
-import { VENSTER_B, VENSTER_H } from '../DesktopChrome'
+import { useContext } from 'react'
+import { VensterCtx } from '../DesktopChrome'
 import { project, portaalBedrijf, portaalItemOfferte, portaalItemFactuur, portaalItemFoto, montage, klant, contact, offerte, offerteItems } from '../../mockData'
 import { typ, euro } from '../../kern/Typ'
 import { veer, vlak, ease } from '../../tijd'
@@ -23,15 +24,18 @@ export type PortaalKlantStand = {
 
 const HANDTEKENING = 'M34 94 C 38 70, 42 40, 48 22 C 54 12, 66 16, 62 32 C 58 46, 42 56, 32 56 M 30 98 C 44 74, 62 46, 74 44 C 82 44, 78 60, 72 70 C 68 78, 74 84, 84 76 M 92 80 c 3 -8 6 -12 8 -6 c 0 6 -2 12 2 10 c 4 -2 8 -8 12 -12 M 116 84 c 2 -12 6 -30 10 -36 c 2 10 -2 24 0 32 c 2 6 8 4 12 -2 c 6 -10 10 -14 6 -18 c -6 2 -8 12 -2 18 c 6 4 14 -2 20 -10 M 168 76 c 2 -8 6 -12 8 -6 c 0 6 -4 12 0 12 c 4 0 8 -6 12 -10 M 192 86 c 10 -34 18 -56 32 -62 c 10 -4 4 14 -8 28 c -10 12 -20 20 -30 32 M 236 72 c 6 -8 14 -10 18 -4 c 4 6 -4 12 -10 8 c -4 -4 2 -10 10 -8 M 262 66 c 6 6 8 18 4 30 c -4 10 -12 12 -16 6 c 8 -14 16 -30 20 -44 M 40 108 C 110 100, 190 104, 262 94'
 
-const Browser: React.FC<{ url: string; children: React.ReactNode }> = ({ url, children }) => (
-  <div className="flex flex-col" style={{ width: VENSTER_B, height: VENSTER_H, backgroundColor: '#F8F7F5', fontFamily: 'Inter, sans-serif' }}>
+const Browser: React.FC<{ url: string; children: React.ReactNode }> = ({ url, children }) => {
+  const venster = useContext(VensterCtx)
+  return (
+  <div className="flex flex-col" style={{ width: venster.b, height: venster.h, backgroundColor: '#F8F7F5', fontFamily: 'Inter, sans-serif' }}>
     <div className="flex items-center gap-3 px-4 border-b border-border/60 flex-shrink-0" style={{ height: 48, backgroundColor: '#ECEAE6' }}>
       <span className="flex gap-1.5"><i className="w-3 h-3 rounded-full bg-[#E5E3DE] block" /><i className="w-3 h-3 rounded-full bg-[#E5E3DE] block" /><i className="w-3 h-3 rounded-full bg-[#E5E3DE] block" /></span>
       <span className="flex-1 h-8 rounded-lg bg-white/80 flex items-center px-3 font-mono text-[12px] text-muted-foreground">{url}</span>
     </div>
     <div className="flex-1 min-h-0 relative overflow-hidden">{children}</div>
   </div>
-)
+  )
+}
 
 export const PortaalKlant: React.FC<{ t: number; stand: PortaalKlantStand }> = ({ t, stand }) => {
   if (stand.pagina === 'publiek') {
