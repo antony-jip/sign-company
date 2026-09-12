@@ -146,30 +146,22 @@ export function Kaart({ etiket, status, acties, children }: KaartProps) {
   )
 }
 
+/**
+ * Een echte foto of niets. Geen initialen-cirkel als terugval: zonder foto
+ * staat de naam er gewoon als tekst, en een kapotte foto-URL laat ook niets
+ * achter.
+ */
 export function Gezicht({ naam, fotoUrl, grootte }: { naam: string; fotoUrl?: string | null; grootte: number }) {
   const [fotoKapot, setFotoKapot] = useState(false)
-  const delen = naam.trim().split(/\s+/).filter(Boolean)
-  const initialen = `${delen[0]?.[0] ?? ''}${delen.length > 1 ? delen[delen.length - 1][0] : ''}`.toUpperCase()
-
-  if (fotoUrl && !fotoKapot) {
-    return (
-      <img
-        src={fotoUrl}
-        alt={naam}
-        onError={() => setFotoKapot(true)}
-        className="shrink-0 rounded-full object-cover"
-        style={{ width: grootte, height: grootte }}
-      />
-    )
-  }
+  if (!fotoUrl || fotoKapot) return null
   return (
-    <span
-      aria-hidden
-      className="inline-flex shrink-0 items-center justify-center rounded-full bg-[#1A535C] font-semibold text-white"
-      style={{ width: grootte, height: grootte, fontSize: Math.round(grootte * 0.36) }}
-    >
-      {initialen}
-    </span>
+    <img
+      src={fotoUrl}
+      alt={naam}
+      onError={() => setFotoKapot(true)}
+      className="shrink-0 rounded-full object-cover"
+      style={{ width: grootte, height: grootte }}
+    />
   )
 }
 
