@@ -24,7 +24,7 @@ import { klantpaginaTeksten } from '@/lib/klantpaginaTeksten'
 import { OFFERTE_VOORBEELD, VOORBEELD_TOKEN, type VoorbeeldBericht } from '@/lib/offerteVoorbeeld'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { getMeetellendeVarianten, nettoStuksprijs } from '@/utils/offerteTotalen'
-import { bijlageSoort, klantSpecs, veiligeTerugUrl, voornaam, type KlantSpec } from '@/utils/offerteKlantpagina'
+import { bijlageSoort, isLichteKleur, klantSpecs, kopKleur, veiligeTerugUrl, voornaam, type KlantSpec } from '@/utils/offerteKlantpagina'
 
 // ============ TYPES ============
 
@@ -122,6 +122,7 @@ interface Huisstijl {
   kop_kleur?: string | null
   logo_tonen?: boolean
   akkoord_toegestaan?: boolean
+  accent_kleur?: string | null
   teksten?: Partial<Record<'akkoord_intro' | 'bedankt_kop' | 'bedankt_tekst', string | null>> | null
 }
 
@@ -1020,13 +1021,16 @@ export function OffertePubliekPagina() {
     </button>
   )
 
-  // Bovenaan, naast de titel: de PDF is voor veel klanten hét document.
+  // Bovenaan, naast de titel: de PDF is voor veel klanten hét document. In de
+  // firmakleur van het briefpapier, zodat de knop bij de PDF past die eruit komt.
+  const accentKleur = kopKleur(huisstijl.accent_kleur ?? huisstijl.kop_kleur)
   const pdfKnopGroot = (
     <button
       type="button"
       onClick={handleDownloadPDF}
       disabled={pdfBezig}
-      className="inline-flex h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-xl border-[1.5px] border-[#1A535C] bg-[#FFFFFF] px-4 text-sm font-semibold text-[#1A535C] transition-colors hover:bg-[#1A535C] hover:text-white disabled:opacity-50"
+      style={{ backgroundColor: accentKleur, color: isLichteKleur(accentKleur) ? '#1A1A1A' : '#FFFFFF' }}
+      className="inline-flex h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-xl px-4 text-sm font-semibold shadow-[0_1px_2px_rgba(0,0,0,0.08)] transition-opacity hover:opacity-90 disabled:opacity-50"
     >
       {pdfBezig ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
       Download PDF

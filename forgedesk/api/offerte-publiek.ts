@@ -375,6 +375,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       logo_tonen: portaalInstellingen?.bedrijfslogo_op_portaal !== false,
       // Dezelfde schakelaar die offerte-accepteren afdwingt.
       akkoord_toegestaan: portaalInstellingen?.klant_kan_offerte_goedkeuren !== false,
+      // De firmakleur van het briefpapier, voor de PDF-knop.
+      accent_kleur: typeof docStyle?.primaire_kleur === 'string' ? docStyle.primaire_kleur : null,
       // Eigen teksten op de offertepagina; de pagina vult lege velden met de standaard.
       teksten: {
         akkoord_intro: typeof portaalInstellingen?.offerte_akkoord_intro === 'string' ? portaalInstellingen.offerte_akkoord_intro : null,

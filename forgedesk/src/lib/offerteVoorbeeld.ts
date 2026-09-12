@@ -62,7 +62,7 @@ export const OFFERTE_VOORBEELD = {
 /** Berichten tussen de instellingenpagina en de preview in het iframe. */
 export interface VoorbeeldBericht {
   type: 'doen-offerte-voorbeeld'
-  huisstijl: { kop_kleur?: string | null; logo_tonen?: boolean; akkoord_toegestaan?: boolean; teksten?: Record<string, string> }
+  huisstijl: { kop_kleur?: string | null; logo_tonen?: boolean; akkoord_toegestaan?: boolean; accent_kleur?: string | null; teksten?: Record<string, string> }
   bedrijf: { bedrijfsnaam?: string; logo_url?: string | null; bedrijfs_telefoon?: string; bedrijfs_email?: string }
   contactpersoon?: { naam: string; functie?: string | null; foto_url?: string | null } | null
   toonBedankt?: boolean

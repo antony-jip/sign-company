@@ -26,6 +26,7 @@ import {
   ExternalLink as OpenExtern,
 } from 'lucide-react'
 import { STANDAARD_KLANTPAGINA_TEKSTEN } from '@/lib/klantpaginaTeksten'
+import { useDocumentStyle } from '@/hooks/useDocumentStyle'
 import { VOORBEELD_TOKEN, type VoorbeeldBericht } from '@/lib/offerteVoorbeeld'
 import { useAuth } from '@/contexts/AuthContext'
 import { getPortaalInstellingen, updatePortaalInstellingen, getDefaultPortaalInstellingen, getProfile } from '@/services/supabaseService'
@@ -48,6 +49,7 @@ export function PortaalTab() {
   const [previewModus, setPreviewModus] = useState<'desktop' | 'mobiel'>('desktop')
   const [previewKlaar, setPreviewKlaar] = useState(false)
   const previewRef = useRef<HTMLIFrameElement>(null)
+  const documentStyle = useDocumentStyle()
 
   // De preview draait de echte offertepagina in een iframe en krijgt de
   // instellingen via postMessage, zodat elke toetsaanslag meteen zichtbaar is.
@@ -60,6 +62,7 @@ export function PortaalTab() {
         kop_kleur: settings.portaal_header_kleur,
         logo_tonen: settings.bedrijfslogo_op_portaal,
         akkoord_toegestaan: settings.klant_kan_offerte_goedkeuren,
+        accent_kleur: documentStyle?.primaire_kleur || null,
         teksten: {
           akkoord_intro: settings.offerte_akkoord_intro || '',
           bedankt_kop: settings.offerte_bedankt_kop || '',
@@ -71,7 +74,7 @@ export function PortaalTab() {
       ...extra,
     }
     venster.postMessage(bericht, window.location.origin)
-  }, [settings, bedrijf, logoUrl, contactpersoon])
+  }, [settings, bedrijf, logoUrl, contactpersoon, documentStyle?.primaire_kleur])
 
   useEffect(() => {
     const opBericht = (e: MessageEvent) => {
