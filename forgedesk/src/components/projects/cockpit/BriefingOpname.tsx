@@ -79,6 +79,8 @@ export function BriefingOpname({ huidigeBriefing, projectNaam, klantNaam, onBrie
         [{ role: 'user', content: transcript }],
         `Je bent Daan. Je krijgt een ingesproken voice memo van iemand bij een reclame/signing bedrijf en maakt er een projectbriefing van.
 
+De memo is automatisch uitgeschreven door spraakherkenning en bevat daardoor verkeerd verstane woorden. Herstel die naar de vakterm die bedoeld is, op basis van klank en context. Veelvoorkomende termen: dibond, forex, plexiglas, acrylaat, alucobond, aluminium composiet, trespa, PVC, vinyl, folie, wrap, carwrap, belettering, doorlichtende letters, freesletters, opbouwletters, lichtbak, gevelbord, spandoek, banner, mesh, raamfolie, etsfolie, zandstraalfolie, sticker, laminaat, RAL, Pantone, CMYK, LED, montage, hoogwerker, steiger, bouwvergunning, drukproef, vectorbestand, huisstijl, logo. Kleurcodes zoals "ral zeven nul één zes" schrijf je als RAL 7016, maten als 200 x 80 cm. Twijfel je of een woord echt verkeerd verstaan is, laat het dan staan.
+
 Stijl:
 - Alleen korte bullets, elke regel begint met "- "
 - Kortbondig zoals een projectleider het opschrijft, geen hele zinnen overnemen
