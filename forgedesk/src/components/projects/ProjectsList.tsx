@@ -1847,6 +1847,15 @@ export function ProjectsList() {
                               iconen midden in de rij die het menu dubbelden */}
                           <td className="py-3.5 pr-5 align-middle" onClick={(e) => e.stopPropagation()}>
                             <div className="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); setMailProject(project) }}
+                                aria-label={`Mail naar klant over ${project.naam || 'project'}`}
+                                title="Mail naar klant"
+                                className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground/70 hover:bg-petrol/10 hover:text-petrol transition-colors"
+                              >
+                                <Mail className="w-3.5 h-3.5" strokeWidth={1.75} />
+                              </button>
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <button
