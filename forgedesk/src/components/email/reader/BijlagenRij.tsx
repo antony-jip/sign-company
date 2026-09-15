@@ -7,6 +7,8 @@ import type { EmailAttachment } from '@/types'
 import type { EmailLijstItem } from '@/lib/mail/types'
 import { useAuth } from '@/contexts/AuthContext'
 import { logger } from '@/utils/logger'
+import { mailStore } from '@/lib/mail/mailStore'
+import { readEmailFromIMAP } from '@/services/gmailService'
 import { BijlageProjectDialog, type BijlageKandidaat, type BijlageProjectKeuze } from '@/components/email/BijlageProjectDialog'
 import { extractSenderEmail, extractSenderName } from '@/components/email/emailHelpers'
 import {
@@ -69,6 +71,27 @@ export function Bijlagen({ bericht, compact }: BijlagenProps) {
 
   const afbeeldingen = lijst.filter((a) => isAfbeelding(a.filename, a.contentType))
   const gecached = cacheVoor(bericht.id)
+
+  // Verzonden mail kreeg tot 15 sep 2026 geen attachment_meta mee, alleen een
+  // paperclip. Die lijst eenmalig van de server laten parsen; read-email
+  // schrijft hem ook weg. Logische map meesturen: read-email zoekt de rij op
+  // `map`, en met de echte IMAP-mapnaam vindt hij hem niet.
+  const metaOntbreekt = bericht.map === 'verzonden' && !!bericht.has_attachments && bericht.attachment_meta == null
+  useEffect(() => {
+    if (!metaOntbreekt) return
+    const uid = bijlageUid(bericht)
+    if (!uid) return
+    let actueel = true
+    readEmailFromIMAP(uid, bericht.map, bericht.account_id || undefined)
+      .then((detail) => {
+        if (!actueel) return
+        const meta = (detail.attachments || []).map(({ filename, contentType, size, isInlineCid }: EmailAttachment) => ({ filename, contentType, size, isInlineCid }))
+        mailStore.patchVanServer(bericht.id, { attachment_meta: meta })
+      })
+      .catch((e) => logger.warn('Bijlagenlijst aanvullen mislukt:', e))
+    return () => { actueel = false }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bericht.id, metaOntbreekt])
 
   // Thumbnails: alle beeldbijlagen in één serverronde, één keer per mail.
   useEffect(() => {

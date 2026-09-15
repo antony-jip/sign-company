@@ -893,7 +893,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const { data: cached } = await leesMetAccount(creds?.account_id, (metAccount) => {
         const basis = supabaseAdmin
           .from('emails')
-          .select('id, van, aan, onderwerp, datum, gelezen, body_text, attachment_meta, message_id')
+          .select('id, van, aan, onderwerp, datum, gelezen, body_text, attachment_meta, has_attachments, message_id')
           .eq('user_id', user_id)
           .eq('uid', Number(uid))
           .eq('map', mapValue)
@@ -922,7 +922,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // cid:-verwijzingen al vervangen door data-URI's — dus eenmalig
         // opnieuw parsen en wegschrijven. Alleen bij ontbrekende vlag; een
         // mail zonder bijlagen raakt dit pad nooit.
-        const metaOnvolledig = meta.length > 0 && meta.some((a) => typeof a?.isInlineCid !== 'boolean')
+        // Ook zonder meta maar mét paperclip: verzonden mail kreeg die lijst
+        // tot 15 sep 2026 niet mee bij het wegschrijven.
+        const metaOnvolledig = (meta.length > 0 && meta.some((a) => typeof a?.isInlineCid !== 'boolean'))
+          || (cached.attachment_meta == null && cached.has_attachments === true)
         if (metaOnvolledig) {
           try {
             const vers = await fetchFromIMAP({

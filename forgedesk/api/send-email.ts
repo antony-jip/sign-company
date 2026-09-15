@@ -721,6 +721,20 @@ async function bouwRuweMail(opties: Record<string, unknown>): Promise<Buffer> {
   throw new Error('MIME-boodschap kon niet worden opgebouwd')
 }
 
+const CONTENT_TYPES: Record<string, string> = {
+  pdf: 'application/pdf', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp',
+  svg: 'image/svg+xml', heic: 'image/heic', tif: 'image/tiff', tiff: 'image/tiff', zip: 'application/zip', txt: 'text/plain',
+  csv: 'text/csv', doc: 'application/msword', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  xls: 'application/vnd.ms-excel', xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  ppt: 'application/vnd.ms-powerpoint', pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  ai: 'application/postscript', eps: 'application/postscript',
+}
+
+function contentTypeVoor(bestandsnaam: string): string {
+  const ext = (bestandsnaam.split('.').pop() || '').toLowerCase()
+  return CONTENT_TYPES[ext] || 'application/octet-stream'
+}
+
 export const config = { maxDuration: 30 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -959,6 +973,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (allAttachments.length) {
       mailOptions.attachments = allAttachments
     }
+    // De bijlagentegels in Verzonden lezen attachment_meta; zonder die lijst
+    // stond er alleen een paperclip en was niet te zien wát er mee ging.
+    const attachmentMeta = [
+      ...inlineAttachments.map((a) => ({ filename: a.filename, contentType: a.contentType, size: a.content.length, isInlineCid: true })),
+      ...fileAttachments.map((a) => ({ filename: a.filename, contentType: contentTypeVoor(a.filename), size: a.content.length, isInlineCid: false })),
+    ]
 
     // ─── Outbox: de verzending zichtbaar maken vóór hij begint ───
     // Een rij in ingeplande_berichten met bron 'outbox'. Status 'verwerken'
@@ -1082,8 +1102,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         inhoud: html || body || '',
         datum: new Date().toISOString(),
         gelezen: true,
-        bijlagen: attachments?.length || 0,
-        has_attachments: (attachments?.length || 0) > 0,
+        bijlagen: fileAttachments.length,
+        has_attachments: fileAttachments.length > 0,
+        attachment_meta: attachmentMeta.length > 0 ? attachmentMeta : null,
         gmail_id: verzondenUid ? String(verzondenUid) : '',
         cached_at: new Date().toISOString(),
         wacht_op_reactie,
