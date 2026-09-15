@@ -105,6 +105,9 @@
     "api/org-export.ts": {
       "maxDuration": 120
     },
+    "api/briefing-transcribe.ts": {
+      "maxDuration": 60
+    },
     "api/cron-nieuwsbrief.ts": {
       "maxDuration": 300
     },
