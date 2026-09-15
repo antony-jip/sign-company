@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Textarea } from '@/components/ui/textarea'
 import { Loader2, Sparkles, FileText } from 'lucide-react'
 import { chatCompletion, isAIConfigured } from '@/services/aiService'
+import { BriefingOpname } from './BriefingOpname'
 
 interface BriefingCardProps {
   beschrijving: string
@@ -155,6 +156,13 @@ Antwoord ALLEEN met de briefing, niets anders.`
             ;(e.target as HTMLTextAreaElement).blur()
           }
         }}
+      />
+
+      <BriefingOpname
+        huidigeBriefing={text}
+        projectNaam={projectNaam}
+        klantNaam={klantNaam}
+        onBriefing={(punten) => setText((huidig) => (huidig.trim() ? `${huidig.trimEnd()}\n${punten}` : punten))}
       />
     </div>
   )
