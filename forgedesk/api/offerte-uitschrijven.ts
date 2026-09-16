@@ -36,6 +36,10 @@ const STANDAARD_MAANDLIMIET_EUR = 15.0
 
 // ── Rate limiting (inline; Vercel bundelt geen lokale imports in api/) ──
 const rlConfigured = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
+if (!rlConfigured) {
+  if (process.env.VERCEL_ENV === 'production') console.error('ratelimit niet geconfigureerd: api/offerte-uitschrijven.ts')
+  else console.warn('[ratelimit] UPSTASH env vars missing for offerte-uitschrijven, requests will not be rate limited')
+}
 const ratelimit = rlConfigured
   ? new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(10, '60 s'), prefix: 'rl:offerte-uitschrijven', timeout: 2000 })
   : null

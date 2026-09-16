@@ -632,7 +632,8 @@ async function haalBodies(
 // ── Rate limiting (inline; Vercel bundelt geen lokale imports in api/) ──
 const rlConfigured = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
 if (!rlConfigured) {
-  console.warn('[ratelimit] UPSTASH env vars missing for classificeer-aanvraag, requests will not be rate limited')
+  if (process.env.VERCEL_ENV === 'production') console.error('ratelimit niet geconfigureerd: api/classificeer-aanvraag.ts')
+  else console.warn('[ratelimit] UPSTASH env vars missing for classificeer-aanvraag, requests will not be rate limited')
 }
 const ratelimit = rlConfigured
   ? new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(20, '60 s'), prefix: 'rl:classificeer-aanvraag', timeout: 2000 })

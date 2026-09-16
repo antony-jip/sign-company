@@ -76,7 +76,8 @@ const SONNET_46_OUTPUT_PRICE = 10
 // ── Rate limiting (inline; Vercel bundelt geen lokale imports in api/) ──
 const rlConfigured = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
 if (!rlConfigured) {
-  console.warn('[ratelimit] UPSTASH env vars missing for inkoopfactuur-extract, requests will not be rate limited')
+  if (process.env.VERCEL_ENV === 'production') Sentry.captureMessage('ratelimit niet geconfigureerd: api/inkoopfactuur-extract.ts', { level: 'error' })
+  else console.warn('[ratelimit] UPSTASH env vars missing for inkoopfactuur-extract, requests will not be rate limited')
 }
 const ratelimit = rlConfigured
   ? new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(30, '60 s'), prefix: 'rl:inkoopfactuur-extract', timeout: 2000 })

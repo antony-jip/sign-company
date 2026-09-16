@@ -11,6 +11,10 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 const supabase = (SUPABASE_URL && SUPABASE_SERVICE_KEY) ? createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY) : null
 
 const rlConfigured = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
+if (!rlConfigured) {
+  if (process.env.VERCEL_ENV === 'production') console.error('ratelimit niet geconfigureerd: api/visualizer-chat.ts')
+  else console.warn('[ratelimit] UPSTASH env vars missing for visualizer-chat, requests will not be rate limited')
+}
 const ratelimit = rlConfigured
   ? new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(40, '3600 s'), prefix: 'rl:visualizer-chat', timeout: 2000 })
   : null

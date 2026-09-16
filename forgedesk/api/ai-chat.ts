@@ -263,6 +263,8 @@ const ratelimit = rlConfigured
   ? new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(20, '60 s'), prefix: 'rl:ai-chat', timeout: 2000 })
   : null
 
+let limiterStoringGemeld = false
+
 async function enforceRateLimit(identifier: string, res: VercelResponse): Promise<boolean> {
   if (!ratelimit) return true
   try {
@@ -277,6 +279,14 @@ async function enforceRateLimit(identifier: string, res: VercelResponse): Promis
     return false
   } catch (err) {
     console.warn(`[ratelimit-error] ai-chat id=${identifier} err=${(err as Error).message}`)
+    // Fail-open: een kapotte limiter mag Daan niet stilzetten, maar het
+    // betekent wel dat er ondertussen géén rem op het verbruik staat. Eén
+    // melding per cold start, anders vult een Redis-storing Sentry met
+    // duizenden identieke events.
+    if (!limiterStoringGemeld) {
+      limiterStoringGemeld = true
+      Sentry.captureMessage('ratelimit valt open in api/ai-chat.ts (limiter onbereikbaar)', { level: 'warning' })
+    }
     return true
   }
 }
