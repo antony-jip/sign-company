@@ -69,15 +69,18 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 const ROUTE_NAME = 'analyze-inkoop-offerte'
 const INKOOP_OFFERTE_MONTHLY_CAP = 100
 
-// Anthropic pricing per 1M tokens — Sonnet 4.6 (verifieer bij prijswijziging)
-// Bron: https://www.anthropic.com/pricing — laatst gecheckt: 2026-05-10
-const SONNET_46_INPUT_PRICE = 3
-const SONNET_46_OUTPUT_PRICE = 15
+// Anthropic pricing per 1M tokens — Sonnet 5 (verifieer bij prijswijziging)
+// Bron: https://www.anthropic.com/pricing — laatst gecheckt: 2026-09-16
+// Stond op het Sonnet 4.6-tarief (3/15) terwijl deze route al op
+// claude-sonnet-5 draait; dat overschatte het verbruik met 50%.
+const SONNET_5_INPUT_PRICE = 2
+const SONNET_5_OUTPUT_PRICE = 10
 
 // ── Rate limiting (inline; Vercel bundelt geen lokale imports in api/) ──
 const rlConfigured = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
 if (!rlConfigured) {
-  console.warn('[ratelimit] UPSTASH env vars missing for analyze-inkoop-offerte, requests will not be rate limited')
+  if (process.env.VERCEL_ENV === 'production') Sentry.captureMessage('ratelimit niet geconfigureerd: api/analyze-inkoop-offerte.ts', { level: 'error' })
+  else console.warn('[ratelimit] UPSTASH env vars missing for analyze-inkoop-offerte, requests will not be rate limited')
 }
 const ratelimit = rlConfigured
   ? new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(10, '60 s'), prefix: 'rl:analyze-inkoop-offerte', timeout: 2000 })
@@ -130,7 +133,7 @@ async function checkOrgCap(orgId: string): Promise<{ allowed: boolean; current: 
 
 async function incrementOrgUsage(orgId: string, inputTokens: number, outputTokens: number): Promise<void> {
   const maand = getCurrentMonth()
-  const kosten = ((inputTokens / 1_000_000) * SONNET_46_INPUT_PRICE + (outputTokens / 1_000_000) * SONNET_46_OUTPUT_PRICE) * USD_NAAR_EUR
+  const kosten = ((inputTokens / 1_000_000) * SONNET_5_INPUT_PRICE + (outputTokens / 1_000_000) * SONNET_5_OUTPUT_PRICE) * USD_NAAR_EUR
   // Atomair bijschrijven via de RPC (migratie 174). Een read-modify-write laat
   // twee gelijktijdige calls over elkaar heen schrijven, en dat verlies is
   // altijd in het nadeel van doen.: de teller loopt achter en de rem grijpt

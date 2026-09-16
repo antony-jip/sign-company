@@ -244,7 +244,7 @@ async function checkUsageLimit(userId: string, organisatieId: string | null): Pr
 // voor dezelfde tekst, dus de schatting moet op echte data geijkt worden.
 const TARIEVEN: Record<string, { in: number; uit: number }> = {
   'claude-opus-4-8': { in: 5, uit: 25 },
-  'claude-sonnet-5': { in: 3, uit: 15 },
+  'claude-sonnet-5': { in: 2, uit: 10 },
   'claude-haiku-4-5-20251001': { in: 1, uit: 5 },
 }
 

@@ -35,7 +35,7 @@ const SYNTHESE_MODEL = "claude-sonnet-5";
 const USD_NAAR_EUR = 0.92;
 const TARIEF: Record<string, { input: number; output: number }> = {
   [LEZER_MODEL]: { input: 1, output: 5 },
-  [SYNTHESE_MODEL]: { input: 3, output: 15 },
+  [SYNTHESE_MODEL]: { input: 2, output: 10 },
 };
 
 interface Spoor {

@@ -328,9 +328,34 @@ async function checkUsageLimit(userId: string, organisatieId: string | null): Pr
   return !data || (data.geschatte_kosten ?? 0) < limiet
 }
 
-async function updateUsage(userId: string, inputTokens: number, outputTokens: number): Promise<void> {
+/** Usage zoals Anthropic hem teruggeeft. De twee cache-velden staan LOS van
+ *  input_tokens: een gecachete prompt telt daar niet in mee. */
+interface AnthropicUsage {
+  input_tokens: number
+  output_tokens: number
+  cache_creation_input_tokens?: number
+  cache_read_input_tokens?: number
+}
+
+// Cache-tarieven als factor op de input-prijs. De write-factor hoort bij de
+// TTL van het cache_control-blok verderop: 1,25x bij 5 minuten, 2x bij 1 uur.
+const CACHE_WRITE_FACTOR = 2
+const CACHE_READ_FACTOR = 0.1
+
+/** Kosten in USD voor één call. Rekent cache-writes en cache-reads mee; die
+ *  ontbraken hier, waardoor de maandmeter structureel onder de echte rekening
+ *  bleef juist op de route met de grootste gecachete systeemprompt. */
+function berekenKostenUsd(usage: AnthropicUsage, inputPrice: number, outputPrice: number): number {
+  const write = (usage.cache_creation_input_tokens ?? 0) * inputPrice * CACHE_WRITE_FACTOR
+  const read = (usage.cache_read_input_tokens ?? 0) * inputPrice * CACHE_READ_FACTOR
+  return (usage.input_tokens * inputPrice + usage.output_tokens * outputPrice + write + read) / 1_000_000
+}
+
+async function updateUsage(userId: string, usage: AnthropicUsage): Promise<void> {
   const maand = getCurrentMonth()
-  const kosten = ((inputTokens / 1_000_000 * 2) + (outputTokens / 1_000_000 * 10)) * USD_NAAR_EUR
+  const inputTokens = usage.input_tokens
+  const outputTokens = usage.output_tokens
+  const kosten = berekenKostenUsd(usage, 2, 10) * USD_NAAR_EUR
   // Atomair bijschrijven via de RPC (migratie 178), zelfde reden als bij de
   // org-teller: een read-modify-write laat twee gelijktijdige calls over elkaar
   // heen schrijven en de teller loopt structureel achter.
@@ -472,13 +497,12 @@ async function resolveOrgId(userId: string): Promise<string | null> {
 async function logOrgUsage(
   organisatieId: string,
   route: string,
-  inputTokens: number,
-  outputTokens: number,
+  usage: AnthropicUsage,
   inputPrice: number,
   outputPrice: number
 ): Promise<void> {
   const maand = getCurrentMonth()
-  const kostenDelta = ((inputTokens / 1_000_000) * inputPrice + (outputTokens / 1_000_000) * outputPrice) * USD_NAAR_EUR
+  const kostenDelta = berekenKostenUsd(usage, inputPrice, outputPrice) * USD_NAAR_EUR
   // Atomair bijschrijven via de RPC (migratie 174). Een read-modify-write laat
   // twee gelijktijdige calls over elkaar heen schrijven, en dat verlies is
   // altijd in het nadeel van doen.: de teller loopt achter en de rem grijpt
@@ -771,7 +795,7 @@ interface AnthropicBlok {
 
 interface AnthropicAntwoord {
   content: AnthropicBlok[]
-  usage: { input_tokens: number; output_tokens: number }
+  usage: AnthropicUsage
 }
 
 function stuurEvent(res: VercelResponse, payload: Record<string, unknown>): void {
@@ -785,7 +809,7 @@ async function leesAnthropicStream(
   const blokken: AnthropicBlok[] = []
   // Tool-input komt in stukjes JSON binnen; per blok apart verzamelen.
   const toolJson = new Map<number, string>()
-  const usage = { input_tokens: 0, output_tokens: 0 }
+  const usage: AnthropicUsage = { input_tokens: 0, output_tokens: 0, cache_creation_input_tokens: 0, cache_read_input_tokens: 0 }
 
   const body = response.body
   if (!body) throw new Error('Lege stream van Anthropic')
@@ -804,9 +828,16 @@ async function leesAnthropicStream(
       return
     }
     switch (gebeurtenis.type) {
-      case 'message_start':
-        usage.input_tokens = gebeurtenis.message?.usage?.input_tokens ?? 0
+      case 'message_start': {
+        const u = gebeurtenis.message?.usage
+        usage.input_tokens = u?.input_tokens ?? 0
+        // Cache-tokens staan hier apart en tellen NIET mee in input_tokens.
+        // Zonder deze twee regels zag de teller de gecachete systeemprompt
+        // voor nul aan, terwijl Anthropic hem wel factureert.
+        usage.cache_creation_input_tokens = u?.cache_creation_input_tokens ?? 0
+        usage.cache_read_input_tokens = u?.cache_read_input_tokens ?? 0
         break
+      }
       case 'content_block_start': {
         const blok = gebeurtenis.content_block || {}
         blokken[gebeurtenis.index] = { type: blok.type, name: blok.name, text: '' }
@@ -1285,14 +1316,14 @@ ${JSON.stringify(dataContext)}`
 
     // Update usage tracking
     try {
-      await updateUsage(userId, data.usage.input_tokens, data.usage.output_tokens)
+      await updateUsage(userId, data.usage)
     } catch {
       // Usage tracking is niet-kritiek
     }
 
     if (orgIdForBudget) {
       try {
-        await logOrgUsage(orgIdForBudget, 'ai-chat', data.usage.input_tokens, data.usage.output_tokens, 2, 10)
+        await logOrgUsage(orgIdForBudget, 'ai-chat', data.usage, 2, 10)
       } catch {
         // Org-usage tracking is niet-kritiek
       }
