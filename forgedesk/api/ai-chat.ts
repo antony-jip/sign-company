@@ -702,27 +702,15 @@ async function getRelevantContext(userId: string, orgId: string | null, question
     })
   }
 
-  // Laad ALTIJD alle geïmporteerde CSV data als context
-  const { data: allCsvData } = await supabase
-    .from('ai_imported_data')
-    .select('data, bestandsnaam')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-    .limit(100)
-
-  if (allCsvData?.length) {
-    // Groepeer per bestandsnaam voor overzichtelijkheid
-    const grouped: Record<string, unknown[]> = {}
-    for (const row of allCsvData) {
-      const key = row.bestandsnaam || 'onbekend'
-      if (!grouped[key]) grouped[key] = []
-      grouped[key].push(row.data)
-    }
-    context.push({ type: 'geimporteerde_csv_data', bestanden: grouped })
-  }
-
-  // Zoek ook specifiek op zoekwoorden voor extra relevantie
+  // Geïmporteerde CSV-data. Hier stond een onvoorwaardelijke dump van 100
+  // rijen bij ELK bericht, plus daarnaast nog een zoekronde die meestal
+  // dezelfde rijen opnieuw meestuurde. Dat zijn tienduizenden tokens per
+  // vraag, ook bij een vraag die niets met die bestanden te maken heeft, en
+  // het valt buiten het gecachete systeemblok. Nu eerst gericht zoeken, en
+  // alleen als dat niets oplevert terugvallen op een kleine recente greep.
   const searchWords = question.split(' ').filter(w => w.length > 3).join(' & ')
+  let csvGevonden = false
+
   if (searchWords) {
     const { data: csvResults } = await supabase
       .from('ai_imported_data')
@@ -733,6 +721,29 @@ async function getRelevantContext(userId: string, orgId: string | null, question
 
     if (csvResults?.length) {
       context.push({ type: 'csv_zoekresultaten', data: csvResults.map(r => r.data) })
+      csvGevonden = true
+    }
+  }
+
+  // Vangnet voor vragen die duidelijk over de geïmporteerde bestanden gaan
+  // maar waar de full-text search niets op raakt (andere spelling, een vraag
+  // als "wat heb ik geïmporteerd"). Bewust klein: een greep, geen dump.
+  if (!csvGevonden && /\b(csv|import|geimporteerd|geïmporteerd|bestand|sheet|excel)\b/.test(q)) {
+    const { data: recenteCsv } = await supabase
+      .from('ai_imported_data')
+      .select('data, bestandsnaam')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(25)
+
+    if (recenteCsv?.length) {
+      const grouped: Record<string, unknown[]> = {}
+      for (const row of recenteCsv) {
+        const key = row.bestandsnaam || 'onbekend'
+        if (!grouped[key]) grouped[key] = []
+        grouped[key].push(row.data)
+      }
+      context.push({ type: 'geimporteerde_csv_data', bestanden: grouped })
     }
   }
 
@@ -1040,7 +1051,7 @@ ONTHOUDEN (tool 'leg_vast'):
     const systemDynamic = `${bedrijfscontext ? `Over het bedrijf: ${bedrijfscontext}\n` : ''}${schrijfstijl ? `\nSchrijfstijl van de gebruiker (overneem in je antwoorden):\n${schrijfstijl}\n` : ''}${kennisBlok ? `\n${kennisBlok}\n` : ''}
 Je hebt toegang tot de volgende bedrijfsdata:
 
-${JSON.stringify(dataContext, null, 2)}`
+${JSON.stringify(dataContext)}`
 
     // Build messages with conversation history
     const messages: Array<{ role: string; content: string }> = []
