@@ -349,7 +349,7 @@ interface AnthropicUsage {
 
 // Cache-tarieven als factor op de input-prijs. De write-factor hoort bij de
 // TTL van het cache_control-blok verderop: 1,25x bij 5 minuten, 2x bij 1 uur.
-const CACHE_WRITE_FACTOR = 2
+const CACHE_WRITE_FACTOR = 1.25
 const CACHE_READ_FACTOR = 0.1
 
 /** Kosten in USD voor één call. Rekent cache-writes en cache-reads mee; die
@@ -1173,14 +1173,14 @@ ${JSON.stringify(dataContext)}`
         output_config: { effort: 'low' },
         max_tokens: 6000,
         system: [
-          // Dit blok is ~17k tokens productkennis. Met de standaard-TTL van
-          // 5 minuten verliep de cache tussen twee vragen door en betaalden we
-          // die write telkens opnieuw. Een write van 1 uur kost 2x in plaats
-          // van 1,25x, dus dit is winst zodra iemand vaker dan één keer per
-          // uur iets vraagt — en verlies als Daan echt maar één keer per uur
-          // gebruikt wordt. Bij het terugdraaien ook CACHE_WRITE_FACTOR mee
-          // terugzetten naar 1.25.
-          { type: 'text', text: systemStatic, cache_control: { type: 'ephemeral', ttl: '1h' } },
+          // Dit blok is ~17k tokens productkennis. Een write van 1 uur kost 2x
+          // in plaats van 1,25x en verdient zich pas terug bij drie vragen
+          // binnen dat uur; bij het huidige gebruik (vragen liggen verder uit
+          // elkaar dan een uur) is elke vraag toch een koude write en is de
+          // standaard-TTL van 5 minuten simpelweg goedkoper. Gaat Daan vaker
+          // gebruikt worden, zet dit op { ttl: '1h' } en CACHE_WRITE_FACTOR
+          // mee op 2.
+          { type: 'text', text: systemStatic, cache_control: { type: 'ephemeral' } },
           { type: 'text', text: systemDynamic },
         ],
         messages,
