@@ -35,7 +35,10 @@ if (!rlConfigured) {
   else console.warn('[ratelimit] UPSTASH env vars missing for ai-suggestie, requests will not be rate limited')
 }
 const ratelimit = rlConfigured
-  ? new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(120, '60 s'), prefix: 'rl:ai-suggestie', timeout: 1000 })
+  // 120/min was decoratief: bij de denkpauze in de editor kun je die grens
+  // niet halen, dus de limiet kon nooit afgaan. 40/min ligt ruim boven normaal
+  // typwerk maar vangt een vastgelopen client die blijft vuren wél af.
+  ? new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(40, '60 s'), prefix: 'rl:ai-suggestie', timeout: 1000 })
   : null
 
 async function enforceRateLimit(identifier: string, res: VercelResponse): Promise<boolean> {

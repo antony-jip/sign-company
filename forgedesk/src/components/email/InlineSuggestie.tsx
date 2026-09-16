@@ -34,7 +34,11 @@ interface Positie {
   fontWeight: string
 }
 
-const DENKPAUZE_MS = 550
+// Elke pauze langer dan dit kost een AI-call. Op 550 ms vuurde het tijdens het
+// typen van één mail tientallen keren, wat meer kostte dan de mail door Daan
+// laten schrijven. Bij ~1 s valt het gros van de korte denkpauzes weg zonder
+// dat de suggestie te laat komt om nog bruikbaar te zijn.
+const DENKPAUZE_MS = 1000
 const MIN_TEKENS = 12
 /** Elementen die een nieuwe regel beginnen; daarachter kijken we niet meer. */
 const REGELEINDES = new Set(['BR', 'DIV', 'P', 'LI', 'UL', 'OL', 'TABLE', 'BLOCKQUOTE', 'H1', 'H2', 'H3', 'HR'])
@@ -129,6 +133,12 @@ export function InlineSuggestie({ editorRef, actief, onderwerp, ontvanger, reply
   const voorRef = useRef('')
   // Na Escape blijft het stil tot de gebruiker weer iets typt.
   const onderdruktRef = useRef(false)
+  // Waarvoor we als laatste een call deden. Een client-side abort stopt de
+  // serverless-functie niet, dus een tweede aanvraag voor exact hetzelfde is
+  // een call die we wél betalen maar nooit gebruiken. De ontvanger en het
+  // onderwerp horen in de sleutel: dezelfde openingszin in een andere mail
+  // verdient wél een eigen suggestie.
+  const laatsteAanvraagRef = useRef<string | null>(null)
   const contextRef = useRef({ onderwerp, ontvanger, replyTekst, schrijfstijl })
   useEffect(() => {
     contextRef.current = { onderwerp, ontvanger, replyTekst, schrijfstijl }
@@ -153,11 +163,15 @@ export function InlineSuggestie({ editorRef, actief, onderwerp, ontvanger, reply
     const pos = leesPositie(editor, cursor.range)
     if (!pos) return
 
+    const ctx = contextRef.current
+    const aanvraagSleutel = `${ctx.ontvanger ?? ''}\u0000${ctx.onderwerp ?? ''}\u0000${cursor.voor}`
+    if (laatsteAanvraagRef.current === aanvraagSleutel) return
+    laatsteAanvraagRef.current = aanvraagSleutel
+
     abortRef.current?.abort()
     const controller = new AbortController()
     abortRef.current = controller
 
-    const ctx = contextRef.current
     const tekst = await haalSuggestie({
       voor: cursor.voor,
       onderwerp: ctx.onderwerp,
