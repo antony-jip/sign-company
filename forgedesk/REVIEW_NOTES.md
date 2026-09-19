@@ -1588,3 +1588,39 @@ AKKOORD-MET-OPMERKINGEN.
 - **Open, nitpick:** "Uren verkocht" op de kaart rekent met het afgeronde
   gemiddelde tarief per veld (centen-drift). Exact vraagt `prijsTotaal` per
   veld uit `getProjectUrenBudget`.
+
+---
+
+## Peppol / Billit / België (branch claude/peppol-billit-integration-f2dnos, 2026-09-19)
+
+Review-loop volgens CLAUDE.md §8, drie reviewers over de hele branch:
+senior-backend (tenant-isolatie, geld, migraties), QAA (acceptatie tegen
+PLAN_PEPPOL_BILLIT.md) en een Peppol/België-domeinreviewer.
+
+### Ronde 1 · senior-backend: BLOKKADE → gefixt in 886ec08
+
+1. btw verlegd stil op 0% in Billit/UBL terwijl factuur/PDF 21% droeg → editor
+   zet regels op 0% bij verlegde klant, sync weigert factuur mét btw, UBL
+   gebruikt AE alleen als de factuur zelf btw-vrij is.
+2. Geen lock op de Peppol-verzending → `in_wachtrij` is nu een claim
+   (`.or(null,niet_verzonden,mislukt)`), alle foutpaden geven hem terug.
+3. `peppol-verzend-xml` accepteerde elke client-UBL → server-side flagcheck,
+   afzender moet het eigen profiel zijn, ontvanger de klant van de factuur.
+
+Niet-blokkerende opmerkingen, verwerkt in 93ef456: webhook-secret als hash,
+`billit_omgeving` alleen via callback, cron zonder OrderStatus-promotie en met
+30-min-reset van hangende claims, inbox-filter op Peppol-kanaal, landregel
+abonnement gelijk aan client.
+
+Bewust open gelaten (fase 0 / later):
+- **Zelfverklaarde btw-verlegging op het abonnement** (`profiles.bedrijfs_land`
+  + btw-nummer op vorm gecheckt, geen VIES). NL-default blijft 21%, dus geen
+  regressie; wel commercieel risico. Voorstel: VIES-check of handmatige
+  goedkeuring vóór 0%, en Mollie-bedrag pas na `update-subscription-bedrag`.
+- Gelijktijdige token-refresh zonder lock (zelfde als Exact); checken of Billit
+  refresh-tokens roteert.
+- OAuth-state bewijst alleen userId; admin-degradatie binnen de TTL van 1 uur
+  wordt niet opnieuw gecheckt (zelfde als Exact).
+- Wees-bestanden in storage bij 23505 in de inbox (cosmetisch).
+- Billit-veldnamen (OrderID, commands/send, participantInformation-antwoord,
+  accountInformation, webhook-body) zijn niet tegen de sandbox geverifieerd.
