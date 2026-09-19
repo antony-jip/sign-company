@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { useAuth } from '@/contexts/AuthContext'
 import { formatCurrency } from '@/lib/utils'
 import { logger } from '@/utils/logger'
+import { getStatusLabel } from '@/utils/statusColors'
+import { useFunctie } from '@/hooks/useFunctie'
 import type { AuditLogEntry } from '@/types'
 import {
   abonneerCockpit,
@@ -24,12 +26,15 @@ import {
 // wat er gebeurt, systeem. Alle bedragen ex btw (zie btwWeergave.ts).
 
 const VERVERS_MS = 120_000
+const PERIODE_KEY = 'doen_cockpit_periode'
+// Kleuren via de status-tokens, zodat de stippen in dark mode meekleuren.
+const KLEUR = { rood: 'var(--status-flame-text)', amber: 'var(--status-amber-text)', groen: 'var(--status-green-text)' }
 
 const PERIODES: { id: CockpitPeriode; label: string }[] = [
   { id: 'maand', label: 'Deze maand' },
   { id: 'kwartaal', label: 'Dit kwartaal' },
   { id: 'jaar', label: 'Dit jaar' },
-  { id: 'twaalf_maanden', label: '12 maanden' },
+  { id: 'twaalf_maanden', label: 'Laatste 12 maanden' },
 ]
 
 interface SignaalGroep {
@@ -37,7 +42,8 @@ interface SignaalGroep {
   titel: string
   uitleg: string
   href: string
-  kleur: string
+  /** Waar "Naar …" heen gaat, in woorden. */
+  module: string
   urgent?: boolean
   rijen: CockpitSignaal[]
   /** Wat er rechts van de titel staat: dagen, bedrag of iets specifieks. */
@@ -60,38 +66,38 @@ function groepeer(signalen: CockpitSignaal[]): SignaalGroep[] {
   const van = (soort: CockpitSignaalSoort) => signalen.filter((s) => s.soort === soort)
   const offertes = van('offerte_wacht')
   const facturen = van('factuur_open')
+  const verlooptBinnenkort = (s: CockpitSignaal) => {
+    const tot = s.detail.verloopt_op
+    return typeof tot === 'string' && (new Date(tot).getTime() - Date.now()) / 864e5 <= 7
+  }
   const groepen: SignaalGroep[] = [
     {
       id: 'facturen_vervallen',
-      titel: 'Facturen vervallen',
-      uitleg: 'Vervaldatum voorbij en nog niet betaald',
+      titel: 'Facturen te laat',
+      uitleg: 'Vervaldatum voorbij, nog niet betaald',
       href: '/facturen',
-      kleur: '#C0451A',
+      module: 'facturen',
       urgent: true,
       rijen: facturen.filter((s) => (s.dagen ?? 0) > 0).sort((a, b) => (b.dagen ?? 0) - (a.dagen ?? 0)),
       meta: (s) => `${dagenTekst(s.dagen)} te laat`,
     },
     {
       id: 'offertes_verlopen',
-      titel: 'Offertes verlopen of bijna',
+      titel: 'Offertes (bijna) verlopen',
       uitleg: 'Geldigheid verstreken of binnen 7 dagen, zonder akkoord',
       href: '/offertes',
-      kleur: '#C0451A',
+      module: 'offertes',
       urgent: true,
-      rijen: offertes.filter((s) => {
-        const tot = s.detail.verloopt_op
-        if (typeof tot !== 'string') return false
-        return (new Date(tot).getTime() - Date.now()) / 864e5 <= 7
-      }),
+      rijen: offertes.filter(verlooptBinnenkort),
       meta: (s) => (s.detail.verlopen ? 'verlopen' : `verloopt ${new Date(String(s.detail.verloopt_op)).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}`),
     },
     {
       id: 'offertes_wachten',
       titel: 'Offertes wachten op de klant',
-      uitleg: 'Verstuurd, nog geen antwoord; vaak bekeken is een koopsignaal',
+      uitleg: 'Verstuurd, al een week of langer geen antwoord',
       href: '/offertes',
-      kleur: '#D24620',
-      rijen: offertes.filter((s) => (s.dagen ?? 0) >= 7).sort((a, b) => (b.dagen ?? 0) - (a.dagen ?? 0)),
+      module: 'offertes',
+      rijen: offertes.filter((s) => (s.dagen ?? 0) >= 7 && !verlooptBinnenkort(s)).sort((a, b) => (b.dagen ?? 0) - (a.dagen ?? 0)),
       meta: (s) => {
         const keer = detailGetal(s, 'keer_bekeken')
         const extra = s.detail.status === 'wijziging_gevraagd' ? ' · wijziging gevraagd' : keer >= 3 ? ` · ${keer}× bekeken` : ''
@@ -103,16 +109,16 @@ function groepeer(signalen: CockpitSignaal[]): SignaalGroep[] {
       titel: 'Collega-checks open',
       uitleg: 'Een offerte wacht op een tweede paar ogen',
       href: '/offertes',
-      kleur: '#8A7A4A',
+      module: 'offertes',
       rijen: van('offerte_check'),
       meta: (s) => `${dagenTekst(s.dagen)} geleden gevraagd`,
     },
     {
       id: 'facturen_vervalt',
-      titel: 'Facturen vervallen deze week',
-      uitleg: 'Nog niet betaald, vervaldatum binnen 7 dagen',
+      titel: 'Vervalt deze week',
+      uitleg: 'Facturen die nog niet betaald zijn, vervaldatum binnen 7 dagen',
       href: '/facturen',
-      kleur: '#8A7A4A',
+      module: 'facturen',
       rijen: facturen.filter((s) => s.dagen != null && s.dagen <= 0 && s.dagen >= -7),
       meta: (s) => (s.dagen === 0 ? 'vervalt vandaag' : `vervalt over ${dagenTekst(-(s.dagen ?? 0))}`),
     },
@@ -121,7 +127,7 @@ function groepeer(signalen: CockpitSignaal[]): SignaalGroep[] {
       titel: 'Peppol-verzending mislukt',
       uitleg: 'De e-factuur is niet afgeleverd',
       href: '/facturen',
-      kleur: '#C0451A',
+      module: 'facturen',
       urgent: true,
       rijen: van('factuur_peppol_mislukt'),
       meta: (s) => String(s.detail.fout ?? 'onbekende fout').slice(0, 60),
@@ -131,16 +137,16 @@ function groepeer(signalen: CockpitSignaal[]): SignaalGroep[] {
       titel: 'Werkbonnen klaar om te factureren',
       uitleg: 'Afgerond, nog geen factuur',
       href: '/werkbonnen',
-      kleur: '#2D6B48',
+      module: 'werkbonnen',
       rijen: van('werkbon_te_factureren'),
       meta: (s) => `${dagenTekst(s.dagen)} geleden afgerond`,
     },
     {
       id: 'portaal',
-      titel: 'Klant moet nog reageren in het portaal',
-      uitleg: 'Tekening, offerte of opdrachtbevestiging verstuurd',
+      titel: 'Portaal wacht op de klant',
+      uitleg: 'Tekening, offerte of opdrachtbevestiging verstuurd, nog geen reactie',
       href: '/portalen',
-      kleur: '#6A5A8A',
+      module: 'portalen',
       rijen: van('portaal_wacht'),
       meta: (s) => `${String(s.detail.type)} · ${s.detail.status === 'bekeken' ? 'bekeken' : 'nog niet geopend'} · ${dagenTekst(s.dagen)}`,
     },
@@ -149,7 +155,7 @@ function groepeer(signalen: CockpitSignaal[]): SignaalGroep[] {
       titel: 'Projecten zonder planning',
       uitleg: 'Akkoord van de klant, nog geen montage ingepland',
       href: '/planning',
-      kleur: '#9A5A48',
+      module: 'planning',
       rijen: van('project_zonder_planning'),
       meta: (s) => String(s.detail.status),
     },
@@ -158,7 +164,7 @@ function groepeer(signalen: CockpitSignaal[]): SignaalGroep[] {
       titel: 'Deadlines deze week',
       uitleg: 'Einddatum binnen 7 dagen of al voorbij',
       href: '/projecten',
-      kleur: '#9A5A48',
+      module: 'projecten',
       rijen: van('project_deadline').sort((a, b) => (a.dagen ?? 0) - (b.dagen ?? 0)),
       meta: (s) => ((s.dagen ?? 0) < 0 ? `${dagenTekst(-(s.dagen ?? 0))} over tijd` : s.dagen === 0 ? 'vandaag' : `nog ${dagenTekst(s.dagen)}`),
     },
@@ -167,7 +173,7 @@ function groepeer(signalen: CockpitSignaal[]): SignaalGroep[] {
       titel: 'Projecten bij of over budget',
       uitleg: 'Besteed bereikt de waarschuwingsgrens',
       href: '/projecten',
-      kleur: '#C0451A',
+      module: 'projecten',
       rijen: van('project_over_budget'),
       meta: (s) => `${formatCurrency(detailGetal(s, 'besteed'))} van ${formatCurrency(detailGetal(s, 'budget'))}`,
     },
@@ -176,7 +182,7 @@ function groepeer(signalen: CockpitSignaal[]): SignaalGroep[] {
       titel: 'Inkoopfacturen wachten op review',
       uitleg: 'Binnengekomen, nog niet goedgekeurd',
       href: '/facturen?tab=inkoop',
-      kleur: '#C44830',
+      module: 'inkoop',
       rijen: van('inkoop_review'),
       meta: (s) => `${dagenTekst(s.dagen)} geleden${s.detail.vertrouwen === 'laag' ? ' · uitlezen onzeker' : ''}`,
     },
@@ -185,7 +191,7 @@ function groepeer(signalen: CockpitSignaal[]): SignaalGroep[] {
       titel: 'Montages niet afgerond',
       uitleg: 'Stonden gepland, nooit op afgerond gezet',
       href: '/planning',
-      kleur: '#9A5A48',
+      module: 'planning',
       rijen: van('montage_niet_afgerond'),
       meta: (s) => `${dagenTekst(s.dagen)} geleden gepland`,
     },
@@ -199,9 +205,7 @@ function Etiket({ children }: { children: React.ReactNode }) {
 
 function Kop({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="text-[18px] font-bold tracking-[-0.3px] text-foreground">
-      {children}<span className="text-flame">.</span>
-    </h2>
+    <h2 className="text-[18px] font-bold tracking-[-0.3px] text-foreground">{children}</h2>
   )
 }
 
@@ -210,9 +214,9 @@ function Tegel({ label, waarde, sub, dot }: { label: string; waarde: string; sub
     <div className="doen-slate-surface rounded-xl px-5 py-4">
       <span className="inline-flex items-center gap-2">
         {dot && <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: dot }} />}
-        <span className="text-[13px] font-semibold text-foreground">{label}<span className="text-flame">.</span></span>
+        <span className="text-[13px] font-semibold text-foreground">{label}</span>
       </span>
-      <p className="mt-2 font-mono text-[22px] font-bold leading-none tabular-nums text-foreground">{waarde}</p>
+      <p className="mt-2 font-mono text-[18px] font-bold leading-none tabular-nums text-foreground md:text-[22px]">{waarde}</p>
       {sub && <p className="mt-1.5 text-xs text-muted-foreground">{sub}</p>}
     </div>
   )
@@ -226,28 +230,31 @@ function SignaalKaart({ groep }: { groep: SignaalGroep }) {
       <div className="flex items-baseline justify-between gap-4">
         <div className="min-w-0">
           <p className="text-[14px] font-bold text-foreground">
-            <span className={groep.urgent ? 'mr-2 inline-block h-1.5 w-1.5 rounded-full bg-flame align-middle' : 'hidden'} />
-            {groep.titel}<span className="text-flame">.</span>
+            {groep.urgent && <span className="mr-2 inline-block h-1.5 w-1.5 rounded-full bg-flame align-middle" />}
+            {groep.titel}
             <span className="ml-2 font-mono text-[13px] font-semibold text-muted-foreground">{groep.rijen.length}</span>
           </p>
           <p className="text-xs text-muted-foreground">{groep.uitleg}</p>
         </div>
         <Link to={groep.href} className="shrink-0 text-xs font-medium text-petrol underline-offset-4 hover:underline">
-          Naar module
+          Naar {groep.module}
         </Link>
       </div>
-      <ul className="mt-3 divide-y divide-border">
+      <ul className="mt-2 space-y-0.5">
         {rijen.map((s) => (
           <li key={`${s.soort}-${s.id}`}>
-            <Link to={s.href} className="flex items-baseline gap-3 py-2 text-sm hover:bg-muted/40 -mx-2 px-2 rounded-md">
+            {/* Op een telefoon staat de toelichting onder de titel; vanaf sm op één regel. */}
+            <Link to={s.href} className="-mx-2 flex flex-col gap-0.5 rounded-md px-2 py-1.5 text-sm hover:bg-muted/40 sm:flex-row sm:items-baseline sm:gap-3">
               <span className="min-w-0 flex-1 truncate">
                 <span className="text-foreground">{s.titel}</span>
                 {s.klant && <span className="text-muted-foreground"> · {s.klant}</span>}
               </span>
-              <span className="shrink-0 text-xs text-muted-foreground">{groep.meta(s)}</span>
-              {s.bedrag != null && s.bedrag !== 0 && (
-                <span className="w-24 shrink-0 text-right font-mono text-sm tabular-nums text-foreground">{formatCurrency(s.bedrag)}</span>
-              )}
+              <span className="flex items-baseline justify-between gap-3 sm:contents">
+                <span className="shrink-0 text-xs text-muted-foreground">{groep.meta(s)}</span>
+                {s.bedrag != null && s.bedrag !== 0 && (
+                  <span className="shrink-0 text-right font-mono text-sm tabular-nums text-foreground sm:w-28">{formatCurrency(s.bedrag)}</span>
+                )}
+              </span>
             </Link>
           </li>
         ))}
@@ -265,14 +272,23 @@ const ENTITY_LABEL: Record<string, string> = {
   taak: 'taak', project: 'project', offerte: 'offerte', factuur: 'factuur', klant: 'klant', werkbon: 'werkbon', montage: 'montage',
 }
 const ACTIE_LABEL: Record<string, string> = {
-  aangemaakt: 'maakte', gewijzigd: 'wijzigde', verwijderd: 'verwijderde', status_gewijzigd: 'zette', verstuurd: 'verstuurde', goedgekeurd: 'keurde goed:',
+  aangemaakt: 'maakte een', gewijzigd: 'wijzigde een', verwijderd: 'verwijderde een', verstuurd: 'verstuurde een',
 }
 
 function activiteitTekst(a: AuditLogEntry): string {
   if (a.omschrijving) return a.omschrijving
   const wat = ENTITY_LABEL[a.entity_type] ?? a.entity_type
-  if (a.actie === 'status_gewijzigd' && a.nieuwe_waarde) return `zette ${wat} op ${a.nieuwe_waarde}`
+  if (a.actie === 'status_gewijzigd' && a.nieuwe_waarde) return `zette een ${wat} op ${getStatusLabel(a.nieuwe_waarde).toLowerCase()}`
+  if (a.actie === 'goedgekeurd') return `keurde een ${wat} goed`
   return `${ACTIE_LABEL[a.actie] ?? a.actie} ${wat}`
+}
+
+const ENTITY_HREF: Record<string, (id: string) => string> = {
+  offerte: (id) => `/offertes/${id}/detail`,
+  factuur: (id) => `/facturen/${id}`,
+  project: (id) => `/projecten/${id}`,
+  werkbon: (id) => `/werkbonnen/${id}`,
+  klant: (id) => `/klanten/${id}`,
 }
 
 function tijdTekst(iso: string): string {
@@ -289,8 +305,18 @@ function duurSinds(iso: string, nu: number): string {
 }
 
 export function CockpitLayout() {
-  const { isAdmin, isLoading, userRol } = useAuth()
-  const [periode, setPeriode] = useState<CockpitPeriode>('maand')
+  const { isAdmin, isLoading } = useAuth()
+  const bezettingAan = useFunctie('planning_bezetting')
+  const [periode, setPeriodeState] = useState<CockpitPeriode>(() => {
+    try {
+      const bewaard = localStorage.getItem(PERIODE_KEY)
+      return PERIODES.some((p) => p.id === bewaard) ? (bewaard as CockpitPeriode) : 'maand'
+    } catch { return 'maand' }
+  })
+  const setPeriode = (p: CockpitPeriode) => {
+    setPeriodeState(p)
+    try { localStorage.setItem(PERIODE_KEY, p) } catch { /* privémodus */ }
+  }
   const [data, setData] = useState<CockpitOverzicht | null>(null)
   const [activiteit, setActiviteit] = useState<AuditLogEntry[]>([])
   const [fout, setFout] = useState<string | null>(null)
@@ -315,17 +341,22 @@ export function CockpitLayout() {
     if (!isAdmin) return
     setBezig(true)
     void laad()
-    const stop = abonneerCockpit(() => { void laad() })
+    // Tien afgevinkte taken zijn tien audit-regels; één herlaad na de laatste.
+    let timer: ReturnType<typeof setTimeout> | null = null
+    const stop = abonneerCockpit(() => {
+      if (timer) clearTimeout(timer)
+      timer = setTimeout(() => { void laad() }, 2000)
+    })
     const interval = setInterval(() => { if (document.visibilityState === 'visible') void laad() }, VERVERS_MS)
     const tik = setInterval(() => setNu(Date.now()), 30_000)
-    return () => { stop(); clearInterval(interval); clearInterval(tik) }
+    return () => { stop(); if (timer) clearTimeout(timer); clearInterval(interval); clearInterval(tik) }
   }, [isAdmin, laad])
 
   const groepen = useMemo(() => (data ? groepeer(data.signalen) : []), [data])
 
-  // De rol komt na de sessie binnen; pas wegsturen als hij bekend is, anders
-  // schiet een beheerder bij elke harde herlaad even naar het dashboard.
-  if (isLoading || userRol === null) return null
+  // AuthContext zet de rol vóór isLoading op false gaat; tot die tijd niets
+  // renderen, daarna is "geen admin" een zekere uitspraak.
+  if (isLoading) return null
   if (!isAdmin) return <Navigate to="/" replace />
 
   const c = data?.cijfers
@@ -339,13 +370,14 @@ export function CockpitLayout() {
     Ontvangen: Math.round(m.ontvangen),
     Inkoop: Math.round(m.inkoop),
   }))
+  const signaalAantal = groepen.reduce((n, g) => n + g.rijen.length, 0)
   const urgentAantal = groepen.filter((g) => g.urgent).reduce((n, g) => n + g.rijen.length, 0)
   const s = data?.systeem
   const trialDagen = s?.organisatie?.trial_einde ? Math.ceil((new Date(s.organisatie.trial_einde).getTime() - nu) / 864e5) : null
 
   return (
-    <div className="-m-3 sm:-m-4 md:-m-6">
-      <div className="px-4 py-4 md:px-8 md:py-8 space-y-10">
+    <div className="space-y-10">
+      <div className="space-y-10">
         <header className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
           <div className="flex items-baseline gap-4">
             <h1 className="text-[32px] font-extrabold tracking-[-0.5px] text-foreground">
@@ -376,9 +408,16 @@ export function CockpitLayout() {
           </div>
         )}
         {fout && (
-          <p className="text-sm text-muted-foreground">
-            De cockpit kon niet laden: <span className="font-mono">{fout}</span>. Staat migratie 259 al in de database?
-          </p>
+          <div>
+            <p className="text-sm text-foreground">
+              De cockpit kon niet laden. Staat migratie 259 al in de database?{' '}
+              <button type="button" onClick={() => { setBezig(true); void laad() }} className="font-medium text-petrol underline-offset-4 hover:underline">Opnieuw proberen</button>
+            </p>
+            <p className="mt-1 font-mono text-xs text-muted-foreground">{fout}</p>
+          </div>
+        )}
+        {data === null && !bezig && !fout && (
+          <p className="text-sm text-muted-foreground">Geen gegevens: de cockpit is alleen voor beheerders.</p>
         )}
 
         {data && c && (
@@ -388,7 +427,7 @@ export function CockpitLayout() {
               <div className="flex items-baseline gap-3">
                 <Kop>Verdient aandacht</Kop>
                 <span className="text-sm text-muted-foreground">
-                  {groepen.length === 0 ? 'Niets open. Mooi zo.' : `${data.signalen.length} signalen${urgentAantal ? `, ${urgentAantal} urgent` : ''}`}
+                  {groepen.length === 0 ? 'Niets open' : `${signaalAantal} signalen${urgentAantal ? `, ${urgentAantal} urgent` : ''}`}
                 </span>
               </div>
               {groepen.length > 0 && (
@@ -402,15 +441,15 @@ export function CockpitLayout() {
             <section className="space-y-4">
               <div className="flex items-baseline gap-3">
                 <Kop>Cijfers</Kop>
-                <span className="text-sm text-muted-foreground">ex btw · {PERIODES.find((p) => p.id === periode)?.label.toLowerCase()}</span>
+                <span className={`text-sm text-muted-foreground transition-opacity ${bezig ? 'opacity-50' : ''}`}>ex btw · {PERIODES.find((p) => p.id === periode)?.label.toLowerCase()}</span>
               </div>
               <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
                 <Tegel label="Pijplijn" waarde={formatCurrency(c.pijplijn)} sub={`${c.pijplijn_aantal} offertes wachten`} dot="#D24620" />
-                <Tegel label="Gefactureerd" waarde={formatCurrency(c.gefactureerd)} sub="op factuurdatum" dot="#2D6B48" />
-                <Tegel label="Ontvangen" waarde={formatCurrency(c.ontvangen)} sub="op betaaldatum" dot="#2D6B48" />
-                <Tegel label="Openstaand" waarde={formatCurrency(c.openstaand)} sub={`${c.openstaand_aantal} facturen, nu`} dot={ouderdom && ouderdom.d90_plus > 0 ? '#C0451A' : '#8A7A4A'} />
-                <Tegel label="Inkoop" waarde={formatCurrency(c.inkoop)} sub="goedgekeurde inkoopfacturen" dot="#C44830" />
-                <Tegel label="Marge" waarde={formatCurrency(marge)} sub={conversiePct != null ? `conversie ${conversiePct}% (${c.conversie.gewonnen}/${c.conversie.totaal})` : 'gefactureerd min inkoop'} dot={marge >= 0 ? '#2D6B48' : '#C0451A'} />
+                <Tegel label="Gefactureerd" waarde={formatCurrency(c.gefactureerd)} sub="op factuurdatum" dot={KLEUR.groen} />
+                <Tegel label="Ontvangen" waarde={formatCurrency(c.ontvangen)} sub="op betaaldatum" dot={KLEUR.groen} />
+                <Tegel label="Openstaand" waarde={formatCurrency(c.openstaand)} sub={`${c.openstaand_aantal} facturen open`} dot={ouderdom && ouderdom.d90_plus > 0 ? KLEUR.rood : KLEUR.amber} />
+                <Tegel label="Marge" waarde={formatCurrency(marge)} sub={`gefactureerd min inkoop (${formatCurrency(c.inkoop)})`} dot={marge >= 0 ? KLEUR.groen : KLEUR.rood} />
+                <Tegel label="Conversie" waarde={conversiePct != null ? `${conversiePct}%` : '—'} sub={`${c.conversie.gewonnen} van ${c.conversie.totaal} aangemaakt in de periode`} dot={KLEUR.amber} />
               </div>
 
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -428,9 +467,12 @@ export function CockpitLayout() {
                           <Tooltip
                             formatter={(v: number) => formatCurrency(v)}
                             contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: 12 }}
+                            labelStyle={{ color: 'hsl(var(--foreground))' }}
+                            itemStyle={{ color: 'hsl(var(--foreground))' }}
                           />
-                          <Bar dataKey="Gefactureerd" fill="#1A535C" radius={[3, 3, 0, 0]} />
-                          <Bar dataKey="Ontvangen" fill="#2D6B48" radius={[3, 3, 0, 0]} />
+                          <Legend iconType="circle" iconSize={6} wrapperStyle={{ fontSize: 11, color: 'hsl(var(--muted-foreground))' }} />
+                          <Bar dataKey="Gefactureerd" fill="#2D6B48" radius={[3, 3, 0, 0]} />
+                          <Bar dataKey="Ontvangen" fill="#2D6B48" fillOpacity={0.45} radius={[3, 3, 0, 0]} />
                           <Bar dataKey="Inkoop" fill="#C44830" radius={[3, 3, 0, 0]} />
                         </BarChart>
                       </ResponsiveContainer>
@@ -442,11 +484,11 @@ export function CockpitLayout() {
                   {ouderdom && ouderdomTotaal > 0 ? (
                     <ul className="mt-3 space-y-2 text-sm">
                       {[
-                        ['Nog niet vervallen', ouderdom.nog_niet_vervallen, '#8A7A4A'],
-                        ['1–30 dagen', ouderdom.d1_30, '#8A7A4A'],
-                        ['31–60 dagen', ouderdom.d31_60, '#C0451A'],
-                        ['61–90 dagen', ouderdom.d61_90, '#C0451A'],
-                        ['Ouder dan 90', ouderdom.d90_plus, '#C0451A'],
+                        ['Nog niet vervallen', ouderdom.nog_niet_vervallen, KLEUR.amber],
+                        ['1–30 dagen', ouderdom.d1_30, KLEUR.amber],
+                        ['31–60 dagen', ouderdom.d31_60, KLEUR.rood],
+                        ['61–90 dagen', ouderdom.d61_90, KLEUR.rood],
+                        ['Ouder dan 90', ouderdom.d90_plus, KLEUR.rood],
                       ].map(([label, bedrag, kleur]) => (
                         <li key={String(label)}>
                           <div className="flex justify-between gap-3">
@@ -481,7 +523,7 @@ export function CockpitLayout() {
                           <span className="min-w-0 truncate">
                             <span className="text-foreground">{k.medewerker || 'Onbekend'}</span>
                             <span className="text-muted-foreground"> · </span>
-                            <Link to={`/projecten/${k.project_id}`} className="text-petrol hover:underline">{k.project || 'project'}</Link>
+                            <Link to={`/projecten/${k.project_id}`} className="text-petrol hover:underline">{k.project || 'Onbekend project'}</Link>
                           </span>
                           <span className="shrink-0 font-mono text-xs tabular-nums text-muted-foreground">{duurSinds(k.sinds, nu)}</span>
                         </li>
@@ -502,7 +544,7 @@ export function CockpitLayout() {
                             <span className="text-foreground">{m.titel}</span>
                             {m.klant && <span className="text-muted-foreground"> · {m.klant}</span>}
                           </span>
-                          <span className="shrink-0 text-xs text-muted-foreground">{(m.monteurs ?? []).join(', ') || m.status}</span>
+                          <span className="shrink-0 text-xs text-muted-foreground">{(m.monteurs ?? []).join(', ') || getStatusLabel(m.status)}</span>
                         </li>
                       ))}
                     </ul>
@@ -521,7 +563,9 @@ export function CockpitLayout() {
                       ))}
                     </ul>
                   )}
-                  <Link to="/instellingen?tab=bezetting" className="mt-3 inline-block text-xs font-medium text-petrol underline-offset-4 hover:underline">Bezetting 4 weken</Link>
+                  {bezettingAan && (
+                    <Link to="/team?tab=bezetting" className="mt-3 inline-block text-xs font-medium text-petrol underline-offset-4 hover:underline">Bezetting 4 weken</Link>
+                  )}
                 </div>
               </div>
             </section>
@@ -536,16 +580,26 @@ export function CockpitLayout() {
                 {activiteit.length === 0 ? (
                   <p className="text-sm text-muted-foreground">Nog geen activiteit.</p>
                 ) : (
-                  <ul className="divide-y divide-border">
-                    {activiteit.map((a) => (
-                      <li key={a.id} className="flex items-baseline gap-3 py-2 text-sm">
-                        <span className="w-14 shrink-0 font-mono text-xs tabular-nums text-muted-foreground">{tijdTekst(a.created_at)}</span>
-                        <span className="min-w-0 flex-1 truncate">
-                          <span className="font-medium text-foreground">{a.medewerker_naam || 'Iemand'}</span>{' '}
-                          <span className="text-muted-foreground">{activiteitTekst(a)}</span>
-                        </span>
-                      </li>
-                    ))}
+                  <ul className="space-y-0.5">
+                    {activiteit.map((a) => {
+                      const naar = ENTITY_HREF[a.entity_type]?.(a.entity_id)
+                      const inhoud = (
+                        <>
+                          <span className="w-14 shrink-0 font-mono text-xs tabular-nums text-muted-foreground">{tijdTekst(a.created_at)}</span>
+                          <span className="min-w-0 flex-1 truncate">
+                            <span className="font-medium text-foreground">{a.medewerker_naam || 'Iemand'}</span>{' '}
+                            <span className="text-muted-foreground">{activiteitTekst(a)}</span>
+                          </span>
+                        </>
+                      )
+                      return (
+                        <li key={a.id}>
+                          {naar && a.actie !== 'verwijderd'
+                            ? <Link to={naar} className="-mx-2 flex items-baseline gap-3 rounded-md px-2 py-1.5 text-sm hover:bg-muted/40">{inhoud}</Link>
+                            : <div className="-mx-2 flex items-baseline gap-3 px-2 py-1.5 text-sm">{inhoud}</div>}
+                        </li>
+                      )
+                    })}
                   </ul>
                 )}
               </div>
@@ -555,21 +609,24 @@ export function CockpitLayout() {
             {s && (
               <section className="space-y-4">
                 <Kop>Systeem</Kop>
-                <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
-                  <Tegel label="Peppol mislukt" waarde={String(s.peppol_mislukt)} dot={s.peppol_mislukt ? '#C0451A' : '#2D6B48'} />
-                  <Tegel label="Exact-sync fouten" waarde={String(s.exact_sync_fouten)} dot={s.exact_sync_fouten ? '#C0451A' : '#2D6B48'} />
-                  <Tegel label="Herinneringen mislukt" waarde={String(s.herinnering_fouten_14d)} sub="laatste 14 dagen" dot={s.herinnering_fouten_14d ? '#C0451A' : '#2D6B48'} />
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                  <Tegel label="Exact-sync fouten" waarde={String(s.exact_sync_fouten)} sub="facturen die niet meekwamen" dot={s.exact_sync_fouten ? KLEUR.rood : KLEUR.groen} />
+                  <Tegel label="Herinneringen mislukt" waarde={String(s.herinnering_fouten_14d)} sub="laatste 14 dagen" dot={s.herinnering_fouten_14d ? KLEUR.rood : KLEUR.groen} />
                   <Tegel
                     label="Daan nachtploeg"
                     waarde={s.laatste_nachtploeg ? (s.laatste_nachtploeg.status === 'klaar' ? 'klaar' : s.laatste_nachtploeg.status) : '—'}
-                    sub={s.laatste_nachtploeg?.klaar_op ? tijdTekst(s.laatste_nachtploeg.klaar_op) : s.laatste_nachtploeg?.fout ? s.laatste_nachtploeg.fout.slice(0, 40) : 'nog niet gedraaid'}
-                    dot={s.laatste_nachtploeg?.fout ? '#C0451A' : '#2D6B48'}
+                    sub={s.laatste_nachtploeg?.fout
+                      ? s.laatste_nachtploeg.fout.slice(0, 40)
+                      : s.laatste_nachtploeg?.klaar_op
+                        ? `${tijdTekst(s.laatste_nachtploeg.klaar_op)}${s.laatste_nachtploeg.voorstellen ? ` · ${s.laatste_nachtploeg.voorstellen} voorstellen` : ''}`
+                        : 'nog niet gedraaid'}
+                    dot={s.laatste_nachtploeg?.fout ? KLEUR.rood : KLEUR.groen}
                   />
                   <Tegel
                     label="Abonnement"
                     waarde={s.organisatie?.abonnement_status ?? '—'}
                     sub={s.organisatie?.abonnement_status === 'trial' && trialDagen != null ? `nog ${trialDagen} dagen` : undefined}
-                    dot={s.organisatie?.abonnement_status === 'trial' && trialDagen != null && trialDagen <= 7 ? '#C0451A' : '#2D6B48'}
+                    dot={s.organisatie?.abonnement_status === 'trial' && trialDagen != null && trialDagen <= 7 ? KLEUR.rood : KLEUR.groen}
                   />
                 </div>
               </section>

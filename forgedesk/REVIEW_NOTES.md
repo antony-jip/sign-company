@@ -1770,9 +1770,10 @@ tonen een nette meldpagina (PaginaVerdwenen).
 De admin-cockpit (`/cockpit`, migratie 259) vervangt Dashboard-KPI's,
 Financieel, Rapportages en Forecast door één serverberekening. Bekend en
 bewust:
-- `portaal_items` en `tekening_goedkeuringen` hebben user-RLS, dus een
-  beheerder ziet in "portaal wacht" alleen de items die hijzelf aanmaakte.
-  Org-RLS op die tabellen is de nette fix (aparte migratie).
+- `portaal_items` heeft user-RLS; de cockpit leest die tak via een
+  SECURITY DEFINER-hulpfunctie (`cockpit_portaal_wacht`) die zelf op de
+  organisatie van de aanroeper filtert. Org-RLS op die tabel blijft de nette
+  structurele fix.
 - Mailsync-gezondheid en ongelezen mail staan niet in de RPC (die tellers
   zijn per gebruiker); een clientblok via `postvakService.getPostvakGezondheid`
   is de volgende stap.
@@ -1781,4 +1782,23 @@ bewust:
 - Nieuwe uren zijn meteen 'goedgekeurd' (geen goedkeurscherm meer); de
   DB-trigger uit 241 blijft goedgekeurde uren beschermen tegen wijzigen door
   niet-beheerders.
+- **Senior:** BLOKKADE — `inkoopfacturen.factuur_datum/vervaldatum` zijn DATE
+  (niet TEXT) en `planning_afwezigheid.medewerker_id` is TEXT (127); beide
+  lieten migratie 259 in zijn geheel terugrollen terwijl `doen_migraties` hem
+  wél registreerde. Gefixt; plus DROP VIEW vóór CREATE, GRANT SELECT, admin-
+  check in de RPC (niet-admin krijgt NULL), REVOKE voor anon, portaal via
+  definer-functie, geen bedrag op portaal-signalen (incl. btw). Migratie 260
+  zet concept/definitief-uren om naar goedgekeurd en haalt de oude
+  uren-schakelaars uit `app_settings.functies` (trigger 241 blijft, inert).
+- **QAA/design:** command palette en mobiel "Meer" alleen voor admins;
+  Flame-budget terug naar h1 + datum + urgente stippen; signaalrijen op
+  400px onder elkaar; legenda en dark-tooltip op de grafiek; woordkeus
+  ("Facturen te laat", "Vervalt deze week", "Portaal wacht op de klant");
+  conversie eigen tegel; periode onthouden (`doen_cockpit_periode`);
+  activiteitenfeed met nette statuslabels en links naar de entiteit;
+  "Bezetting 4 weken" naar `/team?tab=bezetting`.
+- Nog niet in de cockpit (volgende stap): mailsync-gezondheid en
+  ongelezen/opvolgen-mail (per gebruiker), Daan-voorstellen als lijst,
+  bezettingstegel, klant-top-5, uren geboekt vs gefactureerd. CSV-export uit
+  het oude Rapportages is niet vervangen.
 

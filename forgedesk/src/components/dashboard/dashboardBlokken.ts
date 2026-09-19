@@ -60,7 +60,7 @@ export const DASHBOARD_PRESETS: DashboardPreset[] = [
   {
     id: 'verkoop',
     label: 'Verkoop',
-    uitleg: 'Cijfers, opvolging en signalen van Daan',
+    uitleg: 'Opvolging en signalen van Daan',
     blokken: ['briefing', 'vandaag', 'opvolgen', 'portaal', 'deze-week'],
   },
 ]

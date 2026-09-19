@@ -11,6 +11,7 @@ import {
   Files,
   CheckSquare,
   PiggyBank,
+  Gauge,
   Newspaper,
   Settings,
   Plus,
@@ -18,6 +19,7 @@ import {
   Loader2,
 } from 'lucide-react'
 import { getOffertes, getKlanten, getProjecten } from '@/services/supabaseService'
+import { useAuth } from '@/contexts/AuthContext'
 import { getCached, fetchQuery } from '@/lib/queryCache'
 import type { Offerte, Klant, Project } from '@/types'
 import { logger } from '../../utils/logger'
@@ -40,7 +42,7 @@ const navigationItems: CommandItem[] = [
   { id: 'nav-planning', label: 'Planning', subtitle: 'Navigatie', icon: <Calendar className="w-4 h-4" />, path: '/planning', category: 'Navigatie' },
   { id: 'nav-documenten', label: 'Documenten', subtitle: 'Navigatie', icon: <Files className="w-4 h-4" />, path: '/documenten', category: 'Navigatie' },
   { id: 'nav-taken', label: 'Taken', subtitle: 'Navigatie', icon: <CheckSquare className="w-4 h-4" />, path: '/taken', category: 'Navigatie' },
-  { id: 'nav-cockpit', label: 'Cockpit', subtitle: 'Navigatie · beheerder', icon: <PiggyBank className="w-4 h-4" />, path: '/cockpit', category: 'Navigatie' },
+  { id: 'nav-cockpit', label: 'Cockpit', subtitle: 'Navigatie · beheerder', icon: <Gauge className="w-4 h-4" />, path: '/cockpit', category: 'Navigatie' },
   { id: 'nav-instellingen', label: 'Instellingen', subtitle: 'Navigatie', icon: <Settings className="w-4 h-4" />, path: '/instellingen', category: 'Navigatie' },
 ]
 
@@ -83,6 +85,7 @@ function mapProjectenToItems(projecten: Project[]): CommandItem[] {
 }
 
 export function CommandPalette() {
+  const { isAdmin } = useAuth()
   const navigate = useNavigate()
   const [isOpen, setIsOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -141,13 +144,15 @@ export function CommandPalette() {
   // Build filtered results
   const filteredResults = useMemo(() => {
     const q = query.toLowerCase().trim()
+    // De cockpit is alleen voor beheerders; anderen krijgen hem niet aangeboden.
+    const navItems = navigationItems.filter((item) => item.id !== 'nav-cockpit' || isAdmin)
 
     if (!q) {
       // Show navigation + actions when no query
-      return [...navigationItems, ...actionItems]
+      return [...navItems, ...actionItems]
     }
 
-    const matchNav = navigationItems.filter(
+    const matchNav = navItems.filter(
       (item) => item.label.toLowerCase().includes(q)
     )
     const matchActions = actionItems.filter(
@@ -170,7 +175,7 @@ export function CommandPalette() {
     )
 
     return [...matchNav, ...matchActions, ...matchOffertes, ...matchKlanten, ...matchProjecten]
-  }, [query, offerteItems, klantItems, projectItems])
+  }, [query, offerteItems, klantItems, projectItems, isAdmin])
 
   // Group results by category for rendering
   const groupedResults = useMemo(() => {

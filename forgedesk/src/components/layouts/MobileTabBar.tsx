@@ -12,7 +12,7 @@ import { useSupportAttentie } from '@/hooks/useSupportInbox'
 import { useMapTellers } from '@/lib/mail/hooks'
 import { ADMIN_USER_ID } from '@/services/supportChatService'
 import {
-  MOBIELE_NAV_MAX, MOBIELE_MENU_KANDIDATEN, SETTINGS_ITEM, SUPPORT_ITEM,
+  MOBIELE_NAV_MAX, MOBIELE_MENU_KANDIDATEN, SETTINGS_ITEM, SUPPORT_ITEM, COCKPIT_ITEM,
   mobieleMenuItems, type NavItem,
 } from '@/lib/navigatie'
 import { useFeatureFlags } from '@/contexts/FeatureFlagsContext'
@@ -31,7 +31,7 @@ function isPadActief(pathname: string, pad: string) {
 export function MobileTabBar() {
   const location = useLocation()
   const navigate = useNavigate()
-  const { user, logout } = useAuth()
+  const { user, logout, isAdmin } = useAuth()
   const { settings, forgieEnabled } = useAppSettings()
   const isSupportAdmin = user?.id === ADMIN_USER_ID
   const supportAttentie = useSupportAttentie('support-mobile-nav', isSupportAdmin)
@@ -59,9 +59,11 @@ export function MobileTabBar() {
       ...gekozen.slice(plekken),
       ...kandidaten.filter((i) => !gekozenLabels.has(i.label)),
     ]
+    // De cockpit staat buiten de menukeuze; een beheerder vindt hem bovenaan "Meer".
+    if (isAdmin) rest.unshift(COCKPIT_ITEM)
     if (isSupportAdmin) rest.push(SUPPORT_ITEM)
     return { balkItems: gekozen.slice(0, plekken), meerItems: rest }
-  }, [gekozen, kandidaten, isSupportAdmin, forgieEnabled])
+  }, [gekozen, kandidaten, isSupportAdmin, isAdmin, forgieEnabled])
 
   useEffect(() => { setMeerOpen(false) }, [location.pathname])
 

@@ -13,6 +13,8 @@ import type { FunctieInstellingen } from '@/lib/functies'
  */
 // Het goedkeurscherm (weekstaat) is weg; nieuwe uren zijn meteen goedgekeurd,
 // anders blijven ze als concept hangen zonder plek om ze vrij te geven.
+// Migratie 260 zette bestaande concept-uren om en haalde de oude schakelaar
+// uit app_settings.functies.
 export function standaardUrenStatus(_functies: FunctieInstellingen | null | undefined): NonNullable<Tijdregistratie['status']> {
   return 'goedgekeurd'
 }

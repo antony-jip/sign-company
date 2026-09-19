@@ -27,7 +27,7 @@ $$;
 -- Zelfde regel voor tijdstempels die als TEXT zijn opgeslagen (offertes.verstuurd_op).
 CREATE OR REPLACE FUNCTION cockpit_tijdstip(p TEXT)
 RETURNS timestamptz
-LANGUAGE sql IMMUTABLE STRICT
+LANGUAGE sql STABLE STRICT
 AS $$
   SELECT CASE WHEN p ~ '^\d{4}-\d{2}-\d{2}' THEN p::timestamptz END
 $$;
@@ -57,8 +57,41 @@ AS $$
          END
 $$;
 
+-- portaal_items heeft RLS op user_id (049), niet op organisatie: met een
+-- gewone view ziet een beheerder alleen wat hij zelf verstuurde. Deze
+-- hulpfunctie leest als definer en filtert zelf op de organisatie van de
+-- aanroeper via het project, zodat het hele team in beeld is.
+CREATE OR REPLACE FUNCTION cockpit_portaal_wacht()
+RETURNS TABLE (
+  id UUID, organisatie_id UUID, titel TEXT, klant TEXT, dagen INT,
+  detail JSONB, href TEXT, sinds TIMESTAMPTZ
+)
+LANGUAGE sql STABLE SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT
+    p.id, pr.organisatie_id,
+    COALESCE(NULLIF(p.titel, ''), p.type)::text,
+    pr.klant_naam::text,
+    (CURRENT_DATE - p.created_at::date)::int,
+    jsonb_build_object('type', p.type, 'status', p.status, 'project_id', p.project_id, 'bekeken_op', p.bekeken_op),
+    ('/projecten/' || p.project_id)::text,
+    p.created_at
+  FROM portaal_items p
+  JOIN projecten pr ON pr.id = p.project_id
+  WHERE p.status IN ('verstuurd', 'bekeken')
+    AND p.type IN ('offerte', 'tekening', 'opdrachtbevestiging')
+    AND pr.organisatie_id = (SELECT organisatie_id FROM profiles WHERE id = auth.uid())
+$$;
+REVOKE EXECUTE ON FUNCTION cockpit_portaal_wacht() FROM anon, public;
+GRANT EXECUTE ON FUNCTION cockpit_portaal_wacht() TO authenticated;
+
 -- ── Signalen: wat aandacht verdient, als losse rijen met een link ──
-CREATE OR REPLACE VIEW cockpit_signalen
+-- CREATE OR REPLACE VIEW laat later geen kolomwijziging toe (§10.6); eerst
+-- droppen zodat een herdraai na een half gelukte run ook slaagt.
+DROP VIEW IF EXISTS cockpit_signalen;
+DROP VIEW IF EXISTS cockpit_per_maand;
+CREATE VIEW cockpit_signalen
 WITH (security_invoker = on) AS
 -- Offertes die op de klant wachten
 SELECT
@@ -145,19 +178,12 @@ LEFT JOIN klanten k ON k.id = w.klant_id
 WHERE w.status = 'afgerond' AND w.factuur_id IS NULL
 
 UNION ALL
--- Portaal: verstuurd of bekeken, nog geen antwoord van de klant
+-- Portaal: verstuurd of bekeken, nog geen antwoord van de klant. Geen bedrag:
+-- wat het portaal toont is incl. btw, de rest van de cockpit is ex btw.
 SELECT
-  'portaal_wacht', p.id, pr.organisatie_id,
-  COALESCE(NULLIF(p.titel, ''), p.type), pr.klant_naam,
-  p.bedrag,
-  (CURRENT_DATE - p.created_at::date),
-  jsonb_build_object('type', p.type, 'status', p.status, 'project_id', p.project_id, 'bekeken_op', p.bekeken_op),
-  '/projecten/' || p.project_id,
-  p.created_at
-FROM portaal_items p
-JOIN projecten pr ON pr.id = p.project_id
-WHERE p.status IN ('verstuurd', 'bekeken')
-  AND p.type IN ('offerte', 'tekening', 'opdrachtbevestiging')
+  'portaal_wacht', w.id, w.organisatie_id, w.titel, w.klant,
+  NULL::numeric, w.dagen, w.detail, w.href, w.sinds
+FROM cockpit_portaal_wacht() w
 
 UNION ALL
 -- Projecten: zonder planning, deadline dichtbij of over budget
@@ -200,8 +226,8 @@ SELECT
   COALESCE(NULLIF(i.factuur_nummer, ''), 'Inkoopfactuur'), i.leverancier_naam,
   cockpit_ex_btw(i.subtotaal, i.btw_bedrag, i.totaal),
   (CURRENT_DATE - i.created_at::date),
-  jsonb_build_object('status', i.status, 'vervaldatum', cockpit_datum(i.vervaldatum), 'vertrouwen', i.extractie_vertrouwen),
-  '/inkoopfacturen/' || i.id,
+  jsonb_build_object('status', i.status, 'vervaldatum', i.vervaldatum, 'vertrouwen', i.extractie_vertrouwen),
+  '/facturen?tab=inkoop',
   i.created_at
 FROM inkoopfacturen i
 WHERE i.status IN ('nieuw', 'verwerkt')
@@ -221,7 +247,7 @@ WHERE m.status IN ('gepland', 'onderweg', 'bezig')
   AND cockpit_datum(m.datum) < CURRENT_DATE;
 
 -- ── Cijfers per maand (12 maanden), voor de reeks in de cockpit ──
-CREATE OR REPLACE VIEW cockpit_per_maand
+CREATE VIEW cockpit_per_maand
 WITH (security_invoker = on) AS
 SELECT organisatie_id, maand,
   SUM(gefactureerd) AS gefactureerd,
@@ -236,7 +262,8 @@ FROM (
          0, cockpit_ex_btw(subtotaal, btw_bedrag, totaal), 0
   FROM facturen WHERE status = 'betaald'
   UNION ALL
-  SELECT organisatie_id, LEFT(NULLIF(factuur_datum, ''), 7),
+  -- inkoopfacturen.factuur_datum is een echte DATE (migratie 050).
+  SELECT organisatie_id, to_char(factuur_datum, 'YYYY-MM'),
          0, 0, cockpit_ex_btw(subtotaal, btw_bedrag, totaal)
   FROM inkoopfacturen WHERE status = 'goedgekeurd'
 ) r
@@ -246,6 +273,8 @@ GROUP BY organisatie_id, maand;
 -- ── Eén aanroep voor het hele scherm ──
 -- p_van/p_tot: de periode voor de periodecijfers (gefactureerd, ontvangen,
 -- inkoop, conversie). Signalen en openstaand zijn altijd "nu".
+-- Alleen een beheerder krijgt iets terug; voor anderen is het resultaat NULL.
+-- De RLS van de tabellen beperkt sowieso tot de eigen organisatie.
 CREATE OR REPLACE FUNCTION cockpit_overzicht(p_van date, p_tot date)
 RETURNS jsonb
 LANGUAGE sql STABLE SECURITY INVOKER
@@ -283,7 +312,7 @@ AS $$
       ), 0),
       'inkoop', COALESCE((
         SELECT SUM(cockpit_ex_btw(subtotaal, btw_bedrag, totaal)) FROM inkoopfacturen
-        WHERE status = 'goedgekeurd' AND cockpit_datum(factuur_datum) BETWEEN p_van AND p_tot
+        WHERE status = 'goedgekeurd' AND factuur_datum BETWEEN p_van AND p_tot
       ), 0),
       'openstaand', COALESCE((SELECT SUM(open_ex) FROM open_facturen), 0),
       'openstaand_aantal', (SELECT COUNT(*) FROM open_facturen WHERE open_ex > 0.005),
@@ -325,10 +354,16 @@ AS $$
         SELECT COUNT(*) FROM montage_afspraken
         WHERE cockpit_datum(datum) BETWEEN CURRENT_DATE AND CURRENT_DATE + 6
       ),
+      -- planning_afwezigheid.medewerker_id is TEXT (127): een medewerkers.id
+      -- óf 'profile-<uuid>' voor een teamlid zonder medewerkerkaart.
       'afwezig_vandaag', COALESCE((
-        SELECT jsonb_agg(jsonb_build_object('medewerker', m.naam, 'type', a.type, 'tot', a.eind_datum) ORDER BY m.naam)
+        SELECT jsonb_agg(jsonb_build_object(
+          'medewerker', COALESCE(m.naam, NULLIF(TRIM(COALESCE(pf.voornaam, '') || ' ' || COALESCE(pf.achternaam, '')), ''), a.medewerker_id),
+          'type', a.type, 'tot', a.eind_datum
+        ))
         FROM planning_afwezigheid a
-        JOIN medewerkers m ON m.id = a.medewerker_id
+        LEFT JOIN medewerkers m ON m.id::text = a.medewerker_id
+        LEFT JOIN profiles pf ON a.medewerker_id = 'profile-' || pf.id::text
         WHERE cockpit_datum(a.start_datum::text) <= CURRENT_DATE AND cockpit_datum(a.eind_datum::text) >= CURRENT_DATE
       ), '[]'::jsonb),
       'team_actief', (SELECT COUNT(*) FROM medewerkers WHERE status = 'actief'),
@@ -348,7 +383,11 @@ AS $$
       )
     )
   )
+  WHERE EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND rol = 'admin')
 $$;
+REVOKE EXECUTE ON FUNCTION cockpit_overzicht(date, date) FROM anon, public;
+GRANT EXECUTE ON FUNCTION cockpit_overzicht(date, date) TO authenticated;
+GRANT SELECT ON cockpit_signalen, cockpit_per_maand TO authenticated;
 
 COMMIT;
 
