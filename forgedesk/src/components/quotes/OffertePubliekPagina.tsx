@@ -644,7 +644,7 @@ export function OffertePubliekPagina() {
         if (loadedOfferte?.gekozen_items) {
           setSelectedItems(new Set([
             ...loadedItems.filter((i) => i.soort !== 'tekst' && !i.is_optioneel).map((i) => i.id),
-            ...loadedOfferte.gekozen_items,
+            ...(Array.isArray(loadedOfferte.gekozen_items) ? loadedOfferte.gekozen_items : []),
           ]))
           setSelectedVariants(gekozenVariantenPerItem(loadedOfferte.gekozen_varianten))
         } else if (loadedItems.length > 0) {

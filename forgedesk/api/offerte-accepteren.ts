@@ -363,10 +363,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           }
         }
         if (it.is_optioneel && gekozenSet.has(it.id as string)) patch.is_optioneel = false
-        // Zonder keuze dezelfde weg als finalRegels (meetellende varianten),
-        // zodat item.totaal en de offertetotalen nooit uiteenlopen.
-        const effKeuze: GekozenVariant = gekozen ?? (patch.actieve_variant_id as string | undefined)
-        const nt = r2(prijsRegels(it, effKeuze).reduce((sum, r) => sum + regelNetto(r), 0))
+        // Zelfde invoer als finalRegels en keuzeOverzicht, zodat item.totaal en
+        // de offertetotalen per constructie uit dezelfde regels komen.
+        const nt = r2(prijsRegels(it, keuze).reduce((sum, r) => sum + regelNetto(r), 0))
         if (nt !== Number(it.totaal)) patch.totaal = nt
         if (Object.keys(patch).length > 0) {
           await supabaseAdmin.from('offerte_items').update(patch).eq('id', it.id)

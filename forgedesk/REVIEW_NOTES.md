@@ -1709,7 +1709,18 @@ er per land meeverandert en welke wet erachter zit.
   gekozen_varianten) en D (409 als de verkoper de uitvoeringen tussen laden en
   tekenen wijzigde) en 1a (server rekende zonder actieve_variant_id met de
   basisprijs, de pagina met de eerste variant).
+- **Senior ronde 2:** BLOKKADE B1 (gekozen_items bevat na normalisatie alleen
+  optionele posten; de laadtak liet verplichte posten wegvallen) en B2 (PDF
+  telde een aangevinkte optie dubbel, miste afrondingskorting) gefixt in
+  19c7407. **Ronde 3: AKKOORD-MET-OPMERKINGEN**; beide opmerkingen (item.totaal
+  uit dezelfde prijsRegels-invoer als de offertetotalen, Array.isArray-guard op
+  gekozen_items) verwerkt.
 - Bewust open (bestaande schuld, niet uit deze commits):
+  - Afrondingskorting zit in `offerte.subtotaal` gevouwen (offerteTotalen.ts,
+    berekenGeaccepteerdeTotalen) terwijl PDF en pagina hem als aparte regel
+    onder het subtotaal drukken; zonder keuzes staat Subtotaal + BTW +
+    Afrondingskorting dan niet gelijk aan het totaal. Hoort in pdfService/
+    offerteTotalen, één conventie kiezen.
   - Drie formules voor het regelnetto (pagina, accept-API, offerteTotalen)
     wijken in ~1,7% van de halve-cent-gevallen één cent af; één gedeelde
     formule + kopie-test (§10.1) is de nette oplossing.
