@@ -136,6 +136,8 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
             btw_nummer: eigenaar.btw_nummer,
             iban: eigenaar.iban,
             bedrijfs_land: eigenaar.bedrijfs_land,
+            rpr_rechtbank: eigenaar.rpr_rechtbank,
+            btw_nummer_gevalideerd_op: eigenaar.btw_nummer_gevalideerd_op,
           })
         }
       } catch (err) {

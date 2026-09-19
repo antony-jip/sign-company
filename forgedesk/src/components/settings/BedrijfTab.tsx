@@ -44,6 +44,7 @@ export function BedrijfTab() {
   const [iban, setIban] = useState('')
   const [rprRechtbank, setRprRechtbank] = useState('')
   const [btwGevalideerdOp, setBtwGevalideerdOp] = useState<string | null>(null)
+  const [btwNummerOrigineel, setBtwNummerOrigineel] = useState('')
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -65,6 +66,7 @@ export function BedrijfTab() {
         setIban(profile.iban || '')
         setRprRechtbank(profile.rpr_rechtbank || '')
         setBtwGevalideerdOp(profile.btw_nummer_gevalideerd_op ?? null)
+        setBtwNummerOrigineel(profile.btw_nummer || '')
         setBedrijfsLand(landOfStandaard(profile.bedrijfs_land))
         if (profile.logo_url) setLogoPreview(profile.logo_url)
         setEmailKleur(currentKleur || '#1A535C')
@@ -125,9 +127,12 @@ export function BedrijfTab() {
         btw_nummer: btwNummer,
         iban,
         rpr_rechtbank: rprRechtbank.trim() || null,
+        // Een ander btw-nummer is niet gevalideerd; de VIES-stempel vervalt.
+        ...(btwNummer.trim() !== btwNummerOrigineel.trim() ? { btw_nummer_gevalideerd_op: null } : {}),
         logo_url: logoPreview || '',
       })
       await updateAppSettings(user.id, { primaire_kleur: emailKleur })
+      if (btwNummer.trim() !== btwNummerOrigineel.trim()) { setBtwGevalideerdOp(null); setBtwNummerOrigineel(btwNummer) }
       await refreshProfile()
       await refreshSettings()
       toast.success(<>Opgeslagen<span style={{ color: '#D24620' }}>.</span></>)

@@ -109,7 +109,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const gevalideerdOp = geldig ? new Date().toISOString() : null
 
     if (doel === 'profiel') {
-      await supabaseAdmin.from('profiles').update({ btw_nummer_gevalideerd_op: gevalideerdOp }).eq('id', user_id)
+      // De abonnements-api's lezen land en btw-nummer van het profiel van de
+      // eigenaar; de validatie moet dus dáár landen, en bij de aanroeper zelf
+      // voor de weergave. Alleen als het nummer op dat profiel hetzelfde is.
+      const { data: org } = await supabaseAdmin.from('organisaties').select('eigenaar_id').eq('id', orgId).maybeSingle()
+      const eigenaarId = (org as { eigenaar_id?: string | null } | null)?.eigenaar_id ?? null
+      const schoonNummer = (v: string | null | undefined) => (v || '').replace(/[\s.\-]/g, '').toUpperCase()
+      const doelIds = [user_id, ...(eigenaarId && eigenaarId !== user_id ? [eigenaarId] : [])]
+      const { data: profielen } = await supabaseAdmin.from('profiles').select('id, btw_nummer').in('id', doelIds)
+      for (const pr of (profielen ?? []) as Array<{ id: string; btw_nummer: string | null }>) {
+        const zelfde = schoonNummer(pr.btw_nummer) === `${gesplitst.land === 'EL' ? 'GR' : gesplitst.land}${gesplitst.nummer}` || pr.id === user_id
+        await supabaseAdmin.from('profiles').update({ btw_nummer_gevalideerd_op: zelfde ? gevalideerdOp : null }).eq('id', pr.id)
+      }
     } else {
       await supabaseAdmin.from('klanten').update({ btw_nummer_gevalideerd_op: gevalideerdOp }).eq('id', klant_id).eq('organisatie_id', orgId)
     }
