@@ -24,6 +24,8 @@ import { uploadFile, downloadFile, deleteFile } from '@/services/storageService'
 import { createDocument, getSigningVisualisatiesByOfferte, getSigningVisualisatiesByProject } from '@/services/supabaseService'
 import { telItemsMetBijlage } from '@/services/offerteService'
 import { useFunctie } from '@/hooks/useFunctie'
+import { useAppSettings } from '@/contexts/AppSettingsContext'
+import { btwTarievenVoor } from '@/lib/btwTarieven'
 import type { SigningVisualisatie } from '@/types'
 
 // ============================================================
@@ -621,6 +623,8 @@ export function QuoteItemsTable({
   offerteId,
   templateLabels: templateLabelsProp,
 }: QuoteItemsTableProps) {
+  const { profile } = useAppSettings()
+  const btwTarieven = btwTarievenVoor(profile?.bedrijfs_land)
   const sanitizedTemplateLabels = sanitizeDetailLabels(templateLabelsProp || [])
   const templateLabels = sanitizedTemplateLabels.length > 0
     ? sanitizedTemplateLabels
@@ -1525,15 +1529,13 @@ export function QuoteItemsTable({
                           <label className="text-xs font-medium text-muted-foreground">BTW</label>
                           <Select
                             value={String(item.btw_percentage)}
-                            onValueChange={(value) => onUpdateItem(item.id, 'btw_percentage', parseInt(value))}
+                            onValueChange={(value) => onUpdateItem(item.id, 'btw_percentage', parseFloat(value))}
                           >
                             <SelectTrigger className="h-9 text-sm">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="21">21%</SelectItem>
-                              <SelectItem value="9">9%</SelectItem>
-                              <SelectItem value="0">0%</SelectItem>
+                              {btwTarieven.map((t) => <SelectItem key={t} value={String(t)}>{t}%</SelectItem>)}
                             </SelectContent>
                           </Select>
                         </div>
@@ -1771,15 +1773,13 @@ export function QuoteItemsTable({
                                 <label className="text-2xs font-medium text-muted-foreground">BTW</label>
                                 <Select
                                   value={String(variant.btw_percentage)}
-                                  onValueChange={(value) => updatePrijsVariantField(item.id, variant.id, 'btw_percentage', parseInt(value))}
+                                  onValueChange={(value) => updatePrijsVariantField(item.id, variant.id, 'btw_percentage', parseFloat(value))}
                                 >
                                   <SelectTrigger className="h-8 text-xs">
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="21">21%</SelectItem>
-                                    <SelectItem value="9">9%</SelectItem>
-                                    <SelectItem value="0">0%</SelectItem>
+                                    {btwTarieven.map((t) => <SelectItem key={t} value={String(t)}>{t}%</SelectItem>)}
                                   </SelectContent>
                                 </Select>
                               </div>

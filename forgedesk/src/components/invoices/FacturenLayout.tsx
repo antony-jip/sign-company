@@ -126,6 +126,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useNavigateWithTab } from '@/hooks/useNavigateWithTab'
 import { InkoopfacturenLayout } from '@/components/inkoopfacturen/InkoopfacturenLayout'
 import { useAuth } from '@/contexts/AuthContext'
+import { isZuiverTarief, standaardBtwTarief, zuiverTarief } from '@/lib/btwTarieven'
 import { logCreate, logWijziging } from '@/utils/auditLogger'
 import { useMedewerkers } from '@/contexts/MedewerkersContext'
 import { logger } from '../../utils/logger'
@@ -456,15 +457,16 @@ function calcBtwBedrag(items: LineItem[]): number {
 function btwRegelsUitTotalen(
   beschrijving: string,
   subtotaal: number,
-  btwBedrag: number
+  btwBedrag: number,
+  land?: string | null
 ): Array<{ beschrijving: string; eenheidsprijs: number; btw_percentage: number }> {
   const netto = round2(subtotaal)
-  if (netto === 0) return [{ beschrijving, eenheidsprijs: 0, btw_percentage: 21 }]
+  if (netto === 0) return [{ beschrijving, eenheidsprijs: 0, btw_percentage: standaardBtwTarief(land) }]
 
   const absNetto = Math.abs(netto)
   const absBtw = Math.abs(round2(btwBedrag))
 
-  const zuiver = [21, 9, 0].find((tarief) => Math.abs(absBtw - round2((absNetto * tarief) / 100)) <= 0.02)
+  const zuiver = zuiverTarief(absNetto, absBtw, land)
   if (zuiver !== undefined) return [{ beschrijving, eenheidsprijs: netto, btw_percentage: zuiver }]
 
   // Zoek het kortste percentage dat het btw-bedrag op de cent exact
@@ -480,15 +482,15 @@ function btwRegelsUitTotalen(
     const kandidaat = Number(ruwPct.toFixed(decimalen))
     pct = kandidaat
     const reconstrueert = Math.abs(round2((absNetto * kandidaat) / 100) - absBtw) < 0.005
-    const botstMetZuiver = kandidaat === 21 || kandidaat === 9 || kandidaat === 0
+    const botstMetZuiver = isZuiverTarief(kandidaat, land)
     if (reconstrueert && !botstMetZuiver) break
   }
   return [{ beschrijving, eenheidsprijs: netto, btw_percentage: pct }]
 
 }
 
-function lineItemsUitTotalen(beschrijving: string, subtotaal: number, btwBedrag: number): LineItem[] {
-  return btwRegelsUitTotalen(beschrijving, subtotaal, btwBedrag).map((r) => ({
+function lineItemsUitTotalen(beschrijving: string, subtotaal: number, btwBedrag: number, land?: string | null): LineItem[] {
+  return btwRegelsUitTotalen(beschrijving, subtotaal, btwBedrag, land).map((r) => ({
     id: crypto.randomUUID(),
     beschrijving: r.beschrijving,
     aantal: 1,
@@ -1028,7 +1030,7 @@ export function FacturenLayout() {
         vervaldatum: factuur.vervaldatum,
         voorwaarden: factuur.voorwaarden,
         notities: factuur.notities,
-        items: lineItemsUitTotalen(factuur.titel, factuur.subtotaal, factuur.btw_bedrag),
+        items: lineItemsUitTotalen(factuur.titel, factuur.subtotaal, factuur.btw_bedrag, profile?.bedrijfs_land),
       })
       setCreateDialogOpen(true)
     },
@@ -1303,7 +1305,7 @@ export function FacturenLayout() {
               btw_percentage: item.btw_percentage,
               korting_percentage: item.korting_percentage,
             }))
-          : lineItemsUitTotalen(offerte.titel, offerte.subtotaal, offerte.btw_bedrag)
+          : lineItemsUitTotalen(offerte.titel, offerte.subtotaal, offerte.btw_bedrag, profile?.bedrijfs_land)
 
       setFormData({
         klant_id: offerte.klant_id,

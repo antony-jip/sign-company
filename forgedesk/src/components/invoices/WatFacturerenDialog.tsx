@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input'
 import { Loader2, Minus, Plus, Receipt } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuth } from '@/contexts/AuthContext'
+import { useAppSettings } from '@/contexts/AppSettingsContext'
+import { dichtstbijzijndTarief, standaardBtwTarief } from '@/lib/btwTarieven'
 import { getOfferteItems, updateOfferte } from '@/services/offerteService'
 import {
   getGefactureerdeAantallenVoorOfferte,
@@ -62,10 +64,10 @@ export function regelVorm(oi: OfferteItem): { aantal: number; eenheidsprijs: num
   return { aantal: oi.aantal, eenheidsprijs: oi.eenheidsprijs, korting_percentage: oi.korting_percentage || 0, vast: false }
 }
 
-function btwVanVoorschot(v: Voorschot): number {
-  if (!v.subtotaal) return 21
+function btwVanVoorschot(v: Voorschot, land?: string | null): number {
+  if (!v.subtotaal) return standaardBtwTarief(land)
   const pct = Math.round(((v.totaal - v.subtotaal) / v.subtotaal) * 100)
-  return [21, 9, 0].reduce((best, kandidaat) => (Math.abs(kandidaat - pct) < Math.abs(best - pct) ? kandidaat : best), 21)
+  return dichtstbijzijndTarief(pct, land)
 }
 
 function naarFactuurRegels(oi: OfferteItem, aantal: number): NieuweFactuurRegel[] {
@@ -89,6 +91,7 @@ export function WatFacturerenDialog({ open, onOpenChange, offerte, project, proj
   const navigate = useNavigate()
   const location = useLocation()
   const { user } = useAuth()
+  const { profile } = useAppSettings()
   const [laden, setLaden] = useState(false)
   const [bezig, setBezig] = useState(false)
   const [items, setItems] = useState<OfferteItem[]>([])
@@ -156,7 +159,7 @@ export function WatFacturerenDialog({ open, onOpenChange, offerte, project, proj
   const verrekenRegels = voorschotten.map((v) => ({
     beschrijving: `Verrekening voorschot ${v.nummer || ''}`.trim(),
     eenheidsprijs: -round2(v.subtotaal || 0),
-    btw_percentage: btwVanVoorschot(v),
+    btw_percentage: btwVanVoorschot(v, profile?.bedrijfs_land),
   }))
 
   // De "tevens"-acties gebeuren pas als de factuur bestaat: bij een concept

@@ -39,6 +39,8 @@ import { useAuth } from '@/contexts/AuthContext'
 import { isAdminUser } from '@/utils/authHelpers'
 import { urenVeldenUitInstellingen } from '@/utils/offerteUren'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
+import { BTW_TARIEF_LABELS, btwTarievenVoor, standaardBtwTarief } from '@/lib/btwTarieven'
+import { landOfStandaard } from '@/lib/landen'
 import { useFunctie } from '@/hooks/useFunctie'
 import { getOfferteCondities, createOfferteConditie, updateOfferteConditie, deleteOfferteConditie, getCalculatieProductStaffels, upsertCalculatieProductStaffel, deleteCalculatieProductStaffel } from '@/services/offerteService'
 import type { AppSettings, CalculatieProduct, CalculatieTemplate, CalculatieRegel, OfferteTemplate, OfferteTemplateRegel, OfferteConditie, CalculatieProductStaffel } from '@/types'
@@ -611,13 +613,13 @@ function ProductenSection({
   const [productCategorie, setProductCategorie] = useState('')
   const [productEenheid, setProductEenheid] = useState('stuks')
   // Bewerking van het product: wint in de urenberekening van de naam-matching.
-  const { settings: instellingen } = useAppSettings()
+  const { settings: instellingen, profile } = useAppSettings()
   const urenVeldenKeuze = urenVeldenUitInstellingen(instellingen.calculatie_uren_velden)
   const [productUrenveld, setProductUrenveld] = useState('')
   const [productInkoop, setProductInkoop] = useState(0)
   const [productVerkoop, setProductVerkoop] = useState(0)
   const [productMarge, setProductMarge] = useState(standaardMarge)
-  const [productBtw, setProductBtw] = useState(21)
+  const [productBtw, setProductBtw] = useState(() => standaardBtwTarief(profile?.bedrijfs_land))
   const [productNotitie, setProductNotitie] = useState('')
   // Staffels (schakelaar offerte_staffel): alleen bij een bestaand product,
   // want de rijen hangen aan product_id.
@@ -946,12 +948,13 @@ function ProductenSection({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium">BTW tarief</Label>
-                <Select value={String(productBtw)} onValueChange={(v) => setProductBtw(parseInt(v))}>
+                <Select value={String(productBtw)} onValueChange={(v) => setProductBtw(parseFloat(v))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="21">21% (standaard)</SelectItem>
-                    <SelectItem value="9">9% (verlaagd)</SelectItem>
-                    <SelectItem value="0">0% (vrijgesteld)</SelectItem>
+                    {btwTarievenVoor(profile?.bedrijfs_land).map((t) => {
+                      const label = BTW_TARIEF_LABELS[landOfStandaard(profile?.bedrijfs_land)]?.[t]
+                      return <SelectItem key={t} value={String(t)}>{t}%{label ? ` (${label})` : ''}</SelectItem>
+                    })}
                   </SelectContent>
                 </Select>
               </div>

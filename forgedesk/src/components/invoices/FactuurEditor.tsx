@@ -132,6 +132,7 @@ const BOEKHOUD_PAKKET_NAAM: Record<BoekhoudPakket, string> = {
   eboekhouden: 'e-Boekhouden',
 }
 import { round2 } from '@/utils/budgetUtils'
+import { isZuiverTarief, standaardBtwTarief, zuiverTarief } from '@/lib/btwTarieven'
 import { getMeetellendeVarianten } from '@/utils/offerteTotalen'
 import { generateFactuurPDF, generateOffertePDF } from '@/services/pdfService'
 import { getFactuurClipboard } from '@/utils/factuurClipboard'
@@ -240,15 +241,16 @@ function calcLineTotal(item: LineItem): number {
 function btwRegelsUitTotalen(
   beschrijving: string,
   subtotaal: number,
-  btwBedrag: number
+  btwBedrag: number,
+  land?: string | null
 ): Array<{ beschrijving: string; eenheidsprijs: number; btw_percentage: number }> {
   const netto = round2(subtotaal)
-  if (netto === 0) return [{ beschrijving, eenheidsprijs: 0, btw_percentage: 21 }]
+  if (netto === 0) return [{ beschrijving, eenheidsprijs: 0, btw_percentage: standaardBtwTarief(land) }]
 
   const absNetto = Math.abs(netto)
   const absBtw = Math.abs(round2(btwBedrag))
 
-  const zuiver = [21, 9, 0].find((tarief) => Math.abs(absBtw - round2((absNetto * tarief) / 100)) <= 0.02)
+  const zuiver = zuiverTarief(absNetto, absBtw, land)
   if (zuiver !== undefined) return [{ beschrijving, eenheidsprijs: netto, btw_percentage: zuiver }]
 
   // Zoek het kortste percentage dat het btw-bedrag op de cent exact
@@ -264,15 +266,15 @@ function btwRegelsUitTotalen(
     const kandidaat = Number(ruwPct.toFixed(decimalen))
     pct = kandidaat
     const reconstrueert = Math.abs(round2((absNetto * kandidaat) / 100) - absBtw) < 0.005
-    const botstMetZuiver = kandidaat === 21 || kandidaat === 9 || kandidaat === 0
+    const botstMetZuiver = isZuiverTarief(kandidaat, land)
     if (reconstrueert && !botstMetZuiver) break
   }
   return [{ beschrijving, eenheidsprijs: netto, btw_percentage: pct }]
 
 }
 
-function lineItemsUitTotalen(beschrijving: string, subtotaal: number, btwBedrag: number): LineItem[] {
-  return btwRegelsUitTotalen(beschrijving, subtotaal, btwBedrag).map((r) => ({
+function lineItemsUitTotalen(beschrijving: string, subtotaal: number, btwBedrag: number, land?: string | null): LineItem[] {
+  return btwRegelsUitTotalen(beschrijving, subtotaal, btwBedrag, land).map((r) => ({
     id: crypto.randomUUID(),
     beschrijving: r.beschrijving,
     aantal: 1,
@@ -289,7 +291,7 @@ function lineItemsUitTotalen(beschrijving: string, subtotaal: number, btwBedrag:
 // urencorrectie bundelen, zodat het factuur-subtotaal exact gelijk is aan het
 // opgeslagen offerte.subtotaal — anders wijkt de factuur af van wat de klant
 // op de offerte accepteerde.
-function offerteItemsNaarFactuurRegels(offerteItems: OfferteItem[], offerte: Offerte, metCorrectie = true): LineItem[] {
+function offerteItemsNaarFactuurRegels(offerteItems: OfferteItem[], offerte: Offerte, metCorrectie = true, land?: string | null): LineItem[] {
   const regels: LineItem[] = offerteItems
     .filter((oi) => (oi.soort || 'prijs') === 'prijs' && !oi.is_optioneel)
     .sort((a, b) => a.volgorde - b.volgorde)
@@ -342,7 +344,7 @@ function offerteItemsNaarFactuurRegels(offerteItems: OfferteItem[], offerte: Off
 
     const correctieRegels: LineItem[] =
       groepen.length === 0 || totaalNetto === 0
-        ? lineItemsUitTotalen('Afronding / correctie', correctie, correctie * ((offerte.subtotaal ? offerte.btw_bedrag / offerte.subtotaal : 0.21)))
+        ? lineItemsUitTotalen('Afronding / correctie', correctie, correctie * ((offerte.subtotaal ? offerte.btw_bedrag / offerte.subtotaal : standaardBtwTarief(land) / 100)), land)
         : (() => {
             let resterend = correctie
             const uit: LineItem[] = []
@@ -857,12 +859,12 @@ export function FactuurEditor() {
 
                   const offerteItems = await getOfferteItems(offerte.id).catch(() => [])
                   if (offerteItems.length > 0) {
-                    const mapped = offerteItemsNaarFactuurRegels(offerteItems, offerte)
+                    const mapped = offerteItemsNaarFactuurRegels(offerteItems, offerte, true, profile?.bedrijfs_land)
                     setItems(mapped)
                     setOrigineleItems(mapped.map((item) => ({ ...item })))
                     setHasOfferteItems(true)
                   } else {
-                    const uitTotalen = lineItemsUitTotalen(offerte.titel, offerte.subtotaal, offerte.btw_bedrag)
+                    const uitTotalen = lineItemsUitTotalen(offerte.titel, offerte.subtotaal, offerte.btw_bedrag, profile?.bedrijfs_land)
                     setItems(uitTotalen)
                     setOrigineleItems(uitTotalen.map((item) => ({ ...item })))
                     setHasOfferteItems(true)
@@ -941,7 +943,7 @@ export function FactuurEditor() {
                       return meetellend.length === 0 ? { ...oi, aantal } : oi
                     })
                   const mapped = [
-                    ...offerteItemsNaarFactuurRegels(gekozenItems, offerte, gekozen.volledig),
+                    ...offerteItemsNaarFactuurRegels(gekozenItems, offerte, gekozen.volledig, profile?.bedrijfs_land),
                     ...gekozen.verrekenRegels.map((v) => ({
                       id: crypto.randomUUID(),
                       beschrijving: v.beschrijving,
@@ -957,12 +959,12 @@ export function FactuurEditor() {
                   setOrigineleItems(mapped.map((item) => ({ ...item })))
                   setHasOfferteItems(true)
                 } else if (offerteItems.length > 0) {
-                  const mapped = offerteItemsNaarFactuurRegels(offerteItems, offerte)
+                  const mapped = offerteItemsNaarFactuurRegels(offerteItems, offerte, true, profile?.bedrijfs_land)
                   setItems(mapped)
                   setOrigineleItems(mapped.map((item) => ({ ...item })))
                   setHasOfferteItems(true)
                 } else {
-                  setItems(lineItemsUitTotalen(offerte.titel, offerte.subtotaal, offerte.btw_bedrag))
+                  setItems(lineItemsUitTotalen(offerte.titel, offerte.subtotaal, offerte.btw_bedrag, profile?.bedrijfs_land))
                 }
               }
             } catch (err) {
@@ -1010,7 +1012,7 @@ export function FactuurEditor() {
                       }))
                   )
                 } else {
-                  setItems(lineItemsUitTotalen(origFactuur.titel, round2(-origFactuur.subtotaal), round2(-origFactuur.btw_bedrag)))
+                  setItems(lineItemsUitTotalen(origFactuur.titel, round2(-origFactuur.subtotaal), round2(-origFactuur.btw_bedrag), profile?.bedrijfs_land))
                 }
               }
             } catch (err) {

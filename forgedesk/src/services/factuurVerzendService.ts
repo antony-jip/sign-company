@@ -13,6 +13,7 @@ import { sendEmail } from './gmailService'
 import supabase from './supabaseClient'
 import { formatDate } from '@/lib/utils'
 import { round2 } from '@/utils/budgetUtils'
+import { isZuiverTarief, standaardBtwTarief, zuiverTarief } from '@/lib/btwTarieven'
 import { logger } from '@/utils/logger'
 
 // Gedeelde keten voor "factuur de deur uit": verwerken (nummer + status open),
@@ -143,15 +144,15 @@ function blobNaarBase64(blob: Blob): Promise<string> {
 // btwRegelsUitTotalen in FacturenLayout/FactuurEditor: een te grof afgerond
 // percentage zou het factuurbedrag stil veranderen, en een mengvorm mag niet
 // per ongeluk als zuiver tarief ogen.
-function regelsUitTotalen(beschrijving: string, subtotaal: number, btwBedrag: number): OfferteItem[] {
+function regelsUitTotalen(beschrijving: string, subtotaal: number, btwBedrag: number, land?: string | null): OfferteItem[] {
   const netto = round2(subtotaal)
-  let btwPercentage = 21
+  let btwPercentage = standaardBtwTarief(land)
   let eenheidsprijs = netto
 
   if (netto !== 0) {
     const absNetto = Math.abs(netto)
     const absBtw = Math.abs(round2(btwBedrag))
-    const zuiver = [21, 9, 0].find((tarief) => Math.abs(absBtw - round2((absNetto * tarief) / 100)) <= 0.02)
+    const zuiver = zuiverTarief(absNetto, absBtw, land)
     if (zuiver !== undefined) {
       btwPercentage = zuiver
     } else {
@@ -161,7 +162,7 @@ function regelsUitTotalen(beschrijving: string, subtotaal: number, btwBedrag: nu
         const kandidaat = Number(ruwPct.toFixed(decimalen))
         btwPercentage = kandidaat
         const reconstrueert = Math.abs(round2((absNetto * kandidaat) / 100) - absBtw) < 0.005
-        const botstMetZuiver = kandidaat === 21 || kandidaat === 9 || kandidaat === 0
+        const botstMetZuiver = isZuiverTarief(kandidaat, land)
         if (reconstrueert && !botstMetZuiver) break
       }
     }
@@ -288,7 +289,7 @@ export async function verwerkEnVerzendFactuur(opts: {
         detail_regels: item.detail_regels || [],
         created_at: item.created_at,
       }))
-    : regelsUitTotalen(factuur.titel, factuur.subtotaal, factuur.btw_bedrag)
+    : regelsUitTotalen(factuur.titel, factuur.subtotaal, factuur.btw_bedrag, stijl.bedrijfsProfiel?.bedrijfs_land)
 
   const factuurData = {
     nummer: factuur.nummer,
