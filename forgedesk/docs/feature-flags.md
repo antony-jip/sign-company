@@ -164,6 +164,15 @@ ON CONFLICT (naam) WHERE organisatie_id IS NULL DO UPDATE
   SET aan = true, reden = EXCLUDED.reden, aangepast_op = now();
 ```
 
+### Flags die nu bestaan naast de module-flags
+
+- `peppol_accesspoint` (standaard uit): toont in de factuureditor "Verstuur via
+  Peppol" voor organisaties die níet in Billit boekhouden. De factuur gaat dan
+  als eigen UBL via het Billit-access-point-account van doen. zelf
+  (`api/peppol-verzend-xml.ts`, env `BILLIT_ACCESSPOINT_API_KEY` en
+  `BILLIT_ACCESSPOINT_PARTY_ID`). Pas aanzetten als dat account er is; zonder
+  credentials antwoordt de route 503.
+
 ## Zien wat er aanstaat
 
 ```sql

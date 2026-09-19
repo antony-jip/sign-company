@@ -142,6 +142,7 @@ const PEPPOL_STATUS_LABEL: Record<NonNullable<Factuur['peppol_status']>, string>
 }
 import { round2 } from '@/utils/budgetUtils'
 import { isZuiverTarief, standaardBtwTarief, zuiverTarief } from '@/lib/btwTarieven'
+import { useFeatureFlags } from '@/contexts/FeatureFlagsContext'
 import { getMeetellendeVarianten } from '@/utils/offerteTotalen'
 import { generateFactuurPDF, generateOffertePDF } from '@/services/pdfService'
 import { getFactuurClipboard } from '@/utils/factuurClipboard'
@@ -572,6 +573,10 @@ export function FactuurEditor() {
     handtekeningAfbeeldingGrootte,
     profile,
   } = useAppSettings()
+  // Peppol via het access point van doen. (fase 5, zonder Billit-boekhouding)
+  // staat achter een flag: pas aan zodra het access-point-account er is.
+  const peppolAccesspointAan = useFeatureFlags().staatAan('peppol_accesspoint')
+  const [peppolXmlBezig, setPeppolXmlBezig] = useState(false)
   const documentStyle = useDocumentStyle()
 
   // ============ STATE ============
@@ -2022,16 +2027,15 @@ export function FactuurEditor() {
 
   // ============ UBL XML ============
 
-  const handleDownloadUbl = useCallback(() => {
+  const bouwUblXml = useCallback((): string | null => {
     if (!selectedKlant) {
       toast.error('Selecteer eerst een klant')
-      return
+      return null
     }
-
     try {
       // Zoek kostenplaats code voor UBL
       const selectedKostenplaats = kostenplaatsen.find((k) => k.id === kostenplaatsId)
-      const xml = generateUBLInvoice({
+      return generateUBLInvoice({
         factuur: {
           nummer,
           titel,
@@ -2060,13 +2064,56 @@ export function FactuurEditor() {
         klant: selectedKlant,
         profiel: profile || {},
       })
-      downloadUBLXml(xml, `factuur-${nummer}.xml`)
-      toast.success('UBL XML gedownload')
     } catch (err) {
       logger.error('Fout bij genereren UBL:', err)
       toast.error('Kon UBL XML niet genereren')
+      return null
     }
-  }, [selectedKlant, profile, nummer, titel, factuurdatum, vervaldatum, subtotaal, btwBedrag, totaal, notities, voorwaarden, validItems, existingFactuur, klantReferentie])
+  }, [selectedKlant, profile, nummer, titel, factuurdatum, vervaldatum, subtotaal, btwBedrag, totaal, notities, voorwaarden, validItems, existingFactuur, klantReferentie, kostenplaatsen, kostenplaatsId, creditVoorNummer, isCredit])
+
+  const handleDownloadUbl = useCallback(() => {
+    const xml = bouwUblXml()
+    if (!xml) return
+    downloadUBLXml(xml, `factuur-${nummer}.xml`)
+    toast.success('UBL XML gedownload')
+  }, [bouwUblXml, nummer])
+
+  // Fase 5: eigen UBL via het doen.-access-point. De server controleert
+  // eigendom en factuurnummer; Billit valideert de UBL tegen Peppol.
+  const handleVerstuurPeppolXml = useCallback(async () => {
+    if (!existingFactuur || peppolXmlBezig) return
+    if (isDirty) {
+      toast.error('Sla de factuur eerst op voordat je hem via Peppol verstuurt')
+      return
+    }
+    const xml = bouwUblXml()
+    if (!xml) return
+    setPeppolXmlBezig(true)
+    const toastId = toast.loading('Versturen via Peppol...')
+    try {
+      const session = await import('@/services/supabaseClient').then(m => m.default?.auth.getSession())
+      const token = session?.data?.session?.access_token
+      if (!token) { toast.error('Niet ingelogd', { id: toastId }); return }
+      const res = await fetch('/api/peppol-verzend-xml', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ factuur_id: existingFactuur.id, ubl_xml: xml }),
+      })
+      const data = await res.json().catch(() => ({})) as { error?: string; peppol_status?: Factuur['peppol_status']; waarschuwing?: string }
+      if (!res.ok) throw new Error(data.error || 'Peppol-verzending mislukt')
+      setExistingFactuur({
+        ...existingFactuur,
+        peppol_status: data.peppol_status ?? existingFactuur.peppol_status,
+        ...(data.peppol_status === 'verzonden' ? { peppol_verzonden_op: new Date().toISOString() } : {}),
+      })
+      if (data.waarschuwing) toast.warning(data.waarschuwing, { id: toastId, duration: 10000 })
+      else toast.success('Factuur via Peppol verstuurd', { id: toastId })
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Peppol-verzending mislukt', { id: toastId })
+    } finally {
+      setPeppolXmlBezig(false)
+    }
+  }, [existingFactuur, peppolXmlBezig, isDirty, bouwUblXml])
 
   // ============ STANDAARD FACTUUR-CONTACT ============
 
@@ -3231,6 +3278,13 @@ export function FactuurEditor() {
                       <FileDown className="h-4 w-4 mr-2" />
                       Download UBL XML
                     </DropdownMenuItem>
+                    {peppolAccesspointAan && existingFactuur && settings.boekhoud_pakket !== 'billit'
+                      && existingFactuur.peppol_status !== 'verzonden' && existingFactuur.peppol_status !== 'afgeleverd' && (
+                      <DropdownMenuItem onClick={handleVerstuurPeppolXml} disabled={peppolXmlBezig}>
+                        <RefreshCw className={cn('h-4 w-4 mr-2', peppolXmlBezig && 'animate-spin')} />
+                        Verstuur via Peppol
+                      </DropdownMenuItem>
+                    )}
                     {existingFactuur && (
                       <DropdownMenuItem onClick={() => navigate(`/facturen/nieuw?kopie_van=${existingFactuur.id}`)}>
                         <CopyPlus className="h-4 w-4 mr-2" />
