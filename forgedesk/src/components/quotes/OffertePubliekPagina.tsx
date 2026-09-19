@@ -639,8 +639,13 @@ export function OffertePubliekPagina() {
         const loadedOfferte: PubliekOfferte | null = data.offerte
 
         // Initialize selection state in same batch as data loading
+        // gekozen_items bewaart alleen de aangevinkte optionele posten; de
+        // verplichte posten horen er altijd bij.
         if (loadedOfferte?.gekozen_items) {
-          setSelectedItems(new Set(loadedOfferte.gekozen_items))
+          setSelectedItems(new Set([
+            ...loadedItems.filter((i) => i.soort !== 'tekst' && !i.is_optioneel).map((i) => i.id),
+            ...loadedOfferte.gekozen_items,
+          ]))
           setSelectedVariants(gekozenVariantenPerItem(loadedOfferte.gekozen_varianten))
         } else if (loadedItems.length > 0) {
           setSelectedItems(new Set(loadedItems.filter((i) => i.soort !== 'tekst' && !i.is_optioneel).map((i) => i.id)))
@@ -870,6 +875,7 @@ export function OffertePubliekPagina() {
         totaal: hasSelections
           ? round2(berekendeSubtotaal + berekendeBtw + (offerte.afrondingskorting_excl_btw ?? 0))
           : (offerte.aangepast_totaal ?? offerte.totaal),
+        afrondingskorting_excl_btw: offerte.afrondingskorting_excl_btw,
         geldig_tot: offerte.geldig_tot || '',
         notities: offerte.notities || '',
         voorwaarden: offerte.voorwaarden || '',
@@ -899,7 +905,9 @@ export function OffertePubliekPagina() {
           telt_mee: gekozenVarianten(item, selectedVariants[item.id]).some((g) => g.id === v.id),
         })),
         actieve_variant_id: gekozenVarianten(item, selectedVariants[item.id])[0]?.id ?? item.actieve_variant_id,
-        is_optioneel: item.is_optioneel,
+        // Een aangevinkte optie hoort in de hoofdtabel, zoals de server hem na
+        // akkoord ook vastzet; anders telt de PDF hem dubbel onder "Optioneel".
+        is_optioneel: item.is_optioneel && !selectedItems.has(item.id),
         breedte_mm: item.breedte_mm ?? undefined,
         hoogte_mm: item.hoogte_mm ?? undefined,
         oppervlakte_m2: item.oppervlakte_m2 ?? undefined,
@@ -937,7 +945,7 @@ export function OffertePubliekPagina() {
     } finally {
       setPdfBezig(false)
     }
-  }, [offerte, items, bedrijf, klant, docStyle, selectedVariants, hasSelections, berekendeSubtotaal, berekendeBtw])
+  }, [offerte, items, bedrijf, klant, docStyle, selectedItems, selectedVariants, hasSelections, berekendeSubtotaal, berekendeBtw])
 
   // ============ LOADING STATE ============
   if (isLoading) {

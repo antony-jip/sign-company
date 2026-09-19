@@ -322,7 +322,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const varianten = gekozen_varianten || {}
       const isPrijs = (it: Record<string, unknown>) => ((it.soort as string) || 'prijs') === 'prijs'
       const optioneleIds = new Set(items.filter((it) => it.is_optioneel === true).map((it) => it.id as string))
-      const gekozenSet = new Set((gekozen_items || []).filter((id) => typeof id === 'string' && optioneleIds.has(id)))
+      const gekozenSet = new Set((Array.isArray(gekozen_items) ? gekozen_items : []).filter((id) => typeof id === 'string' && optioneleIds.has(id)))
       if (gekozen_items) updateData.gekozen_items = [...gekozenSet]
 
       // Een lijst zonder één geldig id betekent dat de verkoper de uitvoeringen
@@ -331,7 +331,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const verouderd = items.some((it) => {
         const vs = Array.isArray(it.prijs_varianten) ? it.prijs_varianten as Array<Record<string, unknown>> : []
         const keuze = varianten[it.id as string]
-        return vs.length > 0 && Array.isArray(keuze) && keuze.length > 0 && !gekozenVariantIds(vs, keuze)
+        return Array.isArray(keuze) && keuze.length > 0 && !gekozenVariantIds(vs, keuze)
       })
       if (verouderd) {
         return res.status(409).json({ error: 'Deze offerte is intussen aangepast. Laad de pagina opnieuw en controleer je keuze.' })
@@ -363,7 +363,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           }
         }
         if (it.is_optioneel && gekozenSet.has(it.id as string)) patch.is_optioneel = false
-        const effKeuze: GekozenVariant = gekozen ?? ((patch.actieve_variant_id as string) || (it.actieve_variant_id as string | undefined))
+        // Zonder keuze dezelfde weg als finalRegels (meetellende varianten),
+        // zodat item.totaal en de offertetotalen nooit uiteenlopen.
+        const effKeuze: GekozenVariant = gekozen ?? (patch.actieve_variant_id as string | undefined)
         const nt = r2(prijsRegels(it, effKeuze).reduce((sum, r) => sum + regelNetto(r), 0))
         if (nt !== Number(it.totaal)) patch.totaal = nt
         if (Object.keys(patch).length > 0) {
