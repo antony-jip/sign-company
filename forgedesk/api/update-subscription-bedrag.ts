@@ -72,7 +72,10 @@ async function btwPercentageVoorOrganisatie(
     const p = data as { bedrijfs_land?: string | null; btw_nummer?: string | null; btw_nummer_gevalideerd_op?: string | null } | null
     if (p?.bedrijfs_land) land = String(p.bedrijfs_land).trim().toUpperCase()
     if (!btw && p?.btw_nummer) btw = String(p.btw_nummer).trim()
-    gevalideerd = !!p?.btw_nummer_gevalideerd_op
+    // De VIES-stempel hoort bij het nummer op het profiel; een afwijkend
+    // organisatie-nummer mag er niet op meeliften.
+    const schoonProfiel = String(p?.btw_nummer ?? '').replace(/[\s.\-]/g, '').toUpperCase()
+    gevalideerd = !!p?.btw_nummer_gevalideerd_op && btw.replace(/[\s.\-]/g, '').toUpperCase() === schoonProfiel
   }
   const schoon = btw.replace(/[\s.\-]/g, '').toUpperCase()
   // Zelfde landenlijst als src/lib/landen.ts; een onbekend land telt als NL.

@@ -1692,3 +1692,8 @@ Nog open uit de domeinreview (bewust, buiten deze branch):
 
 Onboarding stap 1 begint met Nederland/België; zie docs/BELGIE.md voor wat
 er per land meeverandert en welke wet erachter zit.
+
+- **Senior slotcheck migratie 257 + vies-check: AKKOORD** — "de poort naar 0%
+  zonder VIES is dicht". Restpunt (verwerkt): de stempel telt alleen als het
+  organisatie-btw-nummer gelijk is aan het profiel-nummer. Open (productkeuze):
+  VIES-consultatienummer (`requestIdentifier`) meesturen als formeel bewijs.
