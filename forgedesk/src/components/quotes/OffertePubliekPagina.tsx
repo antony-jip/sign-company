@@ -68,7 +68,6 @@ interface PubliekItemPrijsVariant {
   telt_mee?: boolean
   omschrijving?: string
   vast?: boolean
-  foto_url?: string | null
 }
 
 interface PubliekItem {
@@ -381,8 +380,12 @@ function OfferteRegel({
 
   const soort = bijlageSoort(item.bijlage_url, item.bijlage_type)
   const afbeeldingen = [
-    ...(soort === 'afbeelding' && item.bijlage_url ? [{ url: item.bijlage_url, naam: item.bijlage_naam || titel }] : []),
-    ...(item.foto_op_offerte && item.foto_url && bijlageSoort(item.foto_url) !== 'pdf' ? [{ url: item.foto_url, naam: titel }] : []),
+    // De tekening of foto van de post staat bij de post zelf, met het bijschrift
+    // dat de PDF ook gebruikt; in de PDF staat hij als bijlagepagina achteraan.
+    ...(soort === 'afbeelding' && item.bijlage_url
+      ? [{ url: item.bijlage_url, naam: item.bijlage_naam || titel, onderschrift: item.bijlage_naam ? t.bijlage(item.bijlage_naam) : undefined }]
+      : []),
+    ...(item.foto_op_offerte && item.foto_url && bijlageSoort(item.foto_url) !== 'pdf' ? [{ url: item.foto_url, naam: titel, onderschrift: undefined }] : []),
   ]
 
   return (
@@ -440,6 +443,9 @@ function OfferteRegel({
               onError={(e) => { (e.currentTarget.parentElement as HTMLElement).style.display = 'none' }}
               className="block w-full object-cover"
             />
+            {afbeelding.onderschrift && (
+              <span className="mt-1.5 block text-left text-xs text-[#9B9B95]">{afbeelding.onderschrift}</span>
+            )}
           </button>
         ))}
 
@@ -473,16 +479,6 @@ function OfferteRegel({
                 const toonStuks = v.aantal !== 1 || (v.korting_percentage || 0) > 0
                 const inhoud = (
                   <>
-                    {v.foto_url && (
-                      <button
-                        type="button"
-                        onClick={(e) => { e.preventDefault(); onOpenAfbeelding(v.foto_url as string, v.label) }}
-                        aria-label={t.groterBekijken(v.label)}
-                        className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-[#F8F7F5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1A535C]"
-                      >
-                        <img src={v.foto_url} alt="" loading="lazy" className={`h-full w-full object-cover ${aan ? '' : 'opacity-60'}`} />
-                      </button>
-                    )}
                     <span className="min-w-0 flex-1">
                       <span className={`block break-words text-sm leading-snug ${aan ? 'font-semibold text-[#1A1A1A]' : 'font-medium text-[#6B6B66]'}`}>
                         {v.label}

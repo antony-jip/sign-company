@@ -16,6 +16,7 @@ export interface PortaalTeksten {
   optie: string
   groterBekijken: (naam: string) => string
   tekeningBekijken: string
+  bijlage: (naam: string) => string
   uitvoeringVan: (titel: string) => string
   uitvoering: string
   meerdereMogelijk: string
@@ -115,6 +116,7 @@ const NL: PortaalTeksten = {
   optie: 'Optie',
   groterBekijken: (naam) => `${naam} groter bekijken`,
   tekeningBekijken: 'Tekening bekijken',
+  bijlage: (naam) => `Bijlage: ${naam}`,
   uitvoeringVan: (titel) => `Uitvoering van ${titel}`,
   uitvoering: 'Uitvoering',
   meerdereMogelijk: 'Meerdere mogelijk',
@@ -216,6 +218,7 @@ const FR: PortaalTeksten = {
   optie: 'Option',
   groterBekijken: (naam) => `Agrandir ${naam}`,
   tekeningBekijken: 'Voir le dessin',
+  bijlage: (naam) => `Annexe : ${naam}`,
   uitvoeringVan: (titel) => `Exécution de ${titel}`,
   uitvoering: 'Exécution',
   meerdereMogelijk: 'Plusieurs choix possibles',

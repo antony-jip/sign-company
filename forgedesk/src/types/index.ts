@@ -570,8 +570,6 @@ export interface OfferteItemPrijsVariant {
   omschrijving?: string;
   /** Kan de klant deze uitvoering in het portaal niet uitvinken. */
   vast?: boolean;
-  /** Opslagpad van een foto van deze uitvoering. */
-  foto_url?: string;
   calculatie_regels?: CalculatieRegel[];
   heeft_calculatie?: boolean;
 }
