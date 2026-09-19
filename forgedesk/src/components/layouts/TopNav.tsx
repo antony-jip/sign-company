@@ -21,7 +21,7 @@ import { GlobalSearch } from '@/components/shared/GlobalSearch'
 import { IngeklokteChip } from '@/components/shared/IngeklokteChip'
 import { DarkModeToggle } from '@/components/shared/DarkModeToggle'
 import {
-  DASHBOARD_ITEM, SUPPORT_ITEM, ALLE_MODULES,
+  DASHBOARD_ITEM, COCKPIT_ITEM, SUPPORT_ITEM, ALLE_MODULES,
   PRIMAIRE_LABELS, MOBIELE_NAV_LABELS, normaliseerMenuVoorkeur,
   type NavItem,
 } from '@/lib/navigatie'
@@ -64,7 +64,8 @@ export function TopNav() {
   // achter een uitgezette feature-flag vallen hier al weg, ook uit "Overig".
   const { staatUit } = useFeatureFlags()
   const beschikbareModules = useMemo(() => zonderUitgezetteModules(ALLE_MODULES, staatUit), [staatUit])
-  const navItems = useMemo<NavItem[]>(() => [DASHBOARD_ITEM, ...beschikbareModules], [beschikbareModules])
+  const { isAdmin } = useAuth()
+  const navItems = useMemo<NavItem[]>(() => [DASHBOARD_ITEM, ...(isAdmin ? [COCKPIT_ITEM] : []), ...beschikbareModules], [beschikbareModules, isAdmin])
 
   const visibleItems = useMemo(() => {
     const sidebarItems = settings?.sidebar_items
@@ -73,6 +74,8 @@ export function TopNav() {
     return navItems.filter(item => {
       // Maatjes is altijd zichtbaar: mobiel als capture-tool, desktop als beheer.
       if (item.label === 'Maatjes') return true
+      // De cockpit staat buiten de persoonlijke menukeuze: wie admin is ziet hem.
+      if (item.label === 'Cockpit') return true
       if (isMobieleNav) return MOBIELE_NAV_LABELS.includes(item.label)
       if (!heeftVoorkeur) return true
       return normalized.includes(item.label) || item.label === 'Dashboard'

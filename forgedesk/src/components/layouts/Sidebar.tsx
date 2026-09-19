@@ -21,7 +21,7 @@ import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip'
 import {
-  DASHBOARD_ITEM, SETTINGS_ITEM, SUPPORT_ITEM, NIEUWSBRIEF_ITEM,
+  DASHBOARD_ITEM, COCKPIT_ITEM, SETTINGS_ITEM, SUPPORT_ITEM, NIEUWSBRIEF_ITEM,
   NAV_GROEPEN, ALLE_MODULES, MOBIELE_NAV_LABELS, normaliseerMenuVoorkeur,
   type NavItem,
 } from '@/lib/navigatie'
@@ -43,7 +43,7 @@ function useIsDesktop() {
 export function Sidebar() {
   const isDesktop = useIsDesktop()
   const { isCollapsed, setLayoutMode } = useSidebar()
-  const { user, logout } = useAuth()
+  const { user, logout, isAdmin } = useAuth()
   const isSupportAdmin = user?.id === ADMIN_USER_ID
   const isEigenaar = user?.id === ADMIN_USER_ID
   const supportAttentie = useSupportAttentie('support-nav', isSupportAdmin)
@@ -128,9 +128,9 @@ export function Sidebar() {
   const [indicator, setIndicator] = useState<{ top: number; height: number } | null>(null)
 
   const mainNavActivePath = useMemo(() => {
-    const all = [...filteredGroups.flatMap(g => g.items), ...(isEigenaar ? [NIEUWSBRIEF_ITEM] : []), ...(isSupportAdmin ? [SUPPORT_ITEM] : [])]
+    const all = [...(isAdmin ? [COCKPIT_ITEM] : []), ...filteredGroups.flatMap(g => g.items), ...(isEigenaar ? [NIEUWSBRIEF_ITEM] : []), ...(isSupportAdmin ? [SUPPORT_ITEM] : [])]
     return all.find(i => (i.path === '/' ? location.pathname === '/' : location.pathname.startsWith(i.path)))?.path ?? null
-  }, [filteredGroups, isSupportAdmin, isEigenaar, location.pathname])
+  }, [filteredGroups, isSupportAdmin, isEigenaar, isAdmin, location.pathname])
 
   useLayoutEffect(() => {
     if (!expanded) return
@@ -425,6 +425,7 @@ export function Sidebar() {
           {collapsed ? (
             <div className="flex flex-col items-center gap-0">
               {renderRailItem(DASHBOARD_ITEM)}
+              {isAdmin && renderRailItem(COCKPIT_ITEM)}
               {railDivider('div-dashboard')}
               {filteredGroups.map((group, gi) => (
                 <React.Fragment key={group.section}>
@@ -466,6 +467,7 @@ export function Sidebar() {
               )}
               <div className="space-y-[1px]">
                 {renderExpandedItem(DASHBOARD_ITEM, false, !forMobile)}
+                {isAdmin && renderExpandedItem(COCKPIT_ITEM, false, !forMobile)}
               </div>
               {filteredGroups.map(group => (
                 <div key={group.section} className="mt-7">

@@ -2,8 +2,7 @@ import {
   LayoutDashboard, Hammer, FileText, Building2, Truck, ClipboardCheck, Ruler, Wand2,
   Banknote, Inbox, TrendingUp, Calendar, ListChecks, Mail, MessageSquare, Globe,
   SlidersHorizontal, LifeBuoy, Newspaper, Calculator, BarChart3, LineChart, ShoppingCart,
-  type LucideIcon,
-} from 'lucide-react'
+  type LucideIcon, Gauge } from 'lucide-react'
 
 export type NavSectie = 'WERK' | 'FINANCIEEL' | 'PLANNING' | 'COMMUNICATIE'
 
@@ -54,6 +53,9 @@ const COMMUNICATIE_ITEMS: NavItem[] = [
 ]
 
 export const DASHBOARD_ITEM: NavItem = { label: 'Dashboard', icon: LayoutDashboard, path: '/', color: '#1A535C' }
+// Alleen voor beheerders (profiles.rol = admin): staat buiten de secties en
+// buiten de persoonlijke menukeuze, net als Nieuwsbrief voor de eigenaar.
+export const COCKPIT_ITEM: NavItem = { label: 'Cockpit', icon: Gauge, path: '/cockpit', color: '#1A535C' }
 export const SETTINGS_ITEM: NavItem = { label: 'Instellingen', icon: SlidersHorizontal, path: '/instellingen', color: 'hsl(var(--muted-foreground))' }
 export const SUPPORT_ITEM: NavItem = { label: 'Support', icon: LifeBuoy, path: '/support', color: '#D24620' }
 // Owner-only: nieuwsbrief-module is persoonlijk voor de eigenaar (zie 149_nieuwsbrief.sql).

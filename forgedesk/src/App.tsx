@@ -41,6 +41,7 @@ const OnboardingWizard = lazy(() => import('@/components/onboarding/OnboardingWi
 
 // Dashboard
 const FORGEdeskDashboard = lazy(() => import('@/components/dashboard/FORGEdeskDashboard'), 'FORGEdeskDashboard')
+const CockpitLayout = lazy(() => import('@/components/cockpit/CockpitLayout'), 'CockpitLayout')
 
 // Maatjes
 const MaatjeKladblok = lazy(() => import('@/components/maatjes/MaatjeKladblok'), 'MaatjeKladblok')
@@ -336,6 +337,7 @@ function AppContent() {
         <Route path="tijdregistratie" element={<TijdregistratieLayout />} />
         <Route path="nacalculatie" element={<NacalculatieLayout />} />
         <Route path="team" element={<TeamLayout />} />
+        <Route path="cockpit" element={<CockpitLayout />} />
 
         <Route path="importeren" element={<DataImportPage />} />
         <Route path="forgie" element={<ForgieChatPage />} />
