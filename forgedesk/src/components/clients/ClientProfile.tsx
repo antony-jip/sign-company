@@ -726,7 +726,7 @@ export function ClientProfile() {
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="gap-2 cursor-pointer"
-                onClick={() => navigate(`/kalender?nieuw=true&klant=${id}`)}
+                onClick={() => navigate(`/planning?nieuw=true&klant=${id}`)}
               >
                 <CalendarPlus className="w-4 h-4 text-green-500" />
                 Afspraak

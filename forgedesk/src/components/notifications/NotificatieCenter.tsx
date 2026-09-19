@@ -14,7 +14,6 @@ import {
   Truck,
   Banknote,
   Wallet,
-  CalendarCheck,
   RotateCcw,
   MessageSquare,
   BellRing,
@@ -153,11 +152,6 @@ const typeConfig: Record<
     icon: Wallet,
     colorClass: "text-[#C03A18]",
     bgClass: "bg-[hsl(var(--status-flame-bg))]",
-  },
-  booking_nieuw: {
-    icon: CalendarCheck,
-    colorClass: "text-[#5A4A78]",
-    bgClass: "bg-[hsl(var(--status-violet-bg))]",
   },
   algemeen: {
     icon: Bell,

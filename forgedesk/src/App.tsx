@@ -92,8 +92,7 @@ function TakenRoute() {
   const isDesktop = useMediaQuery('(min-width: 768px)')
   return isDesktop ? <TasksLayout /> : <TasksLayoutMobile />
 }
-const BookingBeheer = lazy(() => import('@/components/planning/BookingBeheer'), 'BookingBeheer')
-const PublicBookingPage = lazy(() => import('@/components/planning/PublicBookingPage'), 'PublicBookingPage')
+const PaginaVerdwenen = lazy(() => import('@/components/klantpagina/PaginaVerdwenen'), 'PaginaVerdwenen')
 
 // Financial
 const FinancialLayout = lazy(() => import('@/components/financial/FinancialLayout'), 'FinancialLayout')
@@ -265,8 +264,8 @@ function AppContent() {
       <Route path="/wachtwoord-resetten" element={<ResetPasswordPage />} />
       {/* Publieke route - klant goedkeuring → redirect naar portaal */}
       <Route path="/goedkeuring/:token" element={<GoedkeuringRedirect />} />
-      {/* Publieke route - klant booking (geen login vereist) */}
-      <Route path="/boeken/:userId" element={<PublicBookingPage />} />
+      {/* Oude publieke booking-links: module is weg, nette melding */}
+      <Route path="/boeken/:userId" element={<PaginaVerdwenen />} />
       {/* Publieke route - online factuur betalen (geen login vereist) */}
       <Route path="/betalen/:token" element={<BetaalPagina />} />
       {/* Publieke route - bevestiging na Mollie betaling */}
@@ -320,7 +319,6 @@ function AppContent() {
         <Route path="email/compose" element={<EmailLayout />} />
         <Route path="nieuwsbrief" element={<NieuwsbriefLayout />} />
         <Route path="planning" element={<PlanningRoute />} />
-        <Route path="kalender" element={<Navigate to="/planning" replace />} />
         <Route path="montage" element={<Navigate to="/planning" replace />} />
         <Route path="inkoopfacturen" element={<Navigate to="/facturen?tab=inkoop" replace />} />
         <Route path="inkoopfacturen/:id" element={<Navigate to="/facturen?tab=inkoop" replace />} />
@@ -351,7 +349,6 @@ function AppContent() {
         <Route path="leads/inzendingen" element={<LeadInzendingenLayout />} />
         <Route path="aanvragen" element={<WebsiteAanvragenLayout />} />
         <Route path="forecast" element={<ForecastLayout />} />
-        <Route path="booking" element={<BookingBeheer />} />
         <Route path="visualizer" element={<StudioRoute />} />
         <Route path="portalen" element={<PortalenOverzicht />} />
         <Route path="meldingen" element={<MeldingenPage />} />

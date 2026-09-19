@@ -65,7 +65,6 @@ const LIGHT_ONLY_ROUTE_PREFIXES = [
   '/offerte-bekijken',
   '/betalen',
   '/betaald',
-  '/boeken',
   '/portaal',
   '/formulier',
   '/goedkeuring',

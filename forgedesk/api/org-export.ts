@@ -137,8 +137,6 @@ const TABELLEN: { tabel: string; sorteer: string }[] = [
   { tabel: 'planning_afwezigheid', sorteer: 'id' },
   { tabel: 'planning_vrij_patronen', sorteer: 'id' },
   { tabel: 'planning_dag_notities', sorteer: 'id' },
-  { tabel: 'booking_slots', sorteer: 'id' },
-  { tabel: 'booking_afspraken', sorteer: 'id' },
   { tabel: 'maatjes', sorteer: 'id' },
 
   // Documenten en portaal

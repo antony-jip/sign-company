@@ -149,11 +149,6 @@ export {
 } from './crmService'
 
 export {
-  getBookingSlots, createBookingSlot, updateBookingSlot, deleteBookingSlot,
-  getBookingAfspraken, getBookingAfspraakByToken, createBookingAfspraak, updateBookingAfspraak,
-} from './bookingService'
-
-export {
   getWebsiteAanvragen, updateWebsiteAanvraag,
 } from './websiteAanvragenService'
 

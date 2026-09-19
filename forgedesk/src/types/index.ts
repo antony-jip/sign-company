@@ -1331,7 +1331,7 @@ export interface Notificatie {
   id: string;
   user_id?: string;
   organisatie_id?: string;
-  type: 'offerte_bekeken' | 'offerte_verlopen' | 'offerte_geaccepteerd' | 'offerte_wijziging' | 'factuur_vervallen' | 'deadline_nadert' | 'nieuwe_email' | 'taak_voltooid' | 'montage_gepland' | 'betaling_ontvangen' | 'budget_waarschuwing' | 'booking_nieuw' | 'algemeen' | 'goedkeuring' | 'herinnering' | 'portaal_goedkeuring' | 'portaal_revisie' | 'portaal_bericht' | 'portaal_bekeken' | 'portaal_herinnering' | 'website_chat' | 'website_aanvraag' | 'taak_toegewezen' | 'offerte_check_gevraagd' | 'offerte_check_afgehandeld' | 'offerte_check_wijzigingen' | 'genoemd' | 'uren_herinnering' | 'conceptfacturen_klaar' | 'uren_week_ingediend' | 'uren_week_goedgekeurd';
+  type: 'offerte_bekeken' | 'offerte_verlopen' | 'offerte_geaccepteerd' | 'offerte_wijziging' | 'factuur_vervallen' | 'deadline_nadert' | 'nieuwe_email' | 'taak_voltooid' | 'montage_gepland' | 'betaling_ontvangen' | 'budget_waarschuwing' | 'algemeen' | 'goedkeuring' | 'herinnering' | 'portaal_goedkeuring' | 'portaal_revisie' | 'portaal_bericht' | 'portaal_bekeken' | 'portaal_herinnering' | 'website_chat' | 'website_aanvraag' | 'taak_toegewezen' | 'offerte_check_gevraagd' | 'offerte_check_afgehandeld' | 'offerte_check_wijzigingen' | 'genoemd' | 'uren_herinnering' | 'conceptfacturen_klaar' | 'uren_week_ingediend' | 'uren_week_goedgekeurd';
   titel: string;
   bericht: string;
   link?: string;
@@ -1538,38 +1538,6 @@ export interface ProjectToewijzing {
   project_id: string;
   medewerker_id: string;
   rol: 'eigenaar' | 'medewerker' | 'viewer';
-  created_at: string;
-  updated_at?: string;
-}
-
-// ============ BOOKING SYSTEEM (Feature 6) ============
-
-export interface BookingSlot {
-  id: string;
-  user_id?: string;
-  organisatie_id?: string;
-  dag_van_week: number;
-  start_tijd: string;
-  eind_tijd: string;
-  slot_duur_minuten: number;
-  actief: boolean;
-  created_at: string;
-  updated_at?: string;
-}
-
-export interface BookingAfspraak {
-  id: string;
-  user_id?: string;
-  organisatie_id?: string;
-  klant_naam: string;
-  klant_email: string;
-  klant_telefoon?: string;
-  datum: string;
-  start_tijd: string;
-  eind_tijd: string;
-  onderwerp?: string;
-  status: 'gepland' | 'bevestigd' | 'geannuleerd';
-  token: string;
   created_at: string;
   updated_at?: string;
 }

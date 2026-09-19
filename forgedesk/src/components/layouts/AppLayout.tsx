@@ -78,7 +78,7 @@ export function AppLayout() {
   const isEmailRoute = location.pathname.startsWith('/email')
   // App-achtige, scherm-vullende views: geen paginapadding (edge-to-edge),
   // consistent in topnav- én sidebar-modus.
-  const isFullBleed = ['/email', '/planning', '/taken', '/montage', '/kalender', '/support', '/visualizer'].some(
+  const isFullBleed = ['/email', '/planning', '/taken', '/montage', '/support', '/visualizer'].some(
     (p) => location.pathname === p || location.pathname.startsWith(p + '/'),
   )
   // Taken is een werkscherm waar je de hele dag in zit · daar kost elke extra

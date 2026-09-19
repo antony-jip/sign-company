@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   Bell, Eye, AlertTriangle, AlertCircle, Clock, Mail, CheckCircle2, Truck,
-  Banknote, Wallet, CalendarCheck, RotateCcw, MessageSquare, BellRing,
+  Banknote, Wallet, RotateCcw, MessageSquare, BellRing,
   Search, Check, Trash2, Filter, X, Inbox, UserCheck,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -45,7 +45,6 @@ const typeConfig: Record<
   montage_gepland:     { icon: Truck, colorClass: 'text-accent', bgClass: 'bg-wm-pale/30', label: 'Montage gepland', categorie: 'systeem' },
   betaling_ontvangen:  { icon: Banknote, colorClass: 'text-emerald-600', bgClass: 'bg-emerald-100', label: 'Betaling ontvangen', categorie: 'systeem' },
   budget_waarschuwing: { icon: Wallet, colorClass: 'text-orange-600', bgClass: 'bg-orange-100', label: 'Budget waarschuwing', categorie: 'systeem' },
-  booking_nieuw:       { icon: CalendarCheck, colorClass: 'text-purple-600', bgClass: 'bg-purple-100', label: 'Nieuwe booking', categorie: 'systeem' },
   algemeen:            { icon: Bell, colorClass: 'text-muted-foreground', bgClass: 'bg-muted', label: 'Algemeen', categorie: 'systeem' },
   goedkeuring:         { icon: CheckCircle2, colorClass: 'text-green-600', bgClass: 'bg-green-100', label: 'Goedkeuring', categorie: 'offertes' },
   herinnering:         { icon: BellRing, colorClass: 'text-orange-600', bgClass: 'bg-orange-100', label: 'Herinnering', categorie: 'systeem' },
