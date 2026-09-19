@@ -22,6 +22,8 @@ export interface Profile {
   rpr_rechtbank?: string | null;
   /** Laatste geslaagde VIES-controle van btw_nummer (migratie 255); voorwaarde voor btw-verlegging op het abonnement. */
   btw_nummer_gevalideerd_op?: string | null;
+  /** Naam die VIES bij de laatste validatie teruggaf (migratie 257); bewijs en mismatch-signaal. */
+  btw_nummer_vies_naam?: string | null;
   kvk_nummer: string;
   btw_nummer: string;
   iban?: string;

@@ -181,6 +181,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(403).json({ error: 'Alleen admins kunnen een boekhoudkoppeling instellen' })
     }
 
+    // Eigenaar-check zoals billit-auth: een collega mag de koppeling van de
+    // eigenaar niet overschrijven; een admin mag wel de eerste leggen.
+    const { data: huidig } = await supabaseAdmin.from('app_settings').select('billit_owner_user_id').eq('organisatie_id', orgId).maybeSingle()
+    const eigenaarId = (huidig as { billit_owner_user_id?: string | null } | null)?.billit_owner_user_id ?? null
+    if (eigenaarId && eigenaarId !== user_id) {
+      return res.status(403).json({ error: 'Alleen de eigenaar van de Billit-koppeling kan opnieuw verbinden. Ontkoppel eerst, of vraag de eigenaar.' })
+    }
+
     const { api_key, party_id, omgeving: omgevingRuw } = req.body as { api_key?: string; party_id?: string; omgeving?: string }
     const omgeving: Omgeving = omgevingRuw === 'sandbox' ? 'sandbox' : 'productie'
     const partyId = (party_id ?? '').trim()

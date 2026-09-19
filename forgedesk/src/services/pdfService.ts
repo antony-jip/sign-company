@@ -1,7 +1,7 @@
 import jsPDF, { GState } from 'jspdf'
 import { landNaam, landOfStandaard } from '@/lib/landen'
 import { gestructureerdeMededeling } from '@/lib/betalingskenmerk'
-import { verleggingsTekst } from '@/lib/verlegging'
+import { isMedecontractant, verleggingsTekst } from '@/lib/verlegging'
 import autoTable, { type RowInput } from 'jspdf-autotable'
 import type { Offerte, OfferteItem, OfferteItemPrijsVariant, Klant, Profile, DocumentStyle, WerkbonRegel, WerkbonFoto, SigningVisualisatie } from '@/types'
 import { getJsPdfFontFamily, getDefaultDocumentStyle } from '@/lib/documentTemplates'
@@ -1914,7 +1914,10 @@ export function generateFactuurPDF(
   // medecontractant-tekst (art. 20 KB nr. 1), anders art. 196 Btw-richtlijn.
   if (btwVerlegd) {
     const verlegging = verleggingsTekst(bedrijfsProfiel.bedrijfs_land, klant.land)
-    const kop = klant.btw_nummer ? `${verlegging.kort} · btw-nummer afnemer ${klant.btw_nummer}` : `${verlegging.kort} · btw-nummer afnemer ontbreekt`
+    // Medecontractant vereist het btw-nummer van de afnemer op de factuur; daarbuiten alleen tonen wat er is.
+    const kop = klant.btw_nummer
+      ? `${verlegging.kort} · btw-nummer afnemer ${klant.btw_nummer}`
+      : isMedecontractant(bedrijfsProfiel.bedrijfs_land, klant.land) ? `${verlegging.kort} · btw-nummer afnemer ontbreekt` : verlegging.kort
     doc.setFont(bodyFont, 'bold')
     doc.text(kop, margins.left, totalsY)
     doc.setFont(bodyFont, 'normal')

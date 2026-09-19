@@ -45,6 +45,7 @@ export function BedrijfTab() {
   const [rprRechtbank, setRprRechtbank] = useState('')
   const [btwGevalideerdOp, setBtwGevalideerdOp] = useState<string | null>(null)
   const [btwNummerOrigineel, setBtwNummerOrigineel] = useState('')
+  const [btwViesNaam, setBtwViesNaam] = useState<string | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -67,6 +68,7 @@ export function BedrijfTab() {
         setRprRechtbank(profile.rpr_rechtbank || '')
         setBtwGevalideerdOp(profile.btw_nummer_gevalideerd_op ?? null)
         setBtwNummerOrigineel(profile.btw_nummer || '')
+        setBtwViesNaam(profile.btw_nummer_vies_naam ?? null)
         setBedrijfsLand(landOfStandaard(profile.bedrijfs_land))
         if (profile.logo_url) setLogoPreview(profile.logo_url)
         setEmailKleur(currentKleur || '#1A535C')
@@ -385,7 +387,13 @@ export function BedrijfTab() {
             <div className="space-y-1.5">
               <Label htmlFor="btw" className="text-[12px] font-semibold uppercase tracking-widest text-foreground/70">BTW Nummer</Label>
               <Input id="btw" value={btwNummer} onChange={(e) => setBtwNummer(e.target.value)} placeholder={bedrijfsLand === 'BE' ? 'BE0123456789' : 'NL123456789B01'} className="font-mono bg-card" />
-              <BtwCheckKnop btwNummer={btwNummer} doel="profiel" gevalideerdOp={btwGevalideerdOp} onResultaat={(r) => setBtwGevalideerdOp(r.gevalideerd_op)} />
+              <BtwCheckKnop btwNummer={btwNummer} doel="profiel" gevalideerdOp={btwGevalideerdOp} onResultaat={(r) => { setBtwGevalideerdOp(r.gevalideerd_op); setBtwViesNaam(r.naam) }} />
+              {btwViesNaam && (
+                <p className="text-[11px] text-muted-foreground">VIES kent dit nummer als <span className="font-medium text-foreground">{btwViesNaam}</span>{bedrijfsnaam && btwViesNaam.toLowerCase() !== bedrijfsnaam.trim().toLowerCase() ? ' · wijkt af van je bedrijfsnaam' : ''}.</p>
+              )}
+              {btwGevalideerdOp && btwNummer.trim() !== btwNummerOrigineel.trim() && (
+                <p className="text-[11px] text-amber-700 dark:text-amber-300">Na opslaan vervalt de validatie; controleer het nieuwe nummer opnieuw.</p>
+              )}
               {bedrijfsLand !== 'NL' && !btwGevalideerdOp && (
                 <p className="text-[11px] text-muted-foreground">Een gevalideerd btw-nummer is nodig om het doen.-abonnement zonder Nederlandse btw (verlegd) te factureren.</p>
               )}

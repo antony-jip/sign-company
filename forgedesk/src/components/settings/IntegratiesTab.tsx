@@ -353,8 +353,17 @@ export function IntegratiesTab() {
     }
     setBillitConnecting(true)
     try {
+      // Eigen OAuth-app: Client ID en Secret horen bij elkaar; alleen een ID
+      // zou de authorize-stap met het eigen ID doen en de token-stap met de
+      // partner-credentials laten mislukken.
+      if (billitClientId.trim() && !billitClientSecret.trim() && !billitClientSecretOpgeslagen) {
+        toast.error('Vul ook de Client Secret van je Billit-app in, of laat beide leeg.')
+        return
+      }
       if (billitClientId.trim() || billitClientSecret.trim()) {
         await saveIntegrationSettings({ billit_client_id: billitClientId.trim(), billit_client_secret: billitClientSecret.trim() })
+      } else if (billitClientSecretOpgeslagen) {
+        await saveIntegrationSettings({ billit_client_id: '' })
       }
       const { data } = supabase ? await supabase.auth.getSession() : { data: null }
       const token = data?.session?.access_token

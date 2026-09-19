@@ -115,11 +115,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const { data: org } = await supabaseAdmin.from('organisaties').select('eigenaar_id').eq('id', orgId).maybeSingle()
       const eigenaarId = (org as { eigenaar_id?: string | null } | null)?.eigenaar_id ?? null
       const schoonNummer = (v: string | null | undefined) => (v || '').replace(/[\s.\-]/g, '').toUpperCase()
+      // De stempel hoort bij het nummer: alleen profielen waarop precies dit
+      // nummer staat krijgen hem; andere profielen blijven ongemoeid (de
+      // trigger uit migratie 257 wist de stempel zelf bij een ander nummer).
       const doelIds = [user_id, ...(eigenaarId && eigenaarId !== user_id ? [eigenaarId] : [])]
       const { data: profielen } = await supabaseAdmin.from('profiles').select('id, btw_nummer').in('id', doelIds)
+      const gevalideerdNummer = `${gesplitst.land === 'EL' ? 'GR' : gesplitst.land}${gesplitst.nummer}`
       for (const pr of (profielen ?? []) as Array<{ id: string; btw_nummer: string | null }>) {
-        const zelfde = schoonNummer(pr.btw_nummer) === `${gesplitst.land === 'EL' ? 'GR' : gesplitst.land}${gesplitst.nummer}` || pr.id === user_id
-        await supabaseAdmin.from('profiles').update({ btw_nummer_gevalideerd_op: zelfde ? gevalideerdOp : null }).eq('id', pr.id)
+        if (schoonNummer(pr.btw_nummer) !== gevalideerdNummer) continue
+        await supabaseAdmin.from('profiles').update({ btw_nummer_gevalideerd_op: gevalideerdOp, btw_nummer_vies_naam: geldig ? (naam && naam !== '---' ? naam : null) : null }).eq('id', pr.id)
       }
     } else {
       await supabaseAdmin.from('klanten').update({ btw_nummer_gevalideerd_op: gevalideerdOp }).eq('id', klant_id).eq('organisatie_id', orgId)

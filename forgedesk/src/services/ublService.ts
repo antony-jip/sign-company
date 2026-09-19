@@ -136,9 +136,12 @@ export function generateUBLInvoice({ factuur, items, klant, profiel }: UBLInput)
       throw new UblFout('Een creditnota mag voor een e-factuur geen positieve regels bevatten.')
     }
     const qty = isCreditnota ? Math.abs(item.aantal) : (regelTotaal < 0 ? -Math.abs(item.aantal) : Math.abs(item.aantal))
-    const prijs = Math.abs(item.eenheidsprijs)
+    // Op een negatieve regel zou een AllowanceCharge negatief worden; dan de
+    // korting in de prijs verwerken zodat qty × prijs = netto blijft.
+    const kortingInPrijs = qty < 0 && item.korting_percentage > 0
+    const prijs = kortingInPrijs ? Math.round(Math.abs(item.eenheidsprijs) * (1 - item.korting_percentage / 100) * 10000) / 10000 : Math.abs(item.eenheidsprijs)
     const bruto = round2(qty * prijs)
-    const korting = item.korting_percentage > 0 ? round2(bruto * (item.korting_percentage / 100)) : 0
+    const korting = !kortingInPrijs && item.korting_percentage > 0 ? round2(bruto * (item.korting_percentage / 100)) : 0
     return { item, qty, prijs, bruto, korting, net: round2(bruto - korting) }
   })
   const btwGroepen = new Map<number, { taxable: number; tax: number }>()
