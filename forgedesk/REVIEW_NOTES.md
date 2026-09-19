@@ -1624,3 +1624,46 @@ Bewust open gelaten (fase 0 / later):
 - Wees-bestanden in storage bij 23505 in de inbox (cosmetisch).
 - Billit-veldnamen (OrderID, commands/send, participantInformation-antwoord,
   accountInformation, webhook-body) zijn niet tegen de sandbox geverifieerd.
+
+### Ronde 1 · QAA: NIET-KLAAR → gefixt in c658536
+
+Twee regressies: `pdfService.ts` toonde de ruwe landwaarde zodra die niet
+letterlijk 'Nederland' was (na migratie 252 dus "NL" onder elk adres), en
+`AppSettingsContext` kopieerde `bedrijfs_land` niet naar teamleden. Plus
+twaalf vergeten `'Nederland'`-schrijvers, ontbrekende `tests/api/billitPayload.test.ts`
+(order-mapping nu geëxporteerd als `bouwBillitOrder`), Sentry-init in
+`billit-auth`/`billit-peppol-check`, 'peppol'-teksten, `peppol_id`-veld,
+'mislukt'-badge, standaardland nieuwe klant uit het bedrijfsprofiel.
+
+### Ronde 2 · senior-backend: AKKOORD-MET-OPMERKINGEN → verwerkt in 500cb04
+
+Stale closure in `handleAddItem`, timeout op `commands/send` laat de claim
+staan (cron-reset na 30 min, cron pollt ook `mislukt`), afzendercheck in
+`peppol-verzend-xml` tegen `organisaties` met profiel als fallback, reset
+van hangende claims voor álle organisaties.
+
+### Ronde 1 · Peppol/België-domein → gefixt in a8f4969, 03111d5, bc5947c
+
+UBL: creditnota's met positieve bedragen, alle totalen uit per regel
+afgeronde regels (BR-CO-10/14/15), btw-nummers genormaliseerd, AE alleen met
+beide btw-nummers, EndpointID verplicht (leesbare fout i.p.v. stille
+onbruikbare download), AllowanceCharge met MultiplierFactor/BaseAmount,
+prijs met 4 decimalen, medecontractant-tekst (art. 20 KB nr. 1) bij BE→BE.
+Billit-order: echte aantallen als die exact sluiten. Inbox: creditnota's
+negatief, status-regex zonder 'unsent'. Belgische aanvullingen: VIES-check
+met naam/adres-prefill, RPR-vermelding, verlegging op het abonnement alleen
+met gevalideerd btw-nummer, Belgische feestdagen in de planning.
+
+Nog open uit de domeinreview (bewust, buiten deze branch):
+- **Verleggingsgrond per factuur** i.p.v. per klant (`klant.btw_verlegd` is te
+  grof: montage in onroerende staat = medecontractant, losse levering = 21%).
+  Kleinste vorm: `facturen.verleggingsgrond` ('geen'|'medecontractant'|
+  'intracommunautair') met categorie K voor intracommunautaire leveringen.
+- Billit-orderveld voor verlegging (nu alleen `VATPercentage: 0`) en het
+  eigen betalingskenmerk in de order; beide veldnamen in fase 0 vaststellen,
+  tot die tijd verlegde facturen via de UBL-route (sendXml) versturen.
+- Boek XIX WER (consumentenherinneringen: gratis eerste herinnering, 14 dagen,
+  kostenschaal), leverdatum (BT-72) op PDF/UBL, `klanten.taal` (FR),
+  unitCode-mapping (m²→MTK, uur→HUR), mod-97-controle op KBO-nummers,
+  Belgische betalingsvoorwaarden-default (€40 forfait, wettelijke interest),
+  ICP-opgave voor doen. zelf.

@@ -252,6 +252,16 @@ klaar voor is.
   omgevingskeuze in 10+ `api/exact-*`-bestanden; alleen doen als een
   Belgische Exact-gebruiker zich meldt.
 
+### Fase 7 · Belgische aanvullingen (gebouwd na de reviewronde)
+
+Uit de domeinreview (zie REVIEW_NOTES.md): VIES-controle van btw-nummers
+(`api/vies-check.ts`, knop bij bedrijf en klant, prefill van naam/adres bij
+Belgische nummers), RPR-vermelding en medecontractant-tekst op de factuur,
+gestructureerde mededeling, verlegging op het abonnement alleen met
+gevalideerd btw-nummer, Belgische feestdagen in de montageplanning.
+Migratie 255. Wat bewust nog open staat (verleggingsgrond per factuur,
+Boek XIX, FR, BT-72) staat in REVIEW_NOTES.md.
+
 ## 6. Risico's en open vragen
 
 | Risico | Wat we ermee doen |
