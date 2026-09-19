@@ -25,9 +25,9 @@ export const MELDING_CATEGORIEEN: MeldingCategorieDefinitie[] = [
   },
   {
     id: 'portaal',
-    label: 'Portaal en website',
-    uitleg: 'Goedkeuringen, revisies en berichten van klanten; chat en aanvragen via de site.',
-    types: ['portaal_goedkeuring', 'portaal_revisie', 'portaal_bericht', 'portaal_bekeken', 'portaal_herinnering', 'website_chat', 'website_aanvraag'],
+    label: 'Portaal',
+    uitleg: 'Goedkeuringen, revisies en berichten van klanten.',
+    types: ['portaal_goedkeuring', 'portaal_revisie', 'portaal_bericht', 'portaal_bekeken', 'portaal_herinnering'],
   },
   {
     id: 'facturen',

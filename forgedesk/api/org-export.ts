@@ -153,11 +153,6 @@ const TABELLEN: { tabel: string; sorteer: string }[] = [
   { tabel: 'herinnering_templates', sorteer: 'id' },
   { tabel: 'notificaties', sorteer: 'id' },
   { tabel: 'support_gesprekken', sorteer: 'id' },
-  { tabel: 'website_aanvragen', sorteer: 'id' },
-  { tabel: 'website_chat_gesprekken', sorteer: 'id' },
-  { tabel: 'website_chat_berichten', sorteer: 'id' },
-  // Geen id-kolom: organisatie_id is hier de primaire sleutel.
-  { tabel: 'website_chat_aanwezigheid', sorteer: 'organisatie_id' },
 
   // Instellingen en kennisbank
   { tabel: 'app_settings', sorteer: 'id' },

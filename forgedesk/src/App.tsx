@@ -142,9 +142,6 @@ const KennisbankPage = lazy(() => import('@/components/kennisbank/KennisbankPage
 const LeveringsbonnenLayout = lazy(() => import('@/components/leveringsbonnen/LeveringsbonnenLayout'), 'LeveringsbonnenLayout')
 const LeveringsbonDetail = lazy(() => import('@/components/leveringsbonnen/LeveringsbonDetail'), 'LeveringsbonDetail')
 
-// Website-aanvragen (chat op signcompany.nl)
-const WebsiteAanvragenLayout = lazy(() => import('@/components/website/WebsiteAanvragenLayout'), 'WebsiteAanvragenLayout')
-
 // Portaal
 const DemoStart = lazy(() => import('@/components/demo/DemoStart'), 'DemoStart')
 const PortaalPagina = lazy(() => import('@/components/portaal/PortaalPagina'), 'PortaalPagina')
@@ -331,7 +328,6 @@ function AppContent() {
         <Route path="leveringsbonnen" element={<LeveringsbonnenLayout />} />
         <Route path="leveringsbonnen/:id" element={<LeveringsbonDetail />} />
         <Route path="leveranciers" element={<LeveranciersLayout />} />
-        <Route path="aanvragen" element={<WebsiteAanvragenLayout />} />
         <Route path="forecast" element={<ForecastLayout />} />
         <Route path="visualizer" element={<StudioRoute />} />
         <Route path="portalen" element={<PortalenOverzicht />} />

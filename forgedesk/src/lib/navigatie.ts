@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Hammer, FileText, Building2, Truck, ClipboardCheck, Ruler, Wand2,
-  Banknote, Inbox, TrendingUp, Calendar, ListChecks, Mail, MessageSquare, Globe,
+  Banknote, Inbox, TrendingUp, Calendar, ListChecks, Mail, Globe,
   SlidersHorizontal, LifeBuoy, Newspaper, BarChart3, LineChart, ShoppingCart,
   type LucideIcon,
 } from 'lucide-react'
@@ -48,7 +48,6 @@ const PLANNING_ITEMS: NavItem[] = [
 
 const COMMUNICATIE_ITEMS: NavItem[] = [
   { label: 'Email', icon: Mail, path: '/email', color: '#6A5A8A' },
-  { label: 'Aanvragen', icon: MessageSquare, path: '/aanvragen', color: '#6A5A8A' },
   { label: 'Portaal', icon: Globe, path: '/portalen', color: '#6A5A8A' },
 ]
 

@@ -16,8 +16,6 @@ import { useSidebar } from '@/contexts/SidebarContext'
 import { useTabShortcuts } from '@/hooks/useTabShortcuts'
 import { prefetchCore } from '@/lib/coreData'
 import { prefetchTopRoutes } from '@/lib/routePrefetch'
-import { chatHeartbeat } from '@/services/websiteChatService'
-import { WebsiteMeldingPopup } from '@/components/notifications/WebsiteMeldingPopup'
 import { cn } from '@/lib/utils'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { useScrollHerstel } from '@/hooks/useScrollHerstel'
@@ -102,20 +100,6 @@ export function AppLayout() {
     }
   }, [])
 
-  useEffect(() => {
-    // Aanwezigheid voor de website-chat (signcompany.nl): zolang de app
-    // zichtbaar openstaat geldt de org als online. Verborgen tab = na
-    // ±3 min offline, dan valt de widget terug op het aanvraagformulier.
-    const slag = () => { if (!document.hidden) chatHeartbeat() }
-    slag()
-    const id = window.setInterval(slag, 60_000)
-    document.addEventListener('visibilitychange', slag)
-    return () => {
-      window.clearInterval(id)
-      document.removeEventListener('visibilitychange', slag)
-    }
-  }, [])
-
   const [stickyHeader, setStickyHeader] = useState<boolean>(() =>
     typeof window !== 'undefined' && window.localStorage.getItem('doen_topnav_sticky') === '1'
   )
@@ -168,7 +152,6 @@ export function AppLayout() {
         <FloatingQuickActions />
         <FloatingEmailButton />
         <ForgieChatWidget />
-        <WebsiteMeldingPopup />
       </>
     )
   }
@@ -210,7 +193,6 @@ export function AppLayout() {
       <FloatingQuickActions />
       <FloatingEmailButton />
       <ForgieChatWidget />
-      <WebsiteMeldingPopup />
     </>
   )
 }

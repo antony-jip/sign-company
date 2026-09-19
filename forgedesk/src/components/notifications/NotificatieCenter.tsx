@@ -63,11 +63,6 @@ const typeConfig: Record<
     colorClass: "text-[#8A6A2A]",
     bgClass: "bg-[hsl(var(--status-amber-bg))]",
   },
-  website_chat: {
-    icon: MessageSquare,
-    colorClass: "text-petrol",
-    bgClass: "bg-[hsl(var(--status-green-bg))]",
-  },
   genoemd: {
     icon: MessageSquare,
     colorClass: "text-petrol",
@@ -92,11 +87,6 @@ const typeConfig: Record<
     icon: Clock,
     colorClass: "text-petrol",
     bgClass: "bg-[hsl(var(--status-green-bg))]",
-  },
-  website_aanvraag: {
-    icon: MessageSquare,
-    colorClass: "text-[#C03A18]",
-    bgClass: "bg-[hsl(var(--status-flame-bg))]",
   },
   offerte_verlopen: {
     icon: AlertTriangle,
@@ -409,9 +399,6 @@ export function NotificatieCenter({ variant = 'bell', userInitial }: Notificatie
               if (prev.some((n) => n.id === nieuw.id)) return prev;
               return [nieuw, ...prev];
             });
-            // website-meldingen krijgen de grote popup rechtsonder
-            // (WebsiteMeldingPopup) incl. geluid; hier dempen tegen dubbel
-            if (nieuw.type === 'website_chat' || nieuw.type === 'website_aanvraag') return;
             if (!meldingZichtbaarRef.current(nieuw.type)) return;
             setToast(nieuw);
             try {

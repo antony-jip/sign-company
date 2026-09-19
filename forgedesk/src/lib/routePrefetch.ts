@@ -33,7 +33,6 @@ const ROUTE_LOADERS: Record<string, () => Promise<unknown>> = {
       ? import('@/components/maatjes/MaatjeBeheer')
       : import('@/components/maatjes/MaatjeKladblok'),
   '/email': () => import('@/components/email/EmailLayout'),
-  '/aanvragen': () => import('@/components/website/WebsiteAanvragenLayout'),
   '/financieel': () => import('@/components/financial/FinancialLayout'),
   '/portalen': () => import('@/components/portaal/PortalenOverzicht'),
   '/visualizer': () => import('@/components/visualizer/VisualizerLayout'),

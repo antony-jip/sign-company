@@ -1331,7 +1331,7 @@ export interface Notificatie {
   id: string;
   user_id?: string;
   organisatie_id?: string;
-  type: 'offerte_bekeken' | 'offerte_verlopen' | 'offerte_geaccepteerd' | 'offerte_wijziging' | 'factuur_vervallen' | 'deadline_nadert' | 'nieuwe_email' | 'taak_voltooid' | 'montage_gepland' | 'betaling_ontvangen' | 'budget_waarschuwing' | 'algemeen' | 'goedkeuring' | 'herinnering' | 'portaal_goedkeuring' | 'portaal_revisie' | 'portaal_bericht' | 'portaal_bekeken' | 'portaal_herinnering' | 'website_chat' | 'website_aanvraag' | 'taak_toegewezen' | 'offerte_check_gevraagd' | 'offerte_check_afgehandeld' | 'offerte_check_wijzigingen' | 'genoemd' | 'uren_herinnering' | 'conceptfacturen_klaar' | 'uren_week_ingediend' | 'uren_week_goedgekeurd';
+  type: 'offerte_bekeken' | 'offerte_verlopen' | 'offerte_geaccepteerd' | 'offerte_wijziging' | 'factuur_vervallen' | 'deadline_nadert' | 'nieuwe_email' | 'taak_voltooid' | 'montage_gepland' | 'betaling_ontvangen' | 'budget_waarschuwing' | 'algemeen' | 'goedkeuring' | 'herinnering' | 'portaal_goedkeuring' | 'portaal_revisie' | 'portaal_bericht' | 'portaal_bekeken' | 'portaal_herinnering' | 'taak_toegewezen' | 'offerte_check_gevraagd' | 'offerte_check_afgehandeld' | 'offerte_check_wijzigingen' | 'genoemd' | 'uren_herinnering' | 'conceptfacturen_klaar' | 'uren_week_ingediend' | 'uren_week_goedgekeurd';
   titel: string;
   bericht: string;
   link?: string;
@@ -1886,57 +1886,6 @@ export interface Lead {
 
   created_at: string;
   updated_at: string;
-}
-
-// ============ LEAD CAPTURE (Tier 3 Feature 2) ============
-
-export interface WebsiteAanvraag {
-  id: string;
-  organisatie_id: string;
-  naam: string;
-  email: string;
-  telefoon?: string;
-  dienst?: string;
-  bericht: string;
-  pagina_url?: string;
-  ip_adres?: string;
-  browser?: string;
-  status: 'nieuw' | 'bekeken' | 'afgehandeld';
-  created_at: string;
-  updated_at?: string;
-}
-
-export interface WebsiteChatGesprek {
-  id: string;
-  organisatie_id: string;
-  naam?: string;
-  email?: string;
-  telefoon?: string;
-  pagina_url?: string;
-  ip_adres?: string;
-  browser?: string;
-  status: 'open' | 'gesloten';
-  laatste_bericht_op: string;
-  team_laatst_gelezen_op?: string;
-  created_at: string;
-  updated_at?: string;
-}
-
-export interface WebsiteChatBericht {
-  id: string;
-  gesprek_id: string;
-  organisatie_id: string;
-  rol: 'bezoeker' | 'team';
-  medewerker_id?: string;
-  tekst: string;
-  created_at: string;
-}
-
-export interface WebsiteChatAanwezigheid {
-  organisatie_id: string;
-  laatst_actief: string;
-  beschikbaar: boolean;
-  updated_at?: string;
 }
 
 // ============ GEDEELDE INBOX UITBREIDING (Tier 3 Feature 3) ============

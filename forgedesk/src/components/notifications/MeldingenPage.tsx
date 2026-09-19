@@ -53,8 +53,6 @@ const typeConfig: Record<
   portaal_bericht:     { icon: MessageSquare, colorClass: 'text-blue-600', bgClass: 'bg-blue-100', label: 'Portaal bericht', categorie: 'portaal' },
   portaal_bekeken:     { icon: Eye, colorClass: 'text-muted-foreground', bgClass: 'bg-muted', label: 'Portaal bekeken', categorie: 'portaal' },
   portaal_herinnering: { icon: BellRing, colorClass: 'text-orange-600', bgClass: 'bg-orange-100', label: 'Portaal herinnering', categorie: 'portaal' },
-  website_chat:        { icon: MessageSquare, colorClass: 'text-blue-600', bgClass: 'bg-blue-100', label: 'Websitechat', categorie: 'systeem' },
-  website_aanvraag:    { icon: Inbox, colorClass: 'text-petrol', bgClass: 'bg-petrol/10', label: 'Website-aanvraag', categorie: 'systeem' },
   genoemd:             { icon: MessageSquare, colorClass: 'text-petrol', bgClass: 'bg-petrol/10', label: 'Je bent genoemd', categorie: 'systeem' },
   uren_herinnering:    { icon: Clock, colorClass: 'text-orange-600', bgClass: 'bg-orange-100', label: 'Uren schrijven', categorie: 'systeem' },
   conceptfacturen_klaar: { icon: Banknote, colorClass: 'text-emerald-600', bgClass: 'bg-emerald-100', label: 'Conceptfacturen', categorie: 'systeem' },
