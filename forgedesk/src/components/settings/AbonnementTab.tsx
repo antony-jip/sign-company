@@ -49,7 +49,7 @@ export function AbonnementTab() {
   // Staffel uit de organisatie (migratie 172). Leeg betekent de eerste trede,
   // en die waarden staan gelijk aan de constanten in de api.
   const bedragExcl = Number(organisatie?.abonnement_bedrag_excl ?? 129)
-  const btwVerlegd = abonnementBtwVerlegd(profile?.bedrijfs_land, organisatie?.btw_nummer || profile?.btw_nummer)
+  const btwVerlegd = abonnementBtwVerlegd(profile?.bedrijfs_land, organisatie?.btw_nummer || profile?.btw_nummer, profile?.btw_nummer_gevalideerd_op)
   const bedragIncl = btwVerlegd ? bedragExcl : bedragExcl * 1.21
   const maxGebruikers = Number(organisatie?.max_gebruikers ?? 10)
   const euro = (bedrag: number) => bedrag.toFixed(2).replace('.', ',')

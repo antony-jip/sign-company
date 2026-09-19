@@ -1,6 +1,7 @@
 import jsPDF, { GState } from 'jspdf'
 import { landNaam, landOfStandaard } from '@/lib/landen'
 import { gestructureerdeMededeling } from '@/lib/betalingskenmerk'
+import { verleggingsTekst } from '@/lib/verlegging'
 import autoTable, { type RowInput } from 'jspdf-autotable'
 import type { Offerte, OfferteItem, OfferteItemPrijsVariant, Klant, Profile, DocumentStyle, WerkbonRegel, WerkbonFoto, SigningVisualisatie } from '@/types'
 import { getJsPdfFontFamily, getDefaultDocumentStyle } from '@/lib/documentTemplates'
@@ -343,6 +344,10 @@ function addHeader(
         doc.text(`BTW: ${bedrijfsProfiel.btw_nummer}`, detailsX, rightY, { align: detailsAlign })
         rightY += 5
       }
+      if (bedrijfsProfiel.rpr_rechtbank) {
+        doc.text(bedrijfsProfiel.rpr_rechtbank, detailsX, rightY, { align: detailsAlign })
+        rightY += 5
+      }
     }
 
     // Divider line
@@ -498,6 +503,7 @@ function addFooter(doc: jsPDF, bedrijfsProfiel: Partial<Profile>, docStyle?: Doc
         if (bedrijfsProfiel.bedrijfsnaam) footerParts.push(bedrijfsProfiel.bedrijfsnaam)
         if (bedrijfsProfiel.kvk_nummer) footerParts.push(`${registratieLabel(bedrijfsProfiel)}: ${bedrijfsProfiel.kvk_nummer}`)
         if (bedrijfsProfiel.btw_nummer) footerParts.push(`BTW: ${bedrijfsProfiel.btw_nummer}`)
+        if (bedrijfsProfiel.rpr_rechtbank) footerParts.push(bedrijfsProfiel.rpr_rechtbank)
         if (bedrijfsProfiel.iban) footerParts.push(`IBAN: ${bedrijfsProfiel.iban}`)
         footerText = footerParts.join('  ·  ')
       }
@@ -1897,20 +1903,25 @@ export function generateFactuurPDF(
 
   // Belgische leverancier: gestructureerde mededeling, zodat de bank van de
   // klant de betaling automatisch aan deze factuur koppelt.
-  const ogm = landOfStandaard(bedrijfsProfiel.bedrijfs_land) === 'BE' ? gestructureerdeMededeling(factuurData.nummer) : null
+  const isCreditPdf = factuurData.factuur_type === 'creditnota' || factuurData.factuur_type === 'credit' || factuurData.totaal < 0
+  const ogm = landOfStandaard(bedrijfsProfiel.bedrijfs_land) === 'BE' && !isCreditPdf ? gestructureerdeMededeling(factuurData.nummer) : null
   if (ogm) {
     doc.text(`Gestructureerde mededeling: ${ogm}`, margins.left, totalsY)
     totalsY += 6
   }
 
-  // Wettelijke vermelding bij verlegde btw (art. 12 lid 1 Btw-richtlijn /
-  // in België ook medecontractant, art. 20 KB nr. 1).
+  // Wettelijke vermelding bij verlegde btw: België→België de verplichte
+  // medecontractant-tekst (art. 20 KB nr. 1), anders art. 196 Btw-richtlijn.
   if (btwVerlegd) {
-    const verlegdTekst = klant.btw_nummer
-      ? `Btw verlegd naar de afnemer (btw-nummer ${klant.btw_nummer}).`
-      : 'Btw verlegd naar de afnemer.'
-    doc.text(verlegdTekst, margins.left, totalsY)
-    totalsY += 6
+    const verlegging = verleggingsTekst(bedrijfsProfiel.bedrijfs_land, klant.land)
+    const kop = klant.btw_nummer ? `${verlegging.kort} · btw-nummer afnemer ${klant.btw_nummer}` : verlegging.kort
+    doc.setFont(bodyFont, 'bold')
+    doc.text(kop, margins.left, totalsY)
+    doc.setFont(bodyFont, 'normal')
+    totalsY += 5
+    const splitVerlegd = doc.splitTextToSize(verlegging.volledig, contentWidth) as string[]
+    totalsY = flowText(splitVerlegd, margins.left, totalsY, 4.5)
+    totalsY += 2
   }
 
   // Betaaltermijn: dagen tussen factuurdatum en vervaldatum (indien beide geldig).

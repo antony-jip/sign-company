@@ -26,6 +26,7 @@ import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { toast } from 'sonner'
 import { Building2, Loader2 } from 'lucide-react'
 import { PeppolCheckKnop } from './PeppolCheckKnop'
+import { BtwCheckKnop } from '@/components/shared/BtwCheckKnop'
 import type { Klant } from '@/types'
 import { klantStatusConfig } from '@/types'
 import { getAllKlantLabels } from '@/services/supabaseService'
@@ -700,7 +701,26 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
                 placeholder={formData.land === 'BE' ? 'BE0123456789' : 'NL123456789B01'}
               />
               {klant?.id && (
-                <PeppolCheckKnop klantId={klant.id} status={klant.peppol_status} gecheckOp={klant.peppol_gecheckt_op} />
+                <>
+                  <BtwCheckKnop
+                    btwNummer={formData.btw_nummer}
+                    doel="klant"
+                    klantId={klant.id}
+                    gevalideerdOp={klant.btw_nummer_gevalideerd_op}
+                    onResultaat={(r) => {
+                      if (!r.geldig) return
+                      setFormData((prev) => ({
+                        ...prev,
+                        btw_nummer: r.btw_nummer,
+                        bedrijfsnaam: prev.bedrijfsnaam.trim() || r.naam || prev.bedrijfsnaam,
+                        adres: prev.adres.trim() || r.adres?.straat || prev.adres,
+                        postcode: prev.postcode.trim() || r.adres?.postcode || prev.postcode,
+                        stad: prev.stad.trim() || r.adres?.stad || prev.stad,
+                      }))
+                    }}
+                  />
+                  <PeppolCheckKnop klantId={klant.id} status={klant.peppol_status} gecheckOp={klant.peppol_gecheckt_op} />
+                </>
               )}
               <Input
                 id="peppol_id"

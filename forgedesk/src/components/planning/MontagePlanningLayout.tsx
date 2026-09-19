@@ -90,7 +90,8 @@ import { getCached, fetchQuery } from '@/lib/queryCache';
 import { WerkbonVanProjectDialog } from "@/components/werkbonnen/WerkbonVanProjectDialog";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { getNederlandseFeestdagen, isFeestdag } from "@/utils/feestdagen";
+import { getFeestdagen, isFeestdag } from "@/utils/feestdagen";
+import { useAppSettings } from "@/contexts/AppSettingsContext";
 import { confirm } from '@/components/shared/ConfirmDialog';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu';
 import { useAuth } from "@/contexts/AuthContext";
@@ -444,6 +445,7 @@ function DagNotitiePopover({
 
 export function MontagePlanningLayout() {
   const { user, userRol } = useAuth();
+  const { profile: bedrijfsProfiel } = useAppSettings();
   const { navigateWithTab } = useNavigateWithTab();
   const [currentMonday, setCurrentMonday] = useState<Date>(() =>
     getMondayOfWeek(new Date())
@@ -634,7 +636,7 @@ export function MontagePlanningLayout() {
       return next;
     });
   }
-  const feestdagen = useMemo(() => getNederlandseFeestdagen(year), [year]);
+  const feestdagen = useMemo(() => getFeestdagen(bedrijfsProfiel?.bedrijfs_land, year), [year, bedrijfsProfiel?.bedrijfs_land]);
 
   const loadData = useCallback(async () => {
     if (getCached('montageAfspraken') === undefined) setLoading(true);

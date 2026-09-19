@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { LANDEN, landOfStandaard, type LandCode } from '@/lib/landen'
+import { BtwCheckKnop } from '@/components/shared/BtwCheckKnop'
 import { Building2, Phone, CreditCard, Upload, Loader2, Trash2 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -41,6 +42,8 @@ export function BedrijfTab() {
   const [kvkNummer, setKvkNummer] = useState('')
   const [btwNummer, setBtwNummer] = useState('')
   const [iban, setIban] = useState('')
+  const [rprRechtbank, setRprRechtbank] = useState('')
+  const [btwGevalideerdOp, setBtwGevalideerdOp] = useState<string | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -60,6 +63,8 @@ export function BedrijfTab() {
         setKvkNummer(profile.kvk_nummer || '')
         setBtwNummer(profile.btw_nummer || '')
         setIban(profile.iban || '')
+        setRprRechtbank(profile.rpr_rechtbank || '')
+        setBtwGevalideerdOp(profile.btw_nummer_gevalideerd_op ?? null)
         setBedrijfsLand(landOfStandaard(profile.bedrijfs_land))
         if (profile.logo_url) setLogoPreview(profile.logo_url)
         setEmailKleur(currentKleur || '#1A535C')
@@ -119,6 +124,7 @@ export function BedrijfTab() {
         kvk_nummer: kvkNummer,
         btw_nummer: btwNummer,
         iban,
+        rpr_rechtbank: rprRechtbank.trim() || null,
         logo_url: logoPreview || '',
       })
       await updateAppSettings(user.id, { primaire_kleur: emailKleur })
@@ -374,11 +380,22 @@ export function BedrijfTab() {
             <div className="space-y-1.5">
               <Label htmlFor="btw" className="text-[12px] font-semibold uppercase tracking-widest text-foreground/70">BTW Nummer</Label>
               <Input id="btw" value={btwNummer} onChange={(e) => setBtwNummer(e.target.value)} placeholder={bedrijfsLand === 'BE' ? 'BE0123456789' : 'NL123456789B01'} className="font-mono bg-card" />
+              <BtwCheckKnop btwNummer={btwNummer} doel="profiel" gevalideerdOp={btwGevalideerdOp} onResultaat={(r) => setBtwGevalideerdOp(r.gevalideerd_op)} />
+              {bedrijfsLand !== 'NL' && !btwGevalideerdOp && (
+                <p className="text-[11px] text-muted-foreground">Een gevalideerd btw-nummer is nodig om het doen.-abonnement zonder Nederlandse btw (verlegd) te factureren.</p>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="iban" className="text-[12px] font-semibold uppercase tracking-widest text-foreground/70">IBAN</Label>
               <Input id="iban" value={iban} onChange={(e) => setIban(e.target.value)} placeholder={bedrijfsLand === 'BE' ? 'BE00 0000 0000 0000' : 'NL00 BANK 0123 4567 89'} className="font-mono bg-card" />
             </div>
+            {bedrijfsLand === 'BE' && (
+              <div className="space-y-1.5 sm:col-span-3">
+                <Label htmlFor="rpr" className="text-[12px] font-semibold uppercase tracking-widest text-foreground/70">RPR (rechtspersonenregister)</Label>
+                <Input id="rpr" value={rprRechtbank} onChange={(e) => setRprRechtbank(e.target.value)} placeholder="RPR Antwerpen, afdeling Antwerpen" className="bg-card" />
+                <p className="text-[11px] text-muted-foreground">Verplichte vermelding op Belgische facturen, naast het ondernemingsnummer en de zetel.</p>
+              </div>
+            )}
           </div>
           {saveButton}
         </div>

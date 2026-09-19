@@ -55,8 +55,8 @@ export function dichtstbijzijndTarief(pct: number, land: string | null | undefin
  * api/billing-webhook.ts, api/create-subscription.ts en
  * api/update-subscription-bedrag.ts.
  */
-export function abonnementBtwVerlegd(land: string | null | undefined, btwNummer: string | null | undefined): boolean {
+export function abonnementBtwVerlegd(land: string | null | undefined, btwNummer: string | null | undefined, gevalideerdOp?: string | null): boolean {
   const code = landOfStandaard(land)
   const btw = (btwNummer || '').replace(/[\s.\-]/g, '').toUpperCase()
-  return code !== 'NL' && /^[A-Z]{2}[A-Z0-9]{2,12}$/.test(btw) && !btw.startsWith('NL')
+  return code !== 'NL' && /^[A-Z]{2}[A-Z0-9]{2,12}$/.test(btw) && !btw.startsWith('NL') && !!gevalideerdOp
 }

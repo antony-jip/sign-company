@@ -63,6 +63,34 @@ export function getNederlandseFeestdagen(jaar: number): Feestdag[] {
   return [...vast, ...bewegend].sort((a, b) => a.datum.localeCompare(b.datum))
 }
 
+export function getBelgischeFeestdagen(jaar: number): Feestdag[] {
+  const pasen = berekenPasen(jaar)
+  const vast: Feestdag[] = [
+    { datum: `${jaar}-01-01`, naam: 'Nieuwjaar', type: 'officieel' },
+    { datum: `${jaar}-05-01`, naam: 'Dag van de Arbeid', type: 'officieel' },
+    { datum: `${jaar}-07-21`, naam: 'Nationale feestdag', type: 'officieel' },
+    { datum: `${jaar}-08-15`, naam: 'O.L.V. Hemelvaart', type: 'officieel' },
+    { datum: `${jaar}-11-01`, naam: 'Allerheiligen', type: 'officieel' },
+    { datum: `${jaar}-11-11`, naam: 'Wapenstilstand', type: 'officieel' },
+    { datum: `${jaar}-12-25`, naam: 'Kerstmis', type: 'officieel' },
+  ]
+  const bewegend: Feestdag[] = [
+    { datum: formatDate(pasen), naam: 'Pasen', type: 'officieel' },
+    { datum: formatDate(addDays(pasen, 1)), naam: 'Paasmaandag', type: 'officieel' },
+    { datum: formatDate(addDays(pasen, 39)), naam: 'O.L.H. Hemelvaart', type: 'officieel' },
+    { datum: formatDate(addDays(pasen, 49)), naam: 'Pinksteren', type: 'officieel' },
+    { datum: formatDate(addDays(pasen, 50)), naam: 'Pinkstermaandag', type: 'officieel' },
+  ]
+  return [...vast, ...bewegend].sort((a, b) => a.datum.localeCompare(b.datum))
+}
+
+/** Feestdagen van het land van het bedrijf (ISO-code of oude naam); onbekend = Nederland. */
+export function getFeestdagen(land: string | null | undefined, jaar: number): Feestdag[] {
+  const code = (land || '').trim().toLowerCase()
+  if (code === 'be' || code === 'belgië' || code === 'belgie') return getBelgischeFeestdagen(jaar)
+  return getNederlandseFeestdagen(jaar)
+}
+
 export function isFeestdag(datum: string, feestdagen: Feestdag[]): Feestdag | undefined {
   return feestdagen.find(f => f.datum === datum)
 }

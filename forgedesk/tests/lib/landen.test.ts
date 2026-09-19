@@ -60,3 +60,16 @@ describe('ondernemingsnummerUitBtw', () => {
     expect(ondernemingsnummerUitBtw('NL123456789B01', 'NL')).toBeNull()
   })
 })
+
+describe('getFeestdagen', () => {
+  it('kiest Belgische feestdagen voor BE en Nederlandse voor de rest', async () => {
+    const { getFeestdagen } = await import('@/utils/feestdagen')
+    const be = getFeestdagen('BE', 2026).map((f) => f.datum)
+    expect(be).toContain('2026-07-21')
+    expect(be).toContain('2026-11-11')
+    expect(be).not.toContain('2026-04-27')
+    const nl = getFeestdagen(undefined, 2026).map((f) => f.datum)
+    expect(nl).toContain('2026-04-27')
+    expect(nl).not.toContain('2026-07-21')
+  })
+})

@@ -42,15 +42,19 @@ describe('isZuiverTarief en dichtstbijzijndTarief', () => {
 })
 
 describe('abonnementBtwVerlegd', () => {
-  it('verlegt voor een Belgische organisatie met Belgisch btw-nummer', () => {
-    expect(abonnementBtwVerlegd('BE', 'BE 0437.299.999')).toBe(true)
-    expect(abonnementBtwVerlegd('België', 'BE0437299999')).toBe(true)
+  const gevalideerd = '2026-09-19T10:00:00Z'
+
+  it('verlegt voor een Belgische organisatie met gevalideerd Belgisch btw-nummer', () => {
+    expect(abonnementBtwVerlegd('BE', 'BE 0437.299.999', gevalideerd)).toBe(true)
+    expect(abonnementBtwVerlegd('België', 'BE0437299999', gevalideerd)).toBe(true)
   })
 
-  it('verlegt niet voor Nederland, zonder btw-nummer of met een NL-nummer', () => {
-    expect(abonnementBtwVerlegd('NL', 'NL123456789B01')).toBe(false)
-    expect(abonnementBtwVerlegd('BE', '')).toBe(false)
-    expect(abonnementBtwVerlegd('BE', 'NL123456789B01')).toBe(false)
-    expect(abonnementBtwVerlegd(undefined, 'BE0437299999')).toBe(false)
+  it('verlegt niet zonder VIES-validatie, voor Nederland, zonder btw-nummer of met een NL-nummer', () => {
+    expect(abonnementBtwVerlegd('BE', 'BE0437299999')).toBe(false)
+    expect(abonnementBtwVerlegd('BE', 'BE0437299999', null)).toBe(false)
+    expect(abonnementBtwVerlegd('NL', 'NL123456789B01', gevalideerd)).toBe(false)
+    expect(abonnementBtwVerlegd('BE', '', gevalideerd)).toBe(false)
+    expect(abonnementBtwVerlegd('BE', 'NL123456789B01', gevalideerd)).toBe(false)
+    expect(abonnementBtwVerlegd(undefined, 'BE0437299999', gevalideerd)).toBe(false)
   })
 })

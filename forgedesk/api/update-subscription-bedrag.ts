@@ -61,19 +61,22 @@ async function btwPercentageVoorOrganisatie(
 ): Promise<number> {
   let land = 'NL'
   let btw = (org.btw_nummer || '').trim()
+  // Alleen een via VIES gevalideerd nummer telt: een zelf ingetikt nummer mag geen 0% opleveren.
+  let gevalideerd = false
   if (org.eigenaar_id) {
     const { data } = await supabase
       .from('profiles')
-      .select('bedrijfs_land, btw_nummer')
+      .select('bedrijfs_land, btw_nummer, btw_nummer_gevalideerd_op')
       .eq('id', org.eigenaar_id)
       .maybeSingle()
-    const p = data as { bedrijfs_land?: string | null; btw_nummer?: string | null } | null
+    const p = data as { bedrijfs_land?: string | null; btw_nummer?: string | null; btw_nummer_gevalideerd_op?: string | null } | null
     if (p?.bedrijfs_land) land = String(p.bedrijfs_land).trim().toUpperCase()
     if (!btw && p?.btw_nummer) btw = String(p.btw_nummer).trim()
+    gevalideerd = !!p?.btw_nummer_gevalideerd_op
   }
   const schoon = btw.replace(/[\s.\-]/g, '').toUpperCase()
   // Zelfde landenlijst als src/lib/landen.ts; een onbekend land telt als NL.
-  const verlegd = ['BE', 'DE', 'LU', 'FR'].includes(land) && /^[A-Z]{2}[A-Z0-9]{2,12}$/.test(schoon) && !schoon.startsWith('NL')
+  const verlegd = gevalideerd && ['BE', 'DE', 'LU', 'FR'].includes(land) && /^[A-Z]{2}[A-Z0-9]{2,12}$/.test(schoon) && !schoon.startsWith('NL')
   return verlegd ? 0 : BTW_PERCENTAGE
 }
 

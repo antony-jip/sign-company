@@ -18,6 +18,10 @@ export interface Profile {
   bedrijfs_website?: string;
   /** ISO-landcode van het eigen bedrijf (migratie 252); stuurt btw-tarieven en Peppol-profiel. */
   bedrijfs_land?: string;
+  /** Belgische RPR-vermelding voor op de factuur (migratie 255). */
+  rpr_rechtbank?: string | null;
+  /** Laatste geslaagde VIES-controle van btw_nummer (migratie 255); voorwaarde voor btw-verlegging op het abonnement. */
+  btw_nummer_gevalideerd_op?: string | null;
   kvk_nummer: string;
   btw_nummer: string;
   iban?: string;
@@ -149,6 +153,7 @@ export interface Klant {
   peppol_gecheckt_op?: string | null;
   /** Handmatige Peppol-identifier (schema:nummer); leeg = afgeleid uit btw-/KvK-nummer. */
   peppol_id?: string | null;
+  btw_nummer_gevalideerd_op?: string | null;
   /** Klant wil altijd een eigen referentie (PO-nummer) op offerte en factuur (migratie 236). */
   po_verplicht?: boolean;
   /** Voorbeelddata uit de onboarding; met één actie te verwijderen. */
