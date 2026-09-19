@@ -20,10 +20,11 @@ import type { Leverancier, Uitgave, KvkResultaat, ContactpersoonRecord } from '@
 import { KvkZoekVeld } from '@/components/shared/KvkZoekVeld'
 import {
   getLeveranciers, createLeverancier, updateLeverancier, deleteLeverancier,
-  getUitgaven, getBestelbonnenByLeverancier,
+  getUitgaven,
   getContactpersonenByLeverancier, createContactpersoonDB, updateContactpersoonDB,
   deleteContactpersoonDB,
 } from '@/services/supabaseService'
+import { getInkoopfacturen } from '@/services/inkoopfactuurService'
 import { getCached, setCached, fetchQuery } from '@/lib/queryCache'
 import { round2 } from '@/utils/budgetUtils'
 import { logger } from '@/utils/logger'
@@ -285,11 +286,11 @@ export function LeveranciersLayout() {
   const handleDelete = useCallback(async () => {
     if (!deleteTarget) return
     try {
-      // De database wist bestelbonnen mee (ON DELETE CASCADE). Dat mag nooit
-      // stil gebeuren; zet de leverancier dan op inactief.
-      const bestelbonnen = await getBestelbonnenByLeverancier(deleteTarget.id)
-      if (bestelbonnen.length > 0) {
-        toast.error(`${deleteTarget.bedrijfsnaam} heeft ${bestelbonnen.length} bestelbon${bestelbonnen.length === 1 ? '' : 'nen'}. Verwijderen zou die wissen; zet de leverancier op inactief.`)
+      // Een leverancier met inkoopfacturen verdwijnt niet zomaar uit de
+      // administratie; zet hem dan op inactief.
+      const inkoopfacturen = await getInkoopfacturen({ leverancier_id: deleteTarget.id })
+      if (inkoopfacturen.length > 0) {
+        toast.error(`${deleteTarget.bedrijfsnaam} heeft ${inkoopfacturen.length} ${inkoopfacturen.length === 1 ? 'inkoopfactuur' : 'inkoopfacturen'}. Zet de leverancier op inactief in plaats van verwijderen.`)
         return
       }
       await deleteLeverancier(deleteTarget.id)

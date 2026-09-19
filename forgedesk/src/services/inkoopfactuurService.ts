@@ -15,6 +15,7 @@ import type {
 export interface InkoopfactuurFilters {
   status?: InkoopFactuurStatus
   toegewezen_aan_id?: string | null
+  leverancier_id?: string
 }
 
 export async function getInkoopfacturen(filters?: InkoopfactuurFilters): Promise<InkoopFactuur[]> {
@@ -23,6 +24,7 @@ export async function getInkoopfacturen(filters?: InkoopfactuurFilters): Promise
     if (filters?.status) query = query.eq('status', filters.status)
     if (filters?.toegewezen_aan_id) query = query.eq('toegewezen_aan_id', filters.toegewezen_aan_id)
     if (filters?.toegewezen_aan_id === null) query = query.is('toegewezen_aan_id', null)
+    if (filters?.leverancier_id) query = query.eq('leverancier_id', filters.leverancier_id)
     const { data, error } = await query
     if (error) throw error
     return data || []

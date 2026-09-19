@@ -117,8 +117,6 @@ const TABELLEN: { tabel: string; sorteer: string }[] = [
   { tabel: 'inkoop_regels', sorteer: 'id' },
   { tabel: 'inkoopfacturen', sorteer: 'id' },
   { tabel: 'inkoopfactuur_inbox_config', sorteer: 'id' },
-  { tabel: 'bestelbonnen', sorteer: 'id' },
-  { tabel: 'bestelbon_regels', sorteer: 'id' },
   { tabel: 'leveringsbonnen', sorteer: 'id' },
   { tabel: 'leveringsbon_regels', sorteer: 'id' },
 

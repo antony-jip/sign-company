@@ -138,10 +138,6 @@ function WerkbonDetailWrapper() {
 // Kennisbank
 const KennisbankPage = lazy(() => import('@/components/kennisbank/KennisbankPage'), 'KennisbankPage')
 
-// Bestelbonnen
-const BestelbonnenLayout = lazy(() => import('@/components/bestelbonnen/BestelbonnenLayout'), 'BestelbonnenLayout')
-const BestelbonDetail = lazy(() => import('@/components/bestelbonnen/BestelbonDetail'), 'BestelbonDetail')
-
 // Leveringsbonnen
 const LeveringsbonnenLayout = lazy(() => import('@/components/leveringsbonnen/LeveringsbonnenLayout'), 'LeveringsbonnenLayout')
 const LeveringsbonDetail = lazy(() => import('@/components/leveringsbonnen/LeveringsbonDetail'), 'LeveringsbonDetail')
@@ -332,8 +328,6 @@ function AppContent() {
         <Route path="kennisbank" element={<KennisbankPage />} />
         <Route path="werkbonnen" element={<WerkbonnenRoute />} />
         <Route path="werkbonnen/:id" element={<WerkbonDetailWrapper />} />
-        <Route path="bestelbonnen" element={<BestelbonnenLayout />} />
-        <Route path="bestelbonnen/:id" element={<BestelbonDetail />} />
         <Route path="leveringsbonnen" element={<LeveringsbonnenLayout />} />
         <Route path="leveringsbonnen/:id" element={<LeveringsbonDetail />} />
         <Route path="leveranciers" element={<LeveranciersLayout />} />

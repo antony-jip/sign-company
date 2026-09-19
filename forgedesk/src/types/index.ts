@@ -1751,48 +1751,6 @@ export interface Uitgave {
   updated_at?: string;
 }
 
-// ============ BESTELBONNEN (Tier 2 Feature 3) ============
-
-export interface Bestelbon {
-  id: string;
-  user_id?: string;
-  organisatie_id?: string;
-  bestelbon_nummer: string;
-  leverancier_id: string;
-  offerte_id?: string;
-  project_id?: string;
-  status: 'concept' | 'besteld' | 'deels_ontvangen' | 'ontvangen' | 'geannuleerd';
-  besteld_op?: string;
-  verwachte_levering?: string;
-  ontvangen_op?: string;
-  subtotaal: number;
-  btw_bedrag: number;
-  totaal: number;
-  opmerkingen?: string;
-  interne_notitie?: string;
-  referentie?: string;
-  created_at: string;
-  updated_at?: string;
-}
-
-export interface BestelbonRegel {
-  id: string;
-  user_id?: string;
-  organisatie_id?: string;
-  bestelbon_id: string;
-  omschrijving: string;
-  aantal: number;
-  eenheid?: string;
-  prijs_per_eenheid: number;
-  btw_percentage: number;
-  totaal: number;
-  aantal_ontvangen?: number;
-  volledig_ontvangen?: boolean;
-  offerte_item_id?: string;
-  created_at: string;
-  updated_at?: string;
-}
-
 // ============ LEVERINGSBONNEN (Tier 2 Feature 4) ============
 
 export interface Leveringsbon {
@@ -1803,7 +1761,6 @@ export interface Leveringsbon {
   klant_id: string;
   project_id?: string;
   werkbon_id?: string;
-  bestelbon_id?: string;
   datum: string;
   locatie_adres: string;
   locatie_stad?: string;

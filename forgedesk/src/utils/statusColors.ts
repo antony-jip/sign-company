@@ -50,11 +50,6 @@ export function getStatusBadgeClass(status: string): string {
     'ingediend':    'badge-grijs',
     'definitief':   'badge-blauw',
 
-    // Bestelbonnen
-    'besteld':         'badge-blauw',
-    'deels_ontvangen': 'badge-grijs',
-    'ontvangen':       'badge-groen',
-
     // Leveringsbonnen
     'geleverd':     'badge-blauw',
     'getekend':     'badge-petrol',
@@ -119,9 +114,6 @@ export function getStatusLabel(status: string): string {
     'geblokkeerd':   'Geblokkeerd',
     'ingediend':     'Ingediend',
     'definitief':    'Definitief',
-    'besteld':       'Besteld',
-    'deels_ontvangen':'Deels ontvangen',
-    'ontvangen':     'Ontvangen',
     'geleverd':      'Geleverd',
     'getekend':      'Getekend',
     'inactief':      'Inactief',
@@ -147,7 +139,6 @@ export function getRowAccentClass(status: string): string {
     'afgerond':    'border-l-[#1A535C]',
     'klaar':       'border-l-[#1A535C]',
     'getekend':    'border-l-[#1A535C]',
-    'ontvangen':   'border-l-[#2D6B48]',
     'opgeleverd':  'border-l-[#2D6B48]',
     'te-factureren':'border-l-[#2D6B48]',
     'gefactureerd':'border-l-[#2D6B48]',
@@ -171,7 +162,6 @@ export function getRowAccentClass(status: string): string {
     // Blauw
     'bezig':       'border-l-[#2A5580]',
     'ingediend':   'border-l-[#2A5580]',
-    'besteld':     'border-l-[#2A5580]',
     'gepland':     'border-l-[#2A5580]',
     'geleverd':    'border-l-[#2A5580]',
     'montage':     'border-l-[#2A5580]',
@@ -215,7 +205,6 @@ export function getStatusPillTone(status: string): PillTone {
     'verstuurd':      'mist',
     'verzonden':      'mist',
     'open':           'mist',
-    'besteld':        'mist',
     'geleverd':       'mist',
     'bezig':          'mist',
     'definitief':     'mist',
@@ -236,7 +225,6 @@ export function getStatusPillTone(status: string): PillTone {
     'betaald':        'sage',
     'klaar':          'sage',
     'getekend':       'sage',
-    'ontvangen':      'sage',
 
     'afgewezen':      'coral',
     'verlopen':       'coral',
