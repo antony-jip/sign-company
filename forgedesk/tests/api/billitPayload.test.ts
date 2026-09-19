@@ -18,7 +18,7 @@ const items = [
 ]
 
 describe('bouwBillitOrder', () => {
-  it('boekt elke regel als 1 × regeltotaal zodat korting en afronding kloppen', () => {
+  it('stuurt echte aantallen als die exact sluiten, anders 1 × regeltotaal', () => {
     const order = bouwBillitOrder({ nummer: 'F-2026-0042', factuurdatum: '2026-09-01T00:00:00Z', vervaldatum: '2026-10-01', isCredit: false, klantNaam: 'Bakkerij Peeters', klant, items }) as any
     expect(order.OrderType).toBe('Invoice')
     expect(order.OrderDirection).toBe('Income')
@@ -29,6 +29,13 @@ describe('bouwBillitOrder', () => {
       { Quantity: 1, UnitPriceExcl: 720, Description: 'Lichtreclame (2 × €400.00) (10% korting)', VATPercentage: 21 },
       { Quantity: 1, UnitPriceExcl: 200, Description: 'Montage', VATPercentage: 6 },
     ])
+    const zonderKorting = bouwBillitOrder({ nummer: 'F-4', isCredit: false, klantNaam: 'X', klant, items: [{ beschrijving: 'Borden', aantal: 3, eenheidsprijs: 12.5, btw_percentage: 21, korting_percentage: 0, totaal: 37.5 }] }) as any
+    expect(zonderKorting.OrderLines[0]).toEqual({ Quantity: 3, UnitPriceExcl: 12.5, Description: 'Borden', VATPercentage: 21 })
+  })
+
+  it('normaliseert oude vrije-tekstlanden naar een ISO-code', () => {
+    const order = bouwBillitOrder({ nummer: 'F-5', isCredit: false, klantNaam: 'X', klant: { ...klant, land: 'België' }, items }) as any
+    expect(order.Customer.Addresses[0].CountryCode).toBe('BE')
   })
 
   it('schoont het btw-nummer op en zet het landcode-adres', () => {
@@ -42,7 +49,7 @@ describe('bouwBillitOrder', () => {
     const order = bouwBillitOrder({ nummer: 'C-1', vervaldatum: '2026-10-01', isCredit: true, klantNaam: 'X', klant, items: items.map((i) => ({ ...i, totaal: -i.totaal })) }) as any
     expect(order.OrderType).toBe('CreditNote')
     expect(order.ExpiryDate).toBeUndefined()
-    expect(order.OrderLines.map((l: any) => l.UnitPriceExcl)).toEqual([720, 200])
+    expect(order.OrderLines.map((l: any) => [l.Quantity, l.UnitPriceExcl])).toEqual([[1, 720], [1, 200]])
   })
 
   it('stuurt het werkelijke btw-percentage door (verlegd = regels op 0%)', () => {

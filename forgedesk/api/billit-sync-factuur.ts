@@ -282,7 +282,13 @@ export interface BillitOrderInvoer {
 export function bouwBillitOrder(invoer: BillitOrderInvoer): Record<string, unknown> {
   const rond2 = (n: number) => Math.round(n * 100) / 100
   const { klant, klantNaam, isCredit } = invoer
-  const landCode = ((klant?.land ?? 'NL') || 'NL').trim().toUpperCase().slice(0, 2) || 'NL'
+  // klanten.land is sinds migratie 252 een ISO-code, oudere rijen kunnen
+  // nog een naam bevatten (spiegel van landNaarIso in src/lib/landen.ts).
+  const landRuw = (klant?.land ?? '').trim().toLowerCase()
+  const landCode = !landRuw || ['nederland', 'netherlands', 'nl'].includes(landRuw) ? 'NL'
+    : ['belgië', 'belgie', 'belgium', 'be'].includes(landRuw) ? 'BE'
+    : ['duitsland', 'germany', 'deutschland', 'de'].includes(landRuw) ? 'DE'
+    : /^[a-z]{2}$/.test(landRuw) ? landRuw.toUpperCase() : 'NL'
   return {
     OrderType: isCredit ? 'CreditNote' : 'Invoice',
     OrderDirection: 'Income',
@@ -307,16 +313,25 @@ export function bouwBillitOrder(invoer: BillitOrderInvoer): Record<string, unkno
         CountryCode: landCode,
       }],
     },
-    OrderLines: invoer.items.map((item) => ({
-      Quantity: 1,
-      UnitPriceExcl: rond2(isCredit ? Math.abs(item.totaal) : item.totaal),
-      Description: [
-        item.beschrijving,
-        typeof item.aantal === 'number' && item.aantal !== 1 ? `(${item.aantal} × €${Number(item.eenheidsprijs ?? 0).toFixed(2)})` : null,
-        item.korting_percentage > 0 ? `(${item.korting_percentage}% korting)` : null,
-      ].filter(Boolean).join(' '),
-      VATPercentage: item.btw_percentage,
-    })),
+    // Echte aantallen en stuksprijs als die exact op het regeltotaal
+    // uitkomen (de ontvanger ziet dan dezelfde regel als op de PDF); bij
+    // korting of afrondingsverschil de 1×-truc, dan blijft het bedrag leidend.
+    OrderLines: invoer.items.map((item) => {
+      const totaal = rond2(isCredit ? Math.abs(item.totaal) : item.totaal)
+      const aantal = Math.abs(Number(item.aantal ?? 1))
+      const prijs = Math.abs(Number(item.eenheidsprijs ?? 0))
+      const exact = !(item.korting_percentage > 0) && aantal > 0 && rond2(aantal * prijs) === totaal
+      return {
+        Quantity: exact ? aantal : 1,
+        UnitPriceExcl: exact ? prijs : totaal,
+        Description: [
+          item.beschrijving,
+          !exact && typeof item.aantal === 'number' && item.aantal !== 1 ? `(${item.aantal} × €${Number(item.eenheidsprijs ?? 0).toFixed(2)})` : null,
+          item.korting_percentage > 0 ? `(${item.korting_percentage}% korting)` : null,
+        ].filter(Boolean).join(' '),
+        VATPercentage: item.btw_percentage,
+      }
+    }),
   }
 }
 

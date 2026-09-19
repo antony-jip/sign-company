@@ -177,7 +177,7 @@ function peppolStatusUitOrder(order: unknown): 'afgeleverd' | 'mislukt' | 'verzo
     if (/deliver|received|accepted|acknowledg/.test(s)) return 'afgeleverd'
     if (/fail|reject|error|refus|bounce/.test(s)) return 'mislukt'
   }
-  for (const s of kandidaten) if (/sent|send|pending|processing/.test(s)) return 'verzonden'
+  for (const s of kandidaten) if (/\b(sent|sending|pending|processing|queued|submitted)\b/.test(s)) return 'verzonden'
   return null
 }
 
@@ -326,9 +326,17 @@ async function verwerkInkomendeOrder(supabase: SupabaseClient, base: string, tok
       regel_totaal: regelTotaal,
     }
   })
-  const subtotaal = getal(order, 'TotalExcl', 'AmountExcl', 'TotalExclVAT') ?? Math.round(lijnen.reduce((s, l) => s + l.regel_totaal, 0) * 100) / 100
-  const totaal = getal(order, 'TotalIncl', 'AmountIncl', 'TotalInclVAT') ?? subtotaal
-  const btw = getal(order, 'TotalVAT', 'VATAmount', 'TotalVat') ?? Math.round((totaal - subtotaal) * 100) / 100
+  // Een inkomende creditnota verlaagt wat we de leverancier schuldig zijn:
+  // negatief opslaan, zoals doen. creditregels zelf ook negatief bewaart.
+  const isCreditnota = /credit/i.test(tekst(order, 'OrderType', 'DocumentType') ?? '')
+  const teken = isCreditnota ? -1 : 1
+  for (const l of lijnen) {
+    l.eenheidsprijs = Math.abs(l.eenheidsprijs) * teken
+    l.regel_totaal = Math.abs(l.regel_totaal) * teken
+  }
+  const subtotaal = teken * Math.abs(getal(order, 'TotalExcl', 'AmountExcl', 'TotalExclVAT') ?? Math.round(lijnen.reduce((s, l) => s + Math.abs(l.regel_totaal), 0) * 100) / 100)
+  const totaal = teken * Math.abs(getal(order, 'TotalIncl', 'AmountIncl', 'TotalInclVAT') ?? Math.abs(subtotaal))
+  const btw = teken * Math.abs(getal(order, 'TotalVAT', 'VATAmount', 'TotalVat') ?? Math.round((Math.abs(totaal) - Math.abs(subtotaal)) * 100) / 100)
 
   const fileId = crypto.randomUUID()
   let pdfPad: string | null = null
@@ -382,7 +390,7 @@ async function verwerkInkomendeOrder(supabase: SupabaseClient, base: string, tok
       email_ontvangen_op: tekst(order, 'Created', 'CreatedDate', 'LastModified') ?? new Date().toISOString(),
       status: 'nieuw',
       extractie_vertrouwen: 'hoog',
-      extractie_opmerkingen: 'Gestructureerde e-factuur via Peppol (Billit); geen AI-extractie nodig.',
+      extractie_opmerkingen: `Gestructureerde e-factuur via Peppol (Billit)${isCreditnota ? ' · creditnota' : ''}; geen AI-extractie nodig.`,
       raw_extractie_json: order,
     })
     .select('id')
