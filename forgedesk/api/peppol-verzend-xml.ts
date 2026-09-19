@@ -91,6 +91,43 @@ function apFetch(path: string, init?: RequestInit): Promise<Response> {
   })
 }
 
+// Serverkant van de feature flag (migratie 200), zelfde rangorde als
+// src/lib/featureFlags.ts en api/cron-mailsync-werker.ts: globale false is
+// een noodstop, org-rij gaat vóór globale true, geen rij is uit.
+async function flagStaatAan(supabase: SupabaseClient, naam: string, orgId: string): Promise<boolean> {
+  const { data } = await supabase
+    .from('feature_flags')
+    .select('organisatie_id, aan')
+    .eq('naam', naam)
+  const rijen = (data ?? []) as Array<{ organisatie_id: string | null; aan: boolean }>
+  const globaal = rijen.find((r) => r.organisatie_id == null)
+  if (globaal && !globaal.aan) return false
+  const perOrg = rijen.find((r) => r.organisatie_id === orgId)
+  if (perOrg) return perOrg.aan
+  return !!globaal
+}
+
+function schoon(waarde: string | null | undefined): string {
+  return (waarde || '').replace(/[\s.\-]/g, '').toUpperCase()
+}
+
+// Alle identifiers waaronder een partij op Peppol mag voorkomen, afgeleid
+// uit de gegevens in de database. De UBL komt van de client; wat erin staat
+// moet hieruit herleidbaar zijn, anders kan iemand namens een ander bedrijf
+// (of naar een willekeurige ontvanger) versturen.
+function toegestaneIdentifiers(partij: { land?: string | null; btw_nummer?: string | null; kvk_nummer?: string | null; peppol_id?: string | null }): Set<string> {
+  const ids = new Set<string>()
+  const btw = schoon(partij.btw_nummer)
+  const kvk = schoon(partij.kvk_nummer)
+  if (btw) ids.add(btw)
+  if (kvk) ids.add(kvk)
+  const beNummer = btw.replace(/^BE/, '')
+  if (/^[01]\d{9}$/.test(beNummer)) ids.add(beNummer)
+  const handmatig = (partij.peppol_id ?? '').trim()
+  if (handmatig) ids.add(schoon(handmatig.includes(':') ? handmatig.split(':').slice(1).join(':') : handmatig))
+  return ids
+}
+
 function xmlTag(xml: string, tag: string): string | null {
   const m = xml.match(new RegExp(`<${tag}(?:\\s[^>]*)?>([^<]*)</${tag}>`))
   return m ? m[1].trim() : null
@@ -116,6 +153,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
+  let peppolGeclaimd: string | null = null
   try {
     if (!AP_API_KEY || !AP_PARTY_ID) {
       return res.status(503).json({ error: 'Peppol-verzending via doen. is nog niet ingericht (access-point-credentials ontbreken).' })
@@ -134,6 +172,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const orgId = await getOrgIdForUser(supabaseAdmin, user_id)
     if (!orgId) return res.status(403).json({ error: 'Geen organisatie gevonden' })
+    if (!(await flagStaatAan(supabaseAdmin, 'peppol_accesspoint', orgId))) {
+      return res.status(403).json({ error: 'Peppol-verzending via doen. staat voor deze organisatie niet aan.' })
+    }
     if (await isRateLimited(`peppol-xml:${orgId}`, 120, 3600)) {
       return res.status(429).json({ error: 'Te veel Peppol-verzendingen in korte tijd. Probeer het over een uur opnieuw.' })
     }
@@ -158,7 +199,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       await supabaseAdmin.from('facturen').update({ peppol_status: 'niet_verzonden', peppol_fout: 'Geen Peppol-identifier voor leverancier en klant in de UBL' }).eq('id', factuur.id)
       return res.status(200).json({ peppol_status: 'niet_verzonden', waarschuwing: 'Vul het KvK-/btw-nummer van je bedrijf en van de klant in; zonder Peppol-identifier is de factuur niet af te leveren.' })
     }
-    const ontvanger = endpoints[1]
+    const [afzender, ontvanger] = endpoints
+
+    // Afzender moet het eigen bedrijf zijn (profiel van de aanvrager, daar
+    // bouwt de client de UBL ook uit) en de ontvanger de klant van de factuur.
+    const { data: eigenProfiel } = await supabaseAdmin
+      .from('profiles')
+      .select('kvk_nummer, btw_nummer, bedrijfs_land')
+      .eq('id', user_id)
+      .maybeSingle()
+    if (!toegestaneIdentifiers(eigenProfiel ?? {}).has(schoon(afzender.id))) {
+      return res.status(400).json({ error: 'De afzender in de UBL komt niet overeen met de bedrijfsgegevens van je organisatie.' })
+    }
+    const { data: klant } = factuur.klant_id
+      ? await supabaseAdmin
+          .from('klanten')
+          .select('land, btw_nummer, kvk_nummer, peppol_id')
+          .eq('id', factuur.klant_id)
+          .eq('organisatie_id', orgId)
+          .maybeSingle()
+      : { data: null }
+    if (!klant || !toegestaneIdentifiers(klant).has(schoon(ontvanger.id))) {
+      return res.status(400).json({ error: 'De ontvanger in de UBL komt niet overeen met de klant van deze factuur.' })
+    }
 
     const checkRes = await apFetch(`/v1/peppol/participantInformation/${encodeURIComponent(ontvanger.id)}`)
     const registratie = leesRegistratie(checkRes.status, await checkRes.json().catch(() => null))
@@ -170,15 +233,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ peppol_status: 'niet_verzonden', waarschuwing: 'De klant is niet geregistreerd op Peppol; verstuur de factuur per e-mail.' })
     }
 
-    await supabaseAdmin.from('facturen').update({ peppol_status: 'in_wachtrij', peppol_fout: null }).eq('id', factuur.id)
-    const sendRes = await apFetch('/v1/peppol/sendXml', {
-      method: 'POST',
-      body: JSON.stringify({ XML: ubl_xml, FileName: `factuur-${factuur.nummer}.xml` }),
-    })
+    // Claim: alleen wie de status naar in_wachtrij zet mag versturen (geen
+    // dubbele documenten op het netwerk bij dubbelklik of retry).
+    const { data: claim } = await supabaseAdmin
+      .from('facturen')
+      .update({ peppol_status: 'in_wachtrij', peppol_fout: null })
+      .eq('id', factuur.id)
+      .or('peppol_status.is.null,peppol_status.in.(niet_verzonden,mislukt)')
+      .select('id')
+    if (!claim || claim.length === 0) {
+      return res.status(200).json({ peppol_status: 'in_wachtrij', waarschuwing: 'De Peppol-verzending van deze factuur loopt al of is al gedaan.' })
+    }
+    peppolGeclaimd = factuur.id
+    let sendRes: Response
+    try {
+      sendRes = await apFetch('/v1/peppol/sendXml', {
+        method: 'POST',
+        body: JSON.stringify({ XML: ubl_xml, FileName: `factuur-${factuur.nummer}.xml` }),
+      })
+    } catch (err) {
+      const fout = `Geen antwoord van het access point: ${err instanceof Error ? err.message : String(err)}`
+      await supabaseAdmin.from('facturen').update({ peppol_status: 'mislukt', peppol_fout: fout.slice(0, 500) }).eq('id', factuur.id).eq('peppol_status', 'in_wachtrij')
+      peppolGeclaimd = null
+      return res.status(200).json({ peppol_status: 'mislukt', waarschuwing: fout })
+    }
     if (!sendRes.ok) {
       const tekst = (await sendRes.text()).slice(0, 300)
       const fout = `Access point weigerde de UBL (${sendRes.status}). ${tekst}`.trim()
       await supabaseAdmin.from('facturen').update({ peppol_status: 'mislukt', peppol_fout: fout.slice(0, 500) }).eq('id', factuur.id)
+      peppolGeclaimd = null
       Sentry.captureMessage('Peppol sendXml mislukt', { level: 'warning', extra: { factuur_id, status: sendRes.status } })
       return res.status(200).json({ peppol_status: 'mislukt', waarschuwing: fout })
     }
@@ -190,10 +273,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       peppol_fout: null,
       ...(berichtId != null ? { peppol_bericht_id: String(berichtId) } : {}),
     }).eq('id', factuur.id)
+    peppolGeclaimd = null
 
     return res.status(200).json({ peppol_status: 'verzonden' })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Onbekende fout'
+    if (peppolGeclaimd) {
+      await supabaseAdmin.from('facturen').update({ peppol_status: 'mislukt', peppol_fout: message.slice(0, 500) }).eq('id', peppolGeclaimd).eq('peppol_status', 'in_wachtrij')
+    }
     if (message === 'Niet geautoriseerd' || message === 'Ongeldige sessie') {
       return res.status(401).json({ error: message })
     }

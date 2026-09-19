@@ -224,6 +224,9 @@ function peppolIdentifier(klant: { land?: string | null; btw_nummer?: string | n
     const kvk = (klant.kvk_nummer ?? '').replace(/[\s.\-]/g, '')
     return /^[01]\d{9}$/.test(kvk) ? kvk : null
   }
+  // Nederland: KvK (schema 0106) zoals src/lib/peppol.ts, anders het btw-nummer
+  const kvk = (klant.kvk_nummer ?? '').replace(/[\s.\-]/g, '')
+  if (land === 'NL' && /^\d{8}$/.test(kvk)) return kvk
   return btw || null
 }
 
@@ -256,6 +259,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
+  let peppolGeclaimd: string | null = null
   try {
     const user_id = await verifyUser(req)
     const { factuur_id, peppol } = req.body as { factuur_id?: string; peppol?: boolean }
@@ -323,7 +327,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const token = await billitAccessToken(supabaseAdmin, settings)
 
     const klantNaam = (klant?.bedrijfsnaam as string | null) || (factuur.klant_naam as string | null) || 'Onbekende klant'
-    const verlegd = klant?.btw_verlegd === true
+    // Btw verlegd is een eigenschap van de factuur zoals hij is opgeslagen
+    // (regels op 0%); Billit krijgt exact wat doen. zelf boekt en mailt.
+    if (klant?.btw_verlegd === true && Math.abs(Number(factuur.btw_bedrag)) >= 0.005) {
+      return res.status(400).json({ error: 'Deze klant staat op btw verlegd, maar de factuur bevat btw. Zet de regels op 0% en sla de factuur op.' })
+    }
     const landCode = ((klant?.land as string | null) ?? 'NL').trim().toUpperCase().slice(0, 2) || 'NL'
 
     // 1. Order aanmaken (tenzij deze factuur al in Billit staat)
@@ -366,7 +374,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             typeof item.aantal === 'number' && item.aantal !== 1 ? `(${item.aantal} × €${Number(item.eenheidsprijs ?? 0).toFixed(2)})` : null,
             item.korting_percentage > 0 ? `(${item.korting_percentage}% korting)` : null,
           ].filter(Boolean).join(' '),
-          VATPercentage: verlegd ? 0 : item.btw_percentage,
+          VATPercentage: item.btw_percentage,
         })),
       }
 
@@ -436,16 +444,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
     }
 
-    await supabaseAdmin.from('facturen').update({ peppol_status: 'in_wachtrij', peppol_fout: null }).eq('id', factuur_id)
-    const sendRes = await billitFetch(base, token, partyId, '/v1/orders/commands/send', {
-      method: 'POST',
-      body: JSON.stringify({ Transporttype: 'Peppol', OrderIDs: [Number.isFinite(Number(orderId)) ? Number(orderId) : orderId] }),
-    })
+    // De claim: alleen wie de status van leeg/niet_verzonden/mislukt naar
+    // in_wachtrij zet mag versturen. Twee gelijktijdige aanroepen (keten +
+    // knop, dubbelklik, retry) leveren zo nooit twee Peppol-berichten op.
+    const { data: claim } = await supabaseAdmin
+      .from('facturen')
+      .update({ peppol_status: 'in_wachtrij', peppol_fout: null })
+      .eq('id', factuur_id)
+      .or('peppol_status.is.null,peppol_status.in.(niet_verzonden,mislukt)')
+      .select('id')
+    if (!claim || claim.length === 0) {
+      return res.status(200).json({ success: true, extern_id: orderId, peppol_status: 'in_wachtrij', waarschuwing: 'De Peppol-verzending van deze factuur loopt al of is al gedaan.' })
+    }
+    peppolGeclaimd = factuur_id
+    let sendRes: Response
+    try {
+      sendRes = await billitFetch(base, token, partyId, '/v1/orders/commands/send', {
+        method: 'POST',
+        body: JSON.stringify({ Transporttype: 'Peppol', OrderIDs: [Number.isFinite(Number(orderId)) ? Number(orderId) : orderId] }),
+      })
+    } catch (err) {
+      // Timeout of netwerkfout: niet weten of Billit hem verstuurd heeft. Op
+      // 'mislukt' zetten zodat de knop een retry toestaat; de cron corrigeert
+      // naar 'verzonden' zodra Billit een verzendstatus meldt.
+      const fout = `Geen antwoord van Billit bij het versturen: ${err instanceof Error ? err.message : String(err)}`
+      await supabaseAdmin.from('facturen').update({ peppol_status: 'mislukt', peppol_fout: fout.slice(0, 500) }).eq('id', factuur_id).eq('peppol_status', 'in_wachtrij')
+      peppolGeclaimd = null
+      return res.status(200).json({ success: true, extern_id: orderId, peppol_status: 'mislukt', waarschuwing: fout })
+    }
     if (!sendRes.ok) {
       const tekst = (await sendRes.text()).slice(0, 300)
       console.error('[billit-sync] peppol verzenden fout:', sendRes.status, tekst)
       const fout = `Billit weigerde de Peppol-verzending (${sendRes.status}). ${tekst}`.trim()
       await supabaseAdmin.from('facturen').update({ peppol_status: 'mislukt', peppol_fout: fout.slice(0, 500) }).eq('id', factuur_id)
+      peppolGeclaimd = null
       Sentry.captureMessage('Peppol-verzending via Billit mislukt', { level: 'warning', extra: { factuur_id, status: sendRes.status } })
       return res.status(200).json({ success: true, extern_id: orderId, peppol_status: 'mislukt', waarschuwing: fout })
     }
@@ -457,10 +489,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       peppol_fout: null,
       ...(berichtId && berichtId !== orderId ? { peppol_bericht_id: berichtId } : {}),
     }).eq('id', factuur_id)
+    peppolGeclaimd = null
 
     return res.status(200).json({ success: true, extern_id: orderId, peppol_status: 'verzonden' })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Onbekende fout'
+    if (peppolGeclaimd) {
+      // Onverwachte fout ná de claim: de wachtrij-status mag de factuur niet
+      // voor altijd blokkeren.
+      await supabaseAdmin.from('facturen').update({ peppol_status: 'mislukt', peppol_fout: message.slice(0, 500) }).eq('id', peppolGeclaimd).eq('peppol_status', 'in_wachtrij')
+    }
     if (message === 'Niet geautoriseerd' || message === 'Ongeldige sessie') {
       return res.status(401).json({ error: message })
     }

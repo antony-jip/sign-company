@@ -1412,7 +1412,7 @@ export function FactuurEditor() {
   }, [standaardBtw, titel])
 
   const handleAddItem = useCallback(() => {
-    setItems((prev) => [...prev, createEmptyLineItem(standaardBtw)])
+    setItems((prev) => [...prev, createEmptyLineItem(selectedKlant?.btw_verlegd ? 0 : standaardBtw)])
   }, [standaardBtw])
 
   const handleRemoveItem = useCallback((id: string) => {

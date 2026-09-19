@@ -56,7 +56,7 @@ function taxCategoryLines(indent: string, pct: number, verlegd: boolean): string
   const categorie = btwCategorie(pct, verlegd)
   const lines = [
     `${indent}<cbc:ID>${categorie}</cbc:ID>`,
-    `${indent}<cbc:Percent>${verlegd ? 0 : pct}</cbc:Percent>`,
+    `${indent}<cbc:Percent>${pct}</cbc:Percent>`,
   ]
   if (categorie === 'AE') {
     lines.push(`${indent}<cbc:TaxExemptionReasonCode>VATEX-EU-AE</cbc:TaxExemptionReasonCode>`)
@@ -77,7 +77,9 @@ export function generateUBLInvoice({ factuur, items, klant, profiel }: UBLInput)
 
   const leveranciersLand = landOfStandaard(profiel.bedrijfs_land)
   const klantLand = landOfStandaard(klant.land)
-  const verlegd = klant.btw_verlegd === true
+  // AE alleen als de factuur zelf zonder btw is opgeslagen; anders wijkt de
+  // e-factuur af van PDF en boekhouding.
+  const verlegd = klant.btw_verlegd === true && items.every((i) => i.btw_percentage === 0) && Math.abs(factuur.btw_bedrag) < 0.005
   const leverancierAdres = splitsBedrijfsAdres(profiel.bedrijfs_adres)
   const leverancierEndpoint = peppolIdentifier({ land: leveranciersLand, btw_nummer: profiel.btw_nummer, kvk_nummer: profiel.kvk_nummer })
   const leverancierRechtspersoon = peppolRechtspersoon({ land: leveranciersLand, btw_nummer: profiel.btw_nummer, kvk_nummer: profiel.kvk_nummer })
@@ -87,7 +89,7 @@ export function generateUBLInvoice({ factuur, items, klant, profiel }: UBLInput)
   // Groepeer items per BTW-percentage
   const btwGroepen = new Map<number, { taxable: number; tax: number }>()
   for (const item of items) {
-    const pct = verlegd ? 0 : item.btw_percentage
+    const pct = item.btw_percentage
     const existing = btwGroepen.get(pct) || { taxable: 0, tax: 0 }
     const kortingFactor = 1 - (item.korting_percentage || 0) / 100
     const lineNet = item.aantal * item.eenheidsprijs * kortingFactor
@@ -260,7 +262,7 @@ export function generateUBLInvoice({ factuur, items, klant, profiel }: UBLInput)
   }
 
   // BG-23: Tax total
-  const btwTotaal = verlegd ? 0 : factuur.btw_bedrag
+  const btwTotaal = factuur.btw_bedrag
   lines.push('  <cac:TaxTotal>')
   lines.push(`    <cbc:TaxAmount currencyID="EUR">${amount(btwTotaal)}</cbc:TaxAmount>`)
   for (const [pct, group] of btwGroepen) {
@@ -275,7 +277,7 @@ export function generateUBLInvoice({ factuur, items, klant, profiel }: UBLInput)
   lines.push('  </cac:TaxTotal>')
 
   // BG-22: Legal monetary totals
-  const teBetalen = verlegd ? factuur.subtotaal : factuur.totaal
+  const teBetalen = factuur.totaal
   lines.push('  <cac:LegalMonetaryTotal>')
   lines.push(`    <cbc:LineExtensionAmount currencyID="EUR">${amount(factuur.subtotaal)}</cbc:LineExtensionAmount>`)
   lines.push(`    <cbc:TaxExclusiveAmount currencyID="EUR">${amount(factuur.subtotaal)}</cbc:TaxExclusiveAmount>`)
