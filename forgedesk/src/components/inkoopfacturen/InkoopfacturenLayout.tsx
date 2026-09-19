@@ -940,6 +940,7 @@ export function InkoopfacturenLayout() {
                           })()}
                           <span className="text-[13px] font-medium text-[#1A4A52] dark:text-foreground truncate">
                             {factuur.leverancier_naam || factuur.email_van || '-'}
+                            {factuur.bron === 'peppol' && <span className="ml-2 inline-flex items-center rounded-full bg-petrol/10 px-1.5 py-0.5 text-[10px] font-semibold text-petrol" title="Ontvangen via Peppol (Billit)">Peppol</span>}
                           </span>
                         </div>
                       </td>

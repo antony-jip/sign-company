@@ -116,6 +116,12 @@
     },
     "api/cron-demo-reset.ts": {
       "maxDuration": 60
+    },
+    "api/cron-billit-inbox.ts": {
+      "maxDuration": 120
+    },
+    "api/billit-webhook.ts": {
+      "maxDuration": 60
     }
   },
   "crons": [
@@ -162,6 +168,10 @@
     {
       "path": "/api/cron-conceptfacturen-klaar",
       "schedule": "30 7 * * *"
+    },
+    {
+      "path": "/api/cron-billit-inbox",
+      "schedule": "*/15 * * * *"
     }
   ]
 }
