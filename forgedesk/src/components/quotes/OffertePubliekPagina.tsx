@@ -23,6 +23,7 @@ import { BedanktMoment } from '@/components/klantpagina/BedanktMoment'
 import { klantpaginaTeksten } from '@/lib/klantpaginaTeksten'
 import { OFFERTE_VOORBEELD, VOORBEELD_TOKEN, type VoorbeeldBericht } from '@/lib/offerteVoorbeeld'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { useTelBedrag } from '@/hooks/useTelBedrag'
 import { getMeetellendeVarianten, nettoStuksprijs } from '@/utils/offerteTotalen'
 import { bijlageSoort, gekozenVariantenPerItem, isLichteKleur, klantSpecs, kopKleur, veiligeTerugUrl, voornaam, type KlantSpec } from '@/utils/offerteKlantpagina'
 
@@ -264,6 +265,12 @@ function groepeerBtwMetSelectie(
 }
 
 // ============ ONDERDELEN ============
+
+/** Een bedrag dat meetelt naar zijn nieuwe waarde als de keuze verandert. */
+function Bedrag({ waarde, className }: { waarde: number; className?: string }) {
+  const getoond = useTelBedrag(waarde)
+  return <span className={className}>{formatCurrency(getoond)}</span>
+}
 
 function StatusKop({ kleur, children }: { kleur: string; children: React.ReactNode }) {
   return <p><StatusWoord kleur={kleur} groot>{children}</StatusWoord></p>
@@ -1065,6 +1072,11 @@ export function OffertePubliekPagina() {
         })
     : []
 
+  // Posten waar de klant iets kan aanvinken: een optie, of een uitvoering die niet vast is.
+  const keuzePosten = items.filter((i) =>
+    i.soort !== 'tekst' && (i.is_optioneel || (i.prijs_varianten?.some((v) => !v.vast) ?? false))
+  ).length
+
   const pdfKnop = (
     <button
       type="button"
@@ -1236,7 +1248,7 @@ export function OffertePubliekPagina() {
             <p className="font-mono text-xs text-[#9B9B95]">{offerte.nummer}</p>
           </div>
           <div className="shrink-0 text-right">
-            <p className="font-mono text-xl font-bold text-[#1A1A1A]">{formatCurrency(totaalExclBedrag)}</p>
+            <p className="font-mono text-xl font-bold text-[#1A1A1A]"><Bedrag waarde={totaalExclBedrag} /></p>
             <p className="text-xs text-[#9B9B95]">
               excl. btw{toonInclRegel ? ` · ${formatCurrency(totaalBedrag)} incl.` : ''}
             </p>
@@ -1403,6 +1415,16 @@ export function OffertePubliekPagina() {
             )}
           </p>
 
+          {/* Wijst de klant op wat er te kiezen valt, vóór hij gaat scrollen. */}
+          {kanActie && keuzePosten > 0 && (
+            <p className="mt-4 text-sm text-[#1A1A1A]">
+              <span aria-hidden className="mr-2 inline-block h-1.5 w-1.5 rounded-full bg-[#D24620] align-middle" />
+              {keuzePosten === 1
+                ? 'Bij één post kun je zelf kiezen wat je wilt; het totaal rekent direct mee.'
+                : `Bij ${keuzePosten} posten kun je zelf kiezen wat je wilt; het totaal rekent direct mee.`}
+            </p>
+          )}
+
           {contactpersoon && (
             <div className="mt-5 flex items-center gap-3 text-sm">
               {contactpersoon.foto_url && <Gezicht naam={contactpersoon.naam} fotoUrl={contactpersoon.foto_url} grootte={36} />}
@@ -1481,9 +1503,7 @@ export function OffertePubliekPagina() {
                 )}
                 <div className="flex items-baseline justify-between gap-4 border-t border-[#EBEBEB] pt-3">
                   <span className="text-base font-bold tracking-[-0.3px] text-[#1A1A1A]">Totaal excl. btw</span>
-                  <span className="font-mono text-2xl font-bold tracking-[-0.3px] text-[#1A1A1A] md:text-3xl">
-                    {formatCurrency(totaalExclBedrag)}
-                  </span>
+                  <Bedrag waarde={totaalExclBedrag} className="font-mono text-2xl font-bold tracking-[-0.3px] text-[#1A1A1A] md:text-3xl" />
                 </div>
                 {toonInclRegel && (
                   <div className="flex justify-between text-sm text-[#6B6B66]">
@@ -1544,7 +1564,12 @@ export function OffertePubliekPagina() {
         <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-4 border-t border-[#EBEBEB] bg-[#FFFFFF]/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.06)] backdrop-blur">
           <div className="min-w-0">
             <p className="text-[11px] uppercase tracking-wider text-[#9B9B95]">Totaal excl. btw</p>
-            <p className="truncate font-mono text-lg font-bold leading-tight text-[#1A1A1A]">{formatCurrency(totaalExclBedrag)}</p>
+            <p className="truncate font-mono text-lg font-bold leading-tight text-[#1A1A1A]"><Bedrag waarde={totaalExclBedrag} /></p>
+            {uwKeuze.length > 0 && (
+              <p className="mt-0.5 truncate text-[11px] text-[#9B9B95]">
+                {uwKeuze.map((k) => (k.uitvoeringen.length > 0 ? `${k.titel}: ${k.uitvoeringen.join(' + ')}` : k.titel)).join(' · ')}
+              </p>
+            )}
           </div>
           <button
             type="button"
