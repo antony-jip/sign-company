@@ -190,15 +190,6 @@ async function verwerkOrganisatie(supabase: SupabaseClient, s: BillitSettings): 
   const token = await billitAccessToken(supabase, s)
   const partyId = s.billit_party_id
 
-  // 0. Een claim die nooit is afgerond (functie gestorven na in_wachtrij)
-  // mag de factuur niet blokkeren: na 30 minuten terug naar 'mislukt'.
-  await supabase
-    .from('facturen')
-    .update({ peppol_status: 'mislukt', peppol_fout: 'Peppol-verzending is niet afgerond; probeer opnieuw' })
-    .eq('organisatie_id', orgId)
-    .eq('peppol_status', 'in_wachtrij')
-    .lt('updated_at', new Date(Date.now() - 30 * 60 * 1000).toISOString())
-
   // 1. Uitgaand: afleverstatus van facturen die via Peppol onderweg zijn.
   let statussen = 0
   const sinds = new Date(Date.now() - 60 * 24 * 3600 * 1000).toISOString()
@@ -207,7 +198,7 @@ async function verwerkOrganisatie(supabase: SupabaseClient, s: BillitSettings): 
     .select('id, boekhoud_extern_id, peppol_status')
     .eq('organisatie_id', orgId)
     .eq('boekhoud_pakket', 'billit')
-    .in('peppol_status', ['in_wachtrij', 'verzonden'])
+    .in('peppol_status', ['in_wachtrij', 'verzonden', 'mislukt'])
     .gte('updated_at', sinds)
     .limit(100)
   for (const f of (onderweg ?? []) as Array<{ id: string; boekhoud_extern_id: string | null; peppol_status: string }>) {
@@ -418,6 +409,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
   const alleenOrg = typeof req.query.org === 'string' ? req.query.org : null
+
+  // Een claim die nooit is afgerond (functie gestorven of timeout na
+  // in_wachtrij) mag de factuur niet blokkeren: na 30 minuten terug naar
+  // 'mislukt'. Voor álle organisaties, ook die zonder Billit die via
+  // api/peppol-verzend-xml versturen.
+  await supabase
+    .from('facturen')
+    .update({ peppol_status: 'mislukt', peppol_fout: 'Peppol-verzending is niet afgerond; probeer opnieuw' })
+    .eq('peppol_status', 'in_wachtrij')
+    .lt('updated_at', new Date(Date.now() - 30 * 60 * 1000).toISOString())
   let query = supabase
     .from('app_settings')
     .select('id, organisatie_id, billit_access_token, billit_refresh_token, billit_token_expires_at, billit_party_id, billit_omgeving, billit_inbox_gesynct_op')

@@ -203,12 +203,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Afzender moet het eigen bedrijf zijn (profiel van de aanvrager, daar
     // bouwt de client de UBL ook uit) en de ontvanger de klant van de factuur.
-    const { data: eigenProfiel } = await supabaseAdmin
-      .from('profiles')
-      .select('kvk_nummer, btw_nummer, bedrijfs_land')
-      .eq('id', user_id)
-      .maybeSingle()
-    if (!toegestaneIdentifiers(eigenProfiel ?? {}).has(schoon(afzender.id))) {
+    const [{ data: eigenOrg }, { data: eigenProfiel }] = await Promise.all([
+      supabaseAdmin.from('organisaties').select('kvk_nummer, btw_nummer').eq('id', orgId).maybeSingle(),
+      supabaseAdmin.from('profiles').select('kvk_nummer, btw_nummer, bedrijfs_land').eq('id', user_id).maybeSingle(),
+    ])
+    const eigenIds = new Set([
+      ...toegestaneIdentifiers(eigenOrg ?? {}),
+      ...toegestaneIdentifiers(eigenProfiel ?? {}),
+    ])
+    if (!eigenIds.has(schoon(afzender.id))) {
       return res.status(400).json({ error: 'De afzender in de UBL komt niet overeen met de bedrijfsgegevens van je organisatie.' })
     }
     const { data: klant } = factuur.klant_id
@@ -252,10 +255,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         body: JSON.stringify({ XML: ubl_xml, FileName: `factuur-${factuur.nummer}.xml` }),
       })
     } catch (err) {
-      const fout = `Geen antwoord van het access point: ${err instanceof Error ? err.message : String(err)}`
-      await supabaseAdmin.from('facturen').update({ peppol_status: 'mislukt', peppol_fout: fout.slice(0, 500) }).eq('id', factuur.id).eq('peppol_status', 'in_wachtrij')
+      // Zelfde afweging als in billit-sync-factuur: claim laten staan, de
+      // cron-reset (30 min) geeft hem vrij als er niets is aangekomen.
+      const fout = `Geen antwoord van het access point: ${err instanceof Error ? err.message : String(err)}. Probeer het over een half uur opnieuw.`
+      await supabaseAdmin.from('facturen').update({ peppol_fout: fout.slice(0, 500) }).eq('id', factuur.id).eq('peppol_status', 'in_wachtrij')
       peppolGeclaimd = null
-      return res.status(200).json({ peppol_status: 'mislukt', waarschuwing: fout })
+      return res.status(200).json({ peppol_status: 'in_wachtrij', waarschuwing: fout })
     }
     if (!sendRes.ok) {
       const tekst = (await sendRes.text()).slice(0, 300)
