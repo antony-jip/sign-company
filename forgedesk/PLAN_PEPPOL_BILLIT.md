@@ -1,7 +1,8 @@
 # Plan · Belgische klanten, Peppol en Billit
 
-Status: **voorstel**, wacht op akkoord. Niets gebouwd, niets gecommit behalve
-dit document. Aanleiding is de vraag van een prospect uit Antwerpen: werkt
+Status: **in uitvoering**. Fase 1 (land + btw-tarieven) en fase 2 (UBL
+Peppol BIS 3.0) staan op de branch; fase 0 (Billit OAuth-credentials) is de
+volgende stap en blokkeert fase 3. Aanleiding is de vraag van een prospect uit Antwerpen: werkt
 doen. met betaallinks in België, en is de facturatie te koppelen aan Peppol
 en Billit?
 
