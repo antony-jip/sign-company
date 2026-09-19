@@ -22,7 +22,6 @@ import { VandaagBlok } from './VandaagBlok'
 import { OpvolgenBlok } from './OpvolgenBlok'
 import { VannachtGeleerdBlok } from './VannachtGeleerdBlok'
 import { DaanBriefingBlok } from './DaanBriefingBlok'
-import { KpiStrip } from './KpiStrip'
 import { RightRail } from './RightRail'
 import { usePortaalHerinnering } from '@/hooks/usePortaalHerinnering'
 import { useWeather, type WeatherIconKey } from '@/hooks/useWeather'
@@ -340,7 +339,6 @@ function FORGEdeskDashboardInner() {
           {zichtbaar.has('portaal') && <PortaalAlerts />}
 
           {/* ── KPI-strip ── */}
-          {zichtbaar.has('kpi') && <KpiStrip />}
 
           {/* ── Dagelijkse briefing: gewogen signalen (verdwijnt als er niets ligt) ── */}
           {zichtbaar.has('briefing') && <DaanBriefingBlok />}

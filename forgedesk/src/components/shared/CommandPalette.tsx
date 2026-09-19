@@ -40,7 +40,7 @@ const navigationItems: CommandItem[] = [
   { id: 'nav-planning', label: 'Planning', subtitle: 'Navigatie', icon: <Calendar className="w-4 h-4" />, path: '/planning', category: 'Navigatie' },
   { id: 'nav-documenten', label: 'Documenten', subtitle: 'Navigatie', icon: <Files className="w-4 h-4" />, path: '/documenten', category: 'Navigatie' },
   { id: 'nav-taken', label: 'Taken', subtitle: 'Navigatie', icon: <CheckSquare className="w-4 h-4" />, path: '/taken', category: 'Navigatie' },
-  { id: 'nav-financieel', label: 'Financieel', subtitle: 'Navigatie', icon: <PiggyBank className="w-4 h-4" />, path: '/financieel', category: 'Navigatie' },
+  { id: 'nav-cockpit', label: 'Cockpit', subtitle: 'Navigatie · beheerder', icon: <PiggyBank className="w-4 h-4" />, path: '/cockpit', category: 'Navigatie' },
   { id: 'nav-instellingen', label: 'Instellingen', subtitle: 'Navigatie', icon: <Settings className="w-4 h-4" />, path: '/instellingen', category: 'Navigatie' },
 ]
 

@@ -33,7 +33,7 @@ describe('presets', () => {
   it('laat montage zonder cijfers en opvolging', () => {
     const montage = DASHBOARD_PRESETS.find((p) => p.id === 'montage')!
     expect(montage.blokken).toContain('vandaag')
-    expect(montage.blokken).not.toContain('kpi')
+    expect(montage.blokken).not.toContain('briefing')
     expect(montage.blokken).not.toContain('opvolgen')
   })
 
@@ -43,6 +43,6 @@ describe('presets', () => {
   })
 
   it('noemt een eigen mix geen preset', () => {
-    expect(herkenPreset(['vandaag', 'kpi', 'team'])).toBeNull()
+    expect(herkenPreset(['vandaag', 'briefing', 'team'])).toBeNull()
   })
 })

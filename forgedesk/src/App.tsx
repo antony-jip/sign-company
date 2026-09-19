@@ -92,7 +92,6 @@ function TakenRoute() {
 const PaginaVerdwenen = lazy(() => import('@/components/klantpagina/PaginaVerdwenen'), 'PaginaVerdwenen')
 
 // Financial
-const FinancialLayout = lazy(() => import('@/components/financial/FinancialLayout'), 'FinancialLayout')
 const LeveranciersLayout = lazy(() => import('@/components/financial/LeveranciersLayout'), 'LeveranciersLayout')
 
 // Inkoopfacturen (rendered as tab in FacturenLayout, not standalone)
@@ -104,7 +103,6 @@ const BetaalPagina = lazy(() => import('@/components/invoices/BetaalPagina'), 'B
 const BetaaldPagina = lazy(() => import('@/components/invoices/BetaaldPagina'), 'BetaaldPagina')
 
 // Reports
-const RapportagesLayout = lazy(() => import('@/components/reports/RapportagesLayout'), 'RapportagesLayout')
 
 // Settings
 const SettingsLayout = lazy(() => import('@/components/settings/SettingsLayout'), 'SettingsLayout')
@@ -303,13 +301,15 @@ function AppContent() {
         <Route path="montage" element={<Navigate to="/planning" replace />} />
         <Route path="inkoopfacturen" element={<Navigate to="/facturen?tab=inkoop" replace />} />
         <Route path="inkoopfacturen/:id" element={<Navigate to="/facturen?tab=inkoop" replace />} />
-        <Route path="financieel" element={<FinancialLayout />} />
+        {/* Financieel, Rapportages en Forecast zijn opgegaan in de cockpit (alleen admin). */}
+        <Route path="financieel" element={<Navigate to="/cockpit" replace />} />
+        <Route path="forecast" element={<Navigate to="/cockpit" replace />} />
         <Route path="taken" element={<TakenRoute />} />
         <Route path="facturen" element={<FacturenLayout />} />
         <Route path="facturen/nieuw" element={<NieuweFactuurRoute />} />
         <Route path="facturen/:id" element={<FactuurEditor />} />
         <Route path="facturen/:id/bewerken" element={<FactuurEditor />} />
-        <Route path="rapportages" element={<RapportagesLayout />} />
+        <Route path="rapportages" element={<Navigate to="/cockpit" replace />} />
         <Route path="team" element={<TeamLayout />} />
         <Route path="cockpit" element={<CockpitLayout />} />
 

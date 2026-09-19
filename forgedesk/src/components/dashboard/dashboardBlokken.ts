@@ -8,7 +8,6 @@
 export type DashboardBlokId =
   | 'weer'
   | 'portaal'
-  | 'kpi'
   | 'briefing'
   | 'vannacht'
   | 'vandaag'
@@ -27,7 +26,6 @@ export interface DashboardBlok {
 export const DASHBOARD_BLOKKEN: DashboardBlok[] = [
   { id: 'weer', label: 'Weerbericht', uitleg: 'Vandaag en de dagen erna, in de koptekst', kolom: 'hoofd' },
   { id: 'portaal', label: 'Portaalmeldingen', uitleg: 'Klanten die iets in hun portaal deden', kolom: 'hoofd' },
-  { id: 'kpi', label: 'Cijfers', uitleg: 'Omzet, offertes en facturen in één strip', kolom: 'hoofd' },
   { id: 'briefing', label: 'Briefing van Daan', uitleg: 'Wat er vandaag aandacht vraagt', kolom: 'hoofd' },
   { id: 'vannacht', label: 'Vannacht geleerd', uitleg: 'Wat de nachtploeg oppikte', kolom: 'hoofd' },
   { id: 'vandaag', label: 'Vandaag', uitleg: 'Je montages, taken en afspraken van vandaag', kolom: 'hoofd' },
@@ -63,7 +61,7 @@ export const DASHBOARD_PRESETS: DashboardPreset[] = [
     id: 'verkoop',
     label: 'Verkoop',
     uitleg: 'Cijfers, opvolging en signalen van Daan',
-    blokken: ['kpi', 'briefing', 'vandaag', 'opvolgen', 'portaal', 'deze-week'],
+    blokken: ['briefing', 'vandaag', 'opvolgen', 'portaal', 'deze-week'],
   },
 ]
 
