@@ -27,15 +27,15 @@ export const OFFERTE_VOORBEELD = {
     {
       id: 'v1', soort: 'prijs' as const, volgorde: 1,
       beschrijving: 'Gevelletters\nFreesletters op afstandhouders, strak uitgelijnd boven de etalage.',
-      aantal: 1, eenheidsprijs: 2150, btw_percentage: 21, korting_percentage: 0, totaal: 2150,
+      aantal: 1, eenheidsprijs: 2150, btw_percentage: 21, korting_percentage: 0, totaal: 2570,
       detail_regels: [
         { id: 'd1', label: 'Materiaal', waarde: 'Aluminium 3 mm, gepoedercoat RAL 9010' },
         { id: 'd2', label: 'Formaat', waarde: '3200 x 450 mm' },
-        { id: 'd3', label: 'Montage', waarde: 'Inclusief, met hoogwerker' },
       ],
       prijs_varianten: [
-        { id: 'pv1', label: 'LED frontverlicht', aantal: 1, eenheidsprijs: 3450, btw_percentage: 21, korting_percentage: 0 },
-        { id: 'pv2', label: 'LED halo-verlicht', aantal: 1, eenheidsprijs: 3890, btw_percentage: 21, korting_percentage: 0 },
+        { id: 'pv1', label: 'Freesletters', aantal: 1, eenheidsprijs: 2150, btw_percentage: 21, korting_percentage: 0, telt_mee: true, omschrijving: 'Aluminium 3 mm op afstandhouders, 3200 x 450 mm' },
+        { id: 'pv2', label: 'LED frontverlichting', aantal: 1, eenheidsprijs: 1300, btw_percentage: 21, korting_percentage: 0, omschrijving: 'Warmwit, inclusief trafo en schemerschakelaar' },
+        { id: 'pv3', label: 'Montage met hoogwerker', aantal: 1, eenheidsprijs: 420, btw_percentage: 21, korting_percentage: 0, telt_mee: true, omschrijving: 'Buiten openingstijden' },
       ],
     },
     {
@@ -49,11 +49,6 @@ export const OFFERTE_VOORBEELD = {
       beschrijving: 'Lichtbak uithangbord, dubbelzijdig\nRond model met LED, inclusief muurbeugel.',
       aantal: 1, eenheidsprijs: 895, btw_percentage: 21, korting_percentage: 0, totaal: 895,
       breedte_mm: 600, hoogte_mm: 600,
-    },
-    {
-      id: 'v4', soort: 'prijs' as const, volgorde: 4,
-      beschrijving: 'Montage en hoogwerker',
-      aantal: 1, eenheidsprijs: 420, btw_percentage: 21, korting_percentage: 0, totaal: 420,
     },
   ],
   klant: { bedrijfsnaam: 'Bakkerij Jansen', contactpersoon: 'Jan Jansen', email: 'jan@bakkerijjansen.nl' },

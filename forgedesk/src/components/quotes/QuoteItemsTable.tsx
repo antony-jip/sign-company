@@ -82,6 +82,7 @@ export interface PrijsVariant {
    * meetellen; staat het bij geen enkele optie, dan telt actieve_variant_id.
    */
   telt_mee?: boolean
+  omschrijving?: string
   calculatie_regels?: CalculatieRegel[]
   heeft_calculatie?: boolean
 }
@@ -1634,7 +1635,7 @@ export function QuoteItemsTable({
                     <div className="space-y-2">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs font-bold text-text-tertiary uppercase tracking-label">
-                          Prijsopties · alles staat op de offerte, vink aan wat meetelt
+                          Prijsopties · alles staat op de offerte, vink aan wat standaard meetelt; de klant kiest zelf
                         </span>
                       </div>
 
@@ -1722,6 +1723,13 @@ export function QuoteItemsTable({
                                 <Trash2 className="h-3.5 w-3.5" />
                               </button>
                             </div>
+
+                            <Input
+                              value={variant.omschrijving || ''}
+                              onChange={(e) => updatePrijsVariantField(item.id, variant.id, 'omschrijving', e.target.value)}
+                              placeholder="Toelichting voor de klant, bv. 3000 x 1000 mm, inclusief ringen"
+                              className="mb-2 h-7 text-xs border-transparent bg-transparent hover:border-border dark:hover:border-border focus-visible:border-border shadow-none"
+                            />
 
                             {/* Variant prijsvelden */}
                             <div className="flex items-end gap-2 flex-wrap">
