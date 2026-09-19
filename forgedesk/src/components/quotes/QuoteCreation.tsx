@@ -100,7 +100,7 @@ import { AuditLogPanel } from '@/components/shared/AuditLogPanel'
 import { ResponsiveDialog } from '@/components/ui/responsive-dialog'
 import { useFunctie, useFunctieGetal } from '@/hooks/useFunctie'
 import { getOfferteCondities, getOfferteHandtekening, zorgPubliekToken } from '@/services/offerteService'
-import { klantLinkVoorMail } from '@/utils/offerteKlantpagina'
+import { klantKeuzeOverzicht, klantLinkVoorMail } from '@/utils/offerteKlantpagina'
 import type { OfferteConditie } from '@/types'
 import { rondOfferteCheckAf } from '@/services/offerteCheckService'
 import { useMedewerkers } from '@/contexts/MedewerkersContext'
@@ -371,6 +371,7 @@ export function QuoteCreation() {
   const [offerteStatus, setOfferteStatus] = useState<string>('concept')
   const [afgewezenReden, setAfgewezenReden] = useState<string | null>(null)
   const [ondertekening, setOndertekening] = useState<{ door?: string; op?: string; handtekening?: string | null } | null>(null)
+  const [klantKeuze, setKlantKeuze] = useState<string[]>([])
   const [showVervolgDialog, setShowVervolgDialog] = useState(false)
   const vervolgAan = useFunctie('offerte_vervolg')
   const geschiedenisAan = useFunctie('geschiedenis')
@@ -797,6 +798,7 @@ export function QuoteCreation() {
         setOndertekening(offerte.geaccepteerd_door
           ? { door: offerte.geaccepteerd_door, op: offerte.geaccepteerd_op || offerte.akkoord_op }
           : null)
+        setKlantKeuze(offerte.geaccepteerd_door ? klantKeuzeOverzicht(offerte, mappedItems) : [])
         // De handtekening staat sinds migratie 240 in een eigen tabel; lazy laden
         // zodat de offertelijsten er niet mee belast worden.
         void getOfferteHandtekening(offerte.id)
@@ -2273,6 +2275,7 @@ export function QuoteCreation() {
         afgewezenReden={afgewezenReden}
         spoed={spoed}
         ondertekening={ondertekening}
+        klantKeuze={klantKeuze}
         onGeschiedenis={geschiedenisAan && isEditMode && editOfferteId ? () => setShowGeschiedenis(true) : undefined}
         onVervolg={vervolgAan && editOfferteId && ['verzonden', 'bekeken', 'goedgekeurd'].includes(offerteStatus) ? () => setShowVervolgDialog(true) : undefined}
         checkStatus={checkInfo.status}

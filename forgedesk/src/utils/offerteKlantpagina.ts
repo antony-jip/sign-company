@@ -1,4 +1,5 @@
 import { isLabelVoor } from '@/utils/offerteSpecs'
+import { getMeetellendeVarianten } from '@/utils/offerteTotalen'
 
 export interface KlantSpec {
   label: string
@@ -70,6 +71,48 @@ export function gekozenVariantenPerItem(
     if (ids.length > 0) keuzes[itemId] = Array.from(new Set(ids))
   }
   return keuzes
+}
+
+interface ItemVoorKeuze {
+  id: string
+  soort?: 'prijs' | 'tekst'
+  beschrijving: string
+  is_optioneel?: boolean
+  prijs_varianten?: { id: string; label: string; telt_mee?: boolean; vast?: boolean }[]
+  actieve_variant_id?: string
+}
+
+/**
+ * Wat de klant bij het akkoord koos, in woorden voor de verkoper: per post met
+ * uitvoeringen de aangevinkte uitvoeringen (na akkoord gematerialiseerd als
+ * telt_mee), plus de optionele posten die hij wel en niet nam. Leeg als er
+ * niets te kiezen viel of de offerte nog niet is geaccepteerd met keuzes.
+ */
+export function klantKeuzeOverzicht(
+  offerte: { gekozen_items?: string[] | null; gekozen_varianten?: Record<string, string | string[]> | null },
+  items: ItemVoorKeuze[],
+): string[] {
+  if (!offerte.gekozen_items && !offerte.gekozen_varianten) return []
+  const gekozenItems = new Set(offerte.gekozen_items ?? [])
+  const regels: string[] = []
+  for (const item of items) {
+    if (item.soort === 'tekst') continue
+    const titel = item.beschrijving.split('\n')[0].trim() || 'Post'
+    const varianten = item.prijs_varianten ?? []
+    // Na akkoord staat een gekozen optie op is_optioneel=false; wat nog optioneel
+    // is, is dus niet genomen. Oudere rijen: alleen via gekozen_items.
+    if (item.is_optioneel && !gekozenItems.has(item.id)) {
+      regels.push(`Niet gekozen: ${titel}`)
+      continue
+    }
+    if (varianten.length > 0) {
+      const labels = getMeetellendeVarianten(varianten, item.actieve_variant_id).map((v) => v.label).filter(Boolean)
+      if (labels.length > 0) regels.push(`${titel}: ${labels.join(' + ')}`)
+    } else if (item.is_optioneel || gekozenItems.has(item.id)) {
+      regels.push(`${titel} (optie genomen)`)
+    }
+  }
+  return regels
 }
 
 export type BijlageSoort = 'afbeelding' | 'pdf'

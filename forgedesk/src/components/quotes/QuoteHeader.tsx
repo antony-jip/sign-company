@@ -80,6 +80,8 @@ export interface QuoteHeaderProps {
   spoed?: boolean
   /** Online akkoord van de klant (migratie 235): naam, datum en handtekening-PNG. */
   ondertekening?: { door?: string; op?: string; handtekening?: string | null } | null
+  /** Wat de klant bij het akkoord aanvinkte: per post de uitvoeringen en de genomen opties. */
+  klantKeuze?: string[]
   // Geschiedenis (audit-log) in een lade, schakelaar geschiedenis
   onGeschiedenis?: () => void
   checkStatus?: 'open' | 'akkoord' | 'verstuurd' | 'wijzigingen' | null
@@ -126,6 +128,7 @@ export function QuoteHeader({
   onVervolg,
   spoed,
   ondertekening,
+  klantKeuze = [],
   onGeschiedenis,
   checkStatus,
   checkAanNaam,
@@ -337,6 +340,13 @@ export function QuoteHeader({
                 {ondertekening.op ? ` op ${new Date(ondertekening.op).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}
               </span>
             </div>
+          )}
+          {ondertekening?.door && klantKeuze.length > 0 && (
+            <p className="mt-1 text-[12px] text-[#6B6B66]">
+              <span className="font-medium text-[#1A1A1A]">Klant koos</span>
+              <span className="text-[#D24620]">.</span>{' '}
+              {klantKeuze.join(' · ')}
+            </p>
           )}
         </div>
 
