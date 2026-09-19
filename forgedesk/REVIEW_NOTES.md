@@ -1756,3 +1756,29 @@ er per land meeverandert en welke wet erachter zit.
   `getMeetellendeVarianten` kent `vast` niet — de editor dwingt vast ⇒
   telt_mee af.
 
+### Sloop + cockpit (commits 1ce6d18 … 608b526)
+
+Op verzoek van Antony verwijderd: Nacalculatie, Voorraad, Booking (+ de
+`/kalender`-redirect), Leads-formulieren, Bestelbonnen, Website-aanvragen,
+Deals + Forecast en de Tijdregistratie-pagina (weekstaat, uren goedkeuren,
+uren-herinnering). Blijven: Kostenplaatsen (keuze Antony), leveranciers,
+inkoopoffertes, leveringsbonnen, de urentabel + inklokken, de prospectlijst
+in de mailmodule (`leads`) en de aanvraagherkenning op mail
+(`classificeer-aanvraag`). Oude publieke links `/boeken/…` en `/formulier/…`
+tonen een nette meldpagina (PaginaVerdwenen).
+
+De admin-cockpit (`/cockpit`, migratie 259) vervangt Dashboard-KPI's,
+Financieel, Rapportages en Forecast door één serverberekening. Bekend en
+bewust:
+- `portaal_items` en `tekening_goedkeuringen` hebben user-RLS, dus een
+  beheerder ziet in "portaal wacht" alleen de items die hijzelf aanmaakte.
+  Org-RLS op die tabellen is de nette fix (aparte migratie).
+- Mailsync-gezondheid en ongelezen mail staan niet in de RPC (die tellers
+  zijn per gebruiker); een clientblok via `postvakService.getPostvakGezondheid`
+  is de volgende stap.
+- Rapportage-views uit migratie 199 (uren per medewerker/project, deals,
+  voorraad) worden nu nergens meer gebruikt; droppen kan in een opruim-migratie.
+- Nieuwe uren zijn meteen 'goedgekeurd' (geen goedkeurscherm meer); de
+  DB-trigger uit 241 blijft goedgekeurde uren beschermen tegen wijzigen door
+  niet-beheerders.
+
