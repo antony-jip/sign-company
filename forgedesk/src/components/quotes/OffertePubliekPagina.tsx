@@ -217,6 +217,17 @@ function effectievePrijsRegels(item: PubliekItem, gekozen?: string[]): PrijsRege
   return keuze.length > 0 ? keuze.map(regelVan) : [regelVan(item)]
 }
 
+/** De standaardkeuze per post, zoals de verkoper hem instelde. */
+function standaardKeuzes(items: PubliekItem[]): VariantKeuzes {
+  const keuzes: VariantKeuzes = {}
+  for (const item of items) {
+    if (item.soort === 'tekst') continue
+    const standaard = gekozenVarianten(item)
+    if (standaard.length > 0) keuzes[item.id] = standaard.map((v) => v.id)
+  }
+  return keuzes
+}
+
 function getEffectiveItemTotal(item: PubliekItem, gekozen?: string[]): number {
   return round2(effectievePrijsRegels(item, gekozen).reduce((sum, r) => sum + regelNetto(r), 0))
 }
@@ -290,21 +301,29 @@ interface OfferteRegelProps {
   isSelected: boolean
   gekozenVariantIds?: string[]
   kanActie: boolean
+  /** Geaccepteerd of gefactureerd: wat niet aanstaat is dan "niet inbegrepen". */
+  afgerond: boolean
   hasOptionalItems: boolean
   onToggle: (itemId: string, aan: boolean) => void
   onKiesVarianten: (itemId: string, variantIds: string[]) => void
   onOpenAfbeelding: (url: string, naam: string) => void
+  onVraag: (titel: string) => void
 }
+
+const VINKJE = 'mt-0.5 h-4 w-4 shrink-0 rounded-sm'
+const VINKJE_CHECKBOX = `${VINKJE} border-[#1A535C] data-[state=checked]:bg-[#1A535C] data-[state=checked]:text-white focus-visible:ring-[#1A535C]/30 focus-visible:ring-offset-0`
 
 function OfferteRegel({
   item,
   isSelected,
   gekozenVariantIds,
   kanActie,
+  afgerond,
   hasOptionalItems,
   onToggle,
   onKiesVarianten,
   onOpenAfbeelding,
+  onVraag,
 }: OfferteRegelProps) {
   if (item.soort === 'tekst') {
     return (
@@ -331,10 +350,14 @@ function OfferteRegel({
 
   // Minstens één uitvoering blijft aan: een post zonder uitvoering heeft geen
   // prijs. Wil de klant de hele post niet, dan is het een optie met eigen vinkje.
+  // Het laatste vinkje blijft gewoon klikbaar (geen disabled-grijs dat als
+  // "uit" leest); de hint eronder zegt waarom er niets gebeurt.
   const kiesUitvoering = (variantId: string, aan: boolean) => {
     const volgende = varianten.map((v) => v.id).filter((id) => (id === variantId ? aan : gekozen.has(id)))
     if (volgende.length > 0) onKiesVarianten(item.id, volgende)
   }
+  const toonMinimumHint = kanKiezen && varianten.length > 1 && gekozen.size === 1
+  const hintId = `${item.id}-minimum`
 
   const soort = bijlageSoort(item.bijlage_url, item.bijlage_type)
   const afbeeldingen = [
@@ -369,13 +392,26 @@ function OfferteRegel({
           </div>
         </div>
 
+        {/* Specs direct onder de omschrijving, vóór het beeld: titel, toelichting,
+            afmetingen, dan de foto. Zo leest een post als één productkaart. */}
+        {specs.length > 0 && (
+          <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-5 gap-y-1 text-sm">
+            {specs.map((spec, i) => (
+              <React.Fragment key={`${spec.label}-${i}`}>
+                <dt className="text-[#9B9B95]">{spec.label}</dt>
+                <dd className="min-w-0 break-words text-[#1A1A1A]">{spec.waarde}</dd>
+              </React.Fragment>
+            ))}
+          </dl>
+        )}
+
         {afbeeldingen.map((afbeelding) => (
           <button
             key={afbeelding.url}
             type="button"
             onClick={() => onOpenAfbeelding(afbeelding.url, afbeelding.naam)}
             aria-label={`${afbeelding.naam} groter bekijken`}
-            className="mt-5 block w-full overflow-hidden rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1A535C]"
+            className="mt-4 block w-full overflow-hidden rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1A535C]"
           >
             <img
               src={afbeelding.url}
@@ -399,36 +435,25 @@ function OfferteRegel({
           </a>
         )}
 
-        {specs.length > 0 && (
-          <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-5 gap-y-1 text-sm">
-            {specs.map((spec, i) => (
-              <React.Fragment key={`${spec.label}-${i}`}>
-                <dt className="text-[#9B9B95]">{spec.label}</dt>
-                <dd className="min-w-0 break-words text-[#1A1A1A]">{spec.waarde}</dd>
-              </React.Fragment>
-            ))}
-          </dl>
-        )}
-
         {/* Uitvoeringen: elke regel is een vinkje, meerdere mogen tegelijk aan.
             Wat aan staat telt op in het regelbedrag hierboven. Als er niets te
             kiezen valt (geaccepteerd, verlopen) staat dezelfde lijst er als
             vaststelling: aangevinkt is inbegrepen. */}
         {heeftUitvoeringen && (
           <div className="mt-4" role="group" aria-label={`Uitvoering van ${titel}`}>
-            <p className="text-[11px] font-medium uppercase tracking-wider text-[#9B9B95]">
-              {kanKiezen ? 'Uitvoering · vink aan wat je wilt' : 'Uitvoering'}
-            </p>
-            <ul className="mt-1 divide-y divide-[#EBEBEB]">
+            <div className="flex items-baseline justify-between gap-4">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-[#9B9B95]">Uitvoering</p>
+              {kanKiezen && varianten.length > 1 && <p className="text-xs text-[#9B9B95]">Meerdere mogelijk</p>}
+            </div>
+            <ul className="mt-2 space-y-1">
               {varianten.map((v) => {
                 const aan = gekozen.has(v.id)
-                const laatste = aan && gekozen.size === 1
                 const stuk = nettoStuksprijs(v)
                 const toonStuks = v.aantal !== 1 || (v.korting_percentage || 0) > 0
                 const inhoud = (
                   <>
                     <span className="min-w-0 flex-1">
-                      <span className={`block text-sm leading-snug ${aan ? 'font-semibold text-[#1A1A1A]' : 'font-medium text-[#6B6B66]'}`}>
+                      <span className={`block break-words text-sm leading-snug ${aan ? 'font-semibold text-[#1A1A1A]' : 'font-medium text-[#6B6B66]'}`}>
                         {v.label}
                       </span>
                       {v.omschrijving && (
@@ -442,8 +467,10 @@ function OfferteRegel({
                           {(v.korting_percentage || 0) > 0 ? ` · ${v.korting_percentage}% korting` : ''}
                         </span>
                       )}
-                      {!kanKiezen && !aan && (
-                        <span className="mt-0.5 block text-xs text-[#9B9B95]">Niet inbegrepen</span>
+                      {!kanActie && (
+                        aan
+                          ? <span className="sr-only">Inbegrepen</span>
+                          : <span className="mt-0.5 block text-xs text-[#9B9B95]">{afgerond ? 'Niet inbegrepen' : 'Niet gekozen'}</span>
                       )}
                     </span>
                     <span className={`shrink-0 font-mono text-sm ${aan ? 'font-semibold text-[#1A1A1A]' : 'text-[#9B9B95]'}`}>
@@ -454,24 +481,24 @@ function OfferteRegel({
                 return (
                   <li key={v.id}>
                     {kanKiezen ? (
-                      <label className={`flex items-start gap-3 py-3 ${laatste ? '' : 'cursor-pointer'}`}>
+                      <label className="flex cursor-pointer items-start gap-3 py-2">
                         <Checkbox
                           checked={aan}
-                          disabled={laatste}
                           onCheckedChange={(checked) => kiesUitvoering(v.id, checked === true)}
                           aria-label={v.label}
-                          className="mt-0.5 border-[#1A535C] data-[state=checked]:bg-[#1A535C] data-[state=checked]:text-white disabled:opacity-100"
+                          aria-describedby={toonMinimumHint && aan ? hintId : undefined}
+                          className={VINKJE_CHECKBOX}
                         />
                         {inhoud}
                       </label>
                     ) : (
-                      <div className="flex items-start gap-3 py-3">
+                      <div className="flex items-start gap-3 py-2">
                         {aan ? (
-                          <span aria-hidden className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] bg-[#1A535C] text-white">
-                            <Check className="h-3 w-3" />
+                          <span aria-hidden className={`${VINKJE} flex items-center justify-center bg-[#1A535C] text-white`}>
+                            <Check className="h-3.5 w-3.5" />
                           </span>
                         ) : (
-                          <span aria-hidden className="mt-0.5 h-4 w-4 shrink-0 rounded-[4px] border border-[#C9C8C3]" />
+                          <span aria-hidden className={`${VINKJE} border border-[#C9C8C3]`} />
                         )}
                         {inhoud}
                       </div>
@@ -480,28 +507,38 @@ function OfferteRegel({
                 )
               })}
             </ul>
+            {toonMinimumHint && (
+              <p id={hintId} className="mt-1 text-xs text-[#9B9B95]">Minstens één uitvoering blijft aan.</p>
+            )}
           </div>
         )}
       </div>
 
       {item.is_optioneel && kanActie && (
-        <label
-          className={`mt-4 flex cursor-pointer items-center gap-3 rounded-lg px-4 py-3 transition-colors ${
-            isSelected ? 'bg-[#F1F6F6] ring-[1.5px] ring-inset ring-[#1A535C]' : 'bg-[#F8F7F5] hover:bg-[#F1F0EC]'
-          }`}
-        >
+        <label className="mt-3 flex cursor-pointer items-start gap-3 py-2">
           <Checkbox
             checked={isSelected}
             onCheckedChange={(checked) => onToggle(item.id, checked === true)}
-            className="border-[#1A535C] data-[state=checked]:bg-[#1A535C] data-[state=checked]:text-white"
+            className={VINKJE_CHECKBOX}
           />
-          <span className="flex-1 text-sm font-medium text-[#1A1A1A]">
+          <span className={`text-sm ${isSelected ? 'font-semibold text-[#1A1A1A]' : 'font-medium text-[#6B6B66]'}`}>
             {isSelected ? 'Toegevoegd aan je offerte' : 'Toevoegen aan je offerte'}
           </span>
         </label>
       )}
       {item.is_optioneel && !kanActie && !isSelected && (
-        <p className="mt-2 text-xs text-[#9B9B95]">Niet gekozen</p>
+        <p className="mt-2 text-xs text-[#9B9B95]">{afgerond ? 'Niet inbegrepen' : 'Niet gekozen'}</p>
+      )}
+      {/* Eén vraag over precies deze post: opent het aanpassingsformulier met
+          de posttitel al ingevuld, zodat de verkoper weet waar het over gaat. */}
+      {kanActie && (
+        <button
+          type="button"
+          onClick={() => onVraag(titel)}
+          className="mt-2 text-xs text-[#9B9B95] underline-offset-4 transition-colors hover:text-[#1A535C] hover:underline"
+        >
+          Vraag of wijziging over deze post
+        </button>
       )}
     </div>
   )
@@ -580,6 +617,7 @@ export function OffertePubliekPagina() {
       if (isVoorbeeld) {
         const items = OFFERTE_VOORBEELD.items as PubliekItem[]
         setSelectedItems(new Set(items.filter((i) => i.soort !== 'tekst' && !i.is_optioneel).map((i) => i.id)))
+        setSelectedVariants(standaardKeuzes(items))
         setOfferte(OFFERTE_VOORBEELD.offerte as PubliekOfferte)
         setItems(items)
         setKlant(OFFERTE_VOORBEELD.klant)
@@ -605,16 +643,8 @@ export function OffertePubliekPagina() {
           setSelectedItems(new Set(loadedOfferte.gekozen_items))
           setSelectedVariants(gekozenVariantenPerItem(loadedOfferte.gekozen_varianten))
         } else if (loadedItems.length > 0) {
-          const initial = new Set<string>()
-          const initialVariants: VariantKeuzes = {}
-          for (const item of loadedItems) {
-            if (item.soort === 'tekst') continue
-            if (!item.is_optioneel) initial.add(item.id)
-            const standaard = gekozenVarianten(item)
-            if (standaard.length > 0) initialVariants[item.id] = standaard.map((v) => v.id)
-          }
-          setSelectedItems(initial)
-          setSelectedVariants(initialVariants)
+          setSelectedItems(new Set(loadedItems.filter((i) => i.soort !== 'tekst' && !i.is_optioneel).map((i) => i.id)))
+          setSelectedVariants(standaardKeuzes(loadedItems))
         }
 
         setOfferte(loadedOfferte)
@@ -684,12 +714,15 @@ export function OffertePubliekPagina() {
 
   const handleOpenAfbeelding = useCallback((url: string, naam: string) => setLightbox({ url, naam }), [])
 
-  const openVerzoek = useCallback((modus: VerzoekModus) => {
+  const openVerzoek = useCallback((modus: VerzoekModus, overPost?: string) => {
     if (modus === 'nieuw') {
       setWijzigingOpmerking(huidig => huidig.trim() ? huidig : 'Graag ontvang ik een nieuwe versie van deze offerte.')
+    } else if (overPost) {
+      setWijzigingOpmerking(huidig => huidig.trim() ? huidig : `Over "${overPost}": `)
     }
     setVerzoekModus(modus)
   }, [])
+  const handleVraag = useCallback((titel: string) => openVerzoek('wijziging', titel), [openVerzoek])
 
   // Accepteren
   const handleAccepteren = useCallback(async () => {
@@ -993,11 +1026,7 @@ export function OffertePubliekPagina() {
           const uitvoeringen = gekozenVarianten(i, selectedVariants[i.id]).map((v) => v.label).filter(Boolean)
           if (!i.is_optioneel && uitvoeringen.length === 0) return []
           const { titel } = splitsBeschrijving(i.beschrijving)
-          return [{
-            id: i.id,
-            tekst: uitvoeringen.length > 0 ? `${titel}: ${uitvoeringen.join(' + ')}` : titel,
-            bedrag: getEffectiveItemTotal(i, selectedVariants[i.id]),
-          }]
+          return [{ id: i.id, titel, uitvoeringen, bedrag: getEffectiveItemTotal(i, selectedVariants[i.id]) }]
         })
     : []
 
@@ -1179,14 +1208,19 @@ export function OffertePubliekPagina() {
           </div>
         </div>
         {uwKeuze.length > 0 && (
-          <div className="mt-3 space-y-1 border-t border-[#EBEBEB] pt-3 text-xs text-[#6B6B66]">
-            <p className="font-medium text-[#1A1A1A]">Je keuze</p>
-            {uwKeuze.map(k => (
-              <div key={k.id} className="flex justify-between gap-3">
-                <span className="truncate">{k.tekst}</span>
-                <span className="shrink-0 font-mono">{formatCurrency(k.bedrag)}</span>
-              </div>
-            ))}
+          <div className="mt-4">
+            <p className="text-[11px] font-medium uppercase tracking-wider text-[#9B9B95]">Je keuze</p>
+            <div className="mt-1.5 space-y-1.5 text-xs text-[#6B6B66]">
+              {uwKeuze.map(k => (
+                <div key={k.id} className="flex items-start justify-between gap-3">
+                  <span className="min-w-0 break-words">
+                    <span className="text-[#1A1A1A]">{k.titel}</span>
+                    {k.uitvoeringen.length > 0 && <span className="text-[#9B9B95]">{` · ${k.uitvoeringen.join(' + ')}`}</span>}
+                  </span>
+                  <span className="shrink-0 font-mono">{formatCurrency(k.bedrag)}</span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -1365,10 +1399,12 @@ export function OffertePubliekPagina() {
                     isSelected={selectedItems.has(item.id)}
                     gekozenVariantIds={selectedVariants[item.id]}
                     kanActie={kanActie}
+                    afgerond={isGeaccepteerd || isGefactureerd}
                     hasOptionalItems={hasOptionalItems}
                     onToggle={handleToggle}
                     onKiesVarianten={handleKiesVarianten}
                     onOpenAfbeelding={handleOpenAfbeelding}
+                    onVraag={handleVraag}
                   />
                 ))}
               </div>
