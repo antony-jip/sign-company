@@ -310,18 +310,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .maybeSingle()
       if (org?.eigenaar_id) bedrijfUserId = org.eigenaar_id as string
     }
-    const { data: profile } = await supabaseAdmin
+    // bedrijfs_land (migratie 252) en klanten.taal (258) kunnen in een database
+    // die achterloopt nog ontbreken; een onbekende kolom laat de hele select
+    // falen (§10.3), dus dan opnieuw zonder die kolom in plaats van een lege
+    // pagina zonder bedrijfsnaam en klant.
+    const isOntbrekendeKolom = (fout: { code?: string } | null) => fout?.code === '42703' || fout?.code === 'PGRST204'
+    const PROFIEL_VELDEN = 'bedrijfsnaam, bedrijfs_adres, bedrijfs_telefoon, bedrijfs_email, bedrijfs_website, kvk_nummer, btw_nummer, iban, logo_url'
+    let { data: profile, error: profielFout } = await supabaseAdmin
       .from('profiles')
-      .select('bedrijfsnaam, bedrijfs_adres, bedrijfs_telefoon, bedrijfs_email, bedrijfs_website, kvk_nummer, btw_nummer, iban, logo_url, bedrijfs_land')
+      .select(`${PROFIEL_VELDEN}, bedrijfs_land`)
       .eq('id', bedrijfUserId)
       .single()
+    if (isOntbrekendeKolom(profielFout)) {
+      ;({ data: profile, error: profielFout } = await supabaseAdmin.from('profiles').select(PROFIEL_VELDEN).eq('id', bedrijfUserId).single())
+    }
+    if (profielFout) console.error('[offerte-publiek] bedrijfsprofiel laden mislukt:', profielFout.message)
 
     // Haal klant gegevens
-    const { data: klant } = await supabaseAdmin
+    const KLANT_VELDEN = 'bedrijfsnaam, contactpersoon, email, adres, postcode, stad'
+    let { data: klant, error: klantFout } = await supabaseAdmin
       .from('klanten')
-      .select('bedrijfsnaam, contactpersoon, email, adres, postcode, stad, taal')
+      .select(`${KLANT_VELDEN}, taal`)
       .eq('id', offerte.klant_id)
       .single()
+    if (isOntbrekendeKolom(klantFout)) {
+      ;({ data: klant, error: klantFout } = await supabaseAdmin.from('klanten').select(KLANT_VELDEN).eq('id', offerte.klant_id).single())
+    }
+    if (klantFout) console.error('[offerte-publiek] klant laden mislukt:', klantFout.message)
 
     // Haal document style op (voor briefpapier, kleuren, etc. in de PDF) —
     // org-first via offerte.organisatie_id, user_id-fallback voor legacy.

@@ -25,9 +25,9 @@ export function useTelBedrag(doel: number, duurMs = 320): number {
     const stap = (nu: number) => {
       const t = Math.min(1, (nu - begin) / duurMs)
       const eased = 1 - (1 - t) * (1 - t)
-      const waarde = start + (doel - start) * eased
+      const waarde = t >= 1 ? doel : start + (doel - start) * eased
       vanRef.current = waarde
-      setGetoond(t >= 1 ? doel : waarde)
+      setGetoond(waarde)
       if (t < 1) frameRef.current = requestAnimationFrame(stap)
     }
     frameRef.current = requestAnimationFrame(stap)

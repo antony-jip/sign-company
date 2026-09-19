@@ -80,3 +80,13 @@ describe('gekozenVariantIds · een vaste uitvoering zit er altijd bij', () => {
     expect(gekozenVariantIds(metVast, ['zzz'])).toBeUndefined()
   })
 })
+
+describe('prijsRegels · een vaste uitvoering telt ook bij een lijstkeuze zonder dat id', () => {
+  const metVast = [
+    { id: 'a', label: 'Banier', aantal: 1, eenheidsprijs: 925, btw_percentage: 21, korting_percentage: 0 },
+    { id: 'b', label: 'Montage', aantal: 1, eenheidsprijs: 845, btw_percentage: 21, korting_percentage: 0, vast: true, telt_mee: true },
+  ]
+  it('rekent b mee als de klant alleen a aanvinkt', () => {
+    expect(prijsRegels({ id: 'i', aantal: 1, eenheidsprijs: 1, btw_percentage: 21, korting_percentage: 0, prijs_varianten: metVast, actieve_variant_id: 'b' }, ['a']).map((r) => r.eenheidsprijs)).toEqual([925, 845])
+  })
+})

@@ -340,6 +340,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(409).json({ error: 'Deze offerte is intussen aangepast. Laad de pagina opnieuw en controleer je keuze.' })
       }
       const genormaliseerdeKeuzes: Record<string, string[]> = {}
+      // Een oude client stuurt één id als string; heeft de post een vaste
+      // uitvoering, dan gaat die keuze als lijst verder zodat de vaste er altijd
+      // bij komt (gekozenVariantIds) en de klant hem niet kan laten vervallen.
+      const keuzeVan = (it: Record<string, unknown>): GekozenVariant => {
+        const ruw = varianten[it.id as string]
+        const vs = Array.isArray(it.prijs_varianten) ? it.prijs_varianten as Array<Record<string, unknown>> : []
+        return typeof ruw === 'string' && vs.some((v) => v.vast === true) ? [ruw] : ruw
+      }
 
       // Materialiseer de keuze op de items. Nooit een verplicht item verwijderen:
       // alleen gekozen optionele items vast zetten en gekozen varianten activeren.
@@ -348,7 +356,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       for (const it of items) {
         const patch: Record<string, unknown> = {}
         const vs = Array.isArray(it.prijs_varianten) ? it.prijs_varianten as Array<Record<string, unknown>> : []
-        const keuze = varianten[it.id as string]
+        const keuze = keuzeVan(it)
         const gekozen = gekozenVariantIds(vs, keuze)
         if (gekozen) {
           genormaliseerdeKeuzes[it.id as string] = gekozen
@@ -380,11 +388,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const inbegrepen = items
         .filter((it) => isPrijs(it) && !(it.is_optioneel && !gekozenSet.has(it.id as string)))
         .sort((a, b) => (Number(a.volgorde) || 0) - (Number(b.volgorde) || 0))
-      const finalRegels = inbegrepen.flatMap((it) => prijsRegels(it, varianten[it.id as string]))
+      const finalRegels = inbegrepen.flatMap((it) => prijsRegels(it, keuzeVan(it)))
       for (const it of inbegrepen) {
         const vs = Array.isArray(it.prijs_varianten) ? it.prijs_varianten as Array<Record<string, unknown>> : []
         if (!it.is_optioneel && vs.length === 0) continue
-        const keuze = varianten[it.id as string]
+        const keuze = keuzeVan(it)
         const gekozen = gekozenVariantIds(vs, keuze)
           ?? (typeof keuze === 'string' && vs.some((v) => v.id === keuze) && meetellendeVarianten(vs, it.actieve_variant_id as string | undefined).length <= 1
             ? [keuze]
@@ -620,12 +628,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       let klantEmail: string | null = null
       let klantFrans = false
       if (offerte.klant_id) {
-        const { data: klant } = await supabaseAdmin
+        // klanten.taal (migratie 258) kan nog ontbreken; dan zonder, anders
+        // gaat de bevestigingsmail stil niet weg (§10.3).
+        let { data: klant, error: klantFout } = await supabaseAdmin
           .from('klanten')
           .select('email, taal')
           .eq('id', offerte.klant_id)
           .maybeSingle()
-        klantEmail = klant?.email || null
+        if (klantFout && (klantFout.code === '42703' || klantFout.code === 'PGRST204')) {
+          ;({ data: klant, error: klantFout } = await supabaseAdmin.from('klanten').select('email').eq('id', offerte.klant_id).maybeSingle())
+        }
+        if (klantFout) console.error('[offerte-accepteren] klant voor bevestigingsmail laden mislukt:', klantFout.message)
+        klantEmail = (klant as { email?: string | null } | null)?.email || null
         klantFrans = (klant as { taal?: string } | null)?.taal === 'fr'
       }
 
@@ -673,7 +687,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           extraHtml: [
             keuzeOverzicht.length > 0
               ? `<div style="font-family: 'DM Sans', Arial, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #9B9B95; padding: 0 0 6px 0;">${mailTekst.keuze}</div><table width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 12px 0;">${keuzeOverzicht.map((k) =>
-                `<tr><td style="padding: 3px 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 13px; color: #1A1A1A;">${escapeHtml(k.titel)}${k.uitvoeringen.length ? `<span style="color: #6B6B66;">: ${escapeHtml(k.uitvoeringen.join(' + '))}</span>` : ''}</td><td align="right" style="padding: 3px 0 3px 12px; font-family: 'DM Mono', Menlo, monospace; font-size: 13px; color: #1A1A1A; white-space: nowrap;">${escapeHtml(formatCurrency(k.bedrag))}</td></tr>`
+                `<tr><td style="padding: 3px 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 13px; color: #1A1A1A;">${escapeHtml(k.titel)}${k.uitvoeringen.length ? `<span style="color: #6B6B66;">: ${escapeHtml(k.uitvoeringen.join(' + '))}</span>` : ''}</td><td align="right" style="padding: 3px 0 3px 12px; font-family: 'DM Mono', Menlo, monospace; font-size: 13px; color: #1A1A1A; white-space: nowrap;">${escapeHtml(formatCurrency(k.bedrag, klantFrans ? 'fr-BE' : 'nl-NL'))}</td></tr>`
               ).join('')}</table>`
               : '',
             handtekening

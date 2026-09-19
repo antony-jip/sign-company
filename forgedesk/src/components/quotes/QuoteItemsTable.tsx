@@ -829,6 +829,9 @@ export function QuoteItemsTable({
   const toggleVariantTeltMee = (itemId: string, variantId: string) => {
     const item = items.find((i) => i.id === itemId)
     if (!item?.prijs_varianten) return
+    // Een vaste optie telt altijd mee; anders ziet het portaal een ander bedrag
+    // dan de editor, de PDF en de factuur.
+    if (item.prijs_varianten.find((v) => v.id === variantId)?.vast) return
     const meetellend = getMeetellendeVarianten(item.prijs_varianten, item.actieve_variant_id)
     const staatAan = meetellend.some((v) => v.id === variantId)
     if (staatAan && meetellend.length === 1) return
@@ -1685,14 +1688,18 @@ export function QuoteItemsTable({
                             <div className="flex items-center gap-2 mb-2">
                               <button
                                 onClick={() => toggleVariantTeltMee(item.id, variant.id)}
+                                disabled={!!variant.vast}
                                 className={cn(
                                   'h-5 w-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors',
                                   isActive
                                     ? 'border-primary bg-primary text-white'
-                                    : 'border-border dark:border-border hover:border-primary/50'
+                                    : 'border-border dark:border-border hover:border-primary/50',
+                                  variant.vast && 'cursor-default'
                                 )}
                                 title={
-                                  isActive
+                                  variant.vast
+                                    ? 'Vast: telt altijd mee'
+                                    : isActive
                                     ? 'Telt mee in het offertetotaal — klik om uit te zetten'
                                     : 'Laat deze optie ook meetellen in het totaal'
                                 }

@@ -1075,10 +1075,13 @@ export function OffertePubliekPagina() {
         })
     : []
 
-  // Posten waar de klant iets kan aanvinken: een optie, of een uitvoering die niet vast is.
-  const keuzePosten = items.filter((i) =>
-    i.soort !== 'tekst' && (i.is_optioneel || (i.prijs_varianten?.some((v) => !v.vast) ?? false))
-  ).length
+  // Posten waar de klant echt iets kan aanvinken: een optie, of minstens één
+  // losse uitvoering naast een andere (één enkele uitvoering is niet uit te vinken).
+  const keuzePosten = items.filter((i) => {
+    if (i.soort === 'tekst') return false
+    const vs = i.prijs_varianten ?? []
+    return i.is_optioneel || (vs.length > 1 && vs.some((v) => !v.vast))
+  }).length
 
   const pdfKnop = (
     <button
