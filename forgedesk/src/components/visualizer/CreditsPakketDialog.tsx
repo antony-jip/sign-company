@@ -202,7 +202,7 @@ export function CreditsPakketDialog({
 
             <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
               <Shield className="h-3 w-3" />
-              Veilig betalen via Mollie · iDEAL & creditcard
+              Veilig betalen via Mollie · iDEAL, Bancontact & creditcard
             </div>
 
             {import.meta.env.DEV && (

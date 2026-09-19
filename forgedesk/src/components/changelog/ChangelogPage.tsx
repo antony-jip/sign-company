@@ -52,6 +52,19 @@ const APP_FEATURES = [
 
 const CHANGELOG: ChangelogEntry[] = [
   {
+    versie: '2.9.0',
+    datum: '19 september 2026',
+    label: 'Nieuw',
+    titel: 'België, Peppol & Billit',
+    beschrijving: 'doen. werkt nu ook voor Belgische bedrijven: e-facturen via Peppol, Billit als boekhoudpakket en Belgische btw-tarieven.',
+    features: [
+      { titel: 'Billit-koppeling', beschrijving: 'Facturen boeken in Billit en via het Peppol-netwerk afleveren. Inkomende Peppol-facturen landen bij Inkoopfacturen.' },
+      { titel: 'Peppol-check op klant', beschrijving: 'Zie op de klantkaart of een klant bereikbaar is via Peppol en kies Peppol als verzendvoorkeur.' },
+      { titel: 'Land en btw-tarieven', beschrijving: 'Landkeuze bij klanten en je eigen bedrijf; België rekent met 21/12/6/0%. Bancontact via je eigen Mollie-account.' },
+      { titel: 'UBL-export Peppol-proof', beschrijving: 'De UBL-download volgt nu Peppol BIS 3.0 (of NLCIUS in Nederland) met EndpointID, BuyerReference en verlegde btw.' },
+    ],
+  },
+  {
     versie: '1.6.2',
     datum: '6 september 2026',
     label: 'Nieuw',
@@ -186,7 +199,7 @@ const CHANGELOG: ChangelogEntry[] = [
     beschrijving: 'Professionele facturen met online betaallink en automatische herinneringen.',
     features: [
       { titel: 'Facturatie', beschrijving: 'Facturen aanmaken op basis van goedgekeurde offertes. PDF generatie en email verzending.' },
-      { titel: 'Mollie integratie', beschrijving: 'Online betaallink op je factuur. Klant betaalt met iDEAL, creditcard of bankoverschrijving.' },
+      { titel: 'Mollie integratie', beschrijving: 'Online betaallink op je factuur. Klant betaalt met iDEAL, Bancontact, creditcard of bankoverschrijving.' },
       { titel: 'Automatische herinneringen', beschrijving: 'Bij vervallen facturen: herinnering na 7, 14 en 21 dagen, aanmaning na 30 dagen.' },
     ],
   },

@@ -183,6 +183,27 @@ const ARTICLES: KbArticle[] = [
     link: '/facturen',
   },
   {
+    id: 'peppol',
+    category: 'financieel',
+    icon: Globe,
+    iconColor: '#1A535C',
+    titel: 'Peppol & Billit (België)',
+    subtitel: 'E-facturen versturen en ontvangen via het Peppol-netwerk',
+    inhoud: [
+      'In België is **e-facturatie via Peppol verplicht** voor B2B-facturen sinds 1 januari 2026. Een PDF per mail telt daar niet meer als factuur.',
+      'Koppel **Billit** via Instellingen > Integraties. Billit boekt je factuur én levert hem af op het Peppol-netwerk. Met de schakelaar *Facturen standaard via Peppol* gaat elke gesyncte factuur meteen de deur uit; per klant kies je *Peppol* als verzendvoorkeur om het alleen voor die klant te doen.',
+      'Op de klantkaart zie je of een klant **op Peppol bereikbaar** is (check via het btw-nummer). Staat hij er niet, dan gaat de factuur gewoon per e-mail.',
+      '**Inkomende** Peppol-facturen komen automatisch binnen bij Inkoopfacturen, met regels en bedragen al ingevuld.',
+      'Zet bij Instellingen > Bedrijf je **land op België**: dan rekent doen. met 21/12/6% btw en gebruikt de UBL-export het Belgische Peppol-profiel met je ondernemingsnummer.',
+    ],
+    tips: [
+      'Vul bij Belgische klanten altijd het btw-nummer in; daaruit leidt doen. het Peppol-adres af',
+      'Btw verlegd? Zet dat op de klant, dan gaat de e-factuur met de juiste btw-categorie',
+      'Test eerst met de Billit-sandbox voordat je op productie koppelt',
+    ],
+    link: '/instellingen?tab=integraties',
+  },
+  {
     id: 'financieel-overzicht',
     category: 'financieel',
     icon: PiggyBank,

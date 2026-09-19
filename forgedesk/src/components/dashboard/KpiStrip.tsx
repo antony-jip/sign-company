@@ -59,7 +59,7 @@ const DOEN_FACTS: DoenFact[] = [
   { cat: 'finance', text: 'Inkoopfacturen worden vanuit je inbox automatisch opgehaald. Niet meer doen.' },
   { cat: 'finance', text: 'Goedkeurings-flow in twee klikken. Of bulk. Doe je zo.' },
   { cat: 'finance', text: 'Exact-sync regelt de boekhouding. Doen we voor je.' },
-  { cat: 'finance', text: 'Mollie-betaallink op elke factuur. iDEAL? Doen.' },
+  { cat: 'finance', text: 'Mollie-betaallink op elke factuur. iDEAL of Bancontact? Doen.' },
   { cat: 'finance', text: 'Voorschot en eindafrekening · automatisch verrekend. Niks dubbel doen.' },
   { cat: 'finance', text: 'Creditfactuur? Eén klik, hele historie erbij. Gedaan.' },
   // ── Planning / Montage
