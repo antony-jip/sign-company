@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { LANDEN, landOfStandaard, type LandCode } from '@/lib/landen'
 import { createKlant, updateKlant } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { toast } from 'sonner'
@@ -53,6 +54,7 @@ interface FormData {
   adres: string
   postcode: string
   stad: string
+  land: LandCode
   website: string
   debiteurennummer: string
   kvk_nummer: string
@@ -80,6 +82,7 @@ const initialFormData: FormData = {
   adres: '',
   postcode: '',
   stad: '',
+  land: 'NL',
   website: '',
   debiteurennummer: '',
   kvk_nummer: '',
@@ -219,6 +222,7 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
         adres: klant.adres,
         postcode: klant.postcode,
         stad: klant.stad,
+        land: landOfStandaard(klant.land),
         website: klant.website,
         debiteurennummer: klant.debiteurennummer,
         kvk_nummer: klant.kvk_nummer,
@@ -293,7 +297,7 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
         adres: formData.adres.trim(),
         postcode: formData.postcode.trim(),
         stad: formData.stad.trim(),
-        land: 'Nederland',
+        land: formData.land,
         website: formData.website.trim(),
         debiteurennummer: formData.debiteurennummer.trim(),
         kvk_nummer: formData.kvk_nummer.trim(),
@@ -502,8 +506,8 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
             </div>
           </div>
 
-          {/* Row 3: Adres + Postcode + Stad */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Row 3: Adres + Postcode + Stad + Land */}
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div className="space-y-2 sm:col-span-1">
               <Label htmlFor="adres">Adres</Label>
               <Input
@@ -530,6 +534,19 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
                 onChange={(e) => handleChange('stad', e.target.value)}
                 placeholder="Stad"
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="land">Land</Label>
+              <Select value={formData.land} onValueChange={(value) => handleChange('land', value as LandCode)}>
+                <SelectTrigger id="land">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {LANDEN.map((l) => (
+                    <SelectItem key={l.code} value={l.code}>{l.naam}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

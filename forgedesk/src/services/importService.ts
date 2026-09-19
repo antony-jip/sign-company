@@ -415,7 +415,7 @@ export async function importeerBedrijfsdata(
           adres: rij.adres || '',
           postcode: rij.postcode || '',
           stad: rij.plaats || '',
-          land: 'Nederland',
+          land: 'NL',
           website: '',
           debiteurennummer: rij.debiteurennummer || '',
           kvk_nummer: rij.kvk_nummer || '',

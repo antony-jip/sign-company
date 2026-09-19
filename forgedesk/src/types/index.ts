@@ -16,6 +16,8 @@ export interface Profile {
   bedrijfs_telefoon?: string;
   bedrijfs_email?: string;
   bedrijfs_website?: string;
+  /** ISO-landcode van het eigen bedrijf (migratie 252); stuurt btw-tarieven en Peppol-profiel. */
+  bedrijfs_land?: string;
   kvk_nummer: string;
   btw_nummer: string;
   iban?: string;

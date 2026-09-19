@@ -29,6 +29,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { LANDEN, landNaam, landOfStandaard, type LandCode } from '@/lib/landen'
 import {
   ArrowLeft,
   Pencil,
@@ -164,7 +166,7 @@ export function ClientProfile() {
   // Vestiging form
   const [vestigingDialogOpen, setVestigingDialogOpen] = useState(false)
   const [editingVestiging, setEditingVestiging] = useState<Vestiging | null>(null)
-  const [vestigingForm, setVestigingForm] = useState({ naam: '', adres: '', postcode: '', stad: '', land: 'Nederland' })
+  const [vestigingForm, setVestigingForm] = useState<{ naam: string; adres: string; postcode: string; stad: string; land: LandCode }>({ naam: '', adres: '', postcode: '', stad: '', land: 'NL' })
   // Move contactpersoon to another company
   const [moveDialogOpen, setMoveDialogOpen] = useState(false)
   const [movingContact, setMovingContact] = useState<Contactpersoon | null>(null)
@@ -453,13 +455,13 @@ export function ClientProfile() {
   // ── Vestiging CRUD ──
   function openAddVestiging() {
     setEditingVestiging(null)
-    setVestigingForm({ naam: '', adres: '', postcode: '', stad: '', land: 'Nederland' })
+    setVestigingForm({ naam: '', adres: '', postcode: '', stad: '', land: 'NL' })
     setVestigingDialogOpen(true)
   }
 
   function openEditVestiging(v: Vestiging) {
     setEditingVestiging(v)
-    setVestigingForm({ naam: v.naam, adres: v.adres, postcode: v.postcode, stad: v.stad, land: v.land || 'Nederland' })
+    setVestigingForm({ naam: v.naam, adres: v.adres, postcode: v.postcode, stad: v.stad, land: landOfStandaard(v.land) })
     setVestigingDialogOpen(true)
   }
 
@@ -913,7 +915,7 @@ export function ClientProfile() {
               <p className="text-sm text-foreground">
                 {[klant.postcode, klant.stad].filter(Boolean).join(' ')}
               </p>
-              {vestigingen.length === 0 && klant.land && <p className="text-sm text-muted-foreground">{klant.land}</p>}
+              {vestigingen.length === 0 && klant.land && <p className="text-sm text-muted-foreground">{landNaam(klant.land)}</p>}
             </div>
             {/* Extra vestigingen */}
             {vestigingen.map((v) => (
@@ -2073,7 +2075,7 @@ export function ClientProfile() {
                   placeholder="1234 AB"
                 />
               </div>
-              <div className="space-y-2 sm:col-span-2">
+              <div className="space-y-2">
                 <Label htmlFor="vest-stad">Stad</Label>
                 <Input
                   id="vest-stad"
@@ -2081,6 +2083,19 @@ export function ClientProfile() {
                   onChange={(e) => setVestigingForm((f) => ({ ...f, stad: e.target.value }))}
                   placeholder="Amsterdam"
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="vest-land">Land</Label>
+                <Select value={vestigingForm.land} onValueChange={(value) => setVestigingForm((f) => ({ ...f, land: value as LandCode }))}>
+                  <SelectTrigger id="vest-land">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LANDEN.map((l) => (
+                      <SelectItem key={l.code} value={l.code}>{l.naam}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>

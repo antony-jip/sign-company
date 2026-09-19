@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { LANDEN, landOfStandaard, type LandCode } from '@/lib/landen'
 import { Building2, Phone, CreditCard, Upload, Loader2, Trash2 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -32,6 +34,7 @@ export function BedrijfTab() {
   const [adres, setAdres] = useState('')
   const [postcode, setPostcode] = useState('')
   const [stad, setStad] = useState('')
+  const [bedrijfsLand, setBedrijfsLand] = useState<LandCode>('NL')
   const [bedrijfsTelefoon, setBedrijfsTelefoon] = useState('')
   const [bedrijfsEmail, setBedrijfsEmail] = useState('')
   const [bedrijfsWebsite, setBedrijfsWebsite] = useState('')
@@ -57,6 +60,7 @@ export function BedrijfTab() {
         setKvkNummer(profile.kvk_nummer || '')
         setBtwNummer(profile.btw_nummer || '')
         setIban(profile.iban || '')
+        setBedrijfsLand(landOfStandaard(profile.bedrijfs_land))
         if (profile.logo_url) setLogoPreview(profile.logo_url)
         setEmailKleur(currentKleur || '#1A535C')
         if (profile.bedrijfs_adres) {
@@ -108,6 +112,7 @@ export function BedrijfTab() {
       await updateProfile(user.id, {
         bedrijfsnaam,
         bedrijfs_adres: bedrijfsAdres,
+        bedrijfs_land: bedrijfsLand,
         bedrijfs_telefoon: bedrijfsTelefoon,
         bedrijfs_email: bedrijfsEmail,
         bedrijfs_website: bedrijfsWebsite,
@@ -300,6 +305,20 @@ export function BedrijfTab() {
                 <Input id="stad" value={stad} onChange={(e) => setStad(e.target.value)} className="bg-muted dark:bg-muted border-border rounded-lg focus-visible:ring-petrol" />
               </div>
             </div>
+            <div className="space-y-1.5">
+              <label htmlFor="bedrijfs-land" className="text-[11px] text-muted-foreground block">Land</label>
+              <Select value={bedrijfsLand} onValueChange={(v) => setBedrijfsLand(v as LandCode)}>
+                <SelectTrigger id="bedrijfs-land" className="bg-muted dark:bg-muted border-border rounded-lg focus-visible:ring-petrol">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {LANDEN.map((l) => (
+                    <SelectItem key={l.code} value={l.code}>{l.naam}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-[11px] text-muted-foreground">Bepaalt de btw-tarieven en het e-factuurprofiel (Peppol).</p>
+            </div>
           </div>
           {saveButton}
         </div>
@@ -349,16 +368,16 @@ export function BedrijfTab() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="kvk" className="text-[12px] font-semibold uppercase tracking-widest text-foreground/70">KvK Nummer</Label>
-              <Input id="kvk" value={kvkNummer} onChange={(e) => setKvkNummer(e.target.value)} placeholder="12345678" className="font-mono bg-card" />
+              <Label htmlFor="kvk" className="text-[12px] font-semibold uppercase tracking-widest text-foreground/70">{bedrijfsLand === 'BE' ? 'Ondernemingsnummer (KBO)' : 'KvK Nummer'}</Label>
+              <Input id="kvk" value={kvkNummer} onChange={(e) => setKvkNummer(e.target.value)} placeholder={bedrijfsLand === 'BE' ? '0123.456.789' : '12345678'} className="font-mono bg-card" />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="btw" className="text-[12px] font-semibold uppercase tracking-widest text-foreground/70">BTW Nummer</Label>
-              <Input id="btw" value={btwNummer} onChange={(e) => setBtwNummer(e.target.value)} placeholder="NL123456789B01" className="font-mono bg-card" />
+              <Input id="btw" value={btwNummer} onChange={(e) => setBtwNummer(e.target.value)} placeholder={bedrijfsLand === 'BE' ? 'BE0123456789' : 'NL123456789B01'} className="font-mono bg-card" />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="iban" className="text-[12px] font-semibold uppercase tracking-widest text-foreground/70">IBAN</Label>
-              <Input id="iban" value={iban} onChange={(e) => setIban(e.target.value)} placeholder="NL00 BANK 0123 4567 89" className="font-mono bg-card" />
+              <Input id="iban" value={iban} onChange={(e) => setIban(e.target.value)} placeholder={bedrijfsLand === 'BE' ? 'BE00 0000 0000 0000' : 'NL00 BANK 0123 4567 89'} className="font-mono bg-card" />
             </div>
           </div>
           {saveButton}
