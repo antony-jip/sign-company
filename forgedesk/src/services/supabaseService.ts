@@ -15,13 +15,6 @@ export {
 } from './offerteService'
 
 export {
-  getVoorraadArtikelen, getVoorraadArtikel, getVoorraadArtikelenBijMinimum,
-  createVoorraadArtikel, updateVoorraadArtikel, deleteVoorraadArtikel,
-  getVoorraadMutaties, getVoorraadMutatiesByProject,
-  createVoorraadMutatie, deleteVoorraadMutatie,
-} from './voorraadService'
-
-export {
   getWerkbonnen, getWerkbon, getWerkbonnenByProject, getWerkbonnenByKlant,
   createWerkbon, updateWerkbon, deleteWerkbon,
   getWerkbonFotos, createWerkbonFoto, deleteWerkbonFoto,

@@ -42,7 +42,7 @@ const supabase = createClient(
 const DAAN_PRODUCTKENNIS = `PRODUCTKENNIS — gebruik dit om vragen te beantwoorden over hoe de app doen. werkt en waar gebruikers iets vinden. Verwijs naar menu-items en knoppen met hun exacte naam.
 
 OVER DOEN.
-doen. is een all-in-one platform voor signmakers en reclamebedrijven (3 tot 30 medewerkers): klanten, offertes, facturen, projecten, montageplanning, werkbonnen, voorraad, inkoopfacturen, e-mail, klantportaal, 3D-visualizer en de AI-assistent Daan op één plek.
+doen. is een all-in-one platform voor signmakers en reclamebedrijven (3 tot 30 medewerkers): klanten, offertes, facturen, projecten, montageplanning, werkbonnen, inkoopfacturen, e-mail, klantportaal, 3D-visualizer en de AI-assistent Daan op één plek.
 - De app heet doen. (kleine letters, met punt). De assistent heet Daan.
 - doen. is transparant binnen een bedrijf: iedereen in dezelfde organisatie ziet en plant alles van iedereen (taken, klanten, projecten, planning). Bewuste keuze, geen instelling.
 - Tarief: er is een staffel op basis van het aantal gebruikers, maandelijks opzegbaar en zonder verborgen kosten. Noem NOOIT zelf een bedrag: het staat per organisatie in de app onder Instellingen, Abonnement. Verwijs daarheen of naar doen.team/contact.
@@ -79,7 +79,7 @@ MODULES (route -> wat het doet)
 - Documenten (/documenten) : centraal bestandsarchief en briefpapier/sjablonen.
 - Kennisbank (/kennisbank) : interne artikelen met uitleg en tips; Daan gebruikt deze ook.
 - Visualizer (/visualizer) : realistische voorbeeldafbeeldingen (mockups) van signing-ontwerpen maken op basis van een beschrijving of afbeelding, met een gekozen beeldverhouding. Werkt met credits; mockups koppelbaar aan project of offerte.
-- Financieel (/financieel) : kerncijfers, plus beheer van uitgaven, leveranciers (met KvK-zoekfunctie) en voorraad (artikelen, mutaties, minimumvoorraad met waarschuwing). Voorraad ook via /voorraad.
+- Financieel (/financieel) : kerncijfers, plus beheer van uitgaven en leveranciers (met KvK-zoekfunctie).
 - Rapportages (/rapportages) : overzichten van omzet, marge, uren, klanten en projecten over een gekozen periode; exporteren naar Excel/CSV.
 - Forecast (/forecast) : omzetprognose op basis van historie en openstaande deals; toont pijplijnwaarde en gewogen waarde.
 - Tijdregistratie (/tijdregistratie) : uren per project registreren met timer of handmatig, factureerbaar markeren, en geselecteerde uren in één keer op een factuur zetten.

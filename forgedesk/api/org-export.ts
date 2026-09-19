@@ -113,7 +113,7 @@ const TABELLEN: { tabel: string; sorteer: string }[] = [
   { tabel: 'btw_codes', sorteer: 'id' },
   { tabel: 'abonnement_facturen', sorteer: 'id' },
 
-  // Inkoop en voorraad
+  // Inkoop
   { tabel: 'leveranciers', sorteer: 'id' },
   { tabel: 'inkoop_offertes', sorteer: 'id' },
   { tabel: 'inkoop_regels', sorteer: 'id' },
@@ -123,8 +123,6 @@ const TABELLEN: { tabel: string; sorteer: string }[] = [
   { tabel: 'bestelbon_regels', sorteer: 'id' },
   { tabel: 'leveringsbonnen', sorteer: 'id' },
   { tabel: 'leveringsbon_regels', sorteer: 'id' },
-  { tabel: 'voorraad_artikelen', sorteer: 'id' },
-  { tabel: 'voorraad_mutaties', sorteer: 'id' },
 
   // Mensen en planning
   { tabel: 'profiles', sorteer: 'id' },

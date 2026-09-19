@@ -97,7 +97,6 @@ const PublicBookingPage = lazy(() => import('@/components/planning/PublicBooking
 
 // Financial
 const FinancialLayout = lazy(() => import('@/components/financial/FinancialLayout'), 'FinancialLayout')
-const VoorraadLayout = lazy(() => import('@/components/financial/VoorraadLayout'), 'VoorraadLayout')
 const LeveranciersLayout = lazy(() => import('@/components/financial/LeveranciersLayout'), 'LeveranciersLayout')
 
 // Inkoopfacturen (rendered as tab in FacturenLayout, not standalone)
@@ -345,7 +344,6 @@ function AppContent() {
         <Route path="bestelbonnen/:id" element={<BestelbonDetail />} />
         <Route path="leveringsbonnen" element={<LeveringsbonnenLayout />} />
         <Route path="leveringsbonnen/:id" element={<LeveringsbonDetail />} />
-        <Route path="voorraad" element={<VoorraadLayout />} />
         <Route path="leveranciers" element={<LeveranciersLayout />} />
         <Route path="leads" element={<LeadCaptureLayout />} />
         <Route path="leads/formulieren/nieuw" element={<LeadFormulierEditor />} />

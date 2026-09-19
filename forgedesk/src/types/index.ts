@@ -1863,47 +1863,6 @@ export interface LeveringsbonRegel {
   updated_at?: string;
 }
 
-// ============ VOORRAADBEHEER (Tier 2 Feature 5) ============
-
-export interface VoorraadArtikel {
-  id: string;
-  user_id?: string;
-  organisatie_id?: string;
-  naam: string;
-  sku?: string;
-  categorie: string;
-  eenheid: string;
-  huidige_voorraad: number;
-  minimum_voorraad: number;
-  maximum_voorraad?: number;
-  inkoop_prijs: number;
-  verkoop_prijs?: number;
-  leverancier_id?: string;
-  leverancier_artikelnummer?: string;
-  levertijd_dagen?: number;
-  opslaglocatie?: string;
-  actief: boolean;
-  created_at: string;
-  updated_at?: string;
-}
-
-export interface VoorraadMutatie {
-  id: string;
-  user_id?: string;
-  organisatie_id?: string;
-  artikel_id: string;
-  type: 'inkoop' | 'verbruik' | 'correctie' | 'retour';
-  aantal: number;
-  reden?: string;
-  project_id?: string;
-  bestelbon_id?: string;
-  werkbon_id?: string;
-  saldo_na_mutatie: number;
-  datum: string;
-  created_at: string;
-  updated_at?: string;
-}
-
 // ============ DEALS / SALES PIPELINE (Tier 3 Feature 1) ============
 
 export interface Deal {
