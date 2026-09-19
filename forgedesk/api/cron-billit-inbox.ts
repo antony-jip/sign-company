@@ -166,10 +166,12 @@ function datum(o: unknown, ...namen: string[]): string | null {
 // Peppol-afleverstatus uit een Billit-order. Alleen expliciete signalen
 // veranderen de status; een onbekende waarde laat hem staan.
 function peppolStatusUitOrder(order: unknown): 'afgeleverd' | 'mislukt' | 'verzonden' | null {
+  // Bewust zonder OrderStatus: dat is de boekhoudstatus (ToSend/Sent/Paid),
+  // geen transportstatus, en zou een hangende wachtrij ten onrechte op
+  // 'verzonden' zetten.
   const kandidaten = [
     tekst(order, 'PeppolStatus', 'TransportStatus', 'EInvoiceStatus', 'LastSendStatus', 'SendStatus'),
     tekst(veld(order, 'LastTransport', 'Transport'), 'Status', 'TransportStatus'),
-    tekst(order, 'OrderStatus'),
   ].filter((s): s is string => !!s).map((s) => s.toLowerCase())
   for (const s of kandidaten) {
     if (/deliver|received|accepted|acknowledg/.test(s)) return 'afgeleverd'
@@ -187,6 +189,15 @@ async function verwerkOrganisatie(supabase: SupabaseClient, s: BillitSettings): 
   const base = BILLIT_BASE[omgeving]
   const token = await billitAccessToken(supabase, s)
   const partyId = s.billit_party_id
+
+  // 0. Een claim die nooit is afgerond (functie gestorven na in_wachtrij)
+  // mag de factuur niet blokkeren: na 30 minuten terug naar 'mislukt'.
+  await supabase
+    .from('facturen')
+    .update({ peppol_status: 'mislukt', peppol_fout: 'Peppol-verzending is niet afgerond; probeer opnieuw' })
+    .eq('organisatie_id', orgId)
+    .eq('peppol_status', 'in_wachtrij')
+    .lt('updated_at', new Date(Date.now() - 30 * 60 * 1000).toISOString())
 
   // 1. Uitgaand: afleverstatus van facturen die via Peppol onderweg zijn.
   let statussen = 0
@@ -299,6 +310,12 @@ async function verwerkInkomendeOrder(supabase: SupabaseClient, base: string, tok
   const res = await billitFetch(base, token, partyId, `/v1/orders/${encodeURIComponent(orderId)}`)
   if (!res.ok) throw new Error(`order ophalen: ${res.status}`)
   const order = await res.json() as Obj
+
+  // Alleen wat via Peppol binnenkwam; wat de klant zelf in Billit inboekt
+  // hoort niet nog eens in de reviewflow van doen. Zonder kanaalveld (fase 0
+  // legt de naam vast) laten we het document door.
+  const kanaal = tekst(order, 'Transporttype', 'TransportType', 'Source', 'Channel', 'ImportSource', 'Origin')
+  if (kanaal && !/peppol/i.test(kanaal)) return
 
   const supplier = veld(order, 'Supplier', 'Party', 'Customer') as Obj | undefined
   const leverancier = tekst(supplier, 'Name', 'CompanyName') ?? tekst(order, 'SupplierName', 'PartyName') ?? 'Onbekende leverancier'

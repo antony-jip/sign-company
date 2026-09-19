@@ -158,6 +158,9 @@ function peppolIdentifier(klant: { land?: string | null; btw_nummer?: string | n
     const kvk = (klant.kvk_nummer ?? '').replace(/[\s.\-]/g, '')
     return /^[01]\d{9}$/.test(kvk) ? kvk : null
   }
+  // Nederland: KvK (schema 0106) zoals src/lib/peppol.ts, anders het btw-nummer
+  const kvk = (klant.kvk_nummer ?? '').replace(/[\s.\-]/g, '')
+  if (land === 'NL' && /^\d{8}$/.test(kvk)) return kvk
   return btw || null
 }
 

@@ -65,7 +65,8 @@ async function btwPercentageVoorOrganisatie(
     if (!btw && p?.btw_nummer) btw = String(p.btw_nummer).trim()
   }
   const schoon = btw.replace(/[\s.\-]/g, '').toUpperCase()
-  const verlegd = land !== 'NL' && land !== 'NEDERLAND' && /^[A-Z]{2}[A-Z0-9]{2,12}$/.test(schoon) && !schoon.startsWith('NL')
+  // Zelfde landenlijst als src/lib/landen.ts; een onbekend land telt als NL.
+  const verlegd = ['BE', 'DE', 'LU', 'FR'].includes(land) && /^[A-Z]{2}[A-Z0-9]{2,12}$/.test(schoon) && !schoon.startsWith('NL')
   return verlegd ? 0 : BTW_PERCENTAGE
 }
 

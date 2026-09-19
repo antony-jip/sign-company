@@ -339,7 +339,6 @@ export function IntegratiesTab() {
     }
     setBillitConnecting(true)
     try {
-      await saveIntegrationSettings({ billit_omgeving: billitOmgeving })
       const { data } = supabase ? await supabase.auth.getSession() : { data: null }
       const token = data?.session?.access_token
       if (!token) { toast.error('Niet ingelogd'); return }

@@ -11,7 +11,7 @@
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
-import { timingSafeEqual } from 'node:crypto'
+import { createHash, timingSafeEqual } from 'node:crypto'
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -37,7 +37,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     .eq('organisatie_id', org)
     .maybeSingle()
   const verwacht = (rij as { billit_webhook_secret?: string | null } | null)?.billit_webhook_secret ?? ''
-  if (!verwacht || !veilig(secret, verwacht)) return res.status(401).json({ error: 'Unauthorized' })
+  if (!verwacht || !veilig(createHash('sha256').update(secret).digest('hex'), verwacht)) return res.status(401).json({ error: 'Unauthorized' })
   if ((rij as { boekhoud_pakket?: string | null } | null)?.boekhoud_pakket !== 'billit') {
     // Ontkoppeld maar webhook nog actief bij Billit: netjes bevestigen zodat
     // Billit niet blijft herhalen.

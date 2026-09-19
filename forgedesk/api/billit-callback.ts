@@ -281,7 +281,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       billit_party_id: partyId,
       billit_omgeving: omgeving,
       billit_owner_user_id: userId,
-      billit_webhook_secret: webhookSecret,
+      // Alleen de hash in de database: app_settings komt via select('*') bij elke org-gebruiker.
+      billit_webhook_secret: crypto.createHash('sha256').update(webhookSecret).digest('hex'),
       boekhoud_pakket: 'billit',
     })
 
