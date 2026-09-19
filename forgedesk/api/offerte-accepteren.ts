@@ -2,6 +2,8 @@
  * Klant-akkoord op een publieke offerte-link.
  *
  * Body: { token, naam, handtekening, gekozen_items?, gekozen_varianten? }
+ * gekozen_varianten: per item-id de aangevinkte variant-ids (string[]); een
+ * enkele string is de oude vorm van vóór het meervoudig kiezen.
  * - handtekening: PNG data-URL, max 200 kB, gaat naar offerte_handtekeningen
  *   (migratie 240). Altijd verplicht: dit is de enige route waarlangs een klant
  *   akkoord geeft, ook vanuit het portaal.
@@ -132,21 +134,41 @@ function meetellendeVarianten(
 }
 
 /**
- * De prijsregels van een item zoals ze meetellen. Staan er meerdere opties vast,
- * dan valt er voor de klant niets te kiezen en tellen ze allemaal mee — een
- * eerder meegestuurde variantkeuze mag die post dan niet terugbrengen tot één optie.
+ * De keuze van de klant per post: sinds de klant meerdere uitvoeringen kan
+ * aanvinken een lijst met variant-ids; oudere pagina's stuurden één id. Alleen
+ * ids die echt op de post staan tellen; blijft er niets over, dan is er geen
+ * keuze en geldt wat de verkoper had ingesteld.
  */
-function prijsRegels(item: Record<string, unknown>, gekozenVariantId?: string): PrijsRegel[] {
-  const vs = Array.isArray(item.prijs_varianten) ? item.prijs_varianten as Array<Record<string, unknown>> : []
-  const meetellend = meetellendeVarianten(vs, item.actieve_variant_id as string | undefined)
-  if (meetellend.length > 1) {
-    return meetellend.map((v) => ({
-      aantal: Number(v.aantal) || 0,
-      eenheidsprijs: Number(v.eenheidsprijs) || 0,
-      btw_percentage: Number(v.btw_percentage) || 0,
-      korting_percentage: Number(v.korting_percentage) || 0,
-    }))
+export type GekozenVariant = string | string[] | undefined
+
+export function gekozenVariantIds(vs: Array<Record<string, unknown>>, keuze: GekozenVariant): string[] | undefined {
+  if (!Array.isArray(keuze)) return undefined
+  const geldig = keuze.filter((id) => typeof id === 'string' && vs.some((v) => v.id === id))
+  return geldig.length > 0 ? Array.from(new Set(geldig)) : undefined
+}
+
+function variantRegel(v: Record<string, unknown>): PrijsRegel {
+  return {
+    aantal: Number(v.aantal) || 0,
+    eenheidsprijs: Number(v.eenheidsprijs) || 0,
+    btw_percentage: Number(v.btw_percentage) || 0,
+    korting_percentage: Number(v.korting_percentage) || 0,
   }
+}
+
+/**
+ * De prijsregels van een item zoals ze meetellen. Heeft de klant een lijst
+ * uitvoeringen aangevinkt, dan zijn dat de regels. Bij een enkele (oude) keuze:
+ * staan er meerdere opties vast, dan valt er niets te kiezen en tellen ze
+ * allemaal mee — die ene keuze mag de post niet terugbrengen tot één optie.
+ */
+export function prijsRegels(item: Record<string, unknown>, keuze: GekozenVariant): PrijsRegel[] {
+  const vs = Array.isArray(item.prijs_varianten) ? item.prijs_varianten as Array<Record<string, unknown>> : []
+  const gekozen = gekozenVariantIds(vs, keuze)
+  if (gekozen) return vs.filter((v) => gekozen.includes(v.id as string)).map(variantRegel)
+  const meetellend = meetellendeVarianten(vs, item.actieve_variant_id as string | undefined)
+  if (meetellend.length > 1) return meetellend.map(variantRegel)
+  const gekozenVariantId = typeof keuze === 'string' ? keuze : undefined
   return [variantWaarden(item, gekozenVariantId || (item.actieve_variant_id as string | undefined))]
 }
 
@@ -184,7 +206,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       token: string
       naam: string
       gekozen_items?: string[]
-      gekozen_varianten?: Record<string, string>
+      gekozen_varianten?: Record<string, string | string[]>
       handtekening?: string
     }
 
@@ -295,18 +317,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       // Materialiseer de keuze op de items. Nooit een verplicht item verwijderen:
       // alleen gekozen optionele items vast zetten en gekozen varianten activeren.
+      // Een lijst aangevinkte uitvoeringen landt als telt_mee op de varianten:
+      // dat is wat detailpagina, PDF en factuur lezen (getMeetellendeVarianten).
       for (const it of items) {
         const patch: Record<string, unknown> = {}
         const vs = Array.isArray(it.prijs_varianten) ? it.prijs_varianten as Array<Record<string, unknown>> : []
-        const meerdereTellenMee =
-          meetellendeVarianten(vs, it.actieve_variant_id as string | undefined).length > 1
-        const vid = varianten[it.id as string]
-        if (!meerdereTellenMee && vid && vs.some((x) => x.id === vid) && vid !== it.actieve_variant_id) {
-          patch.actieve_variant_id = vid
+        const keuze = varianten[it.id as string]
+        const gekozen = gekozenVariantIds(vs, keuze)
+        if (gekozen) {
+          if (vs.some((v) => (v.telt_mee === true) !== gekozen.includes(v.id as string))) {
+            patch.prijs_varianten = vs.map((v) => ({ ...v, telt_mee: gekozen.includes(v.id as string) }))
+          }
+          if (gekozen[0] !== it.actieve_variant_id) patch.actieve_variant_id = gekozen[0]
+        } else {
+          const meerdereTellenMee =
+            meetellendeVarianten(vs, it.actieve_variant_id as string | undefined).length > 1
+          const vid = typeof keuze === 'string' ? keuze : undefined
+          if (!meerdereTellenMee && vid && vs.some((x) => x.id === vid) && vid !== it.actieve_variant_id) {
+            patch.actieve_variant_id = vid
+          }
         }
         if (it.is_optioneel && gekozenSet.has(it.id as string)) patch.is_optioneel = false
-        const effVid = (patch.actieve_variant_id as string) || (it.actieve_variant_id as string | undefined)
-        const nt = r2(prijsRegels(it, effVid).reduce((sum, r) => sum + regelNetto(r), 0))
+        const effKeuze: GekozenVariant = gekozen ?? ((patch.actieve_variant_id as string) || (it.actieve_variant_id as string | undefined))
+        const nt = r2(prijsRegels(it, effKeuze).reduce((sum, r) => sum + regelNetto(r), 0))
         if (nt !== Number(it.totaal)) patch.totaal = nt
         if (Object.keys(patch).length > 0) {
           await supabaseAdmin.from('offerte_items').update(patch).eq('id', it.id)
@@ -317,7 +350,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // optionele items, met de gekozen (of standaard) variant.
       const finalRegels = items
         .filter((it) => isPrijs(it) && !(it.is_optioneel && !gekozenSet.has(it.id as string)))
-        .flatMap((it) => prijsRegels(it, varianten[it.id as string] as string | undefined))
+        .flatMap((it) => prijsRegels(it, varianten[it.id as string]))
       const afrondingskorting = Number(offerte.afrondingskorting_excl_btw) || 0
       const totalen = berekenGeaccepteerdeTotalen(finalRegels, afrondingskorting)
       updateData.subtotaal = totalen.subtotaal

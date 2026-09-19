@@ -24,7 +24,7 @@ import { klantpaginaTeksten } from '@/lib/klantpaginaTeksten'
 import { OFFERTE_VOORBEELD, VOORBEELD_TOKEN, type VoorbeeldBericht } from '@/lib/offerteVoorbeeld'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { getMeetellendeVarianten, nettoStuksprijs } from '@/utils/offerteTotalen'
-import { bijlageSoort, isLichteKleur, klantSpecs, kopKleur, veiligeTerugUrl, voornaam, type KlantSpec } from '@/utils/offerteKlantpagina'
+import { bijlageSoort, gekozenVariantenPerItem, isLichteKleur, klantSpecs, kopKleur, veiligeTerugUrl, voornaam, type KlantSpec } from '@/utils/offerteKlantpagina'
 
 // ============ TYPES ============
 
@@ -53,7 +53,7 @@ interface PubliekOfferte {
   afrondingskorting_excl_btw?: number
   aangepast_totaal?: number
   gekozen_items?: string[]
-  gekozen_varianten?: Record<string, string>
+  gekozen_varianten?: Record<string, string | string[]>
 }
 
 interface PubliekItemPrijsVariant {
@@ -64,6 +64,7 @@ interface PubliekItemPrijsVariant {
   btw_percentage: number
   korting_percentage: number
   telt_mee?: boolean
+  omschrijving?: string
 }
 
 interface PubliekItem {
@@ -173,67 +174,58 @@ function splitsBeschrijving(tekst: string): { titel: string; rest: string } {
   return { titel: eerste.trim(), rest: rest.join('\n').trim() }
 }
 
-// Get effective item values based on selected variant
-function getEffectiveItemValues(item: PubliekItem, selectedVariantId?: string): { aantal: number; eenheidsprijs: number; btw_percentage: number; korting_percentage: number } {
-  if (selectedVariantId && item.prijs_varianten?.length) {
-    const variant = item.prijs_varianten.find(v => v.id === selectedVariantId)
-    if (variant) {
-      return {
-        aantal: variant.aantal,
-        eenheidsprijs: variant.eenheidsprijs,
-        btw_percentage: variant.btw_percentage,
-        korting_percentage: variant.korting_percentage,
-      }
-    }
-  }
+interface PrijsRegel {
+  aantal: number
+  eenheidsprijs: number
+  btw_percentage: number
+  korting_percentage: number
+}
+
+/** Per item de aangevinkte uitvoeringen (variant-ids). */
+type VariantKeuzes = Record<string, string[]>
+
+function regelVan(bron: { aantal: number; eenheidsprijs: number; btw_percentage: number; korting_percentage?: number }): PrijsRegel {
   return {
-    aantal: item.aantal,
-    eenheidsprijs: item.eenheidsprijs,
-    btw_percentage: item.btw_percentage,
-    korting_percentage: item.korting_percentage || 0,
+    aantal: bron.aantal,
+    eenheidsprijs: bron.eenheidsprijs,
+    btw_percentage: bron.btw_percentage,
+    korting_percentage: bron.korting_percentage || 0,
   }
+}
+
+function regelNetto(r: PrijsRegel): number {
+  return round2(r.aantal * r.eenheidsprijs * (1 - r.korting_percentage / 100))
 }
 
 /**
- * De prijsregels van een item zoals ze nu meetellen. Heeft de verkoper meerdere
- * prijsopties laten meetellen, dan staan die allemaal vast op de offerte en valt
- * er voor de klant niets te kiezen; anders blijft het één regel, eventueel de
- * optie die de klant zelf koos.
+ * De uitvoeringen die voor dit item meetellen: wat de klant aanvinkte, of
+ * anders wat de verkoper standaard liet meetellen. Een keuze die niet (meer)
+ * op het item bestaat telt niet; blijft er dan niets over, dan geldt de
+ * standaard, zodat een post nooit stil op nul uitkomt.
  */
-function effectievePrijsRegels(
-  item: PubliekItem,
-  selectedVariantId?: string
-): { aantal: number; eenheidsprijs: number; btw_percentage: number; korting_percentage: number }[] {
-  const meetellend = meetellendeVariantenVan(item)
-  if (meetellend.length > 1) {
-    return meetellend.map((v) => ({
-      aantal: v.aantal,
-      eenheidsprijs: v.eenheidsprijs,
-      btw_percentage: v.btw_percentage,
-      korting_percentage: v.korting_percentage || 0,
-    }))
-  }
-  return [getEffectiveItemValues(item, selectedVariantId)]
+function gekozenVarianten(item: PubliekItem, gekozen?: string[]): PubliekItemPrijsVariant[] {
+  const varianten = item.prijs_varianten ?? []
+  if (varianten.length === 0) return []
+  const keuze = new Set(gekozen ?? [])
+  const aangevinkt = varianten.filter((v) => keuze.has(v.id))
+  return aangevinkt.length > 0 ? aangevinkt : getMeetellendeVarianten(varianten, item.actieve_variant_id)
 }
 
-function meetellendeVariantenVan(item: PubliekItem): PubliekItemPrijsVariant[] {
-  return getMeetellendeVarianten(item.prijs_varianten, item.actieve_variant_id)
+/** De prijsregels van een item: één per gekozen uitvoering, of de basisprijs. */
+function effectievePrijsRegels(item: PubliekItem, gekozen?: string[]): PrijsRegel[] {
+  const keuze = gekozenVarianten(item, gekozen)
+  return keuze.length > 0 ? keuze.map(regelVan) : [regelVan(item)]
 }
 
-function getEffectiveItemTotal(item: PubliekItem, selectedVariantId?: string): number {
-  return round2(
-    effectievePrijsRegels(item, selectedVariantId).reduce(
-      (sum, v) => sum + round2(v.aantal * v.eenheidsprijs * (1 - v.korting_percentage / 100)),
-      0
-    )
-  )
+function getEffectiveItemTotal(item: PubliekItem, gekozen?: string[]): number {
+  return round2(effectievePrijsRegels(item, gekozen).reduce((sum, r) => sum + regelNetto(r), 0))
 }
 
 // BTW groepering with selection awareness
 function groepeerBtwMetSelectie(
   items: PubliekItem[],
   selectedItems: Set<string>,
-  selectedVariants: Record<string, string>,
+  selectedVariants: VariantKeuzes,
   hasOptionalItems: boolean
 ): { percentage: number; basis: number; btw: number }[] {
   const map = new Map<number, { basis: number; btw: number }>()
@@ -242,8 +234,7 @@ function groepeerBtwMetSelectie(
     // Skip unselected items (only filter if there are optional items)
     if (hasOptionalItems && !selectedItems.has(item.id)) continue
     for (const v of effectievePrijsRegels(item, selectedVariants[item.id])) {
-      const korting = v.korting_percentage || 0
-      const regelExcl = round2(v.aantal * v.eenheidsprijs * (1 - korting / 100))
+      const regelExcl = regelNetto(v)
       const regelBtw = round2(regelExcl * v.btw_percentage / 100)
       const existing = map.get(v.btw_percentage) || { basis: 0, btw: 0 }
       existing.basis += regelExcl
@@ -297,22 +288,22 @@ function Sheet({ titel, onClose, children }: { titel: string; onClose: () => voi
 interface OfferteRegelProps {
   item: PubliekItem
   isSelected: boolean
-  gekozenVariantId?: string
+  gekozenVariantIds?: string[]
   kanActie: boolean
   hasOptionalItems: boolean
   onToggle: (itemId: string, aan: boolean) => void
-  onKiesVariant: (itemId: string, variantId: string) => void
+  onKiesVarianten: (itemId: string, variantIds: string[]) => void
   onOpenAfbeelding: (url: string, naam: string) => void
 }
 
 function OfferteRegel({
   item,
   isSelected,
-  gekozenVariantId,
+  gekozenVariantIds,
   kanActie,
   hasOptionalItems,
   onToggle,
-  onKiesVariant,
+  onKiesVarianten,
   onOpenAfbeelding,
 }: OfferteRegelProps) {
   if (item.soort === 'tekst') {
@@ -324,45 +315,26 @@ function OfferteRegel({
   }
 
   const { titel, rest } = splitsBeschrijving(item.beschrijving)
-  const meetellend = meetellendeVariantenVan(item)
-  // Meerdere meetellende opties krijgen elk een eigen regel: één regel kan geen
-  // twee stuksprijzen tonen zonder te liegen over het bedrag.
-  const toonOptieRegels = meetellend.length > 1
-  const waarden = getEffectiveItemValues(item, gekozenVariantId)
-  const regelTotaal = getEffectiveItemTotal(item, gekozenVariantId)
+  const varianten = item.prijs_varianten ?? []
+  const heeftUitvoeringen = varianten.length > 0
+  const gekozen = new Set(gekozenVarianten(item, gekozenVariantIds).map((v) => v.id))
+  const waarden = regelVan(item)
+  const regelTotaal = getEffectiveItemTotal(item, gekozenVariantIds)
   const isDeselected = hasOptionalItems && !isSelected
+  const kanKiezen = heeftUitvoeringen && kanActie && !isDeselected
 
   const specs: KlantSpec[] = klantSpecs(item)
-  // Staan er meerdere opties vast in het totaal, dan valt er niets te kiezen:
-  // dan zijn het geen alternatieven maar vaste regels.
-  const toonbareVarianten = item.prijs_varianten?.filter((v) => v.eenheidsprijs > 0) || []
-  const toonKeuze = !toonOptieRegels && toonbareVarianten.length > 0 && kanActie && !isDeselected
-  const gekozenLabel = !toonKeuze && gekozenVariantId
-    ? item.prijs_varianten?.find((v) => v.id === gekozenVariantId)?.label
-    : undefined
-  if (gekozenLabel) specs.push({ label: 'Uitvoering', waarde: gekozenLabel })
-  if (!toonOptieRegels && waarden.korting_percentage > 0) {
+  if (!heeftUitvoeringen && waarden.korting_percentage > 0) {
     const korting = round2(waarden.aantal * waarden.eenheidsprijs * (waarden.korting_percentage / 100))
     specs.push({ label: 'Korting', waarde: `${waarden.korting_percentage}% (-${formatCurrency(korting)})` })
   }
 
-  // De prijs in een keuze is die ná korting, met het regeltotaal erachter. Met
-  // de brutoprijs leken alle staffels even duur en zag de klant pas na het
-  // kiezen dat er korting op zat.
-  const keuzes = toonKeuze
-    ? [
-        ...(item.eenheidsprijs > 0
-          ? [{ id: '', label: 'Basis', aantal: item.aantal, eenheidsprijs: item.eenheidsprijs, korting_percentage: item.korting_percentage || 0 }]
-          : []),
-        ...toonbareVarianten.map((v) => ({
-          id: v.id,
-          label: v.label,
-          aantal: v.aantal,
-          eenheidsprijs: v.eenheidsprijs,
-          korting_percentage: v.korting_percentage || 0,
-        })),
-      ]
-    : []
+  // Minstens één uitvoering blijft aan: een post zonder uitvoering heeft geen
+  // prijs. Wil de klant de hele post niet, dan is het een optie met eigen vinkje.
+  const kiesUitvoering = (variantId: string, aan: boolean) => {
+    const volgende = varianten.map((v) => v.id).filter((id) => (id === variantId ? aan : gekozen.has(id)))
+    if (volgende.length > 0) onKiesVarianten(item.id, volgende)
+  }
 
   const soort = bijlageSoort(item.bijlage_url, item.bijlage_type)
   const afbeeldingen = [
@@ -371,7 +343,7 @@ function OfferteRegel({
   ]
 
   return (
-    <div className="py-6 first:pt-0 last:pb-0">
+    <div className="py-5 first:pt-0 last:pb-0">
       <div className={`transition-opacity ${isDeselected ? 'opacity-55' : ''}`}>
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
@@ -388,8 +360,8 @@ function OfferteRegel({
               {item.is_optioneel ? '+ ' : ''}{formatCurrency(regelTotaal)}
             </p>
             {/* De stuksprijs staat hier ná korting, zodat aantal x prijs op het
-                regeltotaal uitkomt. */}
-            {!toonOptieRegels && waarden.aantal !== 1 && (
+                regeltotaal uitkomt. Met uitvoeringen staat dat per uitvoering. */}
+            {!heeftUitvoeringen && waarden.aantal !== 1 && (
               <p className="mt-0.5 font-mono text-xs text-[#9B9B95]">
                 {waarden.aantal} x {formatCurrency(nettoStuksprijs(waarden))}
               </p>
@@ -428,7 +400,7 @@ function OfferteRegel({
         )}
 
         {specs.length > 0 && (
-          <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-6 gap-y-1.5 text-sm">
+          <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-5 gap-y-1 text-sm">
             {specs.map((spec, i) => (
               <React.Fragment key={`${spec.label}-${i}`}>
                 <dt className="text-[#9B9B95]">{spec.label}</dt>
@@ -438,61 +410,79 @@ function OfferteRegel({
           </dl>
         )}
 
-        {toonOptieRegels && (
-          <ul className="mt-4 space-y-1.5 text-sm">
-            {meetellend.map((v) => (
-              <li key={v.id} className="flex flex-wrap items-baseline justify-between gap-x-4">
-                <span className="min-w-0 text-[#6B6B66]">
-                  {v.label}
-                  {(v.korting_percentage || 0) > 0 && <span className="ml-1 text-xs">(-{v.korting_percentage}% korting)</span>}
-                </span>
-                <span className="font-mono text-[#6B6B66]">
-                  {v.aantal} x {formatCurrency(nettoStuksprijs(v))} = {formatCurrency(round2(v.aantal * v.eenheidsprijs * (1 - (v.korting_percentage || 0) / 100)))}
-                </span>
-              </li>
-            ))}
-          </ul>
+        {/* Uitvoeringen: elke regel is een vinkje, meerdere mogen tegelijk aan.
+            Wat aan staat telt op in het regelbedrag hierboven. Als er niets te
+            kiezen valt (geaccepteerd, verlopen) staat dezelfde lijst er als
+            vaststelling: aangevinkt is inbegrepen. */}
+        {heeftUitvoeringen && (
+          <div className="mt-4" role="group" aria-label={`Uitvoering van ${titel}`}>
+            <p className="text-[11px] font-medium uppercase tracking-wider text-[#9B9B95]">
+              {kanKiezen ? 'Uitvoering · vink aan wat je wilt' : 'Uitvoering'}
+            </p>
+            <ul className="mt-1 divide-y divide-[#EBEBEB]">
+              {varianten.map((v) => {
+                const aan = gekozen.has(v.id)
+                const laatste = aan && gekozen.size === 1
+                const stuk = nettoStuksprijs(v)
+                const toonStuks = v.aantal !== 1 || (v.korting_percentage || 0) > 0
+                const inhoud = (
+                  <>
+                    <span className="min-w-0 flex-1">
+                      <span className={`block text-sm leading-snug ${aan ? 'font-semibold text-[#1A1A1A]' : 'font-medium text-[#6B6B66]'}`}>
+                        {v.label}
+                      </span>
+                      {v.omschrijving && (
+                        <span className="mt-0.5 block whitespace-pre-line break-words text-[13px] leading-relaxed text-[#6B6B66]">
+                          {v.omschrijving}
+                        </span>
+                      )}
+                      {toonStuks && (
+                        <span className="mt-0.5 block font-mono text-xs text-[#9B9B95]">
+                          {v.aantal} x {formatCurrency(stuk)}
+                          {(v.korting_percentage || 0) > 0 ? ` · ${v.korting_percentage}% korting` : ''}
+                        </span>
+                      )}
+                      {!kanKiezen && !aan && (
+                        <span className="mt-0.5 block text-xs text-[#9B9B95]">Niet inbegrepen</span>
+                      )}
+                    </span>
+                    <span className={`shrink-0 font-mono text-sm ${aan ? 'font-semibold text-[#1A1A1A]' : 'text-[#9B9B95]'}`}>
+                      {formatCurrency(regelNetto(regelVan(v)))}
+                    </span>
+                  </>
+                )
+                return (
+                  <li key={v.id}>
+                    {kanKiezen ? (
+                      <label className={`flex items-start gap-3 py-3 ${laatste ? '' : 'cursor-pointer'}`}>
+                        <Checkbox
+                          checked={aan}
+                          disabled={laatste}
+                          onCheckedChange={(checked) => kiesUitvoering(v.id, checked === true)}
+                          aria-label={v.label}
+                          className="mt-0.5 border-[#1A535C] data-[state=checked]:bg-[#1A535C] data-[state=checked]:text-white disabled:opacity-100"
+                        />
+                        {inhoud}
+                      </label>
+                    ) : (
+                      <div className="flex items-start gap-3 py-3">
+                        {aan ? (
+                          <span aria-hidden className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] bg-[#1A535C] text-white">
+                            <Check className="h-3 w-3" />
+                          </span>
+                        ) : (
+                          <span aria-hidden className="mt-0.5 h-4 w-4 shrink-0 rounded-[4px] border border-[#C9C8C3]" />
+                        )}
+                        {inhoud}
+                      </div>
+                    )}
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
         )}
       </div>
-
-      {toonKeuze && (
-        <div className="mt-5" role="radiogroup" aria-label={`Uitvoering voor ${titel}`}>
-          <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-[#9B9B95]">Kies een uitvoering</p>
-          <div className="space-y-2">
-            {keuzes.map((keuze) => {
-              const actief = (gekozenVariantId || '') === keuze.id
-              const stuk = nettoStuksprijs(keuze)
-              return (
-                <button
-                  key={keuze.id || 'basis'}
-                  type="button"
-                  role="radio"
-                  aria-checked={actief}
-                  onClick={() => onKiesVariant(item.id, keuze.id)}
-                  className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left transition-colors ${
-                    actief ? 'bg-[#F1F6F6] ring-[1.5px] ring-inset ring-[#1A535C]' : 'bg-[#F8F7F5] hover:bg-[#F1F0EC]'
-                  }`}
-                >
-                  <span
-                    aria-hidden
-                    className={`h-4 w-4 shrink-0 rounded-full bg-white ${actief ? 'border-[5px] border-[#1A535C]' : 'border border-[#C9C8C3]'}`}
-                  />
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-medium text-[#1A1A1A]">{keuze.label}</span>
-                    <span className="block font-mono text-xs text-[#6B6B66]">
-                      {keuze.aantal} x {formatCurrency(stuk)}
-                      {keuze.korting_percentage > 0 ? ` · ${keuze.korting_percentage}% korting` : ''}
-                    </span>
-                  </span>
-                  <span className="shrink-0 font-mono text-sm font-semibold text-[#1A1A1A]">
-                    {formatCurrency(round2(keuze.aantal * stuk))}
-                  </span>
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      )}
 
       {item.is_optioneel && kanActie && (
         <label
@@ -554,7 +544,7 @@ export function OffertePubliekPagina() {
 
   // Option selection state
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set())
-  const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({})
+  const [selectedVariants, setSelectedVariants] = useState<VariantKeuzes>({})
 
   const [lightbox, setLightbox] = useState<{ url: string; naam: string } | null>(null)
   const [pdfBezig, setPdfBezig] = useState(false)
@@ -613,16 +603,15 @@ export function OffertePubliekPagina() {
         // Initialize selection state in same batch as data loading
         if (loadedOfferte?.gekozen_items) {
           setSelectedItems(new Set(loadedOfferte.gekozen_items))
-          setSelectedVariants(loadedOfferte.gekozen_varianten || {})
+          setSelectedVariants(gekozenVariantenPerItem(loadedOfferte.gekozen_varianten))
         } else if (loadedItems.length > 0) {
           const initial = new Set<string>()
-          const initialVariants: Record<string, string> = {}
+          const initialVariants: VariantKeuzes = {}
           for (const item of loadedItems) {
             if (item.soort === 'tekst') continue
             if (!item.is_optioneel) initial.add(item.id)
-            if (item.actieve_variant_id && item.prijs_varianten?.length) {
-              initialVariants[item.id] = item.actieve_variant_id
-            }
+            const standaard = gekozenVarianten(item)
+            if (standaard.length > 0) initialVariants[item.id] = standaard.map((v) => v.id)
           }
           setSelectedItems(initial)
           setSelectedVariants(initialVariants)
@@ -689,15 +678,8 @@ export function OffertePubliekPagina() {
     })
   }, [])
 
-  const handleKiesVariant = useCallback((itemId: string, variantId: string) => {
-    setSelectedVariants(prev => {
-      if (!variantId) {
-        const next = { ...prev }
-        delete next[itemId]
-        return next
-      }
-      return { ...prev, [itemId]: variantId }
-    })
+  const handleKiesVarianten = useCallback((itemId: string, variantIds: string[]) => {
+    setSelectedVariants(prev => ({ ...prev, [itemId]: variantIds }))
   }, [])
 
   const handleOpenAfbeelding = useCallback((url: string, naam: string) => setLightbox({ url, naam }), [])
@@ -727,7 +709,15 @@ export function OffertePubliekPagina() {
           naam: acceptNaam.trim(),
           handtekening: acceptHandtekening,
           gekozen_items: hasOptionalItems ? Array.from(selectedItems) : undefined,
-          gekozen_varianten: Object.keys(selectedVariants).length > 0 ? selectedVariants : undefined,
+          // Altijd de effectieve keuze per item met uitvoeringen, ook als de
+          // klant niets aanraakte: dan is het de standaard die hij zag.
+          gekozen_varianten: hasVariants
+            ? Object.fromEntries(
+                items
+                  .filter((i) => i.soort !== 'tekst' && (i.prijs_varianten?.length ?? 0) > 0)
+                  .map((i) => [i.id, gekozenVarianten(i, selectedVariants[i.id]).map((v) => v.id)]),
+              )
+            : undefined,
         }),
       })
       const data = await resp.json()
@@ -750,7 +740,7 @@ export function OffertePubliekPagina() {
     } finally {
       setAcceptLoading(false)
     }
-  }, [token, isVoorbeeld, acceptNaam, acceptHandtekening, selectedItems, selectedVariants, hasOptionalItems])
+  }, [token, isVoorbeeld, acceptNaam, acceptHandtekening, items, selectedItems, selectedVariants, hasOptionalItems, hasVariants])
 
   // Wijziging of nieuwe versie aanvragen
   const handleWijziging = useCallback(async () => {
@@ -832,8 +822,12 @@ export function OffertePubliekPagina() {
         soort: item.soort,
         extra_velden: item.extra_velden,
         detail_regels: item.detail_regels,
-        prijs_varianten: item.prijs_varianten,
-        actieve_variant_id: item.actieve_variant_id,
+        // De PDF telt met wat de klant nu aangevinkt heeft, niet met de standaard.
+        prijs_varianten: item.prijs_varianten?.map((v) => ({
+          ...v,
+          telt_mee: gekozenVarianten(item, selectedVariants[item.id]).some((g) => g.id === v.id),
+        })),
+        actieve_variant_id: gekozenVarianten(item, selectedVariants[item.id])[0]?.id ?? item.actieve_variant_id,
         is_optioneel: item.is_optioneel,
         breedte_mm: item.breedte_mm ?? undefined,
         hoogte_mm: item.hoogte_mm ?? undefined,
@@ -872,7 +866,7 @@ export function OffertePubliekPagina() {
     } finally {
       setPdfBezig(false)
     }
-  }, [offerte, items, bedrijf, klant, docStyle])
+  }, [offerte, items, bedrijf, klant, docStyle, selectedVariants])
 
   // ============ DERIVED STATE (must be before early returns to respect rules of hooks) ============
   const vandaag = new Date().toISOString().split('T')[0]
@@ -996,14 +990,12 @@ export function OffertePubliekPagina() {
     ? items
         .filter(i => i.soort !== 'tekst' && (!hasOptionalItems || selectedItems.has(i.id)))
         .flatMap(i => {
-          const variantLabel = selectedVariants[i.id]
-            ? i.prijs_varianten?.find(v => v.id === selectedVariants[i.id])?.label
-            : undefined
-          if (!i.is_optioneel && !variantLabel) return []
+          const uitvoeringen = gekozenVarianten(i, selectedVariants[i.id]).map((v) => v.label).filter(Boolean)
+          if (!i.is_optioneel && uitvoeringen.length === 0) return []
           const { titel } = splitsBeschrijving(i.beschrijving)
           return [{
             id: i.id,
-            tekst: variantLabel ? `${titel}: ${variantLabel}` : titel,
+            tekst: uitvoeringen.length > 0 ? `${titel}: ${uitvoeringen.join(' + ')}` : titel,
             bedrag: getEffectiveItemTotal(i, selectedVariants[i.id]),
           }]
         })
@@ -1371,11 +1363,11 @@ export function OffertePubliekPagina() {
                     key={item.id}
                     item={item}
                     isSelected={selectedItems.has(item.id)}
-                    gekozenVariantId={selectedVariants[item.id]}
+                    gekozenVariantIds={selectedVariants[item.id]}
                     kanActie={kanActie}
                     hasOptionalItems={hasOptionalItems}
                     onToggle={handleToggle}
-                    onKiesVariant={handleKiesVariant}
+                    onKiesVarianten={handleKiesVarianten}
                     onOpenAfbeelding={handleOpenAfbeelding}
                   />
                 ))}

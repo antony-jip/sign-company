@@ -444,7 +444,8 @@ export interface Offerte {
   geconverteerd_naar_factuur_op?: string;
   // Klant opties-selectie bij acceptatie
   gekozen_items?: string[];
-  gekozen_varianten?: Record<string, string>;
+  // Per item de aangevinkte variant-ids; een enkele string is de oude vorm.
+  gekozen_varianten?: Record<string, string | string[]>;
   toegewezen_aan?: string;
   // Opvolging systeem
   opvolging_actief?: boolean;
@@ -563,6 +564,8 @@ export interface OfferteItemPrijsVariant {
    * meetellen; staat het bij geen enkele optie, dan telt actieve_variant_id.
    */
   telt_mee?: boolean;
+  /** Toelichting voor de klant onder de optienaam, bv. de maat of wat erbij zit. */
+  omschrijving?: string;
   calculatie_regels?: CalculatieRegel[];
   heeft_calculatie?: boolean;
 }

@@ -53,6 +53,22 @@ export function klantSpecs(item: ItemVoorSpecs): KlantSpec[] {
   return specs
 }
 
+/**
+ * De variantkeuze zoals hij op de offerte staat: per item de aangevinkte
+ * uitvoeringen. Offertes van vóór het meervoudig kiezen bewaarden één id per
+ * item; die wordt een lijst van één, zodat de pagina maar één vorm kent.
+ */
+export function gekozenVariantenPerItem(
+  ruw: Record<string, string | string[] | null | undefined> | null | undefined,
+): Record<string, string[]> {
+  const keuzes: Record<string, string[]> = {}
+  for (const [itemId, keuze] of Object.entries(ruw ?? {})) {
+    const ids = (Array.isArray(keuze) ? keuze : [keuze]).filter((id): id is string => typeof id === 'string' && id.length > 0)
+    if (ids.length > 0) keuzes[itemId] = Array.from(new Set(ids))
+  }
+  return keuzes
+}
+
 export type BijlageSoort = 'afbeelding' | 'pdf'
 
 /** Oudere regels hebben geen bijlage_type; dan beslist de extensie. */

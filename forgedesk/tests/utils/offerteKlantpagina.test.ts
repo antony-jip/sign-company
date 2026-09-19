@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   veiligeTerugUrl,
+  gekozenVariantenPerItem,
   klantSpecs,
   bijlageSoort,
   voornaam,
@@ -143,5 +144,16 @@ describe('voornaam', () => {
   it('pakt het eerste woord', () => {
     expect(voornaam('  Mark de Vries ')).toBe('Mark')
     expect(voornaam(undefined)).toBe('')
+  })
+})
+
+describe('gekozenVariantenPerItem · de keuze van de klant in één vorm', () => {
+  it('maakt van een oude enkele keuze een lijst van één', () => {
+    expect(gekozenVariantenPerItem({ i1: 'a' })).toEqual({ i1: ['a'] })
+  })
+
+  it('houdt lijsten, ontdubbelt en laat lege keuzes weg', () => {
+    expect(gekozenVariantenPerItem({ i1: ['a', 'b', 'a'], i2: [], i3: '', i4: null })).toEqual({ i1: ['a', 'b'] })
+    expect(gekozenVariantenPerItem(undefined)).toEqual({})
   })
 })
