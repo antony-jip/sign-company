@@ -404,7 +404,7 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
                     if (!isEditing) {
                       if (kvkDebounce.current) clearTimeout(kvkDebounce.current)
                       if (val.length >= 3) {
-                        kvkDebounce.current = setTimeout(() => zoekKvk(val), 500)
+                        if (formData.land === 'NL') kvkDebounce.current = setTimeout(() => zoekKvk(val), 500)
                       } else {
                         setKvkSuggesties([])
                         setKvkDropdownOpen(false)

@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import * as Sentry from '@sentry/node'
 
 if (process.env.SENTRY_DSN && !Sentry.getClient()) {
@@ -40,9 +40,35 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 const STANDAARD_BEDRAG_EXCL = 129
 const BTW_PERCENTAGE = 21
 
-function bedragIncl(exclusief: number): string {
-  return (exclusief * (1 + BTW_PERCENTAGE / 100)).toFixed(2)
+function bedragIncl(exclusief: number, btwPercentage: number = BTW_PERCENTAGE): string {
+  return (exclusief * (1 + btwPercentage / 100)).toFixed(2)
 }
+
+// Btw verlegd (art. 196 Btw-richtlijn) voor organisaties buiten Nederland
+// met een buitenlands EU-btw-nummer; land en btw-nummer komen van het
+// profiel van de eigenaar. Spiegel van abonnementBtwVerlegd in
+// src/lib/btwTarieven.ts.
+async function btwPercentageVoorOrganisatie(
+  supabase: SupabaseClient,
+  org: { eigenaar_id?: string | null; btw_nummer?: string | null },
+): Promise<number> {
+  let land = 'NL'
+  let btw = (org.btw_nummer || '').trim()
+  if (org.eigenaar_id) {
+    const { data } = await supabase
+      .from('profiles')
+      .select('bedrijfs_land, btw_nummer')
+      .eq('id', org.eigenaar_id)
+      .maybeSingle()
+    const p = data as { bedrijfs_land?: string | null; btw_nummer?: string | null } | null
+    if (p?.bedrijfs_land) land = String(p.bedrijfs_land).trim().toUpperCase()
+    if (!btw && p?.btw_nummer) btw = String(p.btw_nummer).trim()
+  }
+  const schoon = btw.replace(/[\s.\-]/g, '').toUpperCase()
+  const verlegd = land !== 'NL' && land !== 'NEDERLAND' && /^[A-Z]{2}[A-Z0-9]{2,12}$/.test(schoon) && !schoon.startsWith('NL')
+  return verlegd ? 0 : BTW_PERCENTAGE
+}
+
 
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
   auth: { autoRefreshToken: false, persistSession: false },
@@ -101,7 +127,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const { data: org, error: orgError } = await supabaseAdmin
       .from('organisaties')
-      .select('naam, mollie_customer_id, mollie_subscription_id, abonnement_status, abonnement_bedrag_excl')
+      .select('naam, mollie_customer_id, mollie_subscription_id, abonnement_status, abonnement_bedrag_excl, eigenaar_id, btw_nummer')
       .eq('id', organisatie_id)
       .single()
 
@@ -110,7 +136,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const bedragExcl = Number(org.abonnement_bedrag_excl ?? STANDAARD_BEDRAG_EXCL)
-    const ABONNEMENT_BEDRAG = bedragIncl(bedragExcl)
+    const ABONNEMENT_BEDRAG = bedragIncl(bedragExcl, await btwPercentageVoorOrganisatie(supabaseAdmin, org))
 
     const mollieHeaders = {
       'Authorization': `Bearer ${MOLLIE_API_KEY}`,

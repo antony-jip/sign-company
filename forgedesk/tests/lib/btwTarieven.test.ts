@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { btwTarievenVoor, standaardBtwTarief, isZuiverTarief, zuiverTarief, dichtstbijzijndTarief } from '@/lib/btwTarieven'
+import { btwTarievenVoor, standaardBtwTarief, isZuiverTarief, zuiverTarief, dichtstbijzijndTarief, abonnementBtwVerlegd } from '@/lib/btwTarieven'
 
 describe('btwTarievenVoor', () => {
   it('geeft NL-tarieven als er geen land bekend is', () => {
@@ -38,5 +38,19 @@ describe('isZuiverTarief en dichtstbijzijndTarief', () => {
     expect(dichtstbijzijndTarief(7, 'NL')).toBe(9)
     expect(dichtstbijzijndTarief(7, 'BE')).toBe(6)
     expect(dichtstbijzijndTarief(50, 'BE')).toBe(21)
+  })
+})
+
+describe('abonnementBtwVerlegd', () => {
+  it('verlegt voor een Belgische organisatie met Belgisch btw-nummer', () => {
+    expect(abonnementBtwVerlegd('BE', 'BE 0437.299.999')).toBe(true)
+    expect(abonnementBtwVerlegd('België', 'BE0437299999')).toBe(true)
+  })
+
+  it('verlegt niet voor Nederland, zonder btw-nummer of met een NL-nummer', () => {
+    expect(abonnementBtwVerlegd('NL', 'NL123456789B01')).toBe(false)
+    expect(abonnementBtwVerlegd('BE', '')).toBe(false)
+    expect(abonnementBtwVerlegd('BE', 'NL123456789B01')).toBe(false)
+    expect(abonnementBtwVerlegd(undefined, 'BE0437299999')).toBe(false)
   })
 })

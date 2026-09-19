@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
+import { useAppSettings } from '@/contexts/AppSettingsContext'
+import { abonnementBtwVerlegd } from '@/lib/btwTarieven'
 import { isAdminUser } from '@/utils/authHelpers'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -36,6 +38,7 @@ function formatDatum(iso: string): string {
 
 export function AbonnementTab() {
   const { trialStatus, trialDagenOver, organisatie, session, refreshOrganisatie, userRol } = useAuth()
+  const { profile } = useAppSettings()
   const magOpzeggen = isAdminUser(userRol)
   const [searchParams, setSearchParams] = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
@@ -46,7 +49,8 @@ export function AbonnementTab() {
   // Staffel uit de organisatie (migratie 172). Leeg betekent de eerste trede,
   // en die waarden staan gelijk aan de constanten in de api.
   const bedragExcl = Number(organisatie?.abonnement_bedrag_excl ?? 129)
-  const bedragIncl = bedragExcl * 1.21
+  const btwVerlegd = abonnementBtwVerlegd(profile?.bedrijfs_land, organisatie?.btw_nummer || profile?.btw_nummer)
+  const bedragIncl = btwVerlegd ? bedragExcl : bedragExcl * 1.21
   const maxGebruikers = Number(organisatie?.max_gebruikers ?? 10)
   const euro = (bedrag: number) => bedrag.toFixed(2).replace('.', ',')
 
@@ -226,7 +230,7 @@ export function AbonnementTab() {
               {
                 label: 'Per maand',
                 waarde: <span className="font-mono">€{euro(bedragIncl)}</span>,
-                sub: `incl. btw · €${euro(bedragExcl)} excl. btw, 21% btw`,
+                sub: btwVerlegd ? 'btw verlegd (art. 196 Btw-richtlijn)' : `incl. btw · €${euro(bedragExcl)} excl. btw, 21% btw`,
               },
               {
                 label: 'Volgende incasso',
@@ -345,7 +349,7 @@ export function AbonnementTab() {
                 <span className="text-[42px] font-bold font-mono tracking-tight text-foreground">€{euro(bedragExcl)}</span>
                 <span className="text-[15px] text-muted-foreground">/ maand</span>
               </div>
-              <p className="text-[12px] text-muted-foreground mt-1">excl. btw · €{euro(bedragIncl)} incl. btw per maand</p>
+              <p className="text-[12px] text-muted-foreground mt-1">{btwVerlegd ? 'btw verlegd · geen Nederlandse btw' : <>excl. btw · €{euro(bedragIncl)} incl. btw per maand</>}</p>
 
               <div className="flex items-center gap-2 mt-2 rounded-lg px-3 py-2" style={{ backgroundColor: 'hsl(var(--background))' }}>
                 <Users className="h-4 w-4" style={{ color: '#1A535C' }} />
@@ -381,7 +385,7 @@ export function AbonnementTab() {
               {!isActive && (
                 <p className="text-[12px] mt-3 max-w-[380px] leading-[1.5] text-muted-foreground">
                   Je rekent nu de eerste maand af en geeft toestemming voor automatische
-                  incasso. Daarna schrijven we elke maand €{euro(bedragIncl)} incl. btw af tot je opzegt.
+                  incasso. Daarna schrijven we elke maand €{euro(bedragIncl)} {btwVerlegd ? '(btw verlegd)' : 'incl. btw'} af tot je opzegt.
                 </p>
               )}
             </div>

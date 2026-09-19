@@ -47,3 +47,16 @@ export function dichtstbijzijndTarief(pct: number, land: string | null | undefin
   const tarieven = btwTarievenVoor(land)
   return tarieven.reduce((best, kandidaat) => (Math.abs(kandidaat - pct) < Math.abs(best - pct) ? kandidaat : best), tarieven[0])
 }
+
+/**
+ * Btw verlegd op het doen.-abonnement (B2B binnen de EU, art. 196
+ * Btw-richtlijn): de organisatie zit buiten Nederland en heeft een
+ * buitenlands EU-btw-nummer. Zelfde regel staat inline in
+ * api/billing-webhook.ts, api/create-subscription.ts en
+ * api/update-subscription-bedrag.ts.
+ */
+export function abonnementBtwVerlegd(land: string | null | undefined, btwNummer: string | null | undefined): boolean {
+  const code = landOfStandaard(land)
+  const btw = (btwNummer || '').replace(/[\s.\-]/g, '').toUpperCase()
+  return code !== 'NL' && /^[A-Z]{2}[A-Z0-9]{2,12}$/.test(btw) && !btw.startsWith('NL')
+}

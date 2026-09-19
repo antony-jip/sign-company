@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import * as Sentry from '@sentry/node'
 
 // ── Sentry init (inline; Vercel bundelt geen lokale modules in api/) ──
@@ -111,11 +111,37 @@ function getSupabase() {
   })
 }
 
+
+// Btw verlegd (art. 196 Btw-richtlijn) voor organisaties buiten Nederland
+// met een buitenlands EU-btw-nummer; land en btw-nummer komen van het
+// profiel van de eigenaar. Spiegel van abonnementBtwVerlegd in
+// src/lib/btwTarieven.ts.
+async function btwPercentageVoorOrganisatie(
+  supabase: SupabaseClient,
+  org: { eigenaar_id?: string | null; btw_nummer?: string | null },
+): Promise<number> {
+  let land = 'NL'
+  let btw = (org.btw_nummer || '').trim()
+  if (org.eigenaar_id) {
+    const { data } = await supabase
+      .from('profiles')
+      .select('bedrijfs_land, btw_nummer')
+      .eq('id', org.eigenaar_id)
+      .maybeSingle()
+    const p = data as { bedrijfs_land?: string | null; btw_nummer?: string | null } | null
+    if (p?.bedrijfs_land) land = String(p.bedrijfs_land).trim().toUpperCase()
+    if (!btw && p?.btw_nummer) btw = String(p.btw_nummer).trim()
+  }
+  const schoon = btw.replace(/[\s.\-]/g, '').toUpperCase()
+  const verlegd = land !== 'NL' && land !== 'NEDERLAND' && /^[A-Z]{2}[A-Z0-9]{2,12}$/.test(schoon) && !schoon.startsWith('NL')
+  return verlegd ? 0 : BTW_PERCENTAGE
+}
+
 /** Het maandbedrag incl btw voor deze organisatie, uit de staffel (migratie 172). */
 async function bedragVoorOrganisatie(organisatieId: string): Promise<string> {
   const { data, error } = await getSupabase()
     .from('organisaties')
-    .select('abonnement_bedrag_excl')
+    .select('abonnement_bedrag_excl, eigenaar_id, btw_nummer')
     .eq('id', organisatieId)
     .maybeSingle()
   if (error) {
@@ -125,7 +151,8 @@ async function bedragVoorOrganisatie(organisatieId: string): Promise<string> {
     throw new Error('Kon het abonnementsbedrag niet vaststellen')
   }
   const excl = Number(data?.abonnement_bedrag_excl ?? STANDAARD_BEDRAG_EXCL)
-  return (excl * (1 + BTW_PERCENTAGE / 100)).toFixed(2)
+  const pct = await btwPercentageVoorOrganisatie(getSupabase(), data ?? {})
+  return (excl * (1 + pct / 100)).toFixed(2)
 }
 
 // Eén maand vooruit, geklemd op de laatste dag van de doelmaand
@@ -148,6 +175,7 @@ async function haalPartijen(organisatieId: string): Promise<{
   doen: Factuurpartij
   klant: Factuurpartij
   ontvangerEmail: string
+  btwPercentage: number
 } | null> {
   const supabase = getSupabase()
 
@@ -238,6 +266,7 @@ async function haalPartijen(organisatieId: string): Promise<{
       btw: org.btw_nummer || '',
     },
     ontvangerEmail,
+    btwPercentage: await btwPercentageVoorOrganisatie(supabase, org),
   }
 }
 
@@ -249,6 +278,7 @@ interface FactuurRegels {
   bedragExcl: number
   btwBedrag: number
   bedragIncl: number
+  btwPercentage: number
 }
 
 async function bouwFactuurPdf(
@@ -384,10 +414,17 @@ async function bouwFactuurPdf(
   y += 6
 
   doc.setTextColor(...GRIJS)
-  doc.text(`BTW ${BTW_PERCENTAGE}%`, labelX, y)
+  doc.text(f.btwPercentage === 0 ? 'Btw verlegd' : `BTW ${f.btwPercentage}%`, labelX, y)
   doc.setTextColor(...INKT)
   doc.text(euro(f.btwBedrag), rechts, y, { align: 'right' })
   y += 4
+  if (f.btwPercentage === 0) {
+    doc.setFontSize(8)
+    doc.setTextColor(...GRIJS)
+    doc.text('Btw verlegd naar de afnemer, art. 196 Richtlijn 2006/112/EG.', labelX - 40, y + 2)
+    doc.setFontSize(9.5)
+    y += 4
+  }
 
   doc.setDrawColor(225, 225, 228)
   doc.setLineWidth(0.3)
@@ -454,7 +491,8 @@ async function maakEnVerstuurFactuur(payment: MolliePayment, organisatieId: stri
   // Het werkelijk geincasseerde bedrag, niet de constante: als de prijs ooit
   // wijzigt moet de factuur het bedrag tonen dat de klant echt betaald heeft.
   const bedragIncl = r2(Number(payment.amount?.value ?? ABONNEMENT_BEDRAG))
-  const bedragExcl = r2(bedragIncl / (1 + BTW_PERCENTAGE / 100))
+  const btwPercentage = partijen.btwPercentage
+  const bedragExcl = r2(bedragIncl / (1 + btwPercentage / 100))
   const btwBedrag = r2(bedragIncl - bedragExcl)
 
   let factuurId: string
@@ -482,7 +520,7 @@ async function maakEnVerstuurFactuur(payment: MolliePayment, organisatieId: stri
         mollie_payment_id: payment.id,
         datum: betaaldOp.toISOString().slice(0, 10),
         bedrag_excl: bedragExcl,
-        btw_percentage: BTW_PERCENTAGE,
+        btw_percentage: btwPercentage,
         btw_bedrag: btwBedrag,
         bedrag_incl: bedragIncl,
         periode_start: betaaldOp.toISOString().slice(0, 10),
@@ -513,6 +551,7 @@ async function maakEnVerstuurFactuur(payment: MolliePayment, organisatieId: stri
     bedragExcl,
     btwBedrag,
     bedragIncl,
+    btwPercentage,
   })
 
   const pdfPad = `${organisatieId}/${nummer}.pdf`
@@ -546,8 +585,8 @@ async function maakEnVerstuurFactuur(payment: MolliePayment, organisatieId: stri
     ${datumNl(betaaldOp)} t/m ${datumNl(periodeEind)}.
   </p>
   <p>
-    Het bedrag van <strong>${euro(bedragIncl)} incl. btw</strong>
-    (${euro(bedragExcl)} excl. btw, ${euro(btwBedrag)} btw) is automatisch
+    Het bedrag van <strong>${euro(bedragIncl)}${btwPercentage === 0 ? '' : ' incl. btw'}</strong>
+    ${btwPercentage === 0 ? '(btw verlegd, art. 196 Btw-richtlijn)' : `(${euro(bedragExcl)} excl. btw, ${euro(btwBedrag)} btw)`} is automatisch
     van je rekening afgeschreven. Je hoeft niets te doen.
   </p>
   <p style="color:#666;font-size:13px">
