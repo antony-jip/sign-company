@@ -59,8 +59,7 @@ KLIKBARE LINKS (belangrijk)
 
 MODULES (route -> wat het doet)
 - Dashboard (/) : startpunt voor de dag. Blokken Vandaag (montages en taken) en Opvolgen (klanten die aandacht vragen), cijferstrook met openstaande offertes/facturen/werkbonnen, activiteitenlog, en een zwevende plusknop voor snelle acties.
-- Klanten (/klanten) : register van klanten en contactpersonen. Per klant tabs voor projecten, deals, offertes, facturen, e-mail en historie. Klanten toevoegen, zoeken/filteren, importeren en exporteren (Excel/CSV), meerdere contactpersonen en vestigingen per bedrijf.
-- Deals (/deals) : verkooppijplijn als kanban-bord. Deals tussen fases slepen, waarde/winkans/eigenaar/bron bijhouden. Gewogen waarde = waarde maal winkans. Bij akkoord op een offerte schuift de deal naar gewonnen.
+- Klanten (/klanten) : register van klanten en contactpersonen. Per klant tabs voor projecten, offertes, facturen, e-mail en historie. Klanten toevoegen, zoeken/filteren, importeren en exporteren (Excel/CSV), meerdere contactpersonen en vestigingen per bedrijf.
 - Projecten (/projecten) : alle werk voor één klus, van offerte tot factuur. Het project-cockpit toont een fasebalk, een wat-nu-suggestie, een acties-kaart (offerte, werkbon, montage, factuur), taken en offertes, montage, klantgegevens, bestanden en een portaal-paneel. Filter Met aandacht = projecten die op jou wachten. Eén project hoort bij één klant.
 - Offertes (/offertes) : offertes maken, versturen en beheren via een kanban-bord (concept, verstuurd, bekeken, akkoord, gefactureerd; plus afgewezen, verlopen, wijziging gevraagd). Regels met prijs/btw/korting, prijsopbouw met de calculator, prijsvarianten en optionele regels, versturen per e-mail (met pdf) of via openbare portaallink. In de app reken je met bedragen EXCLUSIEF btw; de klant ziet bedragen INCLUSIEF btw. Wijzigingen worden automatisch bewaard en je kunt versies opslaan en terugdraaien. Verstuurde offerte aanpassen = nieuwe versie maken.
 - Inkoopoffertes (/inkoopoffertes) : offertes van leveranciers verzamelen; de app leest de regels uit de pdf, jij controleert ze en gebruikt de inkoopprijzen voor je eigen offerte en marge.
@@ -78,7 +77,6 @@ MODULES (route -> wat het doet)
 - Visualizer (/visualizer) : realistische voorbeeldafbeeldingen (mockups) van signing-ontwerpen maken op basis van een beschrijving of afbeelding, met een gekozen beeldverhouding. Werkt met credits; mockups koppelbaar aan project of offerte.
 - Financieel (/financieel) : kerncijfers, plus beheer van uitgaven en leveranciers (met KvK-zoekfunctie).
 - Rapportages (/rapportages) : overzichten van omzet, marge, uren, klanten en projecten over een gekozen periode; exporteren naar Excel/CSV.
-- Forecast (/forecast) : omzetprognose op basis van historie en openstaande deals; toont pijplijnwaarde en gewogen waarde.
 - Tijdregistratie (/tijdregistratie) : uren per project registreren met timer of handmatig, factureerbaar markeren, en geselecteerde uren in één keer op een factuur zetten.
 - Instellingen (/instellingen) : tabbladen voor Profiel, Bedrijf, Team, Huisstijl/briefpapier (logo, kleuren, opmaak van documenten), Portaal, Integraties (waaronder Exact), Kennisbank, Calculatie, Kostenplaatsen, Abonnement, Daan, Visualizer, Beveiliging, Weergave en E-mail/communicatie (eigen mailaccount koppelen, handtekening, sjablonen, opvolging).
 - Importeren (/importeren) : in één keer bestaande klanten, contactpersonen en historische gegevens inladen via Excel/CSV; importgeschiedenis toont verwerkt/overgeslagen/fouten.

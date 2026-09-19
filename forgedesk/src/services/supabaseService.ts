@@ -133,9 +133,6 @@ export {
 } from './kbService'
 
 export {
-  getDeals, getDeal, getDealsByKlant,
-  createDeal, updateDeal, deleteDeal,
-  getDealActiviteiten, createDealActiviteit,
   getInkoopOffertes, getInkoopOffertesByProject, getInkoopOffertesByOfferte,
   createInkoopOfferte, updateInkoopOfferte, createInkoopRegel, updateInkoopRegel, deleteInkoopOfferte,
 } from './crmService'

@@ -56,9 +56,6 @@ const TijdregistratieLayout = lazy(() => import('@/components/projects/Tijdregis
 const ClientsLayout = lazy(() => import('@/components/clients/ClientsLayout'), 'ClientsLayout')
 const ClientProfile = lazy(() => import('@/components/clients/ClientProfile'), 'ClientProfile')
 
-const DealsLayout = lazy(() => import('@/components/clients/DealsLayout'), 'DealsLayout')
-const DealDetail = lazy(() => import('@/components/clients/DealDetail'), 'DealDetail')
-
 // Quotes
 const QuotesPipeline = lazy(() => import('@/components/quotes/QuotesPipeline'), 'QuotesPipeline')
 const QuoteCreation = lazy(() => import('@/components/quotes/QuoteCreation'), 'QuoteCreation')
@@ -108,7 +105,6 @@ const BetaaldPagina = lazy(() => import('@/components/invoices/BetaaldPagina'), 
 
 // Reports
 const RapportagesLayout = lazy(() => import('@/components/reports/RapportagesLayout'), 'RapportagesLayout')
-const ForecastLayout = lazy(() => import('@/components/reports/ForecastLayout'), 'ForecastLayout')
 
 // Settings
 const SettingsLayout = lazy(() => import('@/components/settings/SettingsLayout'), 'SettingsLayout')
@@ -292,8 +288,6 @@ function AppContent() {
         <Route path="klanten" element={<ClientsLayout />} />
         <Route path="klanten/importeren" element={<Navigate to="/importeren" replace />} />
         <Route path="klanten/:id" element={<ClientProfile />} />
-        <Route path="deals" element={<DealsLayout />} />
-        <Route path="deals/:id" element={<DealDetail />} />
         <Route path="offertes" element={<QuotesPipeline />} />
         <Route path="offertes/nieuw" element={<QuoteCreation />} />
         <Route path="offertes/:id" element={<QuoteCreation />} />
@@ -328,7 +322,6 @@ function AppContent() {
         <Route path="leveringsbonnen" element={<LeveringsbonnenLayout />} />
         <Route path="leveringsbonnen/:id" element={<LeveringsbonDetail />} />
         <Route path="leveranciers" element={<LeveranciersLayout />} />
-        <Route path="forecast" element={<ForecastLayout />} />
         <Route path="visualizer" element={<StudioRoute />} />
         <Route path="portalen" element={<PortalenOverzicht />} />
         <Route path="meldingen" element={<MeldingenPage />} />

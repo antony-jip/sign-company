@@ -74,7 +74,6 @@ const DOEN_FACTS: DoenFact[] = [
   { cat: 'sales', text: 'Akkoord op offerte? Project draait automatisch op. Niks meer doen.' },
   { cat: 'sales', text: 'Wacht-op-reactie-vlag laat geen offerte vergeten. Doen ze.' },
   { cat: 'sales', text: 'Email-threading per klant. Hele historie in één scherm.' },
-  { cat: 'sales', text: 'Deals-pipeline met kanban-bord. Verschuiven en doen.' },
   { cat: 'sales', text: 'Klant uploadt tekening via portaal · direct in \'t project.' },
   { cat: 'sales', text: 'Akkoord op de telefoon, handtekening met de vinger. Gedaan.' },
   // ── Vibes

@@ -84,7 +84,6 @@ import {
   getOffertesByKlant,
   getFacturenByKlant,
   getDocumentenByKlant,
-  getDealsByKlant,
   updateKlant,
   getContactpersonenByKlant,
   updateContactpersoonDB,
@@ -103,7 +102,7 @@ import { AddEditClient } from './AddEditClient'
 // Zelfde plafond als getEmails() had toen de hele lijst in JS werd gefilterd.
 const KLANT_EMAILS_MAX = 200
 import { KlantHistorieTab } from './KlantHistorieTab'
-import type { Klant, Project, Email, Document as DocType, Offerte, Contactpersoon, ContactpersoonRecord, Vestiging, Factuur, Deal, Tijdregistratie, Medewerker } from '@/types'
+import type { Klant, Project, Email, Document as DocType, Offerte, Contactpersoon, ContactpersoonRecord, Vestiging, Factuur, Tijdregistratie, Medewerker } from '@/types'
 import { confirm } from '@/components/shared/ConfirmDialog'
 
 const statusLabels: Record<string, string> = {
@@ -116,7 +115,7 @@ const statusLabels: Record<string, string> = {
   'te-plannen': 'Te plannen',
 }
 
-const KLANT_TABS = ['projecten', 'deals', 'offertes', 'facturen', 'tijdregistratie', 'communicatie', 'documenten', 'contactpersonen', 'historie', 'notities']
+const KLANT_TABS = ['projecten', 'offertes', 'facturen', 'tijdregistratie', 'communicatie', 'documenten', 'contactpersonen', 'historie', 'notities']
 
 export function ClientProfile() {
   const { id } = useParams<{ id: string }>()
@@ -135,7 +134,6 @@ export function ClientProfile() {
   const [clientEmails, setClientEmails] = useState<Email[]>([])
   const [clientDocumenten, setClientDocumenten] = useState<DocType[]>([])
   const [clientFacturen, setClientFacturen] = useState<Factuur[]>([])
-  const [clientDeals, setClientDeals] = useState<Deal[]>([])
   const [clientTijdregistraties, setClientTijdregistraties] = useState<Tijdregistratie[]>([])
   const [clientOffertes, setClientOffertes] = useState<Offerte[]>([])
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>([])
@@ -226,9 +224,8 @@ export function ClientProfile() {
       getOffertesByKlant(id),
       getFacturenByKlant(id).catch(() => []),
       getDocumentenByKlant(id).catch(() => []),
-      getDealsByKlant(id).catch(() => []),
       getContactpersonenByKlant(id).catch(() => []),
-    ]).then(async ([klantData, projecten, offertes, facturen, documenten, deals, contactpersonen]) => {
+    ]).then(async ([klantData, projecten, offertes, facturen, documenten, contactpersonen]) => {
       if (cancelled) return
       setKlant(klantData)
       setClientProjecten(projecten)
@@ -236,7 +233,6 @@ export function ClientProfile() {
       setClientOffertes(offertes)
       setClientFacturen(facturen)
       setClientDocumenten(documenten)
-      setClientDeals(deals)
       setImportedContacts(contactpersonen)
 
       // Mail op klant-adres via de database-filter, niet de hele tabel in JS
@@ -637,7 +633,6 @@ export function ClientProfile() {
   }
   const tabs = [
     { key: 'projecten', label: 'Projecten', count: clientProjecten.length, icon: FolderKanban },
-    { key: 'deals', label: 'Deals', count: clientDeals.length, icon: CreditCard },
     { key: 'offertes', label: 'Offertes', count: clientOffertes.length, icon: FileText },
     { key: 'facturen', label: 'Facturen', count: clientFacturen.length, icon: Receipt },
     { key: 'tijdregistratie', label: 'Uren', count: clientTijdregistraties.length, icon: Clock },
@@ -1386,70 +1381,6 @@ export function ClientProfile() {
                               {formatDate(offerte.geldig_tot)}
                             </span>
                           </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                </>
-              )}
-            </Card>
-          )}
-
-          {/* ════════ DEALS TAB ════════ */}
-          {activeTab === 'deals' && (
-            <Card>
-              {clientDeals.length === 0 ? (
-                <CardContent className="py-12 text-center">
-                  <CreditCard className="w-12 h-12 text-muted-foreground/50 dark:text-muted-foreground mx-auto mb-3" />
-                  <p className="text-muted-foreground">Geen deals voor deze klant</p>
-                </CardContent>
-              ) : (
-                <>
-                <div className="md:hidden divide-y divide-border">
-                  {clientDeals.map((deal) => (
-                    <div
-                      key={`mobile-${deal.id}`}
-                      onClick={() => navigate(`/deals/${deal.id}`)}
-                      className="flex items-center gap-3 px-4 py-3 min-h-[64px] cursor-pointer active:bg-muted/50 transition-colors"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[14px] font-medium text-foreground truncate">{deal.titel}</p>
-                        <div className="mt-1 flex items-center gap-2 text-[12px] text-muted-foreground">
-                          <StatusBadge status={deal.status} className="capitalize" />
-                          <span className="capitalize">{deal.fase}</span>
-                          <span className="font-mono">{deal.kans_percentage || 50}%</span>
-                        </div>
-                      </div>
-                      <span className="text-[14px] font-semibold font-mono text-foreground shrink-0">{formatCurrency(deal.verwachte_waarde)}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="hidden md:block overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-border dark:border-border">
-                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] dark:text-muted-foreground uppercase tracking-label">Titel</th>
-                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] dark:text-muted-foreground uppercase tracking-label">Fase</th>
-                        <th className="text-left py-3 px-4 text-[11px] font-bold text-[#8a8680] dark:text-muted-foreground uppercase tracking-label">Status</th>
-                        <th className="text-right py-3 px-4 text-[11px] font-bold text-[#8a8680] dark:text-muted-foreground uppercase tracking-label">Waarde</th>
-                        <th className="text-right py-3 px-4 text-[11px] font-bold text-[#8a8680] dark:text-muted-foreground uppercase tracking-label hidden md:table-cell">Kans</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border dark:divide-border">
-                      {clientDeals.map((deal) => (
-                        <tr
-                          key={deal.id}
-                          className="hover:bg-background dark:hover:bg-muted/50 cursor-pointer transition-colors duration-150"
-                          onClick={() => navigate(`/deals/${deal.id}`)}
-                        >
-                          <td className="py-3 px-4 text-sm font-medium">{deal.titel}</td>
-                          <td className="py-3 px-4 text-sm capitalize text-muted-foreground">{deal.fase}</td>
-                          <td className="py-3 px-4">
-                            <StatusBadge status={deal.status} className="capitalize" />
-                          </td>
-                          <td className="py-3 px-4 text-right text-sm font-semibold font-mono">{formatCurrency(deal.verwachte_waarde)}</td>
-                          <td className="py-3 px-4 text-right text-sm text-muted-foreground hidden md:table-cell">{deal.kans_percentage || 50}%</td>
                         </tr>
                       ))}
                     </tbody>

@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Hammer, FileText, Building2, Truck, ClipboardCheck, Ruler, Wand2,
   Banknote, Inbox, TrendingUp, Calendar, ListChecks, Mail, Globe,
-  SlidersHorizontal, LifeBuoy, Newspaper, BarChart3, LineChart, ShoppingCart,
+  SlidersHorizontal, LifeBuoy, Newspaper, BarChart3, ShoppingCart,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -38,7 +38,6 @@ const FINANCIEEL_ITEMS: NavItem[] = [
   { label: 'Inkoopoffertes', icon: ShoppingCart, path: '/inkoopoffertes', color: '#C44830' },
   { label: 'Financieel', icon: TrendingUp, path: '/financieel', color: '#2D6B48' },
   { label: 'Rapportages', icon: BarChart3, path: '/rapportages', color: '#3A6B8C' },
-  { label: 'Forecast', icon: LineChart, path: '/forecast', color: '#3A6B8C' },
 ]
 
 const PLANNING_ITEMS: NavItem[] = [
