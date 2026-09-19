@@ -1,3 +1,5 @@
+import { portaalTeksten, type KlantTaal } from '@/lib/portaalTaal'
+
 /**
  * De teksten op de offertepagina die de gebruiker zelf mag aanpassen
  * (Instellingen → Portaal → Offertepagina). Ze staan in
@@ -22,10 +24,24 @@ export const KLANTPAGINA_TEKST_SLEUTELS = {
   bedankt_tekst: 'offerte_bedankt_tekst',
 } as const
 
-export function klantpaginaTeksten(bron?: Partial<Record<keyof KlantpaginaTeksten, string | null>> | null): KlantpaginaTeksten {
+/**
+ * Wat de verkoper zelf invulde gaat altijd voor; alleen de standaardtekst
+ * volgt de taal van de klant (Frans voor een Waalse of Brusselse klant).
+ */
+export function klantpaginaTeksten(
+  bron?: Partial<Record<keyof KlantpaginaTeksten, string | null>> | null,
+  taal: KlantTaal = 'nl',
+): KlantpaginaTeksten {
+  const standaard = taal === 'fr'
+    ? {
+        akkoord_intro: portaalTeksten('fr').standaardAkkoordIntro,
+        bedankt_kop: portaalTeksten('fr').standaardBedanktKop,
+        bedankt_tekst: portaalTeksten('fr').standaardBedanktTekst,
+      }
+    : STANDAARD_KLANTPAGINA_TEKSTEN
   const kies = (sleutel: keyof KlantpaginaTeksten) => {
     const waarde = bron?.[sleutel]
-    return typeof waarde === 'string' && waarde.trim() ? waarde.trim() : STANDAARD_KLANTPAGINA_TEKSTEN[sleutel]
+    return typeof waarde === 'string' && waarde.trim() ? waarde.trim() : standaard[sleutel]
   }
   return {
     akkoord_intro: kies('akkoord_intro'),

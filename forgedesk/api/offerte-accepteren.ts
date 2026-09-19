@@ -93,8 +93,8 @@ function buildPortalEmailHtml(params: {
 }
 // ---- Einde inline email template ----
 
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(amount)
+function formatCurrency(amount: number, locale = 'nl-NL'): string {
+  return new Intl.NumberFormat(locale, { style: 'currency', currency: 'EUR' }).format(amount)
 }
 
 // ── Totaalberekening bij acceptatie met keuzes ──
@@ -197,8 +197,8 @@ function berekenGeaccepteerdeTotalen(regels: PrijsRegel[], afrondingskorting: nu
   return { subtotaal, btw_bedrag, totaal: r2(subtotaal + btw_bedrag) }
 }
 
-function formatDate(d: Date): string {
-  return d.toLocaleDateString('nl-NL', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+function formatDate(d: Date, locale = 'nl-NL'): string {
+  return d.toLocaleDateString(locale, { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -618,13 +618,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Bevestigingsmail naar de klant — branded namens het bedrijf
     try {
       let klantEmail: string | null = null
+      let klantFrans = false
       if (offerte.klant_id) {
         const { data: klant } = await supabaseAdmin
           .from('klanten')
-          .select('email')
+          .select('email, taal')
           .eq('id', offerte.klant_id)
           .maybeSingle()
         klantEmail = klant?.email || null
+        klantFrans = (klant as { taal?: string } | null)?.taal === 'fr'
       }
 
       if (klantEmail) {
@@ -644,19 +646,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           .maybeSingle()
         const bedrijfsnaam = bedrijfsProfiel?.bedrijfsnaam || ''
 
+        // Klantmail in de taal van de klant (klanten.taal, migratie 258); de
+        // teksten van de verkoper zelf (posten, titel) blijven zoals hij ze schreef.
+        const mailTekst = klantFrans
+          ? {
+              heading: 'Merci pour votre accord',
+              beschrijving: `Accepté par ${naam.trim()} le ${formatDate(new Date(), 'fr-BE')}${offerte.totaal ? ` · ${formatCurrency(offerte.subtotaal ?? offerte.totaal, 'fr-BE')} HTVA` : ''}`,
+              quote: 'Nous vous contacterons dans les plus brefs délais concernant les prochaines étapes.',
+              keuze: 'Votre choix',
+              ondertekend: `Signé numériquement par ${escapeHtml(naam.trim())} le ${escapeHtml(formatDate(new Date(), 'fr-BE'))}`,
+              onderwerp: `Confirmation : devis ${offerte.nummer} accepté`,
+            }
+          : {
+              heading: 'Bedankt voor je akkoord',
+              beschrijving: `Geaccepteerd door ${naam.trim()} op ${formatDate(new Date())}${offerte.totaal ? ` · ${formatCurrency(offerte.subtotaal ?? offerte.totaal)} excl. btw` : ''}`,
+              quote: 'We nemen zo snel mogelijk contact met je op over de vervolgstappen.',
+              keuze: 'Je keuze',
+              ondertekend: `Digitaal ondertekend door ${escapeHtml(naam.trim())} op ${escapeHtml(formatDate(new Date()))}`,
+              onderwerp: `Bevestiging: offerte ${offerte.nummer} geaccepteerd`,
+            }
         const html = buildPortalEmailHtml({
-          heading: 'Bedankt voor je akkoord',
+          heading: mailTekst.heading,
           itemTitel: `${offerte.nummer}${offerte.titel ? ` — ${offerte.titel}` : ''}`,
-          beschrijving: `Geaccepteerd door ${naam.trim()} op ${formatDate(new Date())}${offerte.totaal ? ` · ${formatCurrency(offerte.subtotaal ?? offerte.totaal)} excl. btw` : ''}`,
-          quote: 'We nemen zo snel mogelijk contact met je op over de vervolgstappen.',
+          beschrijving: mailTekst.beschrijving,
+          quote: mailTekst.quote,
           extraHtml: [
             keuzeOverzicht.length > 0
-              ? `<div style="font-family: 'DM Sans', Arial, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #9B9B95; padding: 0 0 6px 0;">Je keuze</div><table width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 12px 0;">${keuzeOverzicht.map((k) =>
+              ? `<div style="font-family: 'DM Sans', Arial, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #9B9B95; padding: 0 0 6px 0;">${mailTekst.keuze}</div><table width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 12px 0;">${keuzeOverzicht.map((k) =>
                 `<tr><td style="padding: 3px 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 13px; color: #1A1A1A;">${escapeHtml(k.titel)}${k.uitvoeringen.length ? `<span style="color: #6B6B66;">: ${escapeHtml(k.uitvoeringen.join(' + '))}</span>` : ''}</td><td align="right" style="padding: 3px 0 3px 12px; font-family: 'DM Mono', Menlo, monospace; font-size: 13px; color: #1A1A1A; white-space: nowrap;">${escapeHtml(formatCurrency(k.bedrag))}</td></tr>`
               ).join('')}</table>`
               : '',
             handtekening
-              ? `<p style="margin: 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 13px; color: #5A5A55;">Digitaal ondertekend door ${escapeHtml(naam.trim())} op ${escapeHtml(formatDate(new Date()))}</p>`
+              ? `<p style="margin: 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 13px; color: #5A5A55;">${mailTekst.ondertekend}</p>`
               : '',
           ].filter(Boolean).join('') || undefined,
           bedrijfsnaam: bedrijfsnaam || undefined,
@@ -669,7 +690,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           from: `"${(bedrijfsnaam || 'doen.').replace(/"/g, '')}" <noreply@doen.team>`,
           to: klantEmail,
           replyTo: bedrijfsProfiel?.bedrijfs_email || undefined,
-          subject: `Bevestiging: offerte ${offerte.nummer} geaccepteerd`,
+          subject: mailTekst.onderwerp,
           html,
         })
         console.log('[offerte-accepteren] klant-bevestiging verzonden naar:', klantEmail)

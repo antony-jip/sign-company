@@ -317,14 +317,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     const { data: profile } = await supabaseAdmin
       .from('profiles')
-      .select('bedrijfsnaam, bedrijfs_adres, bedrijfs_telefoon, bedrijfs_email, bedrijfs_website, kvk_nummer, btw_nummer, iban, logo_url')
+      .select('bedrijfsnaam, bedrijfs_adres, bedrijfs_telefoon, bedrijfs_email, bedrijfs_website, kvk_nummer, btw_nummer, iban, logo_url, bedrijfs_land')
       .eq('id', bedrijfUserId)
       .single()
 
     // Haal klant gegevens
     const { data: klant } = await supabaseAdmin
       .from('klanten')
-      .select('bedrijfsnaam, contactpersoon, email, adres, postcode, stad')
+      .select('bedrijfsnaam, contactpersoon, email, adres, postcode, stad, taal')
       .eq('id', offerte.klant_id)
       .single()
 

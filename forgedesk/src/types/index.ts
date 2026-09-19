@@ -149,6 +149,8 @@ export interface Klant {
   gepinde_notitie_waarschuwing?: boolean;
   /** Standaard verzendwijze voor offertes en facturen van deze klant (migratie 236). */
   verzendvoorkeur?: 'email' | 'post' | 'portaal' | 'peppol' | null;
+  /** Taal van het portaal en de klantmails (migratie 258). */
+  taal?: 'nl' | 'fr';
   btw_verlegd?: boolean;
   /** Uitkomst van de laatste Peppol-registratiecheck (migratie 253). */
   peppol_status?: KlantPeppolStatus;

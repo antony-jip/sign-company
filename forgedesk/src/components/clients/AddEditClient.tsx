@@ -71,6 +71,7 @@ interface FormData {
   gepinde_notitie: string
   gepinde_notitie_waarschuwing: boolean
   verzendvoorkeur: '' | 'email' | 'post' | 'portaal' | 'peppol'
+  taal: 'nl' | 'fr'
   btw_verlegd: boolean
   po_verplicht: boolean
   klant_status: Klant['klant_status']
@@ -100,6 +101,7 @@ const initialFormData: FormData = {
   gepinde_notitie: '',
   gepinde_notitie_waarschuwing: false,
   verzendvoorkeur: '',
+  taal: 'nl',
   btw_verlegd: false,
   po_verplicht: false,
   klant_status: 'normaal',
@@ -242,6 +244,7 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
         gepinde_notitie: klant.gepinde_notitie || '',
         gepinde_notitie_waarschuwing: klant.gepinde_notitie_waarschuwing === true,
         verzendvoorkeur: klant.verzendvoorkeur || '',
+        taal: klant.taal === 'fr' ? 'fr' : 'nl',
         btw_verlegd: klant.btw_verlegd === true,
         po_verplicht: klant.po_verplicht === true,
         klant_status: klant.klant_status || 'normaal',
@@ -333,6 +336,11 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
       }
       if (formData.btw_verlegd !== (klant?.btw_verlegd === true)) {
         grippVelden.btw_verlegd = formData.btw_verlegd
+      }
+      // Migratie 258: alleen meesturen als het afwijkt, zodat een klant ook
+      // opslaat zolang de kolom er nog niet is.
+      if (formData.taal !== (klant?.taal === 'fr' ? 'fr' : 'nl')) {
+        grippVelden.taal = formData.taal
       }
       if (formData.po_verplicht !== (klant?.po_verplicht === true)) {
         grippVelden.po_verplicht = formData.po_verplicht
@@ -755,6 +763,21 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
                   <SelectItem value="post">Post</SelectItem>
                   <SelectItem value="portaal">Portaal</SelectItem>
                   <SelectItem value="peppol">Peppol (e-factuur)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center justify-between gap-4 p-3 min-h-[44px]">
+              <div>
+                <Label htmlFor="taal" className="text-sm font-medium">Taal van de klant</Label>
+                <p className="text-xs text-muted-foreground">Portaal en klantmails; jouw eigen teksten blijven zoals je ze schrijft.</p>
+              </div>
+              <Select value={formData.taal} onValueChange={(value) => setFormData((prev) => ({ ...prev, taal: value === 'fr' ? 'fr' : 'nl' }))}>
+                <SelectTrigger id="taal" className="w-[170px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="nl">Nederlands</SelectItem>
+                  <SelectItem value="fr">Frans</SelectItem>
                 </SelectContent>
               </Select>
             </div>

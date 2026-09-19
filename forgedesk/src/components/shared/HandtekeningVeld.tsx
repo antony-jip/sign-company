@@ -8,13 +8,15 @@ interface HandtekeningVeldProps {
   /** Canvas-pixels; het element schaalt mee met de breedte van de container. */
   breedte?: number
   hoogte?: number
+  /** Teksten in de taal van de klant; standaard Nederlands. */
+  teksten?: { tekenHier: string; opnieuw: string }
 }
 
 /**
  * Eenvoudig tekenveld voor een handtekening. Pointer events, dus muis, vinger
  * en pen werken hetzelfde; touch-action none voorkomt dat de pagina meescrolt.
  */
-export function HandtekeningVeld({ onChange, className, breedte = 600, hoogte = 200 }: HandtekeningVeldProps) {
+export function HandtekeningVeld({ onChange, className, breedte = 600, hoogte = 200, teksten }: HandtekeningVeldProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const tekenendRef = useRef(false)
   const [heeftStreek, setHeeftStreek] = useState(false)
@@ -87,7 +89,7 @@ export function HandtekeningVeld({ onChange, className, breedte = 600, hoogte = 
         />
         {!heeftStreek && (
           <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-[#9B9B95]">
-            Teken hier je handtekening
+            {teksten?.tekenHier ?? 'Teken hier je handtekening'}
           </span>
         )}
       </div>
@@ -98,7 +100,7 @@ export function HandtekeningVeld({ onChange, className, breedte = 600, hoogte = 
           disabled={!heeftStreek}
           className="text-xs text-[#6B6B66] hover:text-[#1A535C] disabled:opacity-40 min-h-[44px] px-2"
         >
-          Opnieuw
+          {teksten?.opnieuw ?? 'Opnieuw'}
         </button>
       </div>
     </div>

@@ -3,7 +3,7 @@ import { Mail, Phone } from 'lucide-react'
 import { isLichteKleur, kopKleur } from '@/utils/offerteKlantpagina'
 
 /** Bellen en mailen via de bedrijfsgegevens, op elke klantpagina hetzelfde. */
-export function ContactKnoppen({ telefoon, email, onderwerp }: { telefoon?: string | null; email?: string | null; onderwerp?: string }) {
+export function ContactKnoppen({ telefoon, email, onderwerp, teksten }: { telefoon?: string | null; email?: string | null; onderwerp?: string; teksten?: { bellen: string; mailen: string } }) {
   if (!telefoon && !email) return null
   const knop = 'inline-flex h-10 items-center gap-2 rounded-lg bg-[#F8F7F5] px-4 text-sm font-medium text-[#1A535C] transition-colors hover:bg-[#F1F0EC]'
   return (
@@ -11,13 +11,13 @@ export function ContactKnoppen({ telefoon, email, onderwerp }: { telefoon?: stri
       {telefoon && (
         <a href={`tel:${telefoon.replace(/[^\d+]/g, '')}`} className={knop}>
           <Phone className="h-4 w-4" />
-          Bellen
+          {teksten?.bellen ?? 'Bellen'}
         </a>
       )}
       {email && (
         <a href={`mailto:${email}${onderwerp ? `?subject=${encodeURIComponent(onderwerp)}` : ''}`} className={knop}>
           <Mail className="h-4 w-4" />
-          Mailen
+          {teksten?.mailen ?? 'Mailen'}
         </a>
       )}
     </div>
