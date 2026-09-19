@@ -24,6 +24,7 @@ import { createKlant, updateKlant } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
 import { toast } from 'sonner'
 import { Building2, Loader2 } from 'lucide-react'
+import { PeppolCheckKnop } from './PeppolCheckKnop'
 import type { Klant } from '@/types'
 import { klantStatusConfig } from '@/types'
 import { getAllKlantLabels } from '@/services/supabaseService'
@@ -66,7 +67,7 @@ interface FormData {
   klant_labels: string[]
   gepinde_notitie: string
   gepinde_notitie_waarschuwing: boolean
-  verzendvoorkeur: '' | 'email' | 'post' | 'portaal'
+  verzendvoorkeur: '' | 'email' | 'post' | 'portaal' | 'peppol'
   btw_verlegd: boolean
   po_verplicht: boolean
   klant_status: Klant['klant_status']
@@ -690,8 +691,11 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
                 id="btw_nummer"
                 value={formData.btw_nummer}
                 onChange={(e) => handleChange('btw_nummer', e.target.value)}
-                placeholder="NL123456789B01"
+                placeholder={formData.land === 'BE' ? 'BE0123456789' : 'NL123456789B01'}
               />
+              {klant?.id && (
+                <PeppolCheckKnop klantId={klant.id} status={klant.peppol_status} gecheckOp={klant.peppol_gecheckt_op} />
+              )}
             </div>
           </div>
 
@@ -716,6 +720,7 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
                   <SelectItem value="email">E-mail</SelectItem>
                   <SelectItem value="post">Post</SelectItem>
                   <SelectItem value="portaal">Portaal</SelectItem>
+                  <SelectItem value="peppol">Peppol (e-factuur)</SelectItem>
                 </SelectContent>
               </Select>
             </div>

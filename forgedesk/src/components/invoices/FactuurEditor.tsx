@@ -130,6 +130,15 @@ const BOEKHOUD_PAKKET_NAAM: Record<BoekhoudPakket, string> = {
   snelstart: 'SnelStart',
   moneybird: 'Moneybird',
   eboekhouden: 'e-Boekhouden',
+  billit: 'Billit',
+}
+
+const PEPPOL_STATUS_LABEL: Record<NonNullable<Factuur['peppol_status']>, string> = {
+  niet_verzonden: 'Niet via Peppol',
+  in_wachtrij: 'Peppol · in wachtrij',
+  verzonden: 'Peppol · verzonden',
+  afgeleverd: 'Peppol · afgeleverd',
+  mislukt: 'Peppol · mislukt',
 }
 import { round2 } from '@/utils/budgetUtils'
 import { isZuiverTarief, standaardBtwTarief, zuiverTarief } from '@/lib/btwTarieven'
@@ -1868,6 +1877,8 @@ export function FactuurEditor() {
           handtekeningAfbeeldingLink: handtekeningAfbeeldingLink || undefined,
           handtekeningAfbeeldingGrootte: handtekeningAfbeeldingGrootte || undefined,
           logoUrl: profile?.logo_url || undefined,
+          boekhoudPakket: settings.boekhoud_pakket,
+          peppolStandaard: settings.peppol_verzenden_standaard === true,
         },
         metExact,
         klant: selectedKlant || undefined,
@@ -1880,6 +1891,9 @@ export function FactuurEditor() {
       )
       if (resultaat.exactWaarschuwing) {
         toast.warning(resultaat.exactWaarschuwing, { duration: 10000 })
+      }
+      if (resultaat.peppolWaarschuwing) {
+        toast.warning(`Peppol: ${resultaat.peppolWaarschuwing}`, { duration: 10000 })
       }
       if (resultaat.statusWaarschuwing) {
         toast.warning(resultaat.statusWaarschuwing, { duration: 10000 })
@@ -2908,10 +2922,14 @@ export function FactuurEditor() {
 
   // ============ BOEKHOUD SYNC (SnelStart / Moneybird / e-Boekhouden) ============
 
-  const handleSyncBoekhouding = useCallback(async () => {
+  // Billit: de factuur gaat de boekhouding in én (als de klant dat wil of de
+  // organisatie dat standaard doet) via Peppol de deur uit. `viaPeppol`
+  // forceert de Peppol-stap, voor de losse knop op een al geboekte factuur.
+  const handleSyncBoekhouding = useCallback(async (viaPeppol?: boolean) => {
     if (!existingFactuur || boekhoudSyncing) return
     const pakket = settings.boekhoud_pakket
     if (!pakket) return
+    const peppol = pakket === 'billit' && (viaPeppol === true || (viaPeppol !== false && (selectedKlant?.verzendvoorkeur === 'peppol' || settings.peppol_verzenden_standaard === true)))
     // De server boekt de DB-staat; met onopgeslagen wijzigingen zouden
     // boeking (oude regels) en PDF (nieuwe editor-staat) uiteenlopen.
     if (isDirty) {
@@ -2977,23 +2995,26 @@ export function FactuurEditor() {
       const res = await fetch(`/api/${pakket}-sync-factuur`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ factuur_id: existingFactuur.id }),
+        body: JSON.stringify({ factuur_id: existingFactuur.id, ...(peppol ? { peppol: true } : {}) }),
       })
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}))
         throw new Error(errData.error || 'Sync mislukt')
       }
-      const data = await res.json() as { extern_id: string; waarschuwing?: string }
+      const data = await res.json() as { extern_id: string; waarschuwing?: string; peppol_status?: Factuur['peppol_status'] }
 
       setExistingFactuur({
         ...existingFactuur,
         boekhoud_pakket: pakket,
         boekhoud_extern_id: data.extern_id,
-        boekhoud_synced_at: new Date().toISOString(),
+        boekhoud_synced_at: existingFactuur.boekhoud_synced_at || new Date().toISOString(),
+        ...(data.peppol_status !== undefined ? { peppol_status: data.peppol_status, ...(data.peppol_status === 'verzonden' ? { peppol_verzonden_op: new Date().toISOString() } : {}) } : {}),
       })
 
       if (data.waarschuwing) {
         toast.warning(data.waarschuwing, { id: toastId, duration: 10000 })
+      } else if (data.peppol_status === 'verzonden') {
+        toast.success('Factuur geboekt in Billit en via Peppol verstuurd', { id: toastId })
       } else {
         toast.success(`Factuur gesynchroniseerd met ${pakketNaam}`, { id: toastId })
       }
@@ -3003,7 +3024,7 @@ export function FactuurEditor() {
     } finally {
       setBoekhoudSyncing(false)
     }
-  }, [existingFactuur, boekhoudSyncing, isDirty, settings.boekhoud_pakket, profile, primaireKleur, nummer, titel, factuurdatum, vervaldatum, subtotaal, btwBedrag, totaal, notities, voorwaarden, validItems, isCredit, selectedKlant, documentStyle, outroTekst])
+  }, [existingFactuur, boekhoudSyncing, isDirty, settings.boekhoud_pakket, settings.peppol_verzenden_standaard, profile, primaireKleur, nummer, titel, factuurdatum, vervaldatum, subtotaal, btwBedrag, totaal, notities, voorwaarden, validItems, isCredit, selectedKlant, documentStyle, outroTekst])
 
   // ============ LOADING ============
 
@@ -3159,11 +3180,38 @@ export function FactuurEditor() {
                     variant="outline"
                     size="sm"
                     className="text-petrol border-petrol/20 hover:bg-petrol/5 gap-1"
-                    onClick={handleSyncBoekhouding}
+                    onClick={() => handleSyncBoekhouding()}
                     disabled={boekhoudSyncing}
                   >
                     <RefreshCw className={cn('w-3.5 h-3.5', boekhoudSyncing && 'animate-spin')} />
                     Sync {BOEKHOUD_PAKKET_NAAM[settings.boekhoud_pakket]}
+                  </Button>
+                )}
+
+                {/* Peppol via Billit: status van de aflevering, en een losse
+                    knop zolang de factuur wel in Billit staat maar nog niet
+                    (of mislukt) via Peppol is verstuurd. */}
+                {existingFactuur?.peppol_status && (existingFactuur.peppol_status === 'verzonden' || existingFactuur.peppol_status === 'afgeleverd' || existingFactuur.peppol_status === 'in_wachtrij') && (
+                  <Badge
+                    className="bg-[hsl(var(--status-green-bg))] text-[#2D6B48] text-xs gap-1"
+                    title={existingFactuur.peppol_verzonden_op ? `Via Peppol verstuurd op ${new Date(existingFactuur.peppol_verzonden_op).toLocaleDateString('nl-NL')}` : PEPPOL_STATUS_LABEL[existingFactuur.peppol_status]}
+                  >
+                    <CheckCircle2 className="w-3 h-3" />
+                    {PEPPOL_STATUS_LABEL[existingFactuur.peppol_status]}
+                  </Badge>
+                )}
+                {settings.boekhoud_pakket === 'billit' && existingFactuur?.boekhoud_pakket === 'billit' && existingFactuur.boekhoud_synced_at
+                  && existingFactuur.peppol_status !== 'verzonden' && existingFactuur.peppol_status !== 'afgeleverd' && existingFactuur.peppol_status !== 'in_wachtrij' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-petrol border-petrol/20 hover:bg-petrol/5 gap-1"
+                    onClick={() => handleSyncBoekhouding(true)}
+                    disabled={boekhoudSyncing}
+                    title={existingFactuur.peppol_fout || undefined}
+                  >
+                    <RefreshCw className={cn('w-3.5 h-3.5', boekhoudSyncing && 'animate-spin')} />
+                    {existingFactuur.peppol_status === 'mislukt' ? 'Peppol opnieuw' : 'Verstuur via Peppol'}
                   </Button>
                 )}
 

@@ -142,8 +142,13 @@ export interface Klant {
   /** Toon gepinde_notitie als waarschuwing op offerte, project, werkbon, bestelbon en inkoopfactuur (migratie 236). */
   gepinde_notitie_waarschuwing?: boolean;
   /** Standaard verzendwijze voor offertes en facturen van deze klant (migratie 236). */
-  verzendvoorkeur?: 'email' | 'post' | 'portaal' | null;
+  verzendvoorkeur?: 'email' | 'post' | 'portaal' | 'peppol' | null;
   btw_verlegd?: boolean;
+  /** Uitkomst van de laatste Peppol-registratiecheck (migratie 253). */
+  peppol_status?: KlantPeppolStatus;
+  peppol_gecheckt_op?: string | null;
+  /** Handmatige Peppol-identifier (schema:nummer); leeg = afgeleid uit btw-/KvK-nummer. */
+  peppol_id?: string | null;
   /** Klant wil altijd een eigen referentie (PO-nummer) op offerte en factuur (migratie 236). */
   po_verplicht?: boolean;
   /** Voorbeelddata uit de onboarding; met één actie te verwijderen. */
@@ -772,7 +777,9 @@ export interface NavItem {
   badge?: number;
 }
 
-export type BoekhoudPakket = 'snelstart' | 'moneybird' | 'eboekhouden';
+export type BoekhoudPakket = 'snelstart' | 'moneybird' | 'eboekhouden' | 'billit';
+export type PeppolStatus = 'niet_verzonden' | 'in_wachtrij' | 'verzonden' | 'afgeleverd' | 'mislukt';
+export type KlantPeppolStatus = 'onbekend' | 'geregistreerd' | 'niet_geregistreerd';
 
 export interface AppSettings {
   id: string;
@@ -943,6 +950,16 @@ export interface AppSettings {
   eboekhouden_api_token?: string;
   eboekhouden_debiteuren_ledger_id?: string;
   eboekhouden_omzet_ledger_id?: string;
+  // Billit (migratie 253): OAuth-tokens versleuteld, Peppol via Billit als access point
+  billit_access_token?: string;
+  billit_refresh_token?: string;
+  billit_token_expires_at?: string | null;
+  billit_party_id?: string | null;
+  billit_omgeving?: 'sandbox' | 'productie';
+  billit_owner_user_id?: string | null;
+  billit_inbox_gesynct_op?: string | null;
+  /** Facturen van een Billit-organisatie standaard via Peppol versturen als de klant geregistreerd is. */
+  peppol_verzenden_standaard?: boolean;
   // Snelofferte: welke calculatie-templates als snelkoppeling tonen in het Nieuwe Offerte formulier
   snelofferte_templates?: string[];
   created_at: string;
@@ -1213,6 +1230,11 @@ export interface Factuur {
   boekhoud_pakket?: BoekhoudPakket | null;
   boekhoud_extern_id?: string;
   boekhoud_synced_at?: string;
+  // Peppol-aflevering via Billit (migratie 253)
+  peppol_status?: PeppolStatus | null;
+  peppol_verzonden_op?: string | null;
+  peppol_fout?: string | null;
+  peppol_bericht_id?: string | null;
   // Creditfactuur referentie
   credit_voor_factuur_id?: string;
   // Kostenplaats
@@ -2623,6 +2645,10 @@ export interface InkoopFactuur {
   updated_at: string
   /** Gekoppelde leverancier (migratie 237); leverancier_naam blijft de weergave. */
   leverancier_id?: string | null
+  /** email = mailbox-sync, peppol = ontvangen via Billit/Peppol (migratie 254). */
+  bron?: 'email' | 'peppol' | 'upload'
+  billit_order_id?: string | null
+  ubl_storage_path?: string | null
 }
 
 export interface InkoopFactuurRegel {

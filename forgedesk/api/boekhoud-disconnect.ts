@@ -15,7 +15,7 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 )
 
-type Pakket = 'snelstart' | 'moneybird' | 'eboekhouden'
+type Pakket = 'snelstart' | 'moneybird' | 'eboekhouden' | 'billit'
 
 // Velden die per pakket gewist worden (token + boekingsinstellingen).
 const VELDEN_PER_PAKKET: Record<Pakket, string[]> = {
@@ -36,6 +36,15 @@ const VELDEN_PER_PAKKET: Record<Pakket, string[]> = {
     'eboekhouden_api_token',
     'eboekhouden_debiteuren_ledger_id',
     'eboekhouden_omzet_ledger_id',
+  ],
+  billit: [
+    'billit_access_token',
+    'billit_refresh_token',
+    'billit_token_expires_at',
+    'billit_party_id',
+    'billit_owner_user_id',
+    'billit_webhook_secret',
+    'billit_inbox_gesynct_op',
   ],
 }
 

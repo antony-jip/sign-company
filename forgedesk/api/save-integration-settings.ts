@@ -77,6 +77,8 @@ const ALLOWED_FIELDS = [
   'eboekhouden_api_token',
   'eboekhouden_debiteuren_ledger_id',
   'eboekhouden_omzet_ledger_id',
+  'billit_omgeving',
+  'peppol_verzenden_standaard',
   'drive_actief',
   'drive_hoofdmap_id',
   'drive_map_aanmaken',
@@ -203,9 +205,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Geen geldige velden opgegeven' })
     }
 
+    if ('billit_omgeving' in updates && !['sandbox', 'productie'].includes(updates.billit_omgeving as string)) {
+      return res.status(400).json({ error: 'Ongeldige Billit-omgeving' })
+    }
+
     if ('boekhoud_pakket' in updates) {
       const pakket = updates.boekhoud_pakket
-      if (pakket !== null && !['snelstart', 'moneybird', 'eboekhouden'].includes(pakket as string)) {
+      if (pakket !== null && !['snelstart', 'moneybird', 'eboekhouden', 'billit'].includes(pakket as string)) {
         return res.status(400).json({ error: 'Ongeldig boekhoudpakket' })
       }
     }

@@ -1507,7 +1507,9 @@ export function FacturenLayout() {
     handtekeningAfbeeldingLink: handtekeningAfbeeldingLink || undefined,
     handtekeningAfbeeldingGrootte: handtekeningAfbeeldingGrootte || undefined,
     logoUrl: profile?.logo_url || undefined,
-  }), [profile, primaireKleur, documentStyle, bedrijfsnaam, emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingLink, handtekeningAfbeeldingGrootte])
+    boekhoudPakket: settings.boekhoud_pakket,
+    peppolStandaard: settings.peppol_verzenden_standaard === true,
+  }), [profile, primaireKleur, documentStyle, bedrijfsnaam, emailHandtekening, handtekeningAfbeelding, handtekeningAfbeeldingLink, handtekeningAfbeeldingGrootte, settings.boekhoud_pakket, settings.peppol_verzenden_standaard])
 
   const handleSendFactuur = useCallback(
     async (factuur: Factuur) => {
@@ -1533,6 +1535,7 @@ export function FacturenLayout() {
         await werkProjectBijNaVerzending(factuur)
         toast.success(`Factuur ${resultaat.factuur.nummer} verzonden naar ${resultaat.ontvanger}`)
         if (resultaat.statusWaarschuwing) toast.warning(resultaat.statusWaarschuwing, { duration: 10000 })
+        if (resultaat.peppolWaarschuwing) toast.warning(`Peppol: ${resultaat.peppolWaarschuwing}`, { duration: 10000 })
       } catch (err) {
         logger.error('Fout bij verzenden factuur:', err)
         toast.error(err instanceof FactuurKetenFout ? err.gebruikersmelding : 'Kon factuur niet verzenden')
@@ -1617,6 +1620,7 @@ export function FacturenLayout() {
             },
           }))
           if (resultaat.statusWaarschuwing) toast.warning(resultaat.statusWaarschuwing, { duration: 10000 })
+        if (resultaat.peppolWaarschuwing) toast.warning(`Peppol: ${resultaat.peppolWaarschuwing}`, { duration: 10000 })
           gelukt++
           await werkProjectBijNaVerzending(f)
         } catch (err) {

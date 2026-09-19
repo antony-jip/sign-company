@@ -31,6 +31,7 @@ const BOEKHOUD_PAKKET_NAAM: Record<BoekhoudPakket, string> = {
   snelstart: 'SnelStart',
   moneybird: 'Moneybird',
   eboekhouden: 'e-Boekhouden',
+  billit: 'Billit',
 }
 import { useAuth } from '@/contexts/AuthContext'
 import { useAppSettings } from '@/contexts/AppSettingsContext'
@@ -130,6 +131,14 @@ export function IntegratiesTab() {
   const [boekhoudPakket, setBoekhoudPakket] = useState<BoekhoudPakket | ''>('')
   const [boekhoudTokenAanwezig, setBoekhoudTokenAanwezig] = useState(false)
 
+  // Billit state (OAuth; tokens staan versleuteld op de server)
+  const [billitOmgeving, setBillitOmgeving] = useState<'sandbox' | 'productie'>('productie')
+  const [billitPartyId, setBillitPartyId] = useState<string | null>(null)
+  const [billitOwnerUserId, setBillitOwnerUserId] = useState<string | null>(null)
+  const [billitConnecting, setBillitConnecting] = useState(false)
+  const [peppolStandaard, setPeppolStandaard] = useState(false)
+  const [peppolStandaardSaving, setPeppolStandaardSaving] = useState(false)
+
   // Moneybird state
   const [moneybirdToken, setMoneybirdToken] = useState('')
   const [moneybirdConnecting, setMoneybirdConnecting] = useState(false)
@@ -206,8 +215,13 @@ export function IntegratiesTab() {
         snelstart: s.snelstart_koppelsleutel,
         moneybird: s.moneybird_api_token,
         eboekhouden: s.eboekhouden_api_token,
+        billit: s.billit_access_token,
       }
       setBoekhoudTokenAanwezig(!!(pakket && tokenPerPakket[pakket]))
+      setBillitOmgeving(s.billit_omgeving ?? 'productie')
+      setBillitPartyId(s.billit_party_id ?? null)
+      setBillitOwnerUserId(s.billit_owner_user_id ?? null)
+      setPeppolStandaard(s.peppol_verzenden_standaard ?? false)
       setMoneybirdAdministrationId(s.moneybird_administration_id ?? '')
       setMoneybirdLedgerAccountId(s.moneybird_ledger_account_id ?? '')
       setMoneybirdTaxHoog(s.moneybird_tax_rate_hoog ?? '')
@@ -270,6 +284,96 @@ export function IntegratiesTab() {
     url.searchParams.delete('reason')
     window.history.replaceState({}, '', url.toString())
   }, [user?.id, refreshSettings])
+
+  // Zelfde detectie voor de Billit-OAuth: ?billit=connected|error na
+  // /api/billit-callback.
+  useEffect(() => {
+    if (!user?.id) return
+    const params = new URLSearchParams(window.location.search)
+    const status = params.get('billit')
+    if (!status) return
+    if (status === 'connected') {
+      toast.success(<>Billit verbonden<span style={{ color: '#D24620' }}>.</span></>)
+      if (params.get('webhook') === 'mislukt') {
+        toast.warning('Billit kon geen webhook registreren; statussen en de Peppol-inbox worden elk kwartier opgehaald.', { duration: 10000 })
+      }
+      getAppSettings(user.id).then((s) => {
+        setBoekhoudPakket(s.boekhoud_pakket ?? '')
+        setBoekhoudTokenAanwezig(!!s.billit_access_token)
+        setBillitOmgeving(s.billit_omgeving ?? 'productie')
+        setBillitPartyId(s.billit_party_id ?? null)
+        setBillitOwnerUserId(s.billit_owner_user_id ?? null)
+      }).catch(() => {})
+      refreshSettings?.()
+    } else if (status === 'error') {
+      const reason = params.get('reason')
+      const uitleg: Record<string, string> = {
+        no_credentials: 'doen. heeft nog geen Billit-app-credentials voor deze omgeving. Neem contact op met support.',
+        not_owner: 'Alleen de eigenaar van de Billit-koppeling kan opnieuw verbinden.',
+        not_admin: 'Alleen een beheerder kan Billit koppelen.',
+        invalid_state: 'De koppelpoging is verlopen. Start hem opnieuw en rond het inloggen bij Billit binnen een uur af.',
+        oauth_geweigerd: 'Je hebt de koppeling bij Billit geweigerd.',
+        oauth_client: 'Billit herkent de app-credentials van doen. niet. Neem contact op met support.',
+        oauth_grant: 'Billit accepteerde de koppelcode niet. Probeer het opnieuw.',
+        token_exchange: 'Billit weigerde de koppeling. Probeer het opnieuw; blijft het misgaan, neem contact op met support.',
+        no_party: 'Billit gaf niet door welk bedrijf je koppelt (PartyID). Controleer in Billit of je account bij een bedrijf hoort.',
+        no_org: 'Je account hoort nog niet bij een organisatie.',
+        session: 'Je sessie was verlopen. Log opnieuw in en verbind daarna nog een keer.',
+      }
+      toast.error(uitleg[reason ?? ''] ?? 'Billit verbinden mislukt. Probeer het opnieuw.')
+    }
+    const url = new URL(window.location.href)
+    url.searchParams.delete('billit')
+    url.searchParams.delete('reason')
+    url.searchParams.delete('webhook')
+    window.history.replaceState({}, '', url.toString())
+  }, [user?.id, refreshSettings])
+
+  const isBillitEigenaar = !billitOwnerUserId || billitOwnerUserId === user?.id
+
+  const handleBillitConnect = async () => {
+    if (!user?.id) return
+    if (!isBillitEigenaar) {
+      toast.error('Alleen de eigenaar van de Billit-koppeling kan opnieuw verbinden')
+      return
+    }
+    setBillitConnecting(true)
+    try {
+      await saveIntegrationSettings({ billit_omgeving: billitOmgeving })
+      const { data } = supabase ? await supabase.auth.getSession() : { data: null }
+      const token = data?.session?.access_token
+      if (!token) { toast.error('Niet ingelogd'); return }
+      const antwoord = await fetch(`/api/billit-auth?omgeving=${billitOmgeving}`, {
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+      })
+      const start = await antwoord.json().catch(() => null) as { url?: string; reason?: string } | null
+      if (!antwoord.ok || !start?.url) {
+        window.location.href = `/instellingen?tab=integraties&billit=error&reason=${encodeURIComponent(start?.reason || 'unknown')}`
+        return
+      }
+      window.location.href = start.url
+    } catch (err) {
+      logger.error('Fout bij starten Billit OAuth:', err)
+      toast.error('Kon niet verbinden met Billit')
+    } finally {
+      setBillitConnecting(false)
+    }
+  }
+
+  const handlePeppolStandaardChange = async (aan: boolean) => {
+    setPeppolStandaard(aan)
+    setPeppolStandaardSaving(true)
+    try {
+      await saveIntegrationSettings({ peppol_verzenden_standaard: aan })
+      refreshSettings?.()
+    } catch (err) {
+      logger.error('Peppol-standaard opslaan mislukt:', err)
+      setPeppolStandaard(!aan)
+      toast.error('Kon de Peppol-instelling niet opslaan')
+    } finally {
+      setPeppolStandaardSaving(false)
+    }
+  }
 
   // Koppeling-status ophalen. Re-run wanneer `exactConnected` flipt (b.v. na
   // een succesvolle OAuth-callback) zodat badge en knoppen direct kloppen.
@@ -495,6 +599,7 @@ export function IntegratiesTab() {
           snelstart: s.snelstart_koppelsleutel,
           moneybird: s.moneybird_api_token,
           eboekhouden: s.eboekhouden_api_token,
+          billit: s.billit_access_token,
         }
         setBoekhoudTokenAanwezig(!!tokenPerPakket[pakket])
       }).catch(() => {})
@@ -1517,6 +1622,7 @@ export function IntegratiesTab() {
                     <SelectItem value="geen">Geen</SelectItem>
                     <SelectItem value="moneybird">Moneybird</SelectItem>
                     <SelectItem value="eboekhouden">e-Boekhouden</SelectItem>
+                    <SelectItem value="billit">Billit (België · Peppol)</SelectItem>
                     {/* SnelStart verborgen tot de payload-verificatie tegen een
                         Ontwikkeling&Test-administratie en de certificering rond
                         zijn (zie REVIEW_NOTES.md). Code en routes staan klaar. */}
@@ -1876,6 +1982,53 @@ export function IntegratiesTab() {
                           </div>
                         </>
                       )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {boekhoudPakket === 'billit' && (
+                <div className="space-y-3 border-t border-border pt-4">
+                  <p className="text-sm text-muted-foreground">
+                    Billit boekt je facturen én levert ze via het Peppol-netwerk af, verplicht voor B2B-facturen in België sinds 2026.
+                    Inkomende Peppol-facturen komen binnen bij Inkoopfacturen.
+                  </p>
+                  {!boekhoudTokenAanwezig && (
+                    <div className="space-y-2">
+                      <Label htmlFor="billit-omgeving" className="text-sm font-medium">Omgeving</Label>
+                      <Select value={billitOmgeving} onValueChange={(v) => setBillitOmgeving(v as 'sandbox' | 'productie')}>
+                        <SelectTrigger id="billit-omgeving" className="text-sm w-[220px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="productie">Productie (echte facturen)</SelectItem>
+                          <SelectItem value="sandbox">Sandbox (testen)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  {boekhoudTokenAanwezig && (
+                    <div className="text-xs text-muted-foreground">
+                      Verbonden met Billit-bedrijf <span className="font-mono">{billitPartyId ?? '?'}</span>
+                      {billitOmgeving === 'sandbox' && <Badge className="ml-2 bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200">sandbox</Badge>}
+                      {!isBillitEigenaar && <span className="ml-2">· gekoppeld door een collega</span>}
+                    </div>
+                  )}
+                  <div className="flex justify-end">
+                    {(isBillitEigenaar || !boekhoudTokenAanwezig) && (
+                      <Button size="sm" disabled={billitConnecting} onClick={handleBillitConnect} className="gap-1.5">
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        {billitConnecting ? 'Verbinden...' : (boekhoudTokenAanwezig ? 'Opnieuw verbinden' : 'Verbind met Billit')}
+                      </Button>
+                    )}
+                  </div>
+                  {boekhoudTokenAanwezig && (
+                    <div className="flex items-center justify-between gap-4 rounded-md border border-border bg-muted/40 px-3 py-2">
+                      <div>
+                        <Label htmlFor="peppol-standaard" className="text-sm font-medium">Facturen standaard via Peppol versturen</Label>
+                        <p className="text-xs text-muted-foreground">Bij het syncen naar Billit gaat de factuur meteen via Peppol naar klanten die op het netwerk staan. Per klant te overrulen met de verzendvoorkeur.</p>
+                      </div>
+                      <Switch id="peppol-standaard" checked={peppolStandaard} disabled={peppolStandaardSaving} onCheckedChange={handlePeppolStandaardChange} />
                     </div>
                   )}
                 </div>

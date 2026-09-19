@@ -23,12 +23,13 @@ import { logger } from '@/utils/logger'
 // PDF-bijlage) en dezelfde volgorde hanteren: sync vóór verzenden, zodat
 // Exact dezelfde PDF krijgt als de klant.
 
-export type FactuurKetenStap = 'verwerken' | 'pdf' | 'exact' | 'verzenden'
+export type FactuurKetenStap = 'verwerken' | 'pdf' | 'exact' | 'peppol' | 'verzenden'
 
 const STAP_LABEL: Record<FactuurKetenStap, string> = {
   verwerken: 'Verwerken',
   pdf: 'PDF',
   exact: 'Exact-sync',
+  peppol: 'Peppol',
   verzenden: 'Verzenden',
 }
 
@@ -55,6 +56,11 @@ export type FactuurVerzendStijl = {
   handtekeningAfbeeldingLink?: string
   handtekeningAfbeeldingGrootte?: number
   logoUrl?: string
+  // Billit/Peppol: alleen als het actieve pakket Billit is gaat de factuur
+  // vóór het mailen via Peppol; de mail met PDF blijft als begeleidend
+  // exemplaar gaan.
+  boekhoudPakket?: string | null
+  peppolStandaard?: boolean
 }
 
 export type FactuurKetenResultaat = {
@@ -62,6 +68,8 @@ export type FactuurKetenResultaat = {
   ontvanger: string
   exactGesynct: boolean
   exactWaarschuwing?: string
+  peppolStatus?: Factuur['peppol_status']
+  peppolWaarschuwing?: string
   // Mail is verstuurd maar de status-update naar de database faalde; niet
   // nogmaals versturen.
   statusWaarschuwing?: string
@@ -89,6 +97,22 @@ export async function heeftExactTokens(): Promise<boolean | null> {
   } catch {
     return null
   }
+}
+
+// Via Billit boeken én via Peppol versturen. Soft-fail: een Billit-storing
+// mag de factuur niet tegenhouden, de mail gaat door en de factuur krijgt
+// peppol_status 'mislukt' met een retry-knop in de editor.
+async function verstuurViaPeppol(factuurId: string): Promise<{ status: Factuur['peppol_status']; waarschuwing?: string; externId?: string }> {
+  const token = await getAccessToken()
+  if (!token) return { status: 'mislukt', waarschuwing: 'Niet ingelogd, Peppol overgeslagen' }
+  const res = await fetch('/api/billit-sync-factuur', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ factuur_id: factuurId, peppol: true }),
+  })
+  const data = await res.json().catch(() => ({})) as { error?: string; extern_id?: string; peppol_status?: Factuur['peppol_status']; waarschuwing?: string }
+  if (!res.ok) return { status: 'mislukt', waarschuwing: data.error || 'Billit/Peppol mislukt' }
+  return { status: data.peppol_status ?? null, waarschuwing: data.waarschuwing, externId: data.extern_id }
 }
 
 async function syncFactuurNaarExact(factuurId: string): Promise<{
@@ -386,6 +410,29 @@ export async function verwerkEnVerzendFactuur(opts: {
     }
   }
 
+  let peppolStatus: Factuur['peppol_status'] = factuur.peppol_status ?? null
+  let peppolWaarschuwing: string | undefined
+  const wilPeppol = stijl.boekhoudPakket === 'billit'
+    && (klant.verzendvoorkeur === 'peppol' || stijl.peppolStandaard === true)
+    && peppolStatus !== 'verzonden' && peppolStatus !== 'afgeleverd'
+  if (wilPeppol) {
+    try {
+      const uitkomst = await verstuurViaPeppol(factuur.id)
+      peppolStatus = uitkomst.status
+      peppolWaarschuwing = uitkomst.waarschuwing
+      factuur = {
+        ...factuur,
+        peppol_status: uitkomst.status,
+        ...(uitkomst.externId ? { boekhoud_pakket: 'billit', boekhoud_extern_id: uitkomst.externId, boekhoud_synced_at: factuur.boekhoud_synced_at || new Date().toISOString() } : {}),
+        ...(uitkomst.status === 'verzonden' ? { peppol_verzonden_op: new Date().toISOString() } : {}),
+      }
+    } catch (err) {
+      logger.warn('Peppol-stap mislukt, mail gaat door:', err)
+      peppolStatus = 'mislukt'
+      peppolWaarschuwing = err instanceof Error ? err.message : 'Peppol mislukt'
+    }
+  }
+
   const { subject, html } = factuurVerzendTemplate({
     klantNaam: klant.contactpersoon || klant.bedrijfsnaam,
     factuurNummer: factuur.nummer,
@@ -438,5 +485,5 @@ export async function verwerkEnVerzendFactuur(opts: {
     statusWaarschuwing = `Factuur ${factuur.nummer} is gemaild, maar de status kon niet opgeslagen worden · niet nogmaals versturen`
   }
 
-  return { factuur, ontvanger: ontvanger.email, exactGesynct, exactWaarschuwing, statusWaarschuwing }
+  return { factuur, ontvanger: ontvanger.email, exactGesynct, exactWaarschuwing, statusWaarschuwing, peppolStatus, peppolWaarschuwing }
 }

@@ -31,6 +31,7 @@ import {
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { LANDEN, landNaam, landOfStandaard, type LandCode } from '@/lib/landen'
+import { PeppolCheckKnop } from './PeppolCheckKnop'
 import {
   ArrowLeft,
   Pencil,
@@ -949,6 +950,12 @@ export function ClientProfile() {
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">BTW</p>
                 <p className="text-sm font-medium font-mono text-foreground">{klant.btw_nummer}</p>
+                <PeppolCheckKnop
+                  klantId={klant.id}
+                  status={klant.peppol_status}
+                  gecheckOp={klant.peppol_gecheckt_op}
+                  onStatus={(peppol_status, peppol_gecheckt_op) => setKlant((k) => (k ? { ...k, peppol_status, peppol_gecheckt_op } : k))}
+                />
               </div>
             )}
             {klant.debiteurennummer && (
