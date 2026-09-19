@@ -958,6 +958,10 @@ export interface AppSettings {
   // Billit (migratie 253): OAuth-tokens versleuteld, Peppol via Billit als access point
   billit_access_token?: string;
   billit_refresh_token?: string;
+  /** Eigen API-key van de organisatie (migratie 256), versleuteld; alternatief voor OAuth. */
+  billit_api_key?: string;
+  billit_client_id?: string;
+  billit_client_secret?: string;
   billit_token_expires_at?: string | null;
   billit_party_id?: string | null;
   billit_omgeving?: 'sandbox' | 'productie';

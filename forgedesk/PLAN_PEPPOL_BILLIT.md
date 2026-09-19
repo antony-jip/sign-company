@@ -108,6 +108,12 @@ de UBL-validatie. Onze eigen `ublService` blijft bestaan voor de download en
 wordt in fase 2 wel Peppol-correct gemaakt, zodat een tweede route (`sendXml`
 voor organisaties die níet in Billit boekhouden) later alleen transport is.
 
+**Koppelen zonder te wachten op Billit (gebouwd):** naast de partner-OAuth
+accepteert doen. per organisatie een eigen API-key + Party ID
+(`api/billit-connect.ts`, migratie 256) of een eigen OAuth-app
+(Client ID/Secret, zoals bij Exact). Daarmee kan een klant morgen koppelen;
+de partner-OAuth blijft de nette route op termijn.
+
 **Lead-time-item dat vandaag kan starten:** OAuth Client ID/Secret voor de
 sandbox aanvragen bij Billit-support. Dat heeft doorlooptijd en zonder die
 credentials is fase 3 niet te testen. Tegelijk vragen: kosten per

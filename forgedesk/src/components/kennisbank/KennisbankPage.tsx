@@ -200,6 +200,7 @@ const ARTICLES: KbArticle[] = [
       'Vul bij Belgische klanten altijd het btw-nummer in; daaruit leidt doen. het Peppol-adres af',
       'Btw verlegd? Zet dat op de klant, dan gaat de e-factuur met de juiste btw-categorie',
       'Test eerst met de Billit-sandbox voordat je op productie koppelt',
+      'Koppelen kan direct met je eigen Billit API-key en Party ID (Instellingen → API in Billit); OAuth is de route voor later',
     ],
     link: '/instellingen?tab=integraties',
   },

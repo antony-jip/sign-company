@@ -136,6 +136,15 @@ export function IntegratiesTab() {
   const [billitPartyId, setBillitPartyId] = useState<string | null>(null)
   const [billitOwnerUserId, setBillitOwnerUserId] = useState<string | null>(null)
   const [billitConnecting, setBillitConnecting] = useState(false)
+  // Twee koppelroutes: eigen API-key + Party ID (direct, Exact-stijl) of OAuth
+  // (partner-app van doen., of de eigen OAuth-app van de organisatie).
+  const [billitModus, setBillitModus] = useState<'api_key' | 'oauth'>('api_key')
+  const [billitApiKey, setBillitApiKey] = useState('')
+  const [billitApiKeyOpgeslagen, setBillitApiKeyOpgeslagen] = useState(false)
+  const [billitPartyIdInvoer, setBillitPartyIdInvoer] = useState('')
+  const [billitClientId, setBillitClientId] = useState('')
+  const [billitClientSecret, setBillitClientSecret] = useState('')
+  const [billitClientSecretOpgeslagen, setBillitClientSecretOpgeslagen] = useState(false)
   const [peppolStandaard, setPeppolStandaard] = useState(false)
   const [peppolStandaardSaving, setPeppolStandaardSaving] = useState(false)
 
@@ -215,13 +224,18 @@ export function IntegratiesTab() {
         snelstart: s.snelstart_koppelsleutel,
         moneybird: s.moneybird_api_token,
         eboekhouden: s.eboekhouden_api_token,
-        billit: s.billit_access_token,
+        billit: s.billit_api_key || s.billit_access_token,
       }
       setBoekhoudTokenAanwezig(!!(pakket && tokenPerPakket[pakket]))
       setBillitOmgeving(s.billit_omgeving ?? 'productie')
       setBillitPartyId(s.billit_party_id ?? null)
       setBillitOwnerUserId(s.billit_owner_user_id ?? null)
       setPeppolStandaard(s.peppol_verzenden_standaard ?? false)
+      setBillitApiKeyOpgeslagen(!!s.billit_api_key)
+      setBillitModus(s.billit_access_token && !s.billit_api_key ? 'oauth' : 'api_key')
+      setBillitPartyIdInvoer(s.billit_party_id ?? '')
+      setBillitClientId(s.billit_client_id ?? '')
+      setBillitClientSecretOpgeslagen(!!s.billit_client_secret)
       setMoneybirdAdministrationId(s.moneybird_administration_id ?? '')
       setMoneybirdLedgerAccountId(s.moneybird_ledger_account_id ?? '')
       setMoneybirdTaxHoog(s.moneybird_tax_rate_hoog ?? '')
@@ -339,6 +353,9 @@ export function IntegratiesTab() {
     }
     setBillitConnecting(true)
     try {
+      if (billitClientId.trim() || billitClientSecret.trim()) {
+        await saveIntegrationSettings({ billit_client_id: billitClientId.trim(), billit_client_secret: billitClientSecret.trim() })
+      }
       const { data } = supabase ? await supabase.auth.getSession() : { data: null }
       const token = data?.session?.access_token
       if (!token) { toast.error('Niet ingelogd'); return }
@@ -354,6 +371,39 @@ export function IntegratiesTab() {
     } catch (err) {
       logger.error('Fout bij starten Billit OAuth:', err)
       toast.error('Kon niet verbinden met Billit')
+    } finally {
+      setBillitConnecting(false)
+    }
+  }
+
+  const handleBillitApiKeyConnect = async () => {
+    setBillitConnecting(true)
+    try {
+      if (!supabase) throw new Error('Niet ingelogd')
+      const { data: sess } = await supabase.auth.getSession()
+      const token = sess?.session?.access_token
+      if (!token) throw new Error('Niet ingelogd')
+      const res = await fetch('/api/billit-connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ api_key: billitApiKey.trim(), party_id: billitPartyIdInvoer.trim(), omgeving: billitOmgeving }),
+      })
+      const body = await res.json().catch(() => ({})) as { error?: string; party_id?: string; naam?: string | null; webhook?: boolean }
+      if (!res.ok) throw new Error(body.error || 'Verbinden mislukt')
+      setBoekhoudTokenAanwezig(true)
+      setBillitApiKeyOpgeslagen(true)
+      setBillitApiKey('')
+      setBillitPartyId(body.party_id ?? billitPartyIdInvoer.trim())
+      setBillitOwnerUserId(user?.id ?? null)
+      setBillitModus('api_key')
+      refreshSettings?.()
+      toast.success(<>Billit verbonden{body.naam ? ` · ${body.naam}` : ''}<span style={{ color: '#D24620' }}>.</span></>)
+      if (body.webhook === false) {
+        toast.warning('Billit kon geen webhook registreren; statussen en de Peppol-inbox worden elk kwartier opgehaald.', { duration: 10000 })
+      }
+    } catch (err) {
+      logger.error('Billit verbinden (API-key) mislukt:', err)
+      toast.error(err instanceof Error ? err.message : 'Verbinden mislukt')
     } finally {
       setBillitConnecting(false)
     }
@@ -598,7 +648,7 @@ export function IntegratiesTab() {
           snelstart: s.snelstart_koppelsleutel,
           moneybird: s.moneybird_api_token,
           eboekhouden: s.eboekhouden_api_token,
-          billit: s.billit_access_token,
+          billit: s.billit_api_key || s.billit_access_token,
         }
         setBoekhoudTokenAanwezig(!!tokenPerPakket[pakket])
       }).catch(() => {})
@@ -2009,18 +2059,64 @@ export function IntegratiesTab() {
                   {boekhoudTokenAanwezig && (
                     <div className="text-xs text-muted-foreground">
                       Verbonden met Billit-bedrijf <span className="font-mono">{billitPartyId ?? '?'}</span>
+                      {' '}via {billitApiKeyOpgeslagen ? 'eigen API-key' : 'OAuth'}
                       {billitOmgeving === 'sandbox' && <Badge className="ml-2 bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200">sandbox</Badge>}
                       {!isBillitEigenaar && <span className="ml-2">· gekoppeld door een collega</span>}
                     </div>
                   )}
-                  <div className="flex justify-end">
-                    {(isBillitEigenaar || !boekhoudTokenAanwezig) && (
-                      <Button size="sm" disabled={billitConnecting} onClick={handleBillitConnect} className="gap-1.5">
-                        <ExternalLink className="w-3.5 h-3.5" />
-                        {billitConnecting ? 'Verbinden...' : (boekhoudTokenAanwezig ? 'Opnieuw verbinden' : 'Verbind met Billit')}
-                      </Button>
-                    )}
-                  </div>
+                  {(isBillitEigenaar || !boekhoudTokenAanwezig) && (
+                    <div className="space-y-3">
+                      <div className="flex flex-wrap gap-2">
+                        <Button type="button" size="sm" variant={billitModus === 'api_key' ? 'default' : 'outline'} onClick={() => setBillitModus('api_key')}>Eigen API-key</Button>
+                        <Button type="button" size="sm" variant={billitModus === 'oauth' ? 'default' : 'outline'} onClick={() => setBillitModus('oauth')}>OAuth</Button>
+                      </div>
+                      {billitModus === 'api_key' ? (
+                        <div className="space-y-2">
+                          <p className="text-xs text-muted-foreground">
+                            Direct te koppelen: haal je API-key en Party ID op in Billit onder Instellingen → API. Billit bedoelt API-keys voor eigen integraties; voor een pilot prima, daarna naar OAuth.
+                          </p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                              <Label htmlFor="billit-api-key" className="text-sm">API-key</Label>
+                              <Input id="billit-api-key" type="password" value={billitApiKey} onChange={(e) => setBillitApiKey(e.target.value)} placeholder={billitApiKeyOpgeslagen ? 'Key opgeslagen · vul in om te vervangen' : 'API-key uit Billit'} className="font-mono text-sm" autoComplete="off" data-1p-ignore />
+                            </div>
+                            <div className="space-y-1.5">
+                              <Label htmlFor="billit-party-id" className="text-sm">Party ID</Label>
+                              <Input id="billit-party-id" value={billitPartyIdInvoer} onChange={(e) => setBillitPartyIdInvoer(e.target.value)} placeholder="bv. 12345" className="font-mono text-sm" />
+                            </div>
+                          </div>
+                          <div className="flex justify-end">
+                            <Button size="sm" disabled={billitConnecting || (!billitApiKey.trim() && !billitApiKeyOpgeslagen) || !billitPartyIdInvoer.trim()} onClick={handleBillitApiKeyConnect} className="gap-1.5">
+                              <ExternalLink className="w-3.5 h-3.5" />
+                              {billitConnecting ? 'Verbinden...' : (billitApiKeyOpgeslagen ? 'Opnieuw verbinden' : 'Verbinden')}
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <p className="text-xs text-muted-foreground">
+                            Via OAuth log je in bij Billit en geef je doen. toestemming. Heb je een eigen OAuth-app bij Billit aangevraagd, vul dan hier de Client ID en Secret in; anders gebruikt doen. zijn partner-app.
+                          </p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                              <Label htmlFor="billit-client-id" className="text-sm">Client ID (optioneel)</Label>
+                              <Input id="billit-client-id" value={billitClientId} onChange={(e) => setBillitClientId(e.target.value)} className="font-mono text-sm" />
+                            </div>
+                            <div className="space-y-1.5">
+                              <Label htmlFor="billit-client-secret" className="text-sm">Client Secret (optioneel)</Label>
+                              <Input id="billit-client-secret" type="password" value={billitClientSecret} onChange={(e) => setBillitClientSecret(e.target.value)} placeholder={billitClientSecretOpgeslagen ? 'Secret opgeslagen · vul in om te vervangen' : ''} className="font-mono text-sm" autoComplete="off" data-1p-ignore />
+                            </div>
+                          </div>
+                          <div className="flex justify-end">
+                            <Button size="sm" disabled={billitConnecting} onClick={handleBillitConnect} className="gap-1.5">
+                              <ExternalLink className="w-3.5 h-3.5" />
+                              {billitConnecting ? 'Verbinden...' : (boekhoudTokenAanwezig ? 'Opnieuw verbinden via OAuth' : 'Verbind via OAuth')}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   {boekhoudTokenAanwezig && (
                     <div className="flex items-center justify-between gap-4 rounded-md border border-border bg-muted/40 px-3 py-2">
                       <div>

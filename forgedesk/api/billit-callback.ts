@@ -68,6 +68,29 @@ function encryptSecret(text: string): string {
   const ct = Buffer.concat([cipher.update(text, 'utf8'), cipher.final()])
   return 'g1:' + Buffer.concat([salt, iv, cipher.getAuthTag(), ct]).toString('base64')
 }
+function decryptSecret(text: string): string {
+  if (text && text.startsWith('g1:')) {
+    if (!INT_KEY) throw new Error('Server-encryptie is niet geconfigureerd (INTEGRATION_ENCRYPTION_KEY).')
+    try {
+      const raw = Buffer.from(text.slice(3), 'base64')
+      const key = crypto.scryptSync(INT_KEY, raw.subarray(0, 16), 32)
+      const decipher = crypto.createDecipheriv('aes-256-gcm', key, raw.subarray(16, 28))
+      decipher.setAuthTag(raw.subarray(28, 44))
+      return Buffer.concat([decipher.update(raw.subarray(44)), decipher.final()]).toString('utf8')
+    } catch {
+      throw new Error('Integratie-token kan niet ontsleuteld worden (encryptie-key gewijzigd?).')
+    }
+  }
+  if (!text || !text.includes(':') || text.length < 34) return text
+  if (!INT_KEY) { console.warn('[encryption] INTEGRATION_ENCRYPTION_KEY not set'); return text }
+  try {
+    const key = crypto.scryptSync(INT_KEY, 'integration', 32)
+    const [ivHex, enc] = text.split(':')
+    if (!ivHex || ivHex.length !== 32 || !enc) return text
+    const decipher = crypto.createDecipheriv('aes-256-cbc', key, Buffer.from(ivHex, 'hex'))
+    return decipher.update(enc, 'hex', 'utf8') + decipher.final('utf8')
+  } catch { console.warn('[encryption] decrypt failed, treating as plaintext'); return text }
+}
 
 // Inline kopie van signState uit billit-auth.ts; formaat
 // `${userId}:${omgeving}:${ts}:${sig}` met dezelfde TTL.
@@ -230,7 +253,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const orgId = await getOrgIdForUser(supabase, userId)
     if (!orgId) return res.redirect(302, foutUrl('no_org'))
 
-    const creds = clientCredentials(omgeving)
+    // Eigen OAuth-app van de organisatie gaat vóór de partner-credentials in de env.
+    const { data: eigen } = await supabase.from('app_settings').select('billit_client_id, billit_client_secret').eq('organisatie_id', orgId).maybeSingle()
+    const eigenId = ((eigen as { billit_client_id?: string | null } | null)?.billit_client_id ?? '').trim()
+    const eigenSecretRuw = (eigen as { billit_client_secret?: string | null } | null)?.billit_client_secret ?? ''
+    const creds = eigenId && eigenSecretRuw ? { id: eigenId, secret: decryptSecret(eigenSecretRuw) } : clientCredentials(omgeving)
     if (!creds.id || !creds.secret) return res.redirect(302, foutUrl('no_credentials'))
 
     // Billit verwacht de token-body als JSON (zie docs: grant_type, code,
@@ -281,6 +308,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       billit_party_id: partyId,
       billit_omgeving: omgeving,
       billit_owner_user_id: userId,
+      billit_api_key: null,
       // Alleen de hash in de database: app_settings komt via select('*') bij elke org-gebruiker.
       billit_webhook_secret: crypto.createHash('sha256').update(webhookSecret).digest('hex'),
       boekhoud_pakket: 'billit',

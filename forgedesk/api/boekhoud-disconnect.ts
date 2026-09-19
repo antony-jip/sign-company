@@ -45,6 +45,9 @@ const VELDEN_PER_PAKKET: Record<Pakket, string[]> = {
     'billit_owner_user_id',
     'billit_webhook_secret',
     'billit_inbox_gesynct_op',
+    'billit_api_key',
+    'billit_client_id',
+    'billit_client_secret',
   ],
 }
 

@@ -139,11 +139,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const user_id = await verifyUser(req)
     const omgeving: Omgeving = req.query.omgeving === 'sandbox' ? 'sandbox' : 'productie'
 
-    if (!clientId(omgeving)) {
+    const settings0 = await loadAppSettingsOrgFirst(supabaseAdmin, user_id, 'billit_client_id')
+    // Eigen OAuth-app van de organisatie (zoals bij Exact) gaat vóór de
+    // partner-credentials van doen. in de env.
+    const eigenClientId = ((settings0?.billit_client_id as string | null) ?? '').trim()
+    const gebruikteClientId = eigenClientId || clientId(omgeving)
+    if (!gebruikteClientId) {
       return antwoord(res, wilJson, foutUrl('no_credentials'), 'no_credentials')
     }
 
-    const settings = await loadAppSettingsOrgFirst(supabaseAdmin, user_id, 'billit_owner_user_id')
+    const settings = await loadAppSettingsOrgFirst(supabaseAdmin, user_id, 'billit_owner_user_id, billit_client_id')
     const eigenaarId = settings?.billit_owner_user_id as string | null | undefined
     if (eigenaarId && eigenaarId !== user_id) {
       return antwoord(res, wilJson, foutUrl('not_owner'), 'not_owner')
@@ -161,7 +166,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const params = new URLSearchParams({
       response_type: 'code',
-      client_id: clientId(omgeving),
+      client_id: gebruikteClientId,
       redirect_uri: REDIRECT_URI,
       state: signState(user_id, omgeving),
     })

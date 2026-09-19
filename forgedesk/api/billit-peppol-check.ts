@@ -144,19 +144,28 @@ interface BillitSettings {
   boekhoud_pakket: string | null
   billit_access_token: string | null
   billit_refresh_token: string | null
+  billit_api_key?: string | null
+  billit_client_id?: string | null
+  billit_client_secret?: string | null
   billit_token_expires_at: string | null
   billit_party_id: string | null
   billit_omgeving: Omgeving | null
 }
 
+// Geeft óf 'apikey:<sleutel>' (eigen API-key van de organisatie, Exact-stijl)
+// óf een OAuth-access-token; billitFetch kiest daarop de auth-header.
 async function billitAccessToken(supabase: SupabaseClient, s: BillitSettings): Promise<string> {
+  const apiKey = decryptSecret(s.billit_api_key ?? '')
+  if (apiKey) return `apikey:${apiKey}`
   const huidig = decryptSecret(s.billit_access_token ?? '')
   const verlooptOp = s.billit_token_expires_at ? new Date(s.billit_token_expires_at).getTime() : 0
   if (huidig && verlooptOp > Date.now() + 60_000) return huidig
   const refresh = decryptSecret(s.billit_refresh_token ?? '')
   if (!refresh) throw new Error('Billit-token is verlopen en kan niet ververst worden. Verbind opnieuw via Instellingen > Integraties.')
   const omgeving: Omgeving = s.billit_omgeving === 'sandbox' ? 'sandbox' : 'productie'
-  const creds = clientCredentials(omgeving)
+  const eigenId = (s.billit_client_id ?? '').trim()
+  const eigenSecret = decryptSecret(s.billit_client_secret ?? '')
+  const creds = eigenId && eigenSecret ? { id: eigenId, secret: eigenSecret } : clientCredentials(omgeving)
   const res = await fetch(tokenUrl(omgeving), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
@@ -238,16 +247,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const settings = (await loadAppSettingsOrgFirst(
       supabaseAdmin,
       user_id,
-      'id, boekhoud_pakket, billit_access_token, billit_refresh_token, billit_token_expires_at, billit_party_id, billit_omgeving',
+      'id, boekhoud_pakket, billit_access_token, billit_refresh_token, billit_api_key, billit_client_id, billit_client_secret, billit_token_expires_at, billit_party_id, billit_omgeving',
     ) ?? {}) as unknown as BillitSettings
-    if (settings.boekhoud_pakket !== 'billit' || !settings.billit_access_token || !settings.billit_party_id) {
+    if (settings.boekhoud_pakket !== 'billit' || (!settings.billit_access_token && !settings.billit_api_key) || !settings.billit_party_id) {
       return res.status(400).json({ error: 'De Peppol-check loopt via Billit. Koppel Billit eerst via Instellingen > Integraties.' })
     }
     const omgeving: Omgeving = settings.billit_omgeving === 'sandbox' ? 'sandbox' : 'productie'
     const token = await billitAccessToken(supabaseAdmin, settings)
 
     const checkRes = await fetch(`${BILLIT_BASE[omgeving]}/v1/peppol/participantInformation/${encodeURIComponent(identifier)}`, {
-      headers: { Authorization: `Bearer ${token}`, partyID: settings.billit_party_id, Accept: 'application/json' },
+      headers: { ...(token.startsWith('apikey:') ? { apikey: token.slice(7) } : { Authorization: `Bearer ${token}` }), partyID: settings.billit_party_id, Accept: 'application/json' },
       signal: AbortSignal.timeout(15_000),
     })
     if (checkRes.status === 401) {

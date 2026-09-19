@@ -77,6 +77,8 @@ const ALLOWED_FIELDS = [
   'eboekhouden_api_token',
   'eboekhouden_debiteuren_ledger_id',
   'eboekhouden_omzet_ledger_id',
+  'billit_client_id',
+  'billit_client_secret',
   'peppol_verzenden_standaard',
   'drive_actief',
   'drive_hoofdmap_id',
@@ -95,6 +97,7 @@ const SECRET_FIELDS = [
   'snelstart_koppelsleutel',
   'moneybird_api_token',
   'eboekhouden_api_token',
+  'billit_client_secret',
 ]
 
 function getClientIp(req: VercelRequest): string | null {
@@ -176,6 +179,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       'moneybird_api_token',
       'moneybird_administration_id',
       'eboekhouden_api_token',
+      'billit_client_id',
       'drive_hoofdmap_id',
     ])
 
