@@ -1697,3 +1697,28 @@ er per land meeverandert en welke wet erachter zit.
   zonder VIES is dicht". Restpunt (verwerkt): de stempel telt alleen als het
   organisatie-btw-nummer gelijk is aan het profiel-nummer. Open (productkeuze):
   VIES-consultatienummer (`requestIdentifier`) meesturen als formeel bewijs.
+
+### Portaal: meerdere uitvoeringen aanvinken (commits e09e5d1 … 96863eb)
+
+- **QAA/design:** geen ❌; ⚠️'s (hairlines in de uitvoeringenlijst, kop als
+  zin, disabled laatste vinkje, twee vinkjesstijlen, "Niet inbegrepen" op
+  verlopen offertes, specs onder de foto) verwerkt in 137ccfc.
+- **Senior ronde 1:** BLOKKADE A (oude string-keuze vernauwde bij herladen een
+  post met meerdere vaste uitvoeringen) en B (PDF: vette rijen, oude totalen)
+  gefixt in 96863eb, samen met C (genormaliseerd opslaan van gekozen_items/
+  gekozen_varianten) en D (409 als de verkoper de uitvoeringen tussen laden en
+  tekenen wijzigde) en 1a (server rekende zonder actieve_variant_id met de
+  basisprijs, de pagina met de eerste variant).
+- Bewust open (bestaande schuld, niet uit deze commits):
+  - Drie formules voor het regelnetto (pagina, accept-API, offerteTotalen)
+    wijken in ~1,7% van de halve-cent-gevallen één cent af; één gedeelde
+    formule + kopie-test (§10.1) is de nette oplossing.
+  - Acceptatie met keuzes herrekent zonder urencorrectie en met btw per regel
+    (bewust, comment in offerte-accepteren.ts); nu vaker geraakt omdat het
+    portaal voor elke offerte met uitvoeringen een keuze meestuurt.
+  - pdfService: bij precies één variant drukt de PDF de basisprijs van het item,
+    het portaal de variantprijs (`hasVariants = varianten.length > 1`).
+  - Productwijziging: de verkoper kan een uitvoering niet meer "vast" zetten;
+    elke uitvoering behalve de laatste is door de klant uit te vinken. Wil
+    Antony een vaste uitvoering, dan is een `vast: true`-vlag per variant de
+    kleinste vorm.
