@@ -111,16 +111,31 @@ export function generateUBLInvoice({ factuur, items, klant, profiel }: UBLInput)
   // stil onbruikbare download.
   if (!leverancierEndpoint) throw new UblFout('Vul het KvK-/ondernemingsnummer of btw-nummer van je eigen bedrijf in (Instellingen > Bedrijf) voor een e-factuur.')
   if (!klantEndpoint) throw new UblFout('Vul het KvK-/ondernemingsnummer of btw-nummer van de klant in voor een e-factuur.')
-  if (klant.btw_verlegd === true && !verlegd) {
-    throw new UblFout('Btw verlegd vereist regels op 0% en een btw-nummer van klant én eigen bedrijf.')
+  // Een verlegd-klant kan ook gewoon 21% afnemen (losse levering): dat is
+  // een S-factuur. Alleen een 0%-factuur zonder beide btw-nummers is fout.
+  if (klant.btw_verlegd === true && items.every((i) => i.btw_percentage === 0) && !(leverancierBtw && klantBtw)) {
+    throw new UblFout('Btw verlegd vereist een btw-nummer van de klant én van je eigen bedrijf.')
+  }
+  if (!(klant.bedrijfsnaam || klant.contactpersoon)) throw new UblFout('Vul de bedrijfsnaam van de klant in.')
+  if (!(profiel.bedrijfsnaam || profiel.voornaam || profiel.achternaam)) throw new UblFout('Vul de bedrijfsnaam van je eigen bedrijf in (Instellingen > Bedrijf).')
+  if (!leverancierAdres.postcode || !leverancierAdres.stad) {
+    throw new UblFout('Vul adres, postcode en plaats van je eigen bedrijf in (Instellingen > Bedrijf); een e-factuur vereist een volledig verkoopadres.')
   }
 
   // Alle bedragen komen uit de regels, per regel afgerond op de cent, zodat
   // Σ regels = kop (BR-CO-10/13/15) en Σ btw-subtotalen = btw-totaal. Een
   // creditnota staat in doen. met negatieve bedragen; in UBL zijn die positief.
   type Regel = { item: UBLInput['items'][number]; qty: number; prijs: number; bruto: number; korting: number; net: number }
+  // Op een creditnota zijn regels in doen. negatief en in UBL positief; een
+  // positieve regel op een creditnota is niet uit te drukken. Op een gewone
+  // factuur mag een regel negatief zijn (verrekend voorschot): de prijs blijft
+  // positief (BR-27), het teken zit in de hoeveelheid.
   const regels: Regel[] = items.map((item) => {
-    const qty = Math.abs(item.aantal)
+    const regelTotaal = item.aantal * item.eenheidsprijs
+    if (isCreditnota && regelTotaal > 0) {
+      throw new UblFout('Een creditnota mag voor een e-factuur geen positieve regels bevatten.')
+    }
+    const qty = isCreditnota ? Math.abs(item.aantal) : (regelTotaal < 0 ? -Math.abs(item.aantal) : Math.abs(item.aantal))
     const prijs = Math.abs(item.eenheidsprijs)
     const bruto = round2(qty * prijs)
     const korting = item.korting_percentage > 0 ? round2(bruto * (item.korting_percentage / 100)) : 0
@@ -137,8 +152,11 @@ export function generateUBLInvoice({ factuur, items, klant, profiel }: UBLInput)
   const totaalExcl = round2([...btwGroepen.values()].reduce((s, g) => s + g.taxable, 0))
   const btwTotaal = round2([...btwGroepen.values()].reduce((s, g) => s + g.tax, 0))
   const totaalIncl = round2(totaalExcl + btwTotaal)
-  if (Math.abs(totaalIncl - Math.abs(factuur.totaal)) > 0.02) {
-    throw new UblFout(`Het factuurtotaal (€${Math.abs(factuur.totaal).toFixed(2)}) wijkt af van de som van de regels (€${totaalIncl.toFixed(2)}). Sla de factuur opnieuw op.`)
+  // De editor rondt btw per regel af, de e-factuur per btw-groep (zoals de
+  // validator eist); tot 5 cent verschil is afronding, daarboven klopt de
+  // factuur zelf niet.
+  if (Math.abs(totaalIncl - Math.abs(factuur.totaal)) > 0.05) {
+    throw new UblFout(`Het factuurtotaal (€${Math.abs(factuur.totaal).toFixed(2)}) wijkt af van wat de regels optellen (€${totaalIncl.toFixed(2)}). Controleer de regels en bedragen van de factuur.`)
   }
 
   const lines: string[] = []
@@ -170,12 +188,11 @@ export function generateUBLInvoice({ factuur, items, klant, profiel }: UBLInput)
   // BT-3: Invoice type code (380 = commercial invoice, 381 = credit note)
   lines.push(`  <cbc:${isCreditnota ? 'CreditNoteTypeCode' : 'InvoiceTypeCode'}>${isCreditnota ? '381' : '380'}</cbc:${isCreditnota ? 'CreditNoteTypeCode' : 'InvoiceTypeCode'}>`)
 
-  // BT-22: Notes; bij verlegging ook de wettelijke vermelding (medecontractant / art. 196)
-  if (factuur.notities) {
-    lines.push(`  <cbc:Note>${esc(factuur.notities)}</cbc:Note>`)
-  }
-  if (verlegd) {
-    lines.push(`  <cbc:Note>${esc(verlegging.volledig)}</cbc:Note>`)
+  // BT-22: één Note (PEPPOL-EN16931-R002 staat er maar één toe); bij
+  // verlegging gaat de wettelijke vermelding erin mee.
+  const note = [factuur.notities, verlegd ? verlegging.volledig : null].filter(Boolean).join(' ')
+  if (note) {
+    lines.push(`  <cbc:Note>${esc(note)}</cbc:Note>`)
   }
 
   // BT-5: Currency
@@ -292,7 +309,7 @@ export function generateUBLInvoice({ factuur, items, klant, profiel }: UBLInput)
     lines.push('  <cac:PaymentMeans>')
     lines.push('    <cbc:PaymentMeansCode>58</cbc:PaymentMeansCode>') // SEPA credit transfer
     // BT-83 betalingskenmerk: Belgische banken matchen op de gestructureerde mededeling
-    const betalingskenmerk = leveranciersLand === 'BE' ? gestructureerdeMededelingKaal(factuur.nummer) : null
+    const betalingskenmerk = leveranciersLand === 'BE' && !isCreditnota ? gestructureerdeMededelingKaal(factuur.nummer) : null
     lines.push(`    <cbc:PaymentID>${esc(betalingskenmerk ?? factuur.nummer)}</cbc:PaymentID>`)
     lines.push('    <cac:PayeeFinancialAccount>')
     lines.push(`      <cbc:ID>${esc(profiel.iban.replace(/\s/g, ''))}</cbc:ID>`)

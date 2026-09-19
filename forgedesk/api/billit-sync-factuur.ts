@@ -145,24 +145,33 @@ interface BillitSettings {
   boekhoud_pakket: string | null
   billit_access_token: string | null
   billit_refresh_token: string | null
+  billit_api_key?: string | null
+  billit_client_id?: string | null
+  billit_client_secret?: string | null
   billit_token_expires_at: string | null
   billit_party_id: string | null
   billit_omgeving: Omgeving | null
   peppol_verzenden_standaard: boolean | null
 }
-const BILLIT_KOLOMMEN = 'id, boekhoud_pakket, billit_access_token, billit_refresh_token, billit_token_expires_at, billit_party_id, billit_omgeving, peppol_verzenden_standaard'
+const BILLIT_KOLOMMEN = 'id, boekhoud_pakket, billit_access_token, billit_refresh_token, billit_api_key, billit_client_id, billit_client_secret, billit_token_expires_at, billit_party_id, billit_omgeving, peppol_verzenden_standaard'
 
 // Geeft een geldig access token; ververst hem een minuut vóór het verlopen
 // en schrijft het nieuwe paar terug. Inline in elk Billit-bestand (api/ deelt
 // geen helpers).
+// Geeft óf 'apikey:<sleutel>' (eigen API-key van de organisatie, Exact-stijl)
+// óf een OAuth-access-token; billitFetch kiest daarop de auth-header.
 async function billitAccessToken(supabase: SupabaseClient, s: BillitSettings): Promise<string> {
+  const apiKey = decryptSecret(s.billit_api_key ?? '')
+  if (apiKey) return `apikey:${apiKey}`
   const huidig = decryptSecret(s.billit_access_token ?? '')
   const verlooptOp = s.billit_token_expires_at ? new Date(s.billit_token_expires_at).getTime() : 0
   if (huidig && verlooptOp > Date.now() + 60_000) return huidig
   const refresh = decryptSecret(s.billit_refresh_token ?? '')
   if (!refresh) throw new Error('Billit-token is verlopen en kan niet ververst worden. Verbind opnieuw via Instellingen > Integraties.')
   const omgeving: Omgeving = s.billit_omgeving === 'sandbox' ? 'sandbox' : 'productie'
-  const creds = clientCredentials(omgeving)
+  const eigenId = (s.billit_client_id ?? '').trim()
+  const eigenSecret = decryptSecret(s.billit_client_secret ?? '')
+  const creds = eigenId && eigenSecret ? { id: eigenId, secret: eigenSecret } : clientCredentials(omgeving)
   const res = await fetch(tokenUrl(omgeving), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
@@ -184,10 +193,11 @@ async function billitAccessToken(supabase: SupabaseClient, s: BillitSettings): P
 }
 
 async function billitFetch(base: string, token: string, partyId: string, path: string, init?: RequestInit): Promise<Response> {
+  const auth = token.startsWith('apikey:') ? { apikey: token.slice(7) } : { Authorization: `Bearer ${token}` }
   return fetch(`${base}${path}`, {
     ...init,
     headers: {
-      Authorization: `Bearer ${token}`,
+      ...auth,
       partyID: partyId,
       Accept: 'application/json',
       ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
@@ -398,7 +408,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (settings.boekhoud_pakket !== 'billit') {
       return res.status(400).json({ error: 'Billit is niet het actieve boekhoudpakket. Controleer Instellingen > Integraties.' })
     }
-    if (!settings.billit_access_token || !settings.billit_party_id) {
+    if ((!settings.billit_access_token && !settings.billit_api_key) || !settings.billit_party_id) {
       return res.status(400).json({ error: 'Billit is niet verbonden. Koppel eerst via Instellingen > Integraties.' })
     }
     const omgeving: Omgeving = settings.billit_omgeving === 'sandbox' ? 'sandbox' : 'productie'
@@ -407,11 +417,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const token = await billitAccessToken(supabaseAdmin, settings)
 
     const klantNaam = (klant?.bedrijfsnaam as string | null) || (factuur.klant_naam as string | null) || 'Onbekende klant'
-    // Btw verlegd is een eigenschap van de factuur zoals hij is opgeslagen
-    // (regels op 0%); Billit krijgt exact wat doen. zelf boekt en mailt.
-    if (klant?.btw_verlegd === true && Math.abs(Number(factuur.btw_bedrag)) >= 0.005) {
-      return res.status(400).json({ error: 'Deze klant staat op btw verlegd, maar de factuur bevat btw. Zet de regels op 0% en sla de factuur op.' })
-    }
+    // Billit krijgt de regels zoals doen. ze boekt en mailt (echte
+    // percentages); een verlegd-klant met een 21%-levering is gewoon een
+    // factuur met btw.
 
     // 1. Order aanmaken (tenzij deze factuur al in Billit staat)
     let orderId: string | null = factuur.boekhoud_pakket === 'billit' && factuur.boekhoud_extern_id ? String(factuur.boekhoud_extern_id) : null

@@ -7,7 +7,8 @@ import { landOfStandaard } from './landen'
 export const MEDECONTRACTANT_TEKST =
   'Verlegging van heffing. Bij gebrek aan schriftelijke betwisting binnen een termijn van één maand na de ontvangst van de factuur, wordt de afnemer geacht te erkennen dat hij een belastingplichtige is gehouden tot de indiening van periodieke aangiften. Als die voorwaarde niet vervuld is, is de afnemer ten aanzien van die voorwaarde aansprakelijk voor de betaling van de verschuldigde belasting, interesten en geldboeten.'
 
-export const ART196_TEKST = 'Btw verlegd naar de afnemer (art. 196 Richtlijn 2006/112/EG).'
+export const ART196_TEKST = 'Btw verlegd naar de afnemer (art. 194/196 Richtlijn 2006/112/EG).'
+export const BINNENLANDS_TEKST = 'Btw verlegd naar de afnemer.'
 
 export function isMedecontractant(leveranciersLand: string | null | undefined, klantLand: string | null | undefined): boolean {
   return landOfStandaard(leveranciersLand) === 'BE' && landOfStandaard(klantLand) === 'BE'
@@ -17,6 +18,11 @@ export function isMedecontractant(leveranciersLand: string | null | undefined, k
 export function verleggingsTekst(leveranciersLand: string | null | undefined, klantLand: string | null | undefined): { kort: string; volledig: string } {
   if (isMedecontractant(leveranciersLand, klantLand)) {
     return { kort: 'Btw verlegd, medecontractant (art. 20 KB nr. 1)', volledig: MEDECONTRACTANT_TEKST }
+  }
+  // Binnenlandse verlegging (bv. NL-onderaannemer → NL-hoofdaannemer) heeft
+  // een nationale grondslag; de EU-richtlijn noemen zou fout zijn.
+  if (landOfStandaard(leveranciersLand) === landOfStandaard(klantLand)) {
+    return { kort: 'Btw verlegd', volledig: BINNENLANDS_TEKST }
   }
   return { kort: 'Btw verlegd', volledig: ART196_TEKST }
 }

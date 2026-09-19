@@ -127,6 +127,11 @@ describe('generateUBLInvoice · oude vrije-tekstlanden', () => {
     expect(() => generateUBLInvoice({ factuur, items, klant: { bedrijfsnaam: 'X' }, profiel: { bedrijfsnaam: 'Y' } })).toThrow(/eigen bedrijf/)
     expect(() => generateUBLInvoice({ factuur, items, klant: { bedrijfsnaam: 'X' }, profiel: nlProfiel })).toThrow(/klant/)
   })
+
+  it('eist een volledig verkoopadres en een klantnaam', () => {
+    expect(() => generateUBLInvoice({ factuur, items, klant: nlKlant, profiel: { ...nlProfiel, bedrijfs_adres: 'Industrieweg 12' } })).toThrow(/postcode en plaats/)
+    expect(() => generateUBLInvoice({ factuur, items, klant: { ...nlKlant, bedrijfsnaam: '' }, profiel: nlProfiel })).toThrow(/bedrijfsnaam van de klant/)
+  })
 })
 
 describe('generateUBLInvoice · btw verlegd', () => {
@@ -149,8 +154,15 @@ describe('generateUBLInvoice · btw verlegd', () => {
     expect(xml).toContain('<cbc:PayableAmount currencyID="EUR">1000.00</cbc:PayableAmount>')
   })
 
-  it('zet bij België→België de medecontractant-tekst erbij, anders art. 196', () => {
-    expect(xml).toContain('art. 196')
+  it('zet bij België→België de medecontractant-tekst erbij, grensoverschrijdend art. 194/196, binnenlands niets', () => {
+    expect(xml).toContain('art. 194/196')
+    const nlnl = generateUBLInvoice({
+      factuur: { ...factuur, btw_bedrag: 0, totaal: 1000 },
+      items: items.map((i) => ({ ...i, btw_percentage: 0 })),
+      klant: { ...nlKlant, btw_verlegd: true },
+      profiel: nlProfiel,
+    })
+    expect(nlnl).not.toContain('Richtlijn')
     const be = generateUBLInvoice({
       factuur: { ...factuur, btw_bedrag: 0, totaal: 1000 },
       items: items.map((i) => ({ ...i, btw_percentage: 0 })),
@@ -161,9 +173,28 @@ describe('generateUBLInvoice · btw verlegd', () => {
     expect(be).toContain('Verlegging van heffing.')
   })
 
-  it('weigert verlegging zonder btw-nummer van de klant of met btw op de regels', () => {
+  it('weigert een 0%-verlegging zonder btw-nummer van de klant', () => {
     expect(() => generateUBLInvoice({ factuur: { ...factuur, btw_bedrag: 0, totaal: 1000 }, items: items.map((i) => ({ ...i, btw_percentage: 0 })), klant: { ...nlKlant, btw_nummer: '', btw_verlegd: true }, profiel: nlProfiel })).toThrow(/btw-nummer/)
-    expect(() => generateUBLInvoice({ factuur, items, klant: { ...beKlant, btw_verlegd: true }, profiel: nlProfiel })).toThrow(/0%/)
+  })
+
+  it('behandelt een 21%-factuur aan een verlegd-klant als gewone S-factuur', () => {
+    const s = generateUBLInvoice({ factuur, items, klant: { ...beKlant, btw_verlegd: true }, profiel: nlProfiel })
+    expect(tag(s, 'cbc:ID').filter((v) => v === 'S')).toHaveLength(3)
+    expect(s).not.toContain('VATEX-EU-AE')
+  })
+
+  it('voegt notities en verleggingstekst samen in één Note (R002)', () => {
+    const een = generateUBLInvoice({
+      factuur: { ...factuur, btw_bedrag: 0, totaal: 1000, notities: 'Levering week 40' },
+      items: items.map((i) => ({ ...i, btw_percentage: 0 })),
+      klant: { ...beKlant, btw_verlegd: true },
+      profiel: beProfiel,
+    })
+    // Alleen de Note op documentniveau telt (PaymentTerms heeft zijn eigen cbc:Note)
+    const documentNotes = een.split('\n').filter((r) => r.startsWith('  <cbc:Note>'))
+    expect(documentNotes).toHaveLength(1)
+    expect(documentNotes[0]).toContain('Levering week 40')
+    expect(documentNotes[0]).toContain('Verlegging van heffing.')
   })
 })
 
@@ -185,15 +216,29 @@ describe('generateUBLInvoice · bedragen uit de regels', () => {
     expect(xml).toContain('<cbc:PriceAmount currencyID="EUR">400.0000</cbc:PriceAmount>')
   })
 
-  it('weigert als het opgeslagen totaal meer dan 2 cent afwijkt van de regels', () => {
+  it('laat een negatieve verrekenregel (voorschot) op een gewone factuur toe', () => {
+    const met = [
+      { beschrijving: 'Eindafrekening', aantal: 1, eenheidsprijs: 1000, btw_percentage: 21, korting_percentage: 0, totaal: 1000, volgorde: 1 },
+      { beschrijving: 'Verrekening voorschot', aantal: 1, eenheidsprijs: -400, btw_percentage: 21, korting_percentage: 0, totaal: -400, volgorde: 2 },
+    ]
+    const xml = generateUBLInvoice({ factuur: { ...factuur, subtotaal: 600, btw_bedrag: 126, totaal: 726 }, items: met, klant: nlKlant, profiel: nlProfiel })
+    expect(xml).toContain('<cbc:InvoicedQuantity unitCode="EA">-1</cbc:InvoicedQuantity>')
+    expect(xml).toContain('<cbc:LineExtensionAmount currencyID="EUR">-400.00</cbc:LineExtensionAmount>')
+    expect(xml).toContain('<cbc:PriceAmount currencyID="EUR">400.0000</cbc:PriceAmount>')
+    expect(xml).toContain('<cbc:PayableAmount currencyID="EUR">726.00</cbc:PayableAmount>')
+  })
+
+  it('weigert als het opgeslagen totaal meer dan 5 cent afwijkt van de regels', () => {
     expect(() => generateUBLInvoice({ factuur: { ...factuur, totaal: 1300 }, items, klant: nlKlant, profiel: nlProfiel })).toThrow(/wijkt af/)
   })
 })
 
 describe('generateUBLInvoice · creditnota', () => {
+  // doen. bewaart creditregels negatief; de UBL maakt er positieve bedragen van
+  const creditItems = items.map((i) => ({ ...i, eenheidsprijs: -i.eenheidsprijs, totaal: -i.totaal }))
   const xml = generateUBLInvoice({
-    factuur: { ...factuur, factuur_type: 'creditnota', credit_voor_nummer: 'F-2026-0040' },
-    items,
+    factuur: { ...factuur, factuur_type: 'creditnota', credit_voor_nummer: 'F-2026-0040', subtotaal: -1000, btw_bedrag: -210, totaal: -1210 },
+    items: creditItems,
     klant: nlKlant,
     profiel: nlProfiel,
   })
@@ -210,6 +255,15 @@ describe('generateUBLInvoice · creditnota', () => {
     expect(neg).not.toContain('currencyID="EUR">-')
   })
 
+  it('weigert een creditnota met een positieve regel', () => {
+    expect(() => generateUBLInvoice({
+      factuur: { ...factuur, factuur_type: 'creditnota', totaal: -544.5 },
+      items: [{ ...items[0], eenheidsprijs: -400, totaal: -800 }, { ...items[1], totaal: 200 }],
+      klant: nlKlant,
+      profiel: nlProfiel,
+    })).toThrow(/positieve regels/)
+  })
+
   it('is een CreditNote met verwijzing naar de oorspronkelijke factuur', () => {
     expect(xml).toContain('<CreditNote')
     expect(xml).toContain('<cbc:CreditNoteTypeCode>381</cbc:CreditNoteTypeCode>')
@@ -224,6 +278,16 @@ describe('generateUBLInvoice · betalingskenmerk', () => {
   it('gebruikt voor een Belgische leverancier de gestructureerde mededeling als PaymentID', () => {
     const xml = generateUBLInvoice({ factuur, items, klant: beKlant, profiel: beProfiel })
     expect(xml).toContain('<cbc:PaymentID>002026004240</cbc:PaymentID>')
+  })
+
+  it('zet op een Belgische creditnota geen gestructureerde mededeling (niets te betalen)', () => {
+    const xml = generateUBLInvoice({
+      factuur: { ...factuur, factuur_type: 'creditnota', subtotaal: -1000, btw_bedrag: -210, totaal: -1210 },
+      items: items.map((i) => ({ ...i, eenheidsprijs: -i.eenheidsprijs, totaal: -i.totaal })),
+      klant: beKlant,
+      profiel: beProfiel,
+    })
+    expect(xml).toContain('<cbc:PaymentID>F-2026-0042</cbc:PaymentID>')
   })
 
   it('houdt voor een Nederlandse leverancier het factuurnummer', () => {

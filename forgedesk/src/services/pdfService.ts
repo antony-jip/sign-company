@@ -1914,7 +1914,7 @@ export function generateFactuurPDF(
   // medecontractant-tekst (art. 20 KB nr. 1), anders art. 196 Btw-richtlijn.
   if (btwVerlegd) {
     const verlegging = verleggingsTekst(bedrijfsProfiel.bedrijfs_land, klant.land)
-    const kop = klant.btw_nummer ? `${verlegging.kort} · btw-nummer afnemer ${klant.btw_nummer}` : verlegging.kort
+    const kop = klant.btw_nummer ? `${verlegging.kort} · btw-nummer afnemer ${klant.btw_nummer}` : `${verlegging.kort} · btw-nummer afnemer ontbreekt`
     doc.setFont(bodyFont, 'bold')
     doc.text(kop, margins.left, totalsY)
     doc.setFont(bodyFont, 'normal')
