@@ -43,7 +43,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 const TRULY_PUBLIC_ROUTES = [
   '/login', '/register', '/registreren', '/check-inbox',
   '/wachtwoord-vergeten', '/wachtwoord-resetten',
-  '/goedkeuring/', '/boeken/', '/betalen/',
+  '/goedkeuring/', '/betalen/',
   '/offerte-bekijken/', '/formulier/', '/portaal/',
 ]
 const ONBOARDING_ROUTES = ['/welkom', '/team-welkom', '/onboarding']

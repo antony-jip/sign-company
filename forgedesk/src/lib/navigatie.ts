@@ -1,8 +1,9 @@
 import {
   LayoutDashboard, Hammer, FileText, Building2, Truck, ClipboardCheck, Ruler, Wand2,
-  Banknote, Inbox, TrendingUp, Calendar, ListChecks, Mail, MessageSquare, Globe,
-  SlidersHorizontal, LifeBuoy, Newspaper, Calculator, BarChart3, LineChart, ShoppingCart,
-  type LucideIcon, Gauge } from 'lucide-react'
+  Banknote, Inbox, TrendingUp, Calendar, ListChecks, Mail, Globe,
+  SlidersHorizontal, LifeBuoy, Newspaper, BarChart3, ShoppingCart,
+  type LucideIcon, Gauge,
+} from 'lucide-react'
 
 export type NavSectie = 'WERK' | 'FINANCIEEL' | 'PLANNING' | 'COMMUNICATIE'
 
@@ -29,7 +30,6 @@ const WERK_ITEMS: NavItem[] = [
   { label: 'Werkbonnen', icon: ClipboardCheck, path: '/werkbonnen', color: '#C44830' },
   { label: 'Maatjes', icon: Ruler, path: '/maatjes', color: '#D24620' },
   { label: 'Studio', icon: Wand2, path: '/visualizer', color: '#9A5A48' },
-  { label: 'Nacalculatie', icon: Calculator, path: '/nacalculatie', color: '#1A535C' },
 ]
 
 const FINANCIEEL_ITEMS: NavItem[] = [
@@ -38,7 +38,6 @@ const FINANCIEEL_ITEMS: NavItem[] = [
   { label: 'Inkoopoffertes', icon: ShoppingCart, path: '/inkoopoffertes', color: '#C44830' },
   { label: 'Financieel', icon: TrendingUp, path: '/financieel', color: '#2D6B48' },
   { label: 'Rapportages', icon: BarChart3, path: '/rapportages', color: '#3A6B8C' },
-  { label: 'Forecast', icon: LineChart, path: '/forecast', color: '#3A6B8C' },
 ]
 
 const PLANNING_ITEMS: NavItem[] = [
@@ -48,7 +47,6 @@ const PLANNING_ITEMS: NavItem[] = [
 
 const COMMUNICATIE_ITEMS: NavItem[] = [
   { label: 'Email', icon: Mail, path: '/email', color: '#6A5A8A' },
-  { label: 'Aanvragen', icon: MessageSquare, path: '/aanvragen', color: '#6A5A8A' },
   { label: 'Portaal', icon: Globe, path: '/portalen', color: '#6A5A8A' },
 ]
 

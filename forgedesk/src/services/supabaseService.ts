@@ -15,13 +15,6 @@ export {
 } from './offerteService'
 
 export {
-  getVoorraadArtikelen, getVoorraadArtikel, getVoorraadArtikelenBijMinimum,
-  createVoorraadArtikel, updateVoorraadArtikel, deleteVoorraadArtikel,
-  getVoorraadMutaties, getVoorraadMutatiesByProject,
-  createVoorraadMutatie, deleteVoorraadMutatie,
-} from './voorraadService'
-
-export {
   getWerkbonnen, getWerkbon, getWerkbonnenByProject, getWerkbonnenByKlant,
   createWerkbon, updateWerkbon, deleteWerkbon,
   getWerkbonFotos, createWerkbonFoto, deleteWerkbonFoto,
@@ -119,9 +112,6 @@ export {
   getLeveranciers, getLeverancier, createLeverancier, updateLeverancier, deleteLeverancier,
   getUitgaven, getUitgave, getUitgavenByProject, getUitgavenByLeverancier,
   createUitgave, updateUitgave, deleteUitgave, getUitgavenTotaalByProject,
-  generateBestelbonNummer, getBestelbonnen, getBestelbon, getBestelbonnenByProject, getBestelbonnenByLeverancier,
-  createBestelbon, updateBestelbon, deleteBestelbon,
-  getBestelbonRegels, createBestelbonRegel, updateBestelbonRegel, deleteBestelbonRegel,
   getLeveringsbonnen, getLeveringsbon, getLeveringsbonnenByProject, getLeveringsbonnenByKlant,
   createLeveringsbon, updateLeveringsbon, deleteLeveringsbon,
   getLeveringsbonRegels, createLeveringsbonRegel, updateLeveringsbonRegel, deleteLeveringsbonRegel,
@@ -143,31 +133,9 @@ export {
 } from './kbService'
 
 export {
-  getDeals, getDeal, getDealsByKlant,
-  createDeal, updateDeal, deleteDeal,
-  getDealActiviteiten, createDealActiviteit,
-  generateLeadToken,
-  getLeadFormulieren, getLeadFormulier, getLeadFormulierByToken,
-  createLeadFormulier, updateLeadFormulier, deleteLeadFormulier,
-  getAllLeadInzendingen,
-  createLeadInzending, updateLeadInzending,
   getInkoopOffertes, getInkoopOffertesByProject, getInkoopOffertesByOfferte,
   createInkoopOfferte, updateInkoopOfferte, createInkoopRegel, updateInkoopRegel, deleteInkoopOfferte,
 } from './crmService'
-
-export {
-  getBookingSlots, createBookingSlot, updateBookingSlot, deleteBookingSlot,
-  getBookingAfspraken, getBookingAfspraakByToken, createBookingAfspraak, updateBookingAfspraak,
-} from './bookingService'
-
-export {
-  getWebsiteAanvragen, updateWebsiteAanvraag,
-} from './websiteAanvragenService'
-
-export {
-  getChatGesprekken, getChatBerichten, stuurTeamBericht, markeerChatGelezen,
-  sluitChatGesprek, getChatAanwezigheid, zetChatBeschikbaar, chatHeartbeat,
-} from './websiteChatService'
 
 export {
   getTijdregistraties, createTijdregistratie, updateTijdregistratie, deleteTijdregistratie,

@@ -1373,7 +1373,7 @@ export interface Notificatie {
   id: string;
   user_id?: string;
   organisatie_id?: string;
-  type: 'offerte_bekeken' | 'offerte_verlopen' | 'offerte_geaccepteerd' | 'offerte_wijziging' | 'factuur_vervallen' | 'deadline_nadert' | 'nieuwe_email' | 'taak_voltooid' | 'montage_gepland' | 'betaling_ontvangen' | 'budget_waarschuwing' | 'booking_nieuw' | 'algemeen' | 'goedkeuring' | 'herinnering' | 'portaal_goedkeuring' | 'portaal_revisie' | 'portaal_bericht' | 'portaal_bekeken' | 'portaal_herinnering' | 'website_chat' | 'website_aanvraag' | 'taak_toegewezen' | 'offerte_check_gevraagd' | 'offerte_check_afgehandeld' | 'offerte_check_wijzigingen' | 'genoemd' | 'uren_herinnering' | 'conceptfacturen_klaar' | 'uren_week_ingediend' | 'uren_week_goedgekeurd';
+  type: 'offerte_bekeken' | 'offerte_verlopen' | 'offerte_geaccepteerd' | 'offerte_wijziging' | 'factuur_vervallen' | 'deadline_nadert' | 'nieuwe_email' | 'taak_voltooid' | 'montage_gepland' | 'betaling_ontvangen' | 'budget_waarschuwing' | 'algemeen' | 'goedkeuring' | 'herinnering' | 'portaal_goedkeuring' | 'portaal_revisie' | 'portaal_bericht' | 'portaal_bekeken' | 'portaal_herinnering' | 'taak_toegewezen' | 'offerte_check_gevraagd' | 'offerte_check_afgehandeld' | 'offerte_check_wijzigingen' | 'genoemd' | 'conceptfacturen_klaar';
   titel: string;
   bericht: string;
   link?: string;
@@ -1580,38 +1580,6 @@ export interface ProjectToewijzing {
   project_id: string;
   medewerker_id: string;
   rol: 'eigenaar' | 'medewerker' | 'viewer';
-  created_at: string;
-  updated_at?: string;
-}
-
-// ============ BOOKING SYSTEEM (Feature 6) ============
-
-export interface BookingSlot {
-  id: string;
-  user_id?: string;
-  organisatie_id?: string;
-  dag_van_week: number;
-  start_tijd: string;
-  eind_tijd: string;
-  slot_duur_minuten: number;
-  actief: boolean;
-  created_at: string;
-  updated_at?: string;
-}
-
-export interface BookingAfspraak {
-  id: string;
-  user_id?: string;
-  organisatie_id?: string;
-  klant_naam: string;
-  klant_email: string;
-  klant_telefoon?: string;
-  datum: string;
-  start_tijd: string;
-  eind_tijd: string;
-  onderwerp?: string;
-  status: 'gepland' | 'bevestigd' | 'geannuleerd';
-  token: string;
   created_at: string;
   updated_at?: string;
 }
@@ -1825,48 +1793,6 @@ export interface Uitgave {
   updated_at?: string;
 }
 
-// ============ BESTELBONNEN (Tier 2 Feature 3) ============
-
-export interface Bestelbon {
-  id: string;
-  user_id?: string;
-  organisatie_id?: string;
-  bestelbon_nummer: string;
-  leverancier_id: string;
-  offerte_id?: string;
-  project_id?: string;
-  status: 'concept' | 'besteld' | 'deels_ontvangen' | 'ontvangen' | 'geannuleerd';
-  besteld_op?: string;
-  verwachte_levering?: string;
-  ontvangen_op?: string;
-  subtotaal: number;
-  btw_bedrag: number;
-  totaal: number;
-  opmerkingen?: string;
-  interne_notitie?: string;
-  referentie?: string;
-  created_at: string;
-  updated_at?: string;
-}
-
-export interface BestelbonRegel {
-  id: string;
-  user_id?: string;
-  organisatie_id?: string;
-  bestelbon_id: string;
-  omschrijving: string;
-  aantal: number;
-  eenheid?: string;
-  prijs_per_eenheid: number;
-  btw_percentage: number;
-  totaal: number;
-  aantal_ontvangen?: number;
-  volledig_ontvangen?: boolean;
-  offerte_item_id?: string;
-  created_at: string;
-  updated_at?: string;
-}
-
 // ============ LEVERINGSBONNEN (Tier 2 Feature 4) ============
 
 export interface Leveringsbon {
@@ -1877,7 +1803,6 @@ export interface Leveringsbon {
   klant_id: string;
   project_id?: string;
   werkbon_id?: string;
-  bestelbon_id?: string;
   datum: string;
   locatie_adres: string;
   locatie_stad?: string;
@@ -1901,114 +1826,6 @@ export interface LeveringsbonRegel {
   aantal: number;
   eenheid?: string;
   opmerking?: string;
-  created_at: string;
-  updated_at?: string;
-}
-
-// ============ VOORRAADBEHEER (Tier 2 Feature 5) ============
-
-export interface VoorraadArtikel {
-  id: string;
-  user_id?: string;
-  organisatie_id?: string;
-  naam: string;
-  sku?: string;
-  categorie: string;
-  eenheid: string;
-  huidige_voorraad: number;
-  minimum_voorraad: number;
-  maximum_voorraad?: number;
-  inkoop_prijs: number;
-  verkoop_prijs?: number;
-  leverancier_id?: string;
-  leverancier_artikelnummer?: string;
-  levertijd_dagen?: number;
-  opslaglocatie?: string;
-  actief: boolean;
-  created_at: string;
-  updated_at?: string;
-}
-
-export interface VoorraadMutatie {
-  id: string;
-  user_id?: string;
-  organisatie_id?: string;
-  artikel_id: string;
-  type: 'inkoop' | 'verbruik' | 'correctie' | 'retour';
-  aantal: number;
-  reden?: string;
-  project_id?: string;
-  bestelbon_id?: string;
-  werkbon_id?: string;
-  saldo_na_mutatie: number;
-  datum: string;
-  created_at: string;
-  updated_at?: string;
-}
-
-// ============ DEALS / SALES PIPELINE (Tier 3 Feature 1) ============
-
-export interface Deal {
-  id: string;
-  user_id?: string;
-  organisatie_id?: string;
-
-  // Koppeling
-  klant_id: string;
-  contactpersoon_id?: string;
-
-  // Deal info
-  titel: string;
-  beschrijving?: string;
-  verwachte_waarde: number;
-  werkelijke_waarde?: number;
-
-  // Pipeline
-  fase: string;
-  fase_sinds: string;
-
-  // Status
-  status: 'open' | 'gewonnen' | 'verloren' | 'on-hold';
-  verloren_reden?: string;
-  gewonnen_op?: string;
-  verloren_op?: string;
-
-  // Verwachting
-  verwachte_sluitdatum?: string;
-  kans_percentage?: number;
-
-  // Bron
-  bron?: 'website' | 'telefoon' | 'email' | 'referentie' | 'social_media' | 'beurs' | 'overig';
-
-  // Koppelingen
-  offerte_ids?: string[];
-  project_id?: string;
-
-  // Eigenaar
-  medewerker_id?: string;
-
-  // Activiteiten
-  laatste_activiteit?: string;
-  volgende_actie?: string;
-  volgende_actie_datum?: string;
-
-  created_at: string;
-  updated_at?: string;
-}
-
-export interface DealActiviteit {
-  id: string;
-  user_id?: string;
-  organisatie_id?: string;
-  deal_id: string;
-
-  type: 'notitie' | 'email' | 'telefoon' | 'vergadering' | 'offerte_verstuurd' | 'status_wijziging';
-  beschrijving: string;
-  datum: string;
-
-  email_id?: string;
-  offerte_id?: string;
-
   created_at: string;
   updated_at?: string;
 }
@@ -2044,114 +1861,6 @@ export interface Lead {
 
   created_at: string;
   updated_at: string;
-}
-
-// ============ LEAD CAPTURE (Tier 3 Feature 2) ============
-
-export interface LeadFormulier {
-  id: string;
-  user_id?: string;
-  organisatie_id?: string;
-
-  naam: string;
-  beschrijving?: string;
-
-  velden: LeadFormulierVeld[];
-
-  bedank_tekst: string;
-  redirect_url?: string;
-  email_notificatie: boolean;
-  auto_deal_aanmaken: boolean;
-  deal_fase?: string;
-  standaard_bron: string;
-
-  knop_tekst: string;
-  kleur?: string;
-
-  publiek_token: string;
-
-  actief: boolean;
-  created_at: string;
-  updated_at?: string;
-}
-
-export interface LeadFormulierVeld {
-  id: string;
-  label: string;
-  type: 'tekst' | 'email' | 'telefoon' | 'textarea' | 'select' | 'checkbox';
-  verplicht: boolean;
-  placeholder?: string;
-  opties?: string[];
-  volgorde: number;
-}
-
-export interface LeadInzending {
-  id: string;
-  user_id?: string;
-  organisatie_id?: string;
-  formulier_id: string;
-
-  data: Record<string, string>;
-
-  ip_adres?: string;
-  browser?: string;
-  pagina_url?: string;
-
-  status: 'nieuw' | 'bekeken' | 'verwerkt';
-  deal_id?: string;
-  klant_id?: string;
-
-  created_at: string;
-  updated_at?: string;
-}
-
-export interface WebsiteAanvraag {
-  id: string;
-  organisatie_id: string;
-  naam: string;
-  email: string;
-  telefoon?: string;
-  dienst?: string;
-  bericht: string;
-  pagina_url?: string;
-  ip_adres?: string;
-  browser?: string;
-  status: 'nieuw' | 'bekeken' | 'afgehandeld';
-  created_at: string;
-  updated_at?: string;
-}
-
-export interface WebsiteChatGesprek {
-  id: string;
-  organisatie_id: string;
-  naam?: string;
-  email?: string;
-  telefoon?: string;
-  pagina_url?: string;
-  ip_adres?: string;
-  browser?: string;
-  status: 'open' | 'gesloten';
-  laatste_bericht_op: string;
-  team_laatst_gelezen_op?: string;
-  created_at: string;
-  updated_at?: string;
-}
-
-export interface WebsiteChatBericht {
-  id: string;
-  gesprek_id: string;
-  organisatie_id: string;
-  rol: 'bezoeker' | 'team';
-  medewerker_id?: string;
-  tekst: string;
-  created_at: string;
-}
-
-export interface WebsiteChatAanwezigheid {
-  organisatie_id: string;
-  laatst_actief: string;
-  beschikbaar: boolean;
-  updated_at?: string;
 }
 
 // ============ GEDEELDE INBOX UITBREIDING (Tier 3 Feature 3) ============

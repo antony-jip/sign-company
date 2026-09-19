@@ -21,7 +21,6 @@ import type {
 import { berekenMarkupPercentage } from '@/utils/margeBerekening'
 import { partitionOfferteItemSync } from '@/utils/offerteItemSync'
 import { createProject } from './projectService'
-import { updateDeal } from './crmService'
 import * as Sentry from '@sentry/react'
 
 export { partitionOfferteItemSync }
@@ -374,20 +373,13 @@ export async function converteerOfferteNaarProject(offerte: Offerte, userId?: st
   return { project, offerte: bijgewerkt }
 }
 
-/** Wijst de offerte af met reden; de deal (als die er is) gaat op verloren met dezelfde reden. */
+/** Wijst de offerte af met reden. */
 export async function wijsOfferteAf(offerte: Offerte, reden: string): Promise<Offerte> {
   const bijgewerkt = await updateOfferte(offerte.id, {
     status: 'afgewezen',
     afgewezen_reden: reden,
     afgewezen_op: now(),
   })
-  if (offerte.deal_id) {
-    // De deal is bijzaak: de offerte staat al op afgewezen, dus een mislukte
-    // deal-update mag dat niet als fout terugmelden.
-    await updateDeal(offerte.deal_id, { status: 'verloren', verloren_reden: reden, verloren_op: now() }).catch((err) => {
-      Sentry.captureException(err, { tags: { bron: 'wijsOfferteAf' } })
-    })
-  }
   return bijgewerkt
 }
 

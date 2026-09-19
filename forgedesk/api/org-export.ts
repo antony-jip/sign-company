@@ -72,10 +72,6 @@ const TABELLEN: { tabel: string; sorteer: string }[] = [
   { tabel: 'contactpersonen', sorteer: 'id' },
   { tabel: 'klant_historie', sorteer: 'id' },
   { tabel: 'klant_activiteiten', sorteer: 'id' },
-  { tabel: 'deals', sorteer: 'id' },
-  { tabel: 'deal_activiteiten', sorteer: 'id' },
-  { tabel: 'lead_formulieren', sorteer: 'id' },
-  { tabel: 'lead_inzendingen', sorteer: 'id' },
 
   // Werk
   { tabel: 'projecten', sorteer: 'id' },
@@ -113,18 +109,14 @@ const TABELLEN: { tabel: string; sorteer: string }[] = [
   { tabel: 'btw_codes', sorteer: 'id' },
   { tabel: 'abonnement_facturen', sorteer: 'id' },
 
-  // Inkoop en voorraad
+  // Inkoop
   { tabel: 'leveranciers', sorteer: 'id' },
   { tabel: 'inkoop_offertes', sorteer: 'id' },
   { tabel: 'inkoop_regels', sorteer: 'id' },
   { tabel: 'inkoopfacturen', sorteer: 'id' },
   { tabel: 'inkoopfactuur_inbox_config', sorteer: 'id' },
-  { tabel: 'bestelbonnen', sorteer: 'id' },
-  { tabel: 'bestelbon_regels', sorteer: 'id' },
   { tabel: 'leveringsbonnen', sorteer: 'id' },
   { tabel: 'leveringsbon_regels', sorteer: 'id' },
-  { tabel: 'voorraad_artikelen', sorteer: 'id' },
-  { tabel: 'voorraad_mutaties', sorteer: 'id' },
 
   // Mensen en planning
   { tabel: 'profiles', sorteer: 'id' },
@@ -139,8 +131,6 @@ const TABELLEN: { tabel: string; sorteer: string }[] = [
   { tabel: 'planning_afwezigheid', sorteer: 'id' },
   { tabel: 'planning_vrij_patronen', sorteer: 'id' },
   { tabel: 'planning_dag_notities', sorteer: 'id' },
-  { tabel: 'booking_slots', sorteer: 'id' },
-  { tabel: 'booking_afspraken', sorteer: 'id' },
   { tabel: 'maatjes', sorteer: 'id' },
 
   // Documenten en portaal
@@ -161,11 +151,6 @@ const TABELLEN: { tabel: string; sorteer: string }[] = [
   { tabel: 'herinnering_templates', sorteer: 'id' },
   { tabel: 'notificaties', sorteer: 'id' },
   { tabel: 'support_gesprekken', sorteer: 'id' },
-  { tabel: 'website_aanvragen', sorteer: 'id' },
-  { tabel: 'website_chat_gesprekken', sorteer: 'id' },
-  { tabel: 'website_chat_berichten', sorteer: 'id' },
-  // Geen id-kolom: organisatie_id is hier de primaire sleutel.
-  { tabel: 'website_chat_aanwezigheid', sorteer: 'organisatie_id' },
 
   // Instellingen en kennisbank
   { tabel: 'app_settings', sorteer: 'id' },

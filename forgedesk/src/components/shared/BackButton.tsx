@@ -18,10 +18,7 @@ const PATH_LABELS: Record<string, string> = {
   '/email': 'Email',
   '/portalen': 'Portalen',
   '/instellingen': 'Instellingen',
-  '/bestelbonnen': 'Bestelbonnen',
   '/leveringsbonnen': 'Leveringsbonnen',
-  '/leads': 'Leads',
-  '/deals': 'Deals',
 }
 
 /** Labels voor detail-pagina's (prefix match) */
@@ -31,10 +28,7 @@ const DETAIL_PREFIXES: { prefix: string; label: string }[] = [
   { prefix: '/facturen/', label: 'Factuur' },
   { prefix: '/klanten/', label: 'Klant' },
   { prefix: '/werkbonnen/', label: 'Werkbon' },
-  { prefix: '/bestelbonnen/', label: 'Bestelbon' },
   { prefix: '/leveringsbonnen/', label: 'Leveringsbon' },
-  { prefix: '/leads/', label: 'Lead' },
-  { prefix: '/deals/', label: 'Deal' },
 ]
 
 function getLabelForPath(path: string): string {

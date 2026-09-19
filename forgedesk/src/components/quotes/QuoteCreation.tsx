@@ -308,7 +308,6 @@ export function QuoteCreation() {
   // Query params van bijv. projecten-pagina
   const paramKlantId = searchParams.get('klant_id') || ''
   const paramProjectId = searchParams.get('project_id') || ''
-  const paramDealId = searchParams.get('deal_id') || ''
   const paramTitel = searchParams.get('titel') || ''
   const paramContactpersoonId = searchParams.get('contactpersoon_id') || ''
   // Support both /offertes/:id (routeId) and /offertes/nieuw?edit=id (search param)
@@ -1503,7 +1502,6 @@ export function QuoteCreation() {
           klant_naam: selectedKlant?.bedrijfsnaam,
           ...(selectedProjectId ? { project_id: selectedProjectId } : {}),
           ...(resolvedContactId ? { contactpersoon_id: resolvedContactId } : {}),
-          ...(paramDealId ? { deal_id: paramDealId } : {}),
           nummer: offerteNummer,
           titel: offerteTitel,
           status,

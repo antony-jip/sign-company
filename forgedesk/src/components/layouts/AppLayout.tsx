@@ -16,8 +16,6 @@ import { useSidebar } from '@/contexts/SidebarContext'
 import { useTabShortcuts } from '@/hooks/useTabShortcuts'
 import { prefetchCore } from '@/lib/coreData'
 import { prefetchTopRoutes } from '@/lib/routePrefetch'
-import { chatHeartbeat } from '@/services/websiteChatService'
-import { WebsiteMeldingPopup } from '@/components/notifications/WebsiteMeldingPopup'
 import { cn } from '@/lib/utils'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { useScrollHerstel } from '@/hooks/useScrollHerstel'
@@ -78,7 +76,7 @@ export function AppLayout() {
   const isEmailRoute = location.pathname.startsWith('/email')
   // App-achtige, scherm-vullende views: geen paginapadding (edge-to-edge),
   // consistent in topnav- én sidebar-modus.
-  const isFullBleed = ['/email', '/planning', '/taken', '/montage', '/kalender', '/support', '/visualizer'].some(
+  const isFullBleed = ['/email', '/planning', '/taken', '/montage', '/support', '/visualizer'].some(
     (p) => location.pathname === p || location.pathname.startsWith(p + '/'),
   )
   // Taken is een werkscherm waar je de hele dag in zit · daar kost elke extra
@@ -99,20 +97,6 @@ export function AppLayout() {
       const cic = (window as unknown as { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback
       if (ric && cic) cic(id as number)
       else window.clearTimeout(id as number)
-    }
-  }, [])
-
-  useEffect(() => {
-    // Aanwezigheid voor de website-chat (signcompany.nl): zolang de app
-    // zichtbaar openstaat geldt de org als online. Verborgen tab = na
-    // ±3 min offline, dan valt de widget terug op het aanvraagformulier.
-    const slag = () => { if (!document.hidden) chatHeartbeat() }
-    slag()
-    const id = window.setInterval(slag, 60_000)
-    document.addEventListener('visibilitychange', slag)
-    return () => {
-      window.clearInterval(id)
-      document.removeEventListener('visibilitychange', slag)
     }
   }, [])
 
@@ -168,7 +152,6 @@ export function AppLayout() {
         <FloatingQuickActions />
         <FloatingEmailButton />
         <ForgieChatWidget />
-        <WebsiteMeldingPopup />
       </>
     )
   }
@@ -210,7 +193,6 @@ export function AppLayout() {
       <FloatingQuickActions />
       <FloatingEmailButton />
       <ForgieChatWidget />
-      <WebsiteMeldingPopup />
     </>
   )
 }

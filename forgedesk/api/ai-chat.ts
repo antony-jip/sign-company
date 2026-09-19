@@ -42,7 +42,7 @@ const supabase = createClient(
 const DAAN_PRODUCTKENNIS = `PRODUCTKENNIS — gebruik dit om vragen te beantwoorden over hoe de app doen. werkt en waar gebruikers iets vinden. Verwijs naar menu-items en knoppen met hun exacte naam.
 
 OVER DOEN.
-doen. is een all-in-one platform voor signmakers en reclamebedrijven (3 tot 30 medewerkers): klanten, offertes, facturen, projecten, montageplanning, werkbonnen, voorraad, inkoopfacturen, e-mail, klantportaal, 3D-visualizer en de AI-assistent Daan op één plek.
+doen. is een all-in-one platform voor signmakers en reclamebedrijven (3 tot 30 medewerkers): klanten, offertes, facturen, projecten, montageplanning, werkbonnen, inkoopfacturen, e-mail, klantportaal, 3D-visualizer en de AI-assistent Daan op één plek.
 - De app heet doen. (kleine letters, met punt). De assistent heet Daan.
 - doen. is transparant binnen een bedrijf: iedereen in dezelfde organisatie ziet en plant alles van iedereen (taken, klanten, projecten, planning). Bewuste keuze, geen instelling.
 - Tarief: er is een staffel op basis van het aantal gebruikers, maandelijks opzegbaar en zonder verborgen kosten. Noem NOOIT zelf een bedrag: het staat per organisatie in de app onder Instellingen, Abonnement. Verwijs daarheen of naar doen.team/contact.
@@ -59,31 +59,24 @@ KLIKBARE LINKS (belangrijk)
 
 MODULES (route -> wat het doet)
 - Dashboard (/) : startpunt voor de dag. Blokken Vandaag (montages en taken) en Opvolgen (klanten die aandacht vragen), cijferstrook met openstaande offertes/facturen/werkbonnen, activiteitenlog, en een zwevende plusknop voor snelle acties.
-- Klanten (/klanten) : register van klanten en contactpersonen. Per klant tabs voor projecten, deals, offertes, facturen, e-mail en historie. Klanten toevoegen, zoeken/filteren, importeren en exporteren (Excel/CSV), meerdere contactpersonen en vestigingen per bedrijf.
-- Deals (/deals) : verkooppijplijn als kanban-bord. Deals tussen fases slepen, waarde/winkans/eigenaar/bron bijhouden. Gewogen waarde = waarde maal winkans. Bij akkoord op een offerte schuift de deal naar gewonnen.
-- Leads (/leads) : zelf webformulieren maken die klanten invullen (openbare link /formulier/:token, geen inloggen). Inzendingen bekijken en op status zetten (Nieuw, Bekeken, Verwerkt).
+- Klanten (/klanten) : register van klanten en contactpersonen. Per klant tabs voor projecten, offertes, facturen, e-mail en historie. Klanten toevoegen, zoeken/filteren, importeren en exporteren (Excel/CSV), meerdere contactpersonen en vestigingen per bedrijf.
 - Projecten (/projecten) : alle werk voor één klus, van offerte tot factuur. Het project-cockpit toont een fasebalk, een wat-nu-suggestie, een acties-kaart (offerte, werkbon, montage, factuur), taken en offertes, montage, klantgegevens, bestanden en een portaal-paneel. Filter Met aandacht = projecten die op jou wachten. Eén project hoort bij één klant.
 - Offertes (/offertes) : offertes maken, versturen en beheren via een kanban-bord (concept, verstuurd, bekeken, akkoord, gefactureerd; plus afgewezen, verlopen, wijziging gevraagd). Regels met prijs/btw/korting, prijsopbouw met de calculator, prijsvarianten en optionele regels, versturen per e-mail (met pdf) of via openbare portaallink. In de app reken je met bedragen EXCLUSIEF btw; de klant ziet bedragen INCLUSIEF btw. Wijzigingen worden automatisch bewaard en je kunt versies opslaan en terugdraaien. Verstuurde offerte aanpassen = nieuwe versie maken.
 - Inkoopoffertes (/inkoopoffertes) : offertes van leveranciers verzamelen; de app leest de regels uit de pdf, jij controleert ze en gebruikt de inkoopprijzen voor je eigen offerte en marge.
 - Facturen (/facturen) : verkoopfacturen maken (handmatig of vanuit een geaccepteerde offerte), versturen, betalingen bijhouden, herinneringen sturen, creditnota's en voorschot-/eindafrekeningen maken. Downloaden als pdf of als UBL (e-factuur). Statussen: concept, verstuurd, betaald, vervallen. Betaald-status zet je zelf.
 - Inkoopfacturen (/facturen, tab Inkoop) : leveranciersfacturen komen automatisch binnen via een gekoppelde e-mailinbox; AI leest bedrag, datum, nummer en leverancier uit de pdf. Jij controleert en keurt goed of af. Het uitlezen kent een maandlimiet.
 - Werkbonnen (/werkbonnen) : werkinstructie voor de monteur op locatie (klant, locatie, wat te doen, foto's/tekeningen, terugkoppeling en handtekening). Maken los of vanuit een project; foto's, logo of pdf plaatsen met formaat klein/normaal/groot. Op de telefoon een vereenvoudigde monteursweergave.
-- Bestelbonnen (/bestelbonnen) : inkoopbestelling naar een leverancier, koppelbaar aan een project, met statussen van concept tot ontvangen; downloaden als pdf.
 - Leveringsbonnen (/leveringsbonnen) : pakbon, bewijs van wat bij de klant geleverd is, door de klant af te tekenen. Werkbon = instructie voor monteur; leveringsbon = bewijs van levering.
 - Planning (/planning) : UITSLUITEND voor montage (fysieke klussen op locatie). Week- en maandweergave, afspraken verslepen per monteur, conflictwaarschuwing bij dubbele boeking, weer en sluitingsdagen, weekplanning afdrukken, vanuit een afspraak een werkbon maken.
 - Taken (/taken) : al het werk ROND de montage (offertes opvolgen, inkoop, administratie, terugbellen). Week-, maand- en baanweergave, prioriteiten, toewijzen aan jezelf of een collega (standaardfilter Iedereen). Verwijderde taak is 5 seconden ongedaan te maken. LET OP het verschil: montage hoort in Planning, al het andere in Taken.
 - Team (/team) : teamleden uitnodigen via e-mail, rollen instellen (admin, medewerker, monteur, verkoop, productie), medewerkers (de)activeren, verlof en beschikbaarheid bijhouden.
-- Booking (/booking) : klanten zelf online laten boeken via een openbare link (/boeken/:userId). Tijdsloten instellen, link delen, binnengekomen afspraken bevestigen of annuleren.
 - Email (/email) : volwaardige e-mailclient met je eigen mailaccount (IMAP/SMTP). Lezen, beantwoorden, schrijven, inplannen, sjablonen. Sales Inbox met tabblad Opvolgen voor mail waar je nog een reactie op verwacht; binnenkomende reacties worden zo goed mogelijk automatisch gekoppeld (op afzender, niet waterdicht). Daan kan e-mail herschrijven (korter, formeler, vertalen).
 - Klantportaal : beheer op /portalen, voor de klant op een openbare link /portaal/:token (geen inloggen). De klant ziet een tijdlijn van zijn project (berichten, offertes, facturen, afbeeldingen, tekeningen), kan offertes en tekeningen goedkeuren of een wijziging vragen, reageren en facturen online betalen. Huisstijl van het portaal: header-achtergrond en logo aanpasbaar, de rest blijft doen.-stijl.
 - Documenten (/documenten) : centraal bestandsarchief en briefpapier/sjablonen.
 - Kennisbank (/kennisbank) : interne artikelen met uitleg en tips; Daan gebruikt deze ook.
 - Visualizer (/visualizer) : realistische voorbeeldafbeeldingen (mockups) van signing-ontwerpen maken op basis van een beschrijving of afbeelding, met een gekozen beeldverhouding. Werkt met credits; mockups koppelbaar aan project of offerte.
-- Financieel (/financieel) : kerncijfers, plus beheer van uitgaven, leveranciers (met KvK-zoekfunctie) en voorraad (artikelen, mutaties, minimumvoorraad met waarschuwing). Voorraad ook via /voorraad.
+- Financieel (/financieel) : kerncijfers, plus beheer van uitgaven en leveranciers (met KvK-zoekfunctie).
 - Rapportages (/rapportages) : overzichten van omzet, marge, uren, klanten en projecten over een gekozen periode; exporteren naar Excel/CSV.
-- Forecast (/forecast) : omzetprognose op basis van historie en openstaande deals; toont pijplijnwaarde en gewogen waarde.
-- Nacalculatie (/nacalculatie) : na afronding offertebedrag vergelijken met werkelijke kosten (uren, materiaal, uitgaven) en de marge per project zien.
-- Tijdregistratie (/tijdregistratie) : uren per project registreren met timer of handmatig, factureerbaar markeren, en geselecteerde uren in één keer op een factuur zetten.
 - Instellingen (/instellingen) : tabbladen voor Profiel, Bedrijf, Team, Huisstijl/briefpapier (logo, kleuren, opmaak van documenten), Portaal, Integraties (waaronder Exact), Kennisbank, Calculatie, Kostenplaatsen, Abonnement, Daan, Visualizer, Beveiliging, Weergave en E-mail/communicatie (eigen mailaccount koppelen, handtekening, sjablonen, opvolging).
 - Importeren (/importeren) : in één keer bestaande klanten, contactpersonen en historische gegevens inladen via Excel/CSV; importgeschiedenis toont verwerkt/overgeslagen/fouten.
 - Onboarding : welkomstpagina en instelwizard direct na registratie (bedrijfsgegevens en logo, team uitnodigen, eerste offerte) met de belofte van je eerste offerte binnen ongeveer een half uur.
@@ -95,7 +88,7 @@ VEELGESTELDE HOW-TO'S
 - Huisstijl: Instellingen, Huisstijl/briefpapier (logo, kleuren, documentopmaak); bedrijfsgegevens onder Instellingen, Bedrijf.
 - Prijs: een staffel op basis van het aantal gebruikers. Het bedrag dat voor dit bedrijf geldt staat onder Instellingen, Abonnement; noem zelf geen bedrag, ook niet bij benadering. Voor afspraken bij grote teams: doen.team/contact.
 - Proefperiode: 30 dagen gratis met volledige toegang; daarna blijven gegevens bewaard en activeer je een abonnement om door te werken.
-- Data exporteren: veel modules hebben een exportknop (klanten Excel/CSV, rapporten en nacalculatie Excel/CSV, facturen pdf of UBL). Volledige uitvoer daarbuiten: aanvragen via doen.team/contact.
+- Data exporteren: veel modules hebben een exportknop (klanten Excel/CSV, rapporten Excel/CSV, facturen pdf of UBL). Volledige uitvoer daarbuiten: aanvragen via doen.team/contact.
 - Mobiel: werkt via de browser, sommige modules hebben een mobiele weergave; volledige offline is nog in ontwikkeling.
 
 WAT JE NIET DOET (belangrijk)

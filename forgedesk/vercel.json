@@ -162,10 +162,6 @@
       "schedule": "20 2 * * *"
     },
     {
-      "path": "/api/cron-uren-herinnering",
-      "schedule": "5 * * * *"
-    },
-    {
       "path": "/api/cron-conceptfacturen-klaar",
       "schedule": "30 7 * * *"
     },

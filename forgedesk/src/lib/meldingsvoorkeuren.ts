@@ -25,9 +25,9 @@ export const MELDING_CATEGORIEEN: MeldingCategorieDefinitie[] = [
   },
   {
     id: 'portaal',
-    label: 'Portaal en website',
-    uitleg: 'Goedkeuringen, revisies en berichten van klanten; chat en aanvragen via de site.',
-    types: ['portaal_goedkeuring', 'portaal_revisie', 'portaal_bericht', 'portaal_bekeken', 'portaal_herinnering', 'website_chat', 'website_aanvraag'],
+    label: 'Portaal',
+    uitleg: 'Goedkeuringen, revisies en berichten van klanten.',
+    types: ['portaal_goedkeuring', 'portaal_revisie', 'portaal_bericht', 'portaal_bekeken', 'portaal_herinnering'],
   },
   {
     id: 'facturen',
@@ -37,9 +37,9 @@ export const MELDING_CATEGORIEEN: MeldingCategorieDefinitie[] = [
   },
   {
     id: 'planning',
-    label: 'Planning en uren',
-    uitleg: 'Montage ingepland, boekingen, deadlines en de urenherinnering.',
-    types: ['montage_gepland', 'booking_nieuw', 'deadline_nadert', 'herinnering', 'uren_herinnering'],
+    label: 'Planning',
+    uitleg: 'Montage ingepland en deadlines.',
+    types: ['montage_gepland', 'deadline_nadert', 'herinnering'],
   },
   {
     id: 'taken',

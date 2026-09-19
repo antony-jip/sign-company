@@ -41,7 +41,6 @@ import {
   getFacturen,
   getTijdregistraties,
   getMedewerkers,
-  getVoorraadArtikelen,
 } from '@/services/supabaseService';
 import { getCached, fetchQuery } from '@/lib/queryCache';
 import { getMedewerkerContracten } from '@/services/planningService';
@@ -53,7 +52,6 @@ import type {
   Factuur,
   Tijdregistratie,
   Medewerker,
-  VoorraadArtikel,
   MedewerkerContract,
 } from '@/types';
 import { exBtw, openstaandExBtw } from '@/utils/btwWeergave'
@@ -130,7 +128,6 @@ export function RapportagesLayout() {
   const [offertes, setOffertes] = useState<Offerte[]>(() => getCached<Offerte[]>('offertes') ?? []);
   const [tijdregistraties, setTijdregistraties] = useState<Tijdregistratie[]>(() => getCached<Tijdregistratie[]>('tijdregistraties') ?? []);
   const [medewerkers, setMedewerkers] = useState<Medewerker[]>(() => getCached<Medewerker[]>('medewerkers') ?? []);
-  const [voorraadArtikelen, setVoorraadArtikelen] = useState<VoorraadArtikel[]>(() => getCached<VoorraadArtikel[]>('voorraadArtikelen') ?? []);
   const [contracten, setContracten] = useState<MedewerkerContract[]>([]);
   const [loading, setLoading] = useState(() => getCached('facturen') === undefined);
 
@@ -139,13 +136,12 @@ export function RapportagesLayout() {
     async function fetchData() {
       if (getCached('facturen') === undefined) setLoading(true);
       try {
-        const [facturenData, projectenData, offertesData, tijdData, mwData, vaData, contractData] = await Promise.all([
+        const [facturenData, projectenData, offertesData, tijdData, mwData, contractData] = await Promise.all([
           fetchQuery('facturen', getFacturen),
           fetchQuery('projecten', getProjecten),
           fetchQuery('offertes', getOffertes),
           fetchQuery('tijdregistraties', getTijdregistraties),
           fetchQuery('medewerkers', getMedewerkers).catch(() => []),
-          fetchQuery('voorraadArtikelen', getVoorraadArtikelen).catch(() => []),
           getMedewerkerContracten().catch(() => [] as MedewerkerContract[]),
         ]);
 
@@ -154,7 +150,6 @@ export function RapportagesLayout() {
         setOffertes(offertesData);
         setTijdregistraties(tijdData);
         setMedewerkers(mwData);
-        setVoorraadArtikelen(vaData);
         setContracten(contractData);
       } catch (err) {
         logger.error('Fout bij het laden van rapportagegegevens:', err);
@@ -430,30 +425,6 @@ export function RapportagesLayout() {
   const toonRooster = contracten.length > 0;
 
   // ---------------------------------------------------------------------------
-  // Voorraad rapportage
-  // ---------------------------------------------------------------------------
-
-  const voorraadStats = useMemo(() => {
-    const totaalArtikelen = voorraadArtikelen.length;
-    const onderMinimum = voorraadArtikelen.filter(
-      (a) => a.huidige_voorraad <= (a.minimum_voorraad || 0)
-    ).length;
-    const totaleVoorraadWaarde = round2(voorraadArtikelen.reduce(
-      (s, a) => s + (a.huidige_voorraad * (a.inkoop_prijs || 0)),
-      0
-    ));
-    return {
-      totaalArtikelen,
-      onderMinimum,
-      totaleVoorraadWaarde,
-      artikelen: [...voorraadArtikelen].sort((a, b) =>
-        (a.huidige_voorraad <= (a.minimum_voorraad || 0) ? 0 : 1) -
-        (b.huidige_voorraad <= (b.minimum_voorraad || 0) ? 0 : 1)
-      ).slice(0, 15),
-    };
-  }, [voorraadArtikelen]);
-
-  // ---------------------------------------------------------------------------
   // Export handlers
   // ---------------------------------------------------------------------------
 
@@ -543,25 +514,6 @@ export function RapportagesLayout() {
     }
     toast.success(`Medewerker rapport geexporteerd als ${type.toUpperCase()}`);
   }
-
-  function handleExportVoorraad(type: 'csv' | 'excel') {
-    const headers = ['Artikel', 'Categorie', 'Huidig', 'Minimum', 'Inkoopprijs', 'Waarde'];
-    const data = voorraadArtikelen.map((a) => ({
-      Artikel: a.naam,
-      Categorie: a.categorie || '-',
-      Huidig: a.huidige_voorraad,
-      Minimum: a.minimum_voorraad || 0,
-      Inkoopprijs: a.inkoop_prijs || 0,
-      Waarde: round2(a.huidige_voorraad * (a.inkoop_prijs || 0)),
-    }));
-    if (type === 'csv') {
-      exportCSV('voorraad-rapport', headers, data);
-    } else {
-      exportExcel('voorraad-rapport', headers, data);
-    }
-    toast.success(`Voorraad rapport geexporteerd als ${type.toUpperCase()}`);
-  }
-
   // ---------------------------------------------------------------------------
   // PDF download handlers
   // ---------------------------------------------------------------------------
@@ -1469,81 +1421,6 @@ export function RapportagesLayout() {
                       <td className="py-3 text-right font-medium">{formatCurrency(m.omzet)}</td>
                     </tr>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* ------------------------------------------------------------------ */}
-      {/* Voorraad Rapportage */}
-      {/* ------------------------------------------------------------------ */}
-      {voorraadArtikelen.length > 0 && (
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5" />
-                  Voorraad rapport
-                </CardTitle>
-                <CardDescription>
-                  {voorraadStats.totaalArtikelen} artikelen | Waarde: {formatCurrency(voorraadStats.totaleVoorraadWaarde)}
-                  {voorraadStats.onderMinimum > 0 && (
-                    <Badge variant="destructive" className="ml-2 text-2xs">
-                      {voorraadStats.onderMinimum} onder minimum
-                    </Badge>
-                  )}
-                </CardDescription>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => handleExportVoorraad('csv')}>
-                  <Download className="mr-1 h-3 w-3" /> CSV
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => handleExportVoorraad('excel')}>
-                  <FileSpreadsheet className="mr-1 h-3 w-3" /> Excel
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b text-left">
-                    <th className="pb-3 font-medium text-muted-foreground">Artikel</th>
-                    <th className="pb-3 font-medium text-muted-foreground">Categorie</th>
-                    <th className="pb-3 font-medium text-muted-foreground text-right">Huidig</th>
-                    <th className="pb-3 font-medium text-muted-foreground text-right">Minimum</th>
-                    <th className="pb-3 font-medium text-muted-foreground text-right">Inkoopprijs</th>
-                    <th className="pb-3 font-medium text-muted-foreground text-right">Waarde</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {voorraadStats.artikelen.map((a) => {
-                    const onderMin = a.huidige_voorraad <= (a.minimum_voorraad || 0);
-                    return (
-                      <tr key={a.id} className={cn(
-                        'border-b last:border-0 hover:bg-muted/50 transition-colors',
-                        onderMin && 'bg-red-50 dark:bg-red-900/10'
-                      )}>
-                        <td className="py-3 font-medium">
-                          {a.naam}
-                          {onderMin && <Badge variant="destructive" className="ml-2 text-2xs">Laag</Badge>}
-                        </td>
-                        <td className="py-3 text-muted-foreground">{a.categorie || '-'}</td>
-                        <td className={cn('py-3 text-right', onderMin && 'text-red-600 font-bold')}>
-                          {a.huidige_voorraad} {a.eenheid || ''}
-                        </td>
-                        <td className="py-3 text-right text-muted-foreground">{a.minimum_voorraad || '-'}</td>
-                        <td className="py-3 text-right">{formatCurrency(a.inkoop_prijs || 0)}</td>
-                        <td className="py-3 text-right font-medium">
-                          {formatCurrency(round2(a.huidige_voorraad * (a.inkoop_prijs || 0)))}
-                        </td>
-                      </tr>
-                    );
-                  })}
                 </tbody>
               </table>
             </div>

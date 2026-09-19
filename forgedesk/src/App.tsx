@@ -51,15 +51,10 @@ const MaatjeBeheer = lazy(() => import('@/components/maatjes/MaatjeBeheer'), 'Ma
 const ProjectsList = lazy(() => import('@/components/projects/ProjectsList'), 'ProjectsList')
 const ProjectDetail = lazy(() => import('@/components/projects/ProjectDetail'), 'ProjectDetail')
 const ProjectCreate = lazy(() => import('@/components/projects/ProjectCreate'), 'ProjectCreate')
-const TijdregistratieLayout = lazy(() => import('@/components/projects/TijdregistratieLayout'), 'TijdregistratieLayout')
-const NacalculatieLayout = lazy(() => import('@/components/projects/NacalculatieLayout'), 'NacalculatieLayout')
 
 // Clients
 const ClientsLayout = lazy(() => import('@/components/clients/ClientsLayout'), 'ClientsLayout')
 const ClientProfile = lazy(() => import('@/components/clients/ClientProfile'), 'ClientProfile')
-
-const DealsLayout = lazy(() => import('@/components/clients/DealsLayout'), 'DealsLayout')
-const DealDetail = lazy(() => import('@/components/clients/DealDetail'), 'DealDetail')
 
 // Quotes
 const QuotesPipeline = lazy(() => import('@/components/quotes/QuotesPipeline'), 'QuotesPipeline')
@@ -94,12 +89,10 @@ function TakenRoute() {
   const isDesktop = useMediaQuery('(min-width: 768px)')
   return isDesktop ? <TasksLayout /> : <TasksLayoutMobile />
 }
-const BookingBeheer = lazy(() => import('@/components/planning/BookingBeheer'), 'BookingBeheer')
-const PublicBookingPage = lazy(() => import('@/components/planning/PublicBookingPage'), 'PublicBookingPage')
+const PaginaVerdwenen = lazy(() => import('@/components/klantpagina/PaginaVerdwenen'), 'PaginaVerdwenen')
 
 // Financial
 const FinancialLayout = lazy(() => import('@/components/financial/FinancialLayout'), 'FinancialLayout')
-const VoorraadLayout = lazy(() => import('@/components/financial/VoorraadLayout'), 'VoorraadLayout')
 const LeveranciersLayout = lazy(() => import('@/components/financial/LeveranciersLayout'), 'LeveranciersLayout')
 
 // Inkoopfacturen (rendered as tab in FacturenLayout, not standalone)
@@ -112,7 +105,6 @@ const BetaaldPagina = lazy(() => import('@/components/invoices/BetaaldPagina'), 
 
 // Reports
 const RapportagesLayout = lazy(() => import('@/components/reports/RapportagesLayout'), 'RapportagesLayout')
-const ForecastLayout = lazy(() => import('@/components/reports/ForecastLayout'), 'ForecastLayout')
 
 // Settings
 const SettingsLayout = lazy(() => import('@/components/settings/SettingsLayout'), 'SettingsLayout')
@@ -142,22 +134,9 @@ function WerkbonDetailWrapper() {
 // Kennisbank
 const KennisbankPage = lazy(() => import('@/components/kennisbank/KennisbankPage'), 'KennisbankPage')
 
-// Bestelbonnen
-const BestelbonnenLayout = lazy(() => import('@/components/bestelbonnen/BestelbonnenLayout'), 'BestelbonnenLayout')
-const BestelbonDetail = lazy(() => import('@/components/bestelbonnen/BestelbonDetail'), 'BestelbonDetail')
-
 // Leveringsbonnen
 const LeveringsbonnenLayout = lazy(() => import('@/components/leveringsbonnen/LeveringsbonnenLayout'), 'LeveringsbonnenLayout')
 const LeveringsbonDetail = lazy(() => import('@/components/leveringsbonnen/LeveringsbonDetail'), 'LeveringsbonDetail')
-
-// Leads
-const LeadCaptureLayout = lazy(() => import('@/components/leads/LeadCaptureLayout'), 'LeadCaptureLayout')
-const LeadFormulierEditor = lazy(() => import('@/components/leads/LeadFormulierEditor'), 'LeadFormulierEditor')
-const LeadFormulierPubliek = lazy(() => import('@/components/leads/LeadFormulierPubliek'), 'LeadFormulierPubliek')
-const LeadInzendingenLayout = lazy(() => import('@/components/leads/LeadInzendingenLayout'), 'LeadInzendingenLayout')
-
-// Website-aanvragen (chat op signcompany.nl)
-const WebsiteAanvragenLayout = lazy(() => import('@/components/website/WebsiteAanvragenLayout'), 'WebsiteAanvragenLayout')
 
 // Portaal
 const DemoStart = lazy(() => import('@/components/demo/DemoStart'), 'DemoStart')
@@ -268,16 +247,16 @@ function AppContent() {
       <Route path="/wachtwoord-resetten" element={<ResetPasswordPage />} />
       {/* Publieke route - klant goedkeuring → redirect naar portaal */}
       <Route path="/goedkeuring/:token" element={<GoedkeuringRedirect />} />
-      {/* Publieke route - klant booking (geen login vereist) */}
-      <Route path="/boeken/:userId" element={<PublicBookingPage />} />
+      {/* Oude publieke booking-links: module is weg, nette melding */}
+      <Route path="/boeken/:userId" element={<PaginaVerdwenen />} />
       {/* Publieke route - online factuur betalen (geen login vereist) */}
       <Route path="/betalen/:token" element={<BetaalPagina />} />
       {/* Publieke route - bevestiging na Mollie betaling */}
       <Route path="/betaald" element={<BetaaldPagina />} />
       {/* Publieke route - offerte bekijken door klant (geen login vereist) */}
       <Route path="/offerte-bekijken/:token" element={<OffertePubliekPagina />} />
-      {/* Publieke route - lead formulier invullen (geen login vereist) */}
-      <Route path="/formulier/:token" element={<LeadFormulierPubliek />} />
+      {/* Oude publieke lead-formulierlinks: module is weg, nette melding */}
+      <Route path="/formulier/:token" element={<PaginaVerdwenen />} />
       {/* Publieke route - klantportaal (geen login vereist) */}
       <Route path="/portaal/:token" element={<PortaalPagina />} />
       <Route path="/demo" element={<DemoStart />} />
@@ -309,8 +288,6 @@ function AppContent() {
         <Route path="klanten" element={<ClientsLayout />} />
         <Route path="klanten/importeren" element={<Navigate to="/importeren" replace />} />
         <Route path="klanten/:id" element={<ClientProfile />} />
-        <Route path="deals" element={<DealsLayout />} />
-        <Route path="deals/:id" element={<DealDetail />} />
         <Route path="offertes" element={<QuotesPipeline />} />
         <Route path="offertes/nieuw" element={<QuoteCreation />} />
         <Route path="offertes/:id" element={<QuoteCreation />} />
@@ -323,7 +300,6 @@ function AppContent() {
         <Route path="email/compose" element={<EmailLayout />} />
         <Route path="nieuwsbrief" element={<NieuwsbriefLayout />} />
         <Route path="planning" element={<PlanningRoute />} />
-        <Route path="kalender" element={<Navigate to="/planning" replace />} />
         <Route path="montage" element={<Navigate to="/planning" replace />} />
         <Route path="inkoopfacturen" element={<Navigate to="/facturen?tab=inkoop" replace />} />
         <Route path="inkoopfacturen/:id" element={<Navigate to="/facturen?tab=inkoop" replace />} />
@@ -334,8 +310,6 @@ function AppContent() {
         <Route path="facturen/:id" element={<FactuurEditor />} />
         <Route path="facturen/:id/bewerken" element={<FactuurEditor />} />
         <Route path="rapportages" element={<RapportagesLayout />} />
-        <Route path="tijdregistratie" element={<TijdregistratieLayout />} />
-        <Route path="nacalculatie" element={<NacalculatieLayout />} />
         <Route path="team" element={<TeamLayout />} />
         <Route path="cockpit" element={<CockpitLayout />} />
 
@@ -345,19 +319,9 @@ function AppContent() {
         <Route path="kennisbank" element={<KennisbankPage />} />
         <Route path="werkbonnen" element={<WerkbonnenRoute />} />
         <Route path="werkbonnen/:id" element={<WerkbonDetailWrapper />} />
-        <Route path="bestelbonnen" element={<BestelbonnenLayout />} />
-        <Route path="bestelbonnen/:id" element={<BestelbonDetail />} />
         <Route path="leveringsbonnen" element={<LeveringsbonnenLayout />} />
         <Route path="leveringsbonnen/:id" element={<LeveringsbonDetail />} />
-        <Route path="voorraad" element={<VoorraadLayout />} />
         <Route path="leveranciers" element={<LeveranciersLayout />} />
-        <Route path="leads" element={<LeadCaptureLayout />} />
-        <Route path="leads/formulieren/nieuw" element={<LeadFormulierEditor />} />
-        <Route path="leads/formulieren/:id" element={<LeadFormulierEditor />} />
-        <Route path="leads/inzendingen" element={<LeadInzendingenLayout />} />
-        <Route path="aanvragen" element={<WebsiteAanvragenLayout />} />
-        <Route path="forecast" element={<ForecastLayout />} />
-        <Route path="booking" element={<BookingBeheer />} />
         <Route path="visualizer" element={<StudioRoute />} />
         <Route path="portalen" element={<PortalenOverzicht />} />
         <Route path="meldingen" element={<MeldingenPage />} />
