@@ -1933,63 +1933,6 @@ export interface Lead {
 
 // ============ LEAD CAPTURE (Tier 3 Feature 2) ============
 
-export interface LeadFormulier {
-  id: string;
-  user_id?: string;
-  organisatie_id?: string;
-
-  naam: string;
-  beschrijving?: string;
-
-  velden: LeadFormulierVeld[];
-
-  bedank_tekst: string;
-  redirect_url?: string;
-  email_notificatie: boolean;
-  auto_deal_aanmaken: boolean;
-  deal_fase?: string;
-  standaard_bron: string;
-
-  knop_tekst: string;
-  kleur?: string;
-
-  publiek_token: string;
-
-  actief: boolean;
-  created_at: string;
-  updated_at?: string;
-}
-
-export interface LeadFormulierVeld {
-  id: string;
-  label: string;
-  type: 'tekst' | 'email' | 'telefoon' | 'textarea' | 'select' | 'checkbox';
-  verplicht: boolean;
-  placeholder?: string;
-  opties?: string[];
-  volgorde: number;
-}
-
-export interface LeadInzending {
-  id: string;
-  user_id?: string;
-  organisatie_id?: string;
-  formulier_id: string;
-
-  data: Record<string, string>;
-
-  ip_adres?: string;
-  browser?: string;
-  pagina_url?: string;
-
-  status: 'nieuw' | 'bekeken' | 'verwerkt';
-  deal_id?: string;
-  klant_id?: string;
-
-  created_at: string;
-  updated_at?: string;
-}
-
 export interface WebsiteAanvraag {
   id: string;
   organisatie_id: string;

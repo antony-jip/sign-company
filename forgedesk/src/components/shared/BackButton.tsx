@@ -20,7 +20,6 @@ const PATH_LABELS: Record<string, string> = {
   '/instellingen': 'Instellingen',
   '/bestelbonnen': 'Bestelbonnen',
   '/leveringsbonnen': 'Leveringsbonnen',
-  '/leads': 'Leads',
   '/deals': 'Deals',
 }
 
@@ -33,7 +32,6 @@ const DETAIL_PREFIXES: { prefix: string; label: string }[] = [
   { prefix: '/werkbonnen/', label: 'Werkbon' },
   { prefix: '/bestelbonnen/', label: 'Bestelbon' },
   { prefix: '/leveringsbonnen/', label: 'Leveringsbon' },
-  { prefix: '/leads/', label: 'Lead' },
   { prefix: '/deals/', label: 'Deal' },
 ]
 

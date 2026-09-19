@@ -139,11 +139,6 @@ export {
   getDeals, getDeal, getDealsByKlant,
   createDeal, updateDeal, deleteDeal,
   getDealActiviteiten, createDealActiviteit,
-  generateLeadToken,
-  getLeadFormulieren, getLeadFormulier, getLeadFormulierByToken,
-  createLeadFormulier, updateLeadFormulier, deleteLeadFormulier,
-  getAllLeadInzendingen,
-  createLeadInzending, updateLeadInzending,
   getInkoopOffertes, getInkoopOffertesByProject, getInkoopOffertesByOfferte,
   createInkoopOfferte, updateInkoopOfferte, createInkoopRegel, updateInkoopRegel, deleteInkoopOfferte,
 } from './crmService'

@@ -146,12 +146,6 @@ const BestelbonDetail = lazy(() => import('@/components/bestelbonnen/BestelbonDe
 const LeveringsbonnenLayout = lazy(() => import('@/components/leveringsbonnen/LeveringsbonnenLayout'), 'LeveringsbonnenLayout')
 const LeveringsbonDetail = lazy(() => import('@/components/leveringsbonnen/LeveringsbonDetail'), 'LeveringsbonDetail')
 
-// Leads
-const LeadCaptureLayout = lazy(() => import('@/components/leads/LeadCaptureLayout'), 'LeadCaptureLayout')
-const LeadFormulierEditor = lazy(() => import('@/components/leads/LeadFormulierEditor'), 'LeadFormulierEditor')
-const LeadFormulierPubliek = lazy(() => import('@/components/leads/LeadFormulierPubliek'), 'LeadFormulierPubliek')
-const LeadInzendingenLayout = lazy(() => import('@/components/leads/LeadInzendingenLayout'), 'LeadInzendingenLayout')
-
 // Website-aanvragen (chat op signcompany.nl)
 const WebsiteAanvragenLayout = lazy(() => import('@/components/website/WebsiteAanvragenLayout'), 'WebsiteAanvragenLayout')
 
@@ -272,8 +266,8 @@ function AppContent() {
       <Route path="/betaald" element={<BetaaldPagina />} />
       {/* Publieke route - offerte bekijken door klant (geen login vereist) */}
       <Route path="/offerte-bekijken/:token" element={<OffertePubliekPagina />} />
-      {/* Publieke route - lead formulier invullen (geen login vereist) */}
-      <Route path="/formulier/:token" element={<LeadFormulierPubliek />} />
+      {/* Oude publieke lead-formulierlinks: module is weg, nette melding */}
+      <Route path="/formulier/:token" element={<PaginaVerdwenen />} />
       {/* Publieke route - klantportaal (geen login vereist) */}
       <Route path="/portaal/:token" element={<PortaalPagina />} />
       <Route path="/demo" element={<DemoStart />} />
@@ -343,10 +337,6 @@ function AppContent() {
         <Route path="leveringsbonnen" element={<LeveringsbonnenLayout />} />
         <Route path="leveringsbonnen/:id" element={<LeveringsbonDetail />} />
         <Route path="leveranciers" element={<LeveranciersLayout />} />
-        <Route path="leads" element={<LeadCaptureLayout />} />
-        <Route path="leads/formulieren/nieuw" element={<LeadFormulierEditor />} />
-        <Route path="leads/formulieren/:id" element={<LeadFormulierEditor />} />
-        <Route path="leads/inzendingen" element={<LeadInzendingenLayout />} />
         <Route path="aanvragen" element={<WebsiteAanvragenLayout />} />
         <Route path="forecast" element={<ForecastLayout />} />
         <Route path="visualizer" element={<StudioRoute />} />

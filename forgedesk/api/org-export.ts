@@ -74,8 +74,6 @@ const TABELLEN: { tabel: string; sorteer: string }[] = [
   { tabel: 'klant_activiteiten', sorteer: 'id' },
   { tabel: 'deals', sorteer: 'id' },
   { tabel: 'deal_activiteiten', sorteer: 'id' },
-  { tabel: 'lead_formulieren', sorteer: 'id' },
-  { tabel: 'lead_inzendingen', sorteer: 'id' },
 
   // Werk
   { tabel: 'projecten', sorteer: 'id' },
