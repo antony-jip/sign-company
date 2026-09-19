@@ -989,9 +989,12 @@ export async function generateOffertePDF(
           : ''
         const variantColor = isActief ? brand : mutedColor
         const isLast = vi === varianten.length - 1
+        // De toelichting per uitvoering op een eigen regel onder de naam, net
+        // als in het portaal; autoTable breekt op de nieuwe regel.
+        const omschrijving = (variant.omschrijving || '').trim()
         rows.push([
           {
-            content: `${labelPrefix}${variant.label}${labelSuffix}`,
+            content: `${labelPrefix}${variant.label}${labelSuffix}${omschrijving ? `\n${omschrijving}` : ''}`,
             styles: {
               fontStyle: isActief ? 'bold' : 'normal',
               cellPadding: { top: 1.5, bottom: isLast ? 3 : 1.5, left: 4, right: 4 },
