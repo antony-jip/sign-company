@@ -2067,7 +2067,7 @@ export function FactuurEditor() {
       })
     } catch (err) {
       logger.error('Fout bij genereren UBL:', err)
-      toast.error('Kon UBL XML niet genereren')
+      toast.error(err instanceof Error && err.message ? err.message : 'Kon UBL XML niet genereren', { duration: 8000 })
       return null
     }
   }, [selectedKlant, profile, nummer, titel, factuurdatum, vervaldatum, subtotaal, btwBedrag, totaal, notities, voorwaarden, validItems, existingFactuur, klantReferentie, kostenplaatsen, kostenplaatsId, creditVoorNummer, isCredit])

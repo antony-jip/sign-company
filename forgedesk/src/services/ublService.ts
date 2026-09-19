@@ -11,6 +11,7 @@ import type { Factuur, FactuurItem, Klant, Profile } from '@/types'
 import { landOfStandaard } from '@/lib/landen'
 import { peppolIdentifier, peppolRechtspersoon, ublCustomizationId, PROFILE_PEPPOL_BILLING } from '@/lib/peppol'
 import { gestructureerdeMededelingKaal } from '@/lib/betalingskenmerk'
+import { verleggingsTekst } from '@/lib/verlegging'
 
 // XML escaping
 function esc(val: string | number | undefined | null): string {
@@ -26,6 +27,18 @@ function esc(val: string | number | undefined | null): string {
 function amount(val: number): string {
   return val.toFixed(2)
 }
+
+function round2(val: number): number {
+  return Math.round(val * 100) / 100
+}
+
+// Btw-nummers zonder spaties en punten (BT-31/BT-48): ontvangers en VIES
+// matchen op 'BE0437299999', niet op 'BE 0437.299.999'.
+function schoonBtw(val: string | null | undefined): string {
+  return (val || '').replace(/[\s.\-]/g, '').toUpperCase()
+}
+
+export class UblFout extends Error {}
 
 function dateStr(val: string | undefined): string {
   if (!val) return new Date().toISOString().split('T')[0]
@@ -52,7 +65,7 @@ function btwCategorie(pct: number, verlegd: boolean): 'S' | 'Z' | 'AE' {
   return pct === 0 ? 'Z' : 'S'
 }
 
-function taxCategoryLines(indent: string, pct: number, verlegd: boolean): string[] {
+function taxCategoryLines(indent: string, pct: number, verlegd: boolean, verlegdReden: string): string[] {
   const categorie = btwCategorie(pct, verlegd)
   const lines = [
     `${indent}<cbc:ID>${categorie}</cbc:ID>`,
@@ -60,7 +73,7 @@ function taxCategoryLines(indent: string, pct: number, verlegd: boolean): string
   ]
   if (categorie === 'AE') {
     lines.push(`${indent}<cbc:TaxExemptionReasonCode>VATEX-EU-AE</cbc:TaxExemptionReasonCode>`)
-    lines.push(`${indent}<cbc:TaxExemptionReason>Btw verlegd</cbc:TaxExemptionReason>`)
+    lines.push(`${indent}<cbc:TaxExemptionReason>${esc(verlegdReden)}</cbc:TaxExemptionReason>`)
   }
   lines.push(`${indent}<cac:TaxScheme>`)
   lines.push(`${indent}  <cbc:ID>VAT</cbc:ID>`)
@@ -77,25 +90,55 @@ export function generateUBLInvoice({ factuur, items, klant, profiel }: UBLInput)
 
   const leveranciersLand = landOfStandaard(profiel.bedrijfs_land)
   const klantLand = landOfStandaard(klant.land)
-  // AE alleen als de factuur zelf zonder btw is opgeslagen; anders wijkt de
-  // e-factuur af van PDF en boekhouding.
-  const verlegd = klant.btw_verlegd === true && items.every((i) => i.btw_percentage === 0) && Math.abs(factuur.btw_bedrag) < 0.005
+  const leverancierBtw = schoonBtw(profiel.btw_nummer)
+  const klantBtw = schoonBtw(klant.btw_nummer)
+  // AE alleen als de factuur zelf zonder btw is opgeslagen (anders wijkt de
+  // e-factuur af van PDF en boekhouding) én beide btw-nummers bekend zijn
+  // (BR-AE-02/03).
+  const verlegd = klant.btw_verlegd === true
+    && items.every((i) => i.btw_percentage === 0)
+    && Math.abs(factuur.btw_bedrag) < 0.005
+    && !!leverancierBtw && !!klantBtw
+  const verlegging = verleggingsTekst(leveranciersLand, klantLand)
   const leverancierAdres = splitsBedrijfsAdres(profiel.bedrijfs_adres)
   const leverancierEndpoint = peppolIdentifier({ land: leveranciersLand, btw_nummer: profiel.btw_nummer, kvk_nummer: profiel.kvk_nummer })
   const leverancierRechtspersoon = peppolRechtspersoon({ land: leveranciersLand, btw_nummer: profiel.btw_nummer, kvk_nummer: profiel.kvk_nummer })
   const klantEndpoint = peppolIdentifier({ land: klantLand, btw_nummer: klant.btw_nummer, kvk_nummer: klant.kvk_nummer })
   const klantRechtspersoon = peppolRechtspersoon({ land: klantLand, btw_nummer: klant.btw_nummer, kvk_nummer: klant.kvk_nummer })
 
-  // Groepeer items per BTW-percentage
+  // Peppol routeert op EndpointID; zonder is het document niet af te leveren
+  // (PEPPOL-EN16931-R010/R020). Liever hier een duidelijke fout dan een
+  // stil onbruikbare download.
+  if (!leverancierEndpoint) throw new UblFout('Vul het KvK-/ondernemingsnummer of btw-nummer van je eigen bedrijf in (Instellingen > Bedrijf) voor een e-factuur.')
+  if (!klantEndpoint) throw new UblFout('Vul het KvK-/ondernemingsnummer of btw-nummer van de klant in voor een e-factuur.')
+  if (klant.btw_verlegd === true && !verlegd) {
+    throw new UblFout('Btw verlegd vereist regels op 0% en een btw-nummer van klant én eigen bedrijf.')
+  }
+
+  // Alle bedragen komen uit de regels, per regel afgerond op de cent, zodat
+  // Σ regels = kop (BR-CO-10/13/15) en Σ btw-subtotalen = btw-totaal. Een
+  // creditnota staat in doen. met negatieve bedragen; in UBL zijn die positief.
+  type Regel = { item: UBLInput['items'][number]; qty: number; prijs: number; bruto: number; korting: number; net: number }
+  const regels: Regel[] = items.map((item) => {
+    const qty = Math.abs(item.aantal)
+    const prijs = Math.abs(item.eenheidsprijs)
+    const bruto = round2(qty * prijs)
+    const korting = item.korting_percentage > 0 ? round2(bruto * (item.korting_percentage / 100)) : 0
+    return { item, qty, prijs, bruto, korting, net: round2(bruto - korting) }
+  })
   const btwGroepen = new Map<number, { taxable: number; tax: number }>()
-  for (const item of items) {
-    const pct = item.btw_percentage
+  for (const r of regels) {
+    const pct = r.item.btw_percentage
     const existing = btwGroepen.get(pct) || { taxable: 0, tax: 0 }
-    const kortingFactor = 1 - (item.korting_percentage || 0) / 100
-    const lineNet = item.aantal * item.eenheidsprijs * kortingFactor
-    existing.taxable += lineNet
-    existing.tax += lineNet * (pct / 100)
+    existing.taxable = round2(existing.taxable + r.net)
     btwGroepen.set(pct, existing)
+  }
+  for (const [pct, group] of btwGroepen) group.tax = round2(group.taxable * (pct / 100))
+  const totaalExcl = round2([...btwGroepen.values()].reduce((s, g) => s + g.taxable, 0))
+  const btwTotaal = round2([...btwGroepen.values()].reduce((s, g) => s + g.tax, 0))
+  const totaalIncl = round2(totaalExcl + btwTotaal)
+  if (Math.abs(totaalIncl - Math.abs(factuur.totaal)) > 0.02) {
+    throw new UblFout(`Het factuurtotaal (€${Math.abs(factuur.totaal).toFixed(2)}) wijkt af van de som van de regels (€${totaalIncl.toFixed(2)}). Sla de factuur opnieuw op.`)
   }
 
   const lines: string[] = []
@@ -127,9 +170,12 @@ export function generateUBLInvoice({ factuur, items, klant, profiel }: UBLInput)
   // BT-3: Invoice type code (380 = commercial invoice, 381 = credit note)
   lines.push(`  <cbc:${isCreditnota ? 'CreditNoteTypeCode' : 'InvoiceTypeCode'}>${isCreditnota ? '381' : '380'}</cbc:${isCreditnota ? 'CreditNoteTypeCode' : 'InvoiceTypeCode'}>`)
 
-  // BT-22: Notes
+  // BT-22: Notes; bij verlegging ook de wettelijke vermelding (medecontractant / art. 196)
   if (factuur.notities) {
     lines.push(`  <cbc:Note>${esc(factuur.notities)}</cbc:Note>`)
+  }
+  if (verlegd) {
+    lines.push(`  <cbc:Note>${esc(verlegging.volledig)}</cbc:Note>`)
   }
 
   // BT-5: Currency
@@ -173,9 +219,9 @@ export function generateUBLInvoice({ factuur, items, klant, profiel }: UBLInput)
   lines.push(`          <cbc:IdentificationCode>${leveranciersLand}</cbc:IdentificationCode>`)
   lines.push('        </cac:Country>')
   lines.push('      </cac:PostalAddress>')
-  if (profiel.btw_nummer) {
+  if (leverancierBtw) {
     lines.push('      <cac:PartyTaxScheme>')
-    lines.push(`        <cbc:CompanyID>${esc(profiel.btw_nummer)}</cbc:CompanyID>`)
+    lines.push(`        <cbc:CompanyID>${esc(leverancierBtw)}</cbc:CompanyID>`)
     lines.push('        <cac:TaxScheme>')
     lines.push('          <cbc:ID>VAT</cbc:ID>')
     lines.push('        </cac:TaxScheme>')
@@ -183,7 +229,7 @@ export function generateUBLInvoice({ factuur, items, klant, profiel }: UBLInput)
   }
   // BT-27/BT-30: RegistrationName is verplicht, CompanyID alleen als we een geldig nummer hebben
   lines.push('      <cac:PartyLegalEntity>')
-  lines.push(`        <cbc:RegistrationName>${esc(profiel.bedrijfsnaam)}</cbc:RegistrationName>`)
+  lines.push(`        <cbc:RegistrationName>${esc(profiel.bedrijfsnaam || [profiel.voornaam, profiel.achternaam].filter(Boolean).join(' ') || 'Onbekend')}</cbc:RegistrationName>`)
   if (leverancierRechtspersoon) {
     lines.push(`        <cbc:CompanyID schemeID="${leverancierRechtspersoon.schemeID}">${esc(leverancierRechtspersoon.id)}</cbc:CompanyID>`)
   }
@@ -218,16 +264,16 @@ export function generateUBLInvoice({ factuur, items, klant, profiel }: UBLInput)
   lines.push(`          <cbc:IdentificationCode>${klantLand}</cbc:IdentificationCode>`)
   lines.push('        </cac:Country>')
   lines.push('      </cac:PostalAddress>')
-  if (klant.btw_nummer) {
+  if (klantBtw) {
     lines.push('      <cac:PartyTaxScheme>')
-    lines.push(`        <cbc:CompanyID>${esc(klant.btw_nummer)}</cbc:CompanyID>`)
+    lines.push(`        <cbc:CompanyID>${esc(klantBtw)}</cbc:CompanyID>`)
     lines.push('        <cac:TaxScheme>')
     lines.push('          <cbc:ID>VAT</cbc:ID>')
     lines.push('        </cac:TaxScheme>')
     lines.push('      </cac:PartyTaxScheme>')
   }
   lines.push('      <cac:PartyLegalEntity>')
-  lines.push(`        <cbc:RegistrationName>${esc(klant.bedrijfsnaam)}</cbc:RegistrationName>`)
+  lines.push(`        <cbc:RegistrationName>${esc(klant.bedrijfsnaam || klant.contactpersoon || 'Onbekend')}</cbc:RegistrationName>`)
   if (klantRechtspersoon) {
     lines.push(`        <cbc:CompanyID schemeID="${klantRechtspersoon.schemeID}">${esc(klantRechtspersoon.id)}</cbc:CompanyID>`)
   }
@@ -262,7 +308,6 @@ export function generateUBLInvoice({ factuur, items, klant, profiel }: UBLInput)
   }
 
   // BG-23: Tax total
-  const btwTotaal = factuur.btw_bedrag
   lines.push('  <cac:TaxTotal>')
   lines.push(`    <cbc:TaxAmount currencyID="EUR">${amount(btwTotaal)}</cbc:TaxAmount>`)
   for (const [pct, group] of btwGroepen) {
@@ -270,57 +315,55 @@ export function generateUBLInvoice({ factuur, items, klant, profiel }: UBLInput)
     lines.push(`      <cbc:TaxableAmount currencyID="EUR">${amount(group.taxable)}</cbc:TaxableAmount>`)
     lines.push(`      <cbc:TaxAmount currencyID="EUR">${amount(group.tax)}</cbc:TaxAmount>`)
     lines.push('      <cac:TaxCategory>')
-    lines.push(...taxCategoryLines('        ', pct, verlegd))
+    lines.push(...taxCategoryLines('        ', pct, verlegd, verlegging.kort))
     lines.push('      </cac:TaxCategory>')
     lines.push('    </cac:TaxSubtotal>')
   }
   lines.push('  </cac:TaxTotal>')
 
   // BG-22: Legal monetary totals
-  const teBetalen = factuur.totaal
   lines.push('  <cac:LegalMonetaryTotal>')
-  lines.push(`    <cbc:LineExtensionAmount currencyID="EUR">${amount(factuur.subtotaal)}</cbc:LineExtensionAmount>`)
-  lines.push(`    <cbc:TaxExclusiveAmount currencyID="EUR">${amount(factuur.subtotaal)}</cbc:TaxExclusiveAmount>`)
-  lines.push(`    <cbc:TaxInclusiveAmount currencyID="EUR">${amount(teBetalen)}</cbc:TaxInclusiveAmount>`)
-  lines.push(`    <cbc:PayableAmount currencyID="EUR">${amount(teBetalen)}</cbc:PayableAmount>`)
+  lines.push(`    <cbc:LineExtensionAmount currencyID="EUR">${amount(totaalExcl)}</cbc:LineExtensionAmount>`)
+  lines.push(`    <cbc:TaxExclusiveAmount currencyID="EUR">${amount(totaalExcl)}</cbc:TaxExclusiveAmount>`)
+  lines.push(`    <cbc:TaxInclusiveAmount currencyID="EUR">${amount(totaalIncl)}</cbc:TaxInclusiveAmount>`)
+  lines.push(`    <cbc:PayableAmount currencyID="EUR">${amount(totaalIncl)}</cbc:PayableAmount>`)
   lines.push('  </cac:LegalMonetaryTotal>')
 
   // BG-25: Invoice lines
   const lineTag = isCreditnota ? 'CreditNoteLine' : 'InvoiceLine'
   const qtyTag = isCreditnota ? 'CreditedQuantity' : 'InvoicedQuantity'
 
-  for (const item of items) {
-    const kortingFactor = 1 - (item.korting_percentage || 0) / 100
-    const lineNet = item.aantal * item.eenheidsprijs * kortingFactor
-
+  for (const { item, qty, prijs, bruto, korting, net } of regels) {
     lines.push(`  <cac:${lineTag}>`)
     lines.push(`    <cbc:ID>${item.volgorde}</cbc:ID>`)
-    lines.push(`    <cbc:${qtyTag} unitCode="EA">${item.aantal}</cbc:${qtyTag}>`)
-    lines.push(`    <cbc:LineExtensionAmount currencyID="EUR">${amount(lineNet)}</cbc:LineExtensionAmount>`)
+    lines.push(`    <cbc:${qtyTag} unitCode="EA">${qty}</cbc:${qtyTag}>`)
+    lines.push(`    <cbc:LineExtensionAmount currencyID="EUR">${amount(net)}</cbc:LineExtensionAmount>`)
 
     // BT-133: AccountingCost per regel (grootboekrekening)
     if (item.grootboek_code) {
       lines.push(`    <cbc:AccountingCost>${esc(item.grootboek_code)}</cbc:AccountingCost>`)
     }
 
-    // Korting op regelniveau
-    if (item.korting_percentage > 0) {
-      const kortingBedrag = item.aantal * item.eenheidsprijs * (item.korting_percentage / 100)
+    // Korting op regelniveau (BG-27; zonder TaxCategory, dat mag niet op regelniveau)
+    if (korting > 0) {
       lines.push('    <cac:AllowanceCharge>')
       lines.push('      <cbc:ChargeIndicator>false</cbc:ChargeIndicator>')
       lines.push(`      <cbc:AllowanceChargeReason>Korting ${item.korting_percentage}%</cbc:AllowanceChargeReason>`)
-      lines.push(`      <cbc:Amount currencyID="EUR">${amount(kortingBedrag)}</cbc:Amount>`)
+      lines.push(`      <cbc:MultiplierFactorNumeric>${item.korting_percentage}</cbc:MultiplierFactorNumeric>`)
+      lines.push(`      <cbc:Amount currencyID="EUR">${amount(korting)}</cbc:Amount>`)
+      lines.push(`      <cbc:BaseAmount currencyID="EUR">${amount(bruto)}</cbc:BaseAmount>`)
       lines.push('    </cac:AllowanceCharge>')
     }
 
     lines.push('    <cac:Item>')
     lines.push(`      <cbc:Name>${esc(item.beschrijving)}</cbc:Name>`)
     lines.push('      <cac:ClassifiedTaxCategory>')
-    lines.push(...taxCategoryLines('        ', item.btw_percentage, verlegd))
+    lines.push(...taxCategoryLines('        ', item.btw_percentage, verlegd, verlegging.kort))
     lines.push('      </cac:ClassifiedTaxCategory>')
     lines.push('    </cac:Item>')
     lines.push('    <cac:Price>')
-    lines.push(`      <cbc:PriceAmount currencyID="EUR">${amount(item.eenheidsprijs)}</cbc:PriceAmount>`)
+    // Prijs met 4 decimalen (toegestaan): m²-prijzen met meer decimalen breken anders qty × prijs = netto
+    lines.push(`      <cbc:PriceAmount currencyID="EUR">${prijs.toFixed(4)}</cbc:PriceAmount>`)
     lines.push('    </cac:Price>')
     lines.push(`  </cac:${lineTag}>`)
   }
