@@ -1,4 +1,6 @@
 import jsPDF, { GState } from 'jspdf'
+import { landOfStandaard } from '@/lib/landen'
+import { gestructureerdeMededeling } from '@/lib/betalingskenmerk'
 import autoTable, { type RowInput } from 'jspdf-autotable'
 import type { Offerte, OfferteItem, OfferteItemPrijsVariant, Klant, Profile, DocumentStyle, WerkbonRegel, WerkbonFoto, SigningVisualisatie } from '@/types'
 import { getJsPdfFontFamily, getDefaultDocumentStyle } from '@/lib/documentTemplates'
@@ -66,6 +68,11 @@ function hexToRgb(hex: string): [number, number, number] {
   const g = parseInt(h.substring(2, 4), 16)
   const b = parseInt(h.substring(4, 6), 16)
   return [isNaN(r) ? 41 : r, isNaN(g) ? 65 : g, isNaN(b) ? 122 : b]
+}
+
+// België kent geen KvK: op de factuur hoort daar het ondernemingsnummer (KBO).
+function registratieLabel(profiel: PdfBedrijfsProfiel): string {
+  return landOfStandaard(profiel.bedrijfs_land) === 'BE' ? 'Ondernemingsnr.' : 'KvK'
 }
 
 function getBrandColor(profiel: PdfBedrijfsProfiel, docStyle?: DocumentStyle | null): [number, number, number] {
@@ -329,7 +336,7 @@ function addHeader(
         rightY += 5
       }
       if (bedrijfsProfiel.kvk_nummer) {
-        doc.text(`KvK: ${bedrijfsProfiel.kvk_nummer}`, detailsX, rightY, { align: detailsAlign })
+        doc.text(`${registratieLabel(bedrijfsProfiel)}: ${bedrijfsProfiel.kvk_nummer}`, detailsX, rightY, { align: detailsAlign })
         rightY += 5
       }
       if (bedrijfsProfiel.btw_nummer) {
@@ -487,7 +494,7 @@ function addFooter(doc: jsPDF, bedrijfsProfiel: Partial<Profile>, docStyle?: Doc
       } else {
         const footerParts: string[] = []
         if (bedrijfsProfiel.bedrijfsnaam) footerParts.push(bedrijfsProfiel.bedrijfsnaam)
-        if (bedrijfsProfiel.kvk_nummer) footerParts.push(`KvK: ${bedrijfsProfiel.kvk_nummer}`)
+        if (bedrijfsProfiel.kvk_nummer) footerParts.push(`${registratieLabel(bedrijfsProfiel)}: ${bedrijfsProfiel.kvk_nummer}`)
         if (bedrijfsProfiel.btw_nummer) footerParts.push(`BTW: ${bedrijfsProfiel.btw_nummer}`)
         if (bedrijfsProfiel.iban) footerParts.push(`IBAN: ${bedrijfsProfiel.iban}`)
         footerText = footerParts.join('  ·  ')
@@ -1800,7 +1807,10 @@ export function generateFactuurPDF(
   const btwTarieven = Array.from(
     new Set(items.filter((it) => it.soort !== 'tekst').map((it) => it.btw_percentage))
   )
-  const btwLabel = btwTarieven.length === 1 ? `BTW (${String(btwTarieven[0]).replace('.', ',')}%)` : 'BTW'
+  const btwVerlegd = klant.btw_verlegd === true && Math.abs(factuurData.btw_bedrag) < 0.005
+  const btwLabel = btwVerlegd
+    ? 'BTW verlegd'
+    : btwTarieven.length === 1 ? `BTW (${String(btwTarieven[0]).replace('.', ',')}%)` : 'BTW'
 
   doc.setTextColor(120, 120, 115)
   doc.text(btwLabel, totalsX, totalsY)
@@ -1883,6 +1893,24 @@ export function generateFactuurPDF(
     }
   }
 
+  // Belgische leverancier: gestructureerde mededeling, zodat de bank van de
+  // klant de betaling automatisch aan deze factuur koppelt.
+  const ogm = landOfStandaard(bedrijfsProfiel.bedrijfs_land) === 'BE' ? gestructureerdeMededeling(factuurData.nummer) : null
+  if (ogm) {
+    doc.text(`Gestructureerde mededeling: ${ogm}`, margins.left, totalsY)
+    totalsY += 6
+  }
+
+  // Wettelijke vermelding bij verlegde btw (art. 12 lid 1 Btw-richtlijn /
+  // in België ook medecontractant, art. 20 KB nr. 1).
+  if (btwVerlegd) {
+    const verlegdTekst = klant.btw_nummer
+      ? `Btw verlegd naar de afnemer (btw-nummer ${klant.btw_nummer}).`
+      : 'Btw verlegd naar de afnemer.'
+    doc.text(verlegdTekst, margins.left, totalsY)
+    totalsY += 6
+  }
+
   // Betaaltermijn: dagen tussen factuurdatum en vervaldatum (indien beide geldig).
   // Alleen tonen als de gebruiker geen eigen betaalvoorwaarden heeft ingevuld —
   // die tekst (hieronder) dekt de termijn dan al af (geen dubbeling).
@@ -1897,7 +1925,7 @@ export function generateFactuurPDF(
   }
 
   const betaalInfo = factuurData.betaalvoorwaarden ||
-    `Wij verzoeken u vriendelijk het totaalbedrag van ${formatCurrency(factuurData.totaal)} over te maken voor ${formatDate(factuurData.vervaldatum)} onder vermelding van factuurnummer ${factuurData.nummer}.`
+    `Wij verzoeken u vriendelijk het totaalbedrag van ${formatCurrency(factuurData.totaal)} over te maken voor ${formatDate(factuurData.vervaldatum)} onder vermelding van ${ogm ? `de gestructureerde mededeling ${ogm}` : `factuurnummer ${factuurData.nummer}`}.`
 
   const splitPayment = doc.splitTextToSize(betaalInfo, contentWidth) as string[]
   totalsY = flowText(splitPayment, margins.left, totalsY, 5)

@@ -524,7 +524,7 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
                 id="postcode"
                 value={formData.postcode}
                 onChange={(e) => handleChange('postcode', e.target.value)}
-                placeholder="1234 AB"
+                placeholder={formData.land === 'BE' ? '2000' : '1234 AB'}
               />
             </div>
             <div className="space-y-2">

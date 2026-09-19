@@ -10,6 +10,7 @@
 import type { Factuur, FactuurItem, Klant, Profile } from '@/types'
 import { landOfStandaard } from '@/lib/landen'
 import { peppolIdentifier, peppolRechtspersoon, ublCustomizationId, PROFILE_PEPPOL_BILLING } from '@/lib/peppol'
+import { gestructureerdeMededelingKaal } from '@/lib/betalingskenmerk'
 
 // XML escaping
 function esc(val: string | number | undefined | null): string {
@@ -242,7 +243,9 @@ export function generateUBLInvoice({ factuur, items, klant, profiel }: UBLInput)
   if (profiel.iban) {
     lines.push('  <cac:PaymentMeans>')
     lines.push('    <cbc:PaymentMeansCode>58</cbc:PaymentMeansCode>') // SEPA credit transfer
-    lines.push(`    <cbc:PaymentID>${esc(factuur.nummer)}</cbc:PaymentID>`)
+    // BT-83 betalingskenmerk: Belgische banken matchen op de gestructureerde mededeling
+    const betalingskenmerk = leveranciersLand === 'BE' ? gestructureerdeMededelingKaal(factuur.nummer) : null
+    lines.push(`    <cbc:PaymentID>${esc(betalingskenmerk ?? factuur.nummer)}</cbc:PaymentID>`)
     lines.push('    <cac:PayeeFinancialAccount>')
     lines.push(`      <cbc:ID>${esc(profiel.iban.replace(/\s/g, ''))}</cbc:ID>`)
     lines.push('    </cac:PayeeFinancialAccount>')

@@ -167,3 +167,15 @@ describe('generateUBLInvoice · creditnota', () => {
     expect(xml).not.toContain('<cbc:DueDate>')
   })
 })
+
+describe('generateUBLInvoice · betalingskenmerk', () => {
+  it('gebruikt voor een Belgische leverancier de gestructureerde mededeling als PaymentID', () => {
+    const xml = generateUBLInvoice({ factuur, items, klant: beKlant, profiel: beProfiel })
+    expect(xml).toContain('<cbc:PaymentID>002026004240</cbc:PaymentID>')
+  })
+
+  it('houdt voor een Nederlandse leverancier het factuurnummer', () => {
+    const xml = generateUBLInvoice({ factuur, items, klant: nlKlant, profiel: nlProfiel })
+    expect(xml).toContain('<cbc:PaymentID>F-2026-0042</cbc:PaymentID>')
+  })
+})
