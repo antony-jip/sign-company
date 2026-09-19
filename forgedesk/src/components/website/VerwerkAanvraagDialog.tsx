@@ -63,7 +63,7 @@ export function VerwerkAanvraagDialog({ open, onOpenChange, bron }: VerwerkAanvr
         adres: '',
         postcode: '',
         stad: '',
-        land: 'Nederland',
+        land: 'NL',
         website: '',
         debiteurennummer: '',
         kvk_nummer: '',

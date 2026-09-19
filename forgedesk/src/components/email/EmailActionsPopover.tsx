@@ -335,7 +335,7 @@ export function EmailActionsPopover({ email, onOpenProjectDialog, openKlantSigna
         contactpersoon: klantForm.contactpersoon,
         email: klantForm.email,
         telefoon: klantForm.telefoon || klantForm.mobiel,
-        adres: klantForm.adres, postcode: klantForm.postcode, stad: klantForm.stad, land: 'Nederland',
+        adres: klantForm.adres, postcode: klantForm.postcode, stad: klantForm.stad, land: 'NL',
         website: klantForm.website || (senderDomain ? `www.${senderDomain}` : ''),
         debiteurennummer: '', kvk_nummer: klantForm.kvk, btw_nummer: '', status: 'actief', tags: [], notities: '',
         contactpersonen: [{ id: crypto.randomUUID(), naam: klantForm.contactpersoon, functie: klantForm.functie, email: klantForm.email, telefoon: klantForm.mobiel || klantForm.telefoon, is_primair: true }],

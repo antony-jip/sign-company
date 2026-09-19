@@ -386,7 +386,7 @@ export function SendOfferteDialog({
               : `Verstuur ${offerte.nummer} als email met PDF bijlage.`}
             {klant?.verzendvoorkeur && klant.verzendvoorkeur !== 'email' && (
               <span className="block mt-1 text-amber-700 dark:text-amber-400">
-                Voorkeur van deze klant: {klant.verzendvoorkeur === 'post' ? 'per post' : 'via het portaal'}.
+                Voorkeur van deze klant: {klant.verzendvoorkeur === 'post' ? 'per post' : klant.verzendvoorkeur === 'peppol' ? 'facturen als e-factuur via Peppol' : 'via het portaal'}.
               </span>
             )}
           </DialogDescription>

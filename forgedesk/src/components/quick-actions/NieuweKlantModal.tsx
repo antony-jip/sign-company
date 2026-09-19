@@ -118,7 +118,7 @@ export function NieuweKlantModal({ open, onOpenChange }: Props) {
           adres: adres.trim(),
           postcode: postcode.trim(),
           stad: stad.trim(),
-          land: 'Nederland',
+          land: 'NL',
           website: website.trim(),
           debiteurennummer: debiteurennummer.trim(),
           kvk_nummer: '',

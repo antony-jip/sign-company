@@ -255,6 +255,71 @@ interface FactuurItemRij {
   totaal: number
 }
 
+export interface BillitOrderInvoer {
+  nummer: string
+  factuurdatum?: string | null
+  vervaldatum?: string | null
+  klant_referentie?: string | null
+  isCredit: boolean
+  klantNaam: string
+  klant: {
+    btw_nummer?: string | null
+    email?: string | null
+    telefoon?: string | null
+    debiteurennummer?: string | null
+    adres?: string | null
+    stad?: string | null
+    postcode?: string | null
+    land?: string | null
+  } | null
+  items: FactuurItemRij[]
+}
+
+// Per regel: UnitPriceExcl = regeltotaal met Quantity 1, zodat het geboekte
+// bedrag exact gelijk is aan doen.'s totaal ondanks korting en afronding
+// (zelfde truc als Moneybird/Exact). Creditnota's gaan met positieve bedragen
+// op een CreditNote. Geëxporteerd voor tests/api/billitPayload.test.ts.
+export function bouwBillitOrder(invoer: BillitOrderInvoer): Record<string, unknown> {
+  const rond2 = (n: number) => Math.round(n * 100) / 100
+  const { klant, klantNaam, isCredit } = invoer
+  const landCode = ((klant?.land ?? 'NL') || 'NL').trim().toUpperCase().slice(0, 2) || 'NL'
+  return {
+    OrderType: isCredit ? 'CreditNote' : 'Invoice',
+    OrderDirection: 'Income',
+    OrderNumber: invoer.nummer,
+    OrderDate: String(invoer.factuurdatum ?? '').slice(0, 10) || new Date().toISOString().slice(0, 10),
+    ...(invoer.vervaldatum && !isCredit ? { ExpiryDate: String(invoer.vervaldatum).slice(0, 10) } : {}),
+    ...(invoer.klant_referentie ? { OrderReference: String(invoer.klant_referentie) } : {}),
+    Customer: {
+      Name: klantNaam,
+      PartyType: 'Customer',
+      ...(klant?.btw_nummer ? { VATNumber: String(klant.btw_nummer).replace(/[\s.\-]/g, '').toUpperCase() } : {}),
+      ...(klant?.email ? { Email: klant.email } : {}),
+      ...(klant?.telefoon ? { Phone: klant.telefoon } : {}),
+      ...(klant?.debiteurennummer ? { Nr: String(klant.debiteurennummer) } : {}),
+      Language: 'NL',
+      Addresses: [{
+        AddressType: 'InvoiceAddress',
+        Name: klantNaam,
+        Street: klant?.adres || '',
+        City: klant?.stad || '',
+        Zipcode: klant?.postcode || '',
+        CountryCode: landCode,
+      }],
+    },
+    OrderLines: invoer.items.map((item) => ({
+      Quantity: 1,
+      UnitPriceExcl: rond2(isCredit ? Math.abs(item.totaal) : item.totaal),
+      Description: [
+        item.beschrijving,
+        typeof item.aantal === 'number' && item.aantal !== 1 ? `(${item.aantal} × €${Number(item.eenheidsprijs ?? 0).toFixed(2)})` : null,
+        item.korting_percentage > 0 ? `(${item.korting_percentage}% korting)` : null,
+      ].filter(Boolean).join(' '),
+      VATPercentage: item.btw_percentage,
+    })),
+  }
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
@@ -332,51 +397,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (klant?.btw_verlegd === true && Math.abs(Number(factuur.btw_bedrag)) >= 0.005) {
       return res.status(400).json({ error: 'Deze klant staat op btw verlegd, maar de factuur bevat btw. Zet de regels op 0% en sla de factuur op.' })
     }
-    const landCode = ((klant?.land as string | null) ?? 'NL').trim().toUpperCase().slice(0, 2) || 'NL'
 
     // 1. Order aanmaken (tenzij deze factuur al in Billit staat)
     let orderId: string | null = factuur.boekhoud_pakket === 'billit' && factuur.boekhoud_extern_id ? String(factuur.boekhoud_extern_id) : null
     let nieuwAangemaakt = false
     if (!orderId) {
-      const orderBody = {
-        OrderType: isCredit ? 'CreditNote' : 'Invoice',
-        OrderDirection: 'Income',
-        OrderNumber: factuur.nummer,
-        OrderDate: String(factuur.factuurdatum ?? '').slice(0, 10) || new Date().toISOString().slice(0, 10),
-        ...(factuur.vervaldatum && !isCredit ? { ExpiryDate: String(factuur.vervaldatum).slice(0, 10) } : {}),
-        ...(factuur.klant_referentie ? { OrderReference: String(factuur.klant_referentie) } : {}),
-        Customer: {
-          Name: klantNaam,
-          PartyType: 'Customer',
-          ...(klant?.btw_nummer ? { VATNumber: String(klant.btw_nummer).replace(/[\s.\-]/g, '').toUpperCase() } : {}),
-          ...(klant?.email ? { Email: klant.email } : {}),
-          ...(klant?.telefoon ? { Phone: klant.telefoon } : {}),
-          ...(klant?.debiteurennummer ? { Nr: String(klant.debiteurennummer) } : {}),
-          Language: 'NL',
-          Addresses: [{
-            AddressType: 'InvoiceAddress',
-            Name: klantNaam,
-            Street: (klant?.adres as string | null) || '',
-            City: (klant?.stad as string | null) || '',
-            Zipcode: (klant?.postcode as string | null) || '',
-            CountryCode: landCode,
-          }],
-        },
-        // Per regel: UnitPriceExcl = regeltotaal met Quantity 1, zodat het
-        // geboekte bedrag exact gelijk is aan doen.'s totaal ondanks korting
-        // en afronding (zelfde truc als Moneybird/Exact). Creditnota's gaan
-        // met positieve bedragen op een CreditNote.
-        OrderLines: items.map((item) => ({
-          Quantity: 1,
-          UnitPriceExcl: rond2(isCredit ? Math.abs(item.totaal) : item.totaal),
-          Description: [
-            item.beschrijving,
-            typeof item.aantal === 'number' && item.aantal !== 1 ? `(${item.aantal} × €${Number(item.eenheidsprijs ?? 0).toFixed(2)})` : null,
-            item.korting_percentage > 0 ? `(${item.korting_percentage}% korting)` : null,
-          ].filter(Boolean).join(' '),
-          VATPercentage: item.btw_percentage,
-        })),
-      }
+      const orderBody = bouwBillitOrder({
+        nummer: String(factuur.nummer),
+        factuurdatum: factuur.factuurdatum,
+        vervaldatum: factuur.vervaldatum,
+        klant_referentie: factuur.klant_referentie,
+        isCredit,
+        klantNaam,
+        klant: klant ?? null,
+        items,
+      })
 
       const createRes = await billitFetch(base, token, partyId, '/v1/orders', { method: 'POST', body: JSON.stringify(orderBody) })
       if (!createRes.ok) {
@@ -464,13 +499,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         body: JSON.stringify({ Transporttype: 'Peppol', OrderIDs: [Number.isFinite(Number(orderId)) ? Number(orderId) : orderId] }),
       })
     } catch (err) {
-      // Timeout of netwerkfout: niet weten of Billit hem verstuurd heeft. Op
-      // 'mislukt' zetten zodat de knop een retry toestaat; de cron corrigeert
-      // naar 'verzonden' zodra Billit een verzendstatus meldt.
-      const fout = `Geen antwoord van Billit bij het versturen: ${err instanceof Error ? err.message : String(err)}`
-      await supabaseAdmin.from('facturen').update({ peppol_status: 'mislukt', peppol_fout: fout.slice(0, 500) }).eq('id', factuur_id).eq('peppol_status', 'in_wachtrij')
+      // Timeout of netwerkfout: onbekend of Billit hem tóch verstuurd heeft.
+      // De claim blijft staan zodat niemand direct opnieuw verstuurt; de cron
+      // haalt de echte transportstatus op en zet een claim die na 30 minuten
+      // nog hangt terug op 'mislukt'.
+      const fout = `Geen antwoord van Billit bij het versturen: ${err instanceof Error ? err.message : String(err)}. De status wordt automatisch bijgewerkt.`
+      await supabaseAdmin.from('facturen').update({ peppol_fout: fout.slice(0, 500) }).eq('id', factuur_id).eq('peppol_status', 'in_wachtrij')
       peppolGeclaimd = null
-      return res.status(200).json({ success: true, extern_id: orderId, peppol_status: 'mislukt', waarschuwing: fout })
+      return res.status(200).json({ success: true, extern_id: orderId, peppol_status: 'in_wachtrij', waarschuwing: fout })
     }
     if (!sendRes.ok) {
       const tekst = (await sendRes.text()).slice(0, 300)

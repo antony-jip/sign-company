@@ -22,6 +22,7 @@ import {
 import { LANDEN, landOfStandaard, type LandCode } from '@/lib/landen'
 import { createKlant, updateKlant } from '@/services/supabaseService'
 import { useAuth } from '@/contexts/AuthContext'
+import { useAppSettings } from '@/contexts/AppSettingsContext'
 import { toast } from 'sonner'
 import { Building2, Loader2 } from 'lucide-react'
 import { PeppolCheckKnop } from './PeppolCheckKnop'
@@ -60,6 +61,7 @@ interface FormData {
   debiteurennummer: string
   kvk_nummer: string
   btw_nummer: string
+  peppol_id: string
   status: 'actief' | 'inactief' | 'prospect'
   geen_betalingsherinneringen: boolean
   tags: string
@@ -88,6 +90,7 @@ const initialFormData: FormData = {
   debiteurennummer: '',
   kvk_nummer: '',
   btw_nummer: '',
+  peppol_id: '',
   status: 'actief',
   geen_betalingsherinneringen: false,
   tags: '',
@@ -105,6 +108,7 @@ const initialFormData: FormData = {
 
 export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditClientProps) {
   const { user } = useAuth()
+  const { profile } = useAppSettings()
   const [formData, setFormData] = useState<FormData>(initialFormData)
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({})
   const [saving, setSaving] = useState(false)
@@ -228,6 +232,7 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
         debiteurennummer: klant.debiteurennummer,
         kvk_nummer: klant.kvk_nummer,
         btw_nummer: klant.btw_nummer,
+        peppol_id: klant.peppol_id || '',
         status: klant.status,
         geen_betalingsherinneringen: klant.geen_betalingsherinneringen === true,
         tags: klant.tags.join(', '),
@@ -243,10 +248,10 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
         label_input: '',
       })
     } else {
-      setFormData(initialFormData)
+      setFormData({ ...initialFormData, land: landOfStandaard(profile?.bedrijfs_land) })
     }
     setErrors({})
-  }, [klant, open])
+  }, [klant, open, profile?.bedrijfs_land])
 
   function handleChange(field: keyof FormData, value: string) {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -303,6 +308,7 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
         debiteurennummer: formData.debiteurennummer.trim(),
         kvk_nummer: formData.kvk_nummer.trim(),
         btw_nummer: formData.btw_nummer.trim(),
+        peppol_id: formData.peppol_id.trim() || null,
         status: formData.status,
         geen_betalingsherinneringen: formData.geen_betalingsherinneringen,
         tags: tagsArray,
@@ -696,6 +702,14 @@ export function AddEditClient({ open, onOpenChange, klant, onSaved }: AddEditCli
               {klant?.id && (
                 <PeppolCheckKnop klantId={klant.id} status={klant.peppol_status} gecheckOp={klant.peppol_gecheckt_op} />
               )}
+              <Input
+                id="peppol_id"
+                value={formData.peppol_id}
+                onChange={(e) => handleChange('peppol_id', e.target.value)}
+                placeholder="Peppol-id (optioneel, bv. 0208:0123456789)"
+                className="font-mono text-sm"
+                title="Alleen invullen als de klant onder een ander nummer op Peppol staat dan zijn btw-/KvK-nummer"
+              />
             </div>
           </div>
 

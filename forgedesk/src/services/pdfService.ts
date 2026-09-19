@@ -1,5 +1,5 @@
 import jsPDF, { GState } from 'jspdf'
-import { landOfStandaard } from '@/lib/landen'
+import { landNaam, landOfStandaard } from '@/lib/landen'
 import { gestructureerdeMededeling } from '@/lib/betalingskenmerk'
 import autoTable, { type RowInput } from 'jspdf-autotable'
 import type { Offerte, OfferteItem, OfferteItemPrijsVariant, Klant, Profile, DocumentStyle, WerkbonRegel, WerkbonFoto, SigningVisualisatie } from '@/types'
@@ -440,8 +440,10 @@ function addClientInfo(
     doc.text(`Debiteurnr. ${klant.debiteurennummer}`, margins.left, y)
     y += 5
   }
-  if (klant.land && klant.land !== 'Nederland') {
-    doc.text(klant.land, margins.left, y)
+  // Alleen een buitenlands adres krijgt het land erbij (ISO-code sinds
+  // migratie 252, oude rijen kunnen nog een naam bevatten).
+  if (klant.land && landOfStandaard(klant.land) !== landOfStandaard(bedrijfsProfiel.bedrijfs_land)) {
+    doc.text(landNaam(klant.land), margins.left, y)
     y += 5
   }
 

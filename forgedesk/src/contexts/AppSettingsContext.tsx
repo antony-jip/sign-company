@@ -135,6 +135,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
             kvk_nummer: eigenaar.kvk_nummer,
             btw_nummer: eigenaar.btw_nummer,
             iban: eigenaar.iban,
+            bedrijfs_land: eigenaar.bedrijfs_land,
           })
         }
       } catch (err) {

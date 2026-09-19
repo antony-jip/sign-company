@@ -72,7 +72,7 @@ export function KlantToevoegenDialog({ open, onSluiten, afzenderNaam, afzenderEm
       const klant = await createKlant({
         bedrijfsnaam: form.bedrijfsnaam, contactpersoon: form.contactpersoon,
         email: form.email, telefoon: form.telefoon || form.mobiel,
-        adres: form.adres, postcode: form.postcode, stad: form.stad, land: 'Nederland',
+        adres: form.adres, postcode: form.postcode, stad: form.stad, land: 'NL',
         website: form.website || (domein ? `www.${domein}` : ''),
         debiteurennummer: '', kvk_nummer: form.kvk, btw_nummer: '', status: 'actief', tags: [], notities: '',
         contactpersonen: [{ id: crypto.randomUUID(), naam: form.contactpersoon, functie: form.functie, email: form.email, telefoon: form.mobiel || form.telefoon, is_primair: true }],

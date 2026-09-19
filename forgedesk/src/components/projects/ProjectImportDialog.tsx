@@ -181,7 +181,7 @@ export function ProjectImportDialog({ open, onOpenChange, onImportComplete }: Pr
             adres: '',
             postcode: '',
             stad: '',
-            land: 'Nederland',
+            land: 'NL',
             website: '',
             debiteurennummer: '',
             kvk_nummer: '',

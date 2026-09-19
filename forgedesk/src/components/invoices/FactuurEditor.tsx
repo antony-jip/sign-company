@@ -58,6 +58,7 @@ import {
   Bell,
   BellOff,
   CheckCircle2,
+  XCircle,
   AlertCircle,
   AlertTriangle,
   MinusCircle,
@@ -1413,7 +1414,7 @@ export function FactuurEditor() {
 
   const handleAddItem = useCallback(() => {
     setItems((prev) => [...prev, createEmptyLineItem(selectedKlant?.btw_verlegd ? 0 : standaardBtw)])
-  }, [standaardBtw])
+  }, [standaardBtw, selectedKlant?.btw_verlegd])
 
   const handleRemoveItem = useCallback((id: string) => {
     setItems((prev) => prev.filter((i) => i.id !== id))
@@ -3247,6 +3248,12 @@ export function FactuurEditor() {
                     {PEPPOL_STATUS_LABEL[existingFactuur.peppol_status]}
                   </Badge>
                 )}
+                {existingFactuur?.peppol_status === 'mislukt' && (
+                  <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200 text-xs gap-1" title={existingFactuur.peppol_fout || 'Peppol-verzending mislukt'}>
+                    <XCircle className="w-3 h-3" />
+                    Peppol mislukt
+                  </Badge>
+                )}
                 {settings.boekhoud_pakket === 'billit' && existingFactuur?.boekhoud_pakket === 'billit' && existingFactuur.boekhoud_synced_at
                   && existingFactuur.peppol_status !== 'verzonden' && existingFactuur.peppol_status !== 'afgeleverd' && existingFactuur.peppol_status !== 'in_wachtrij' && (
                   <Button
@@ -4253,7 +4260,7 @@ export function FactuurEditor() {
           <div className="space-y-3 py-2 text-sm">
             {selectedKlant?.verzendvoorkeur && selectedKlant.verzendvoorkeur !== 'email' && (
               <p className="text-xs text-amber-700 dark:text-amber-400">
-                Voorkeur van deze klant: {selectedKlant.verzendvoorkeur === 'post' ? 'per post' : 'via het portaal'}. Download de PDF of deel via het portaal als je die voorkeur wilt volgen.
+                Voorkeur van deze klant: {selectedKlant.verzendvoorkeur === 'post' ? 'per post' : selectedKlant.verzendvoorkeur === 'peppol' ? 'als e-factuur via Peppol' : 'via het portaal'}. {selectedKlant.verzendvoorkeur === 'peppol' ? 'Bij het syncen naar Billit gaat de factuur automatisch via Peppol.' : 'Download de PDF of deel via het portaal als je die voorkeur wilt volgen.'}
               </p>
             )}
             <div className="space-y-1.5">

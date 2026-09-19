@@ -116,7 +116,7 @@ export function AanvraagKaart({ email, senderName }: AanvraagKaartProps) {
           adres: handtekening.adres,
           postcode: handtekening.postcode,
           stad: handtekening.stad,
-          land: 'Nederland',
+          land: 'NL',
           website: domein && !generiekDomein ? `www.${domein}` : '',
           debiteurennummer: '', kvk_nummer: '', btw_nummer: '',
           status: 'actief', tags: [], notities: '',

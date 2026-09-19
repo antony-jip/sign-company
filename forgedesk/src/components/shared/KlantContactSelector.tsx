@@ -237,7 +237,7 @@ export function KlantContactSelector({
         adres: nb.adres.trim(),
         postcode: nb.postcode.trim(),
         stad: nb.stad.trim(),
-        land: 'Nederland',
+        land: 'NL',
         website: nb.website.trim(),
         debiteurennummer: nb.debiteurennummer.trim(),
         kvk_nummer: nb.kvk_nummer.trim(),

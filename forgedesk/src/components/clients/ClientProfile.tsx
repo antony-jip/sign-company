@@ -665,6 +665,7 @@ export function ClientProfile() {
             {([
               klant.verzendvoorkeur === 'post' ? 'Post' : null,
               klant.verzendvoorkeur === 'portaal' ? 'Portaal' : null,
+              klant.verzendvoorkeur === 'peppol' ? 'Peppol' : null,
               klant.btw_verlegd ? 'BTW verlegd' : null,
               klant.po_verplicht ? 'PO verplicht' : null,
             ].filter(Boolean) as string[]).map((badge) => (

@@ -514,7 +514,7 @@ export function QuoteCreation() {
       }] : []
       const nieuw = await createKlant({
         bedrijfsnaam: nbData.bedrijfsnaam.trim(), contactpersoon: nbData.contactpersoon.trim(), email: nbData.email.trim(), telefoon: nbData.telefoon.trim(),
-        adres: nbData.adres.trim(), postcode: nbData.postcode.trim(), stad: nbData.stad.trim(), land: 'Nederland',
+        adres: nbData.adres.trim(), postcode: nbData.postcode.trim(), stad: nbData.stad.trim(), land: 'NL',
         website: nbData.website.trim(), debiteurennummer: nbData.debiteurennummer.trim(), kvk_nummer: nbData.kvk_nummer.trim(), btw_nummer: nbData.btw_nummer.trim(),
         status: 'actief', tags: [], notities: '', contactpersonen: cpArray, user_id: user?.id || '',
       } as any)

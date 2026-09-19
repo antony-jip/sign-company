@@ -163,7 +163,7 @@ export function ForgieActieKaart({
           adres: '',
           postcode: '',
           stad: '',
-          land: 'Nederland',
+          land: 'NL',
           website: '',
           debiteurennummer: '',
           kvk_nummer: '',
