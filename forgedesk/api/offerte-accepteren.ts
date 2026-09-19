@@ -167,8 +167,11 @@ export function prijsRegels(item: Record<string, unknown>, keuze: GekozenVariant
   const gekozen = gekozenVariantIds(vs, keuze)
   if (gekozen) return vs.filter((v) => gekozen.includes(v.id as string)).map(variantRegel)
   const meetellend = meetellendeVarianten(vs, item.actieve_variant_id as string | undefined)
-  if (meetellend.length > 1) return meetellend.map(variantRegel)
-  const gekozenVariantId = typeof keuze === 'string' ? keuze : undefined
+  const gekozenVariantId = typeof keuze === 'string' && vs.some((v) => v.id === keuze) ? keuze : undefined
+  // Zonder keuze telt wat de verkoper standaard liet meetellen — ook als dat
+  // de eerste variant is omdat actieve_variant_id ontbreekt; de klantpagina
+  // rekent daar ook mee (getMeetellendeVarianten) en niet met de basisprijs.
+  if (meetellend.length > 1 || (meetellend.length === 1 && !gekozenVariantId)) return meetellend.map(variantRegel)
   return [variantWaarden(item, gekozenVariantId || (item.actieve_variant_id as string | undefined))]
 }
 
@@ -298,8 +301,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       akkoord_op: nu,
       updated_at: nu,
     }
-    if (gekozen_items) updateData.gekozen_items = gekozen_items
-    if (gekozen_varianten) updateData.gekozen_varianten = gekozen_varianten
+    // gekozen_items/gekozen_varianten landen genormaliseerd op de offerte (alleen
+    // items en variant-ids van déze offerte), nooit de ruwe client-lading.
 
     // Wat de klant aanvinkte, voor de mails: één regel per post waar iets te
     // kiezen viel. Zonder dit weet de klant na het tekenen niet meer wat hij
@@ -316,9 +319,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .select('*')
         .eq('offerte_id', offerte.id)
       const items = (rawItems || []) as Array<Record<string, unknown>>
-      const gekozenSet = new Set(gekozen_items || [])
       const varianten = gekozen_varianten || {}
       const isPrijs = (it: Record<string, unknown>) => ((it.soort as string) || 'prijs') === 'prijs'
+      const optioneleIds = new Set(items.filter((it) => it.is_optioneel === true).map((it) => it.id as string))
+      const gekozenSet = new Set((gekozen_items || []).filter((id) => typeof id === 'string' && optioneleIds.has(id)))
+      if (gekozen_items) updateData.gekozen_items = [...gekozenSet]
+
+      // Een lijst zonder één geldig id betekent dat de verkoper de uitvoeringen
+      // tussen laden en tekenen heeft veranderd: dan tekent de klant voor een
+      // ander bedrag dan hij zag. Weigeren vóór er iets geschreven is.
+      const verouderd = items.some((it) => {
+        const vs = Array.isArray(it.prijs_varianten) ? it.prijs_varianten as Array<Record<string, unknown>> : []
+        const keuze = varianten[it.id as string]
+        return vs.length > 0 && Array.isArray(keuze) && keuze.length > 0 && !gekozenVariantIds(vs, keuze)
+      })
+      if (verouderd) {
+        return res.status(409).json({ error: 'Deze offerte is intussen aangepast. Laad de pagina opnieuw en controleer je keuze.' })
+      }
+      const genormaliseerdeKeuzes: Record<string, string[]> = {}
 
       // Materialiseer de keuze op de items. Nooit een verplicht item verwijderen:
       // alleen gekozen optionele items vast zetten en gekozen varianten activeren.
@@ -330,6 +348,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const keuze = varianten[it.id as string]
         const gekozen = gekozenVariantIds(vs, keuze)
         if (gekozen) {
+          genormaliseerdeKeuzes[it.id as string] = gekozen
           if (vs.some((v) => (v.telt_mee === true) !== gekozen.includes(v.id as string))) {
             patch.prijs_varianten = vs.map((v) => ({ ...v, telt_mee: gekozen.includes(v.id as string) }))
           }
@@ -338,8 +357,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           const meerdereTellenMee =
             meetellendeVarianten(vs, it.actieve_variant_id as string | undefined).length > 1
           const vid = typeof keuze === 'string' ? keuze : undefined
-          if (!meerdereTellenMee && vid && vs.some((x) => x.id === vid) && vid !== it.actieve_variant_id) {
-            patch.actieve_variant_id = vid
+          if (!meerdereTellenMee && vid && vs.some((x) => x.id === vid)) {
+            genormaliseerdeKeuzes[it.id as string] = [vid]
+            if (vid !== it.actieve_variant_id) patch.actieve_variant_id = vid
           }
         }
         if (it.is_optioneel && gekozenSet.has(it.id as string)) patch.is_optioneel = false
@@ -371,6 +391,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           bedrag: r2(prijsRegels(it, keuze).reduce((sum, r) => sum + regelNetto(r), 0)),
         })
       }
+      if (gekozen_varianten) updateData.gekozen_varianten = genormaliseerdeKeuzes
       const afrondingskorting = Number(offerte.afrondingskorting_excl_btw) || 0
       const totalen = berekenGeaccepteerdeTotalen(finalRegels, afrondingskorting)
       updateData.subtotaal = totalen.subtotaal

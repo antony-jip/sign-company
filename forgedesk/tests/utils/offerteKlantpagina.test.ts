@@ -148,8 +148,8 @@ describe('voornaam', () => {
 })
 
 describe('gekozenVariantenPerItem · de keuze van de klant in één vorm', () => {
-  it('maakt van een oude enkele keuze een lijst van één', () => {
-    expect(gekozenVariantenPerItem({ i1: 'a' })).toEqual({ i1: ['a'] })
+  it('laat een oude enkele keuze liggen: die staat al als actieve_variant_id op het item', () => {
+    expect(gekozenVariantenPerItem({ i1: 'a', i2: ['b'] })).toEqual({ i2: ['b'] })
   })
 
   it('houdt lijsten, ontdubbelt en laat lege keuzes weg', () => {

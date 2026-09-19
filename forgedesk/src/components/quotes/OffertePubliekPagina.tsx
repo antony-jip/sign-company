@@ -813,6 +813,39 @@ export function OffertePubliekPagina() {
     }
   }, [token, isVoorbeeld, wijzigingNaam, wijzigingOpmerking, verzoekModus])
 
+  // ============ DERIVED STATE (vóór de early returns, en vóór de PDF-callback die ze gebruikt) ============
+  const vandaag = new Date().toISOString().split('T')[0]
+  const btwGroepen = useMemo(
+    () => groepeerBtwMetSelectie(items, selectedItems, selectedVariants, hasOptionalItems),
+    [items, selectedItems, selectedVariants, hasOptionalItems],
+  )
+  const berekendeSubtotaal = useMemo(() => {
+    let sum = 0
+    for (const item of items) {
+      if (item.soort === 'tekst') continue
+      if (hasOptionalItems && !selectedItems.has(item.id)) continue
+      sum += getEffectiveItemTotal(item, selectedVariants[item.id])
+    }
+    return round2(sum)
+  }, [items, selectedItems, selectedVariants, hasOptionalItems])
+  const berekendeBtw = useMemo(() => {
+    return round2(btwGroepen.reduce((sum, g) => sum + g.btw, 0))
+  }, [btwGroepen])
+  // Het subtotaal is al netto: zonder dit bedrag leest de klant nergens terug wat
+  // er van de prijs af ging. Alleen berekend over wat meetelt in het subtotaal.
+  const kortingBedrag = useMemo(() => {
+    let sum = 0
+    for (const item of items) {
+      if (item.soort === 'tekst') continue
+      if (hasOptionalItems && !selectedItems.has(item.id)) continue
+      for (const r of effectievePrijsRegels(item, selectedVariants[item.id])) {
+        const bruto = r.aantal * r.eenheidsprijs
+        sum += bruto - round2(bruto * (1 - (r.korting_percentage || 0) / 100))
+      }
+    }
+    return round2(sum)
+  }, [items, selectedItems, selectedVariants, hasOptionalItems])
+
   // PDF download (client-side with jsPDF)
   const handleDownloadPDF = useCallback(async () => {
     if (!offerte) return
@@ -822,6 +855,9 @@ export function OffertePubliekPagina() {
       // briefpapier, huisstijl, brand kleuren en layout consistent zijn.
       const { generateOffertePDF } = await import('@/services/pdfService')
 
+      // Dezelfde bedragen als onderaan de pagina: met keuzes de live berekende,
+      // anders wat de server vastlegde. Anders staan de aangevinkte rijen vet
+      // in een PDF waarvan het totaal nog de verkoper-standaard is.
       const offerteData = {
         id: offerte.id || '',
         user_id: '',
@@ -829,9 +865,11 @@ export function OffertePubliekPagina() {
         nummer: offerte.nummer,
         titel: offerte.titel || '',
         status: offerte.status as 'concept',
-        subtotaal: offerte.subtotaal,
-        btw_bedrag: offerte.btw_bedrag,
-        totaal: offerte.aangepast_totaal ?? offerte.totaal,
+        subtotaal: hasSelections ? berekendeSubtotaal : offerte.subtotaal,
+        btw_bedrag: hasSelections ? berekendeBtw : offerte.btw_bedrag,
+        totaal: hasSelections
+          ? round2(berekendeSubtotaal + berekendeBtw + (offerte.afrondingskorting_excl_btw ?? 0))
+          : (offerte.aangepast_totaal ?? offerte.totaal),
         geldig_tot: offerte.geldig_tot || '',
         notities: offerte.notities || '',
         voorwaarden: offerte.voorwaarden || '',
@@ -850,7 +888,7 @@ export function OffertePubliekPagina() {
         eenheidsprijs: item.eenheidsprijs,
         btw_percentage: item.btw_percentage,
         korting_percentage: item.korting_percentage || 0,
-        totaal: item.totaal,
+        totaal: getEffectiveItemTotal(item, selectedVariants[item.id]),
         volgorde: index + 1,
         soort: item.soort,
         extra_velden: item.extra_velden,
@@ -899,40 +937,7 @@ export function OffertePubliekPagina() {
     } finally {
       setPdfBezig(false)
     }
-  }, [offerte, items, bedrijf, klant, docStyle, selectedVariants])
-
-  // ============ DERIVED STATE (must be before early returns to respect rules of hooks) ============
-  const vandaag = new Date().toISOString().split('T')[0]
-  const btwGroepen = useMemo(
-    () => groepeerBtwMetSelectie(items, selectedItems, selectedVariants, hasOptionalItems),
-    [items, selectedItems, selectedVariants, hasOptionalItems],
-  )
-  const berekendeSubtotaal = useMemo(() => {
-    let sum = 0
-    for (const item of items) {
-      if (item.soort === 'tekst') continue
-      if (hasOptionalItems && !selectedItems.has(item.id)) continue
-      sum += getEffectiveItemTotal(item, selectedVariants[item.id])
-    }
-    return round2(sum)
-  }, [items, selectedItems, selectedVariants, hasOptionalItems])
-  const berekendeBtw = useMemo(() => {
-    return round2(btwGroepen.reduce((sum, g) => sum + g.btw, 0))
-  }, [btwGroepen])
-  // Het subtotaal is al netto: zonder dit bedrag leest de klant nergens terug wat
-  // er van de prijs af ging. Alleen berekend over wat meetelt in het subtotaal.
-  const kortingBedrag = useMemo(() => {
-    let sum = 0
-    for (const item of items) {
-      if (item.soort === 'tekst') continue
-      if (hasOptionalItems && !selectedItems.has(item.id)) continue
-      for (const r of effectievePrijsRegels(item, selectedVariants[item.id])) {
-        const bruto = r.aantal * r.eenheidsprijs
-        sum += bruto - round2(bruto * (1 - (r.korting_percentage || 0) / 100))
-      }
-    }
-    return round2(sum)
-  }, [items, selectedItems, selectedVariants, hasOptionalItems])
+  }, [offerte, items, bedrijf, klant, docStyle, selectedVariants, hasSelections, berekendeSubtotaal, berekendeBtw])
 
   // ============ LOADING STATE ============
   if (isLoading) {

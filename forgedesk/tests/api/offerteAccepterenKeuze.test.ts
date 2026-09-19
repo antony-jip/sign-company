@@ -54,6 +54,12 @@ describe('prijsRegels · wat de klant aanvinkte telt', () => {
     expect(prijsRegels(vast, 'c').map((r) => r.eenheidsprijs)).toEqual([925, 845])
   })
 
+  it('rekent zonder actieve variant met de eerste uitvoering, net als de klantpagina', () => {
+    const zonderActieve = { ...item, actieve_variant_id: undefined, eenheidsprijs: 1 }
+    expect(prijsRegels(zonderActieve, undefined).map((r) => r.eenheidsprijs)).toEqual([925])
+    expect(prijsRegels(zonderActieve, 'onbekend').map((r) => r.eenheidsprijs)).toEqual([925])
+  })
+
   it('gebruikt de basisprijs als de post geen uitvoeringen heeft', () => {
     expect(prijsRegels({ aantal: 3, eenheidsprijs: 10, btw_percentage: 9, korting_percentage: 0 }, ['a'])).toEqual([
       { aantal: 3, eenheidsprijs: 10, btw_percentage: 9, korting_percentage: 0 },

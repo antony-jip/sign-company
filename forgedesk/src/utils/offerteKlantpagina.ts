@@ -56,14 +56,17 @@ export function klantSpecs(item: ItemVoorSpecs): KlantSpec[] {
 /**
  * De variantkeuze zoals hij op de offerte staat: per item de aangevinkte
  * uitvoeringen. Offertes van vóór het meervoudig kiezen bewaarden één id per
- * item; die wordt een lijst van één, zodat de pagina maar één vorm kent.
+ * item; die is door de accept-API al als actieve_variant_id op het item gezet
+ * en telt hier niet mee — als lijst zou hij een post met meerdere vaste
+ * uitvoeringen vernauwen tot één en een lager bedrag tonen dan is vastgelegd.
  */
 export function gekozenVariantenPerItem(
   ruw: Record<string, string | string[] | null | undefined> | null | undefined,
 ): Record<string, string[]> {
   const keuzes: Record<string, string[]> = {}
   for (const [itemId, keuze] of Object.entries(ruw ?? {})) {
-    const ids = (Array.isArray(keuze) ? keuze : [keuze]).filter((id): id is string => typeof id === 'string' && id.length > 0)
+    if (!Array.isArray(keuze)) continue
+    const ids = keuze.filter((id): id is string => typeof id === 'string' && id.length > 0)
     if (ids.length > 0) keuzes[itemId] = Array.from(new Set(ids))
   }
   return keuzes
