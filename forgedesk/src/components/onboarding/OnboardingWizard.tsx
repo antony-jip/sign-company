@@ -17,7 +17,10 @@ import {
   createOfferte,
   createOfferteItem,
   createTaak,
+  updateAppSettings,
 } from '@/services/supabaseService'
+import { landLabels, standaardInstellingenVoorLand, demoKlantenVoorLand } from '@/lib/landInstellingen'
+import { landOfStandaard, type LandCode } from '@/lib/landen'
 import { Loader2, ArrowLeft, ArrowRight, Layers, Sparkles } from 'lucide-react'
 import { logger } from '../../utils/logger'
 import { logCreate } from '@/utils/auditLogger'
@@ -165,6 +168,7 @@ function PrimaryButton({
 // ── Step 1: Bedrijfsgegevens ────────────────────────────────────────────
 
 interface BedrijfsgegevensState {
+  land: LandCode
   voornaam: string
   achternaam: string
   naam: string
@@ -192,6 +196,7 @@ function StepBedrijfsgegevens({
   const update = (field: keyof BedrijfsgegevensState, value: string) => {
     setGegevens({ ...gegevens, [field]: value })
   }
+  const labels = landLabels(gegevens.land)
 
   return (
     <StepCard>
@@ -203,6 +208,29 @@ function StepBedrijfsgegevens({
       />
 
       <div className="space-y-4">
+        {/* Land eerst: bepaalt btw-tarieven, factuurvermeldingen, e-facturatie (Peppol) en feestdagen */}
+        <div className="space-y-1.5">
+          <Label style={labelStyle} className={labelClass}>Waar is je bedrijf gevestigd?</Label>
+          <div className="grid grid-cols-2 gap-2">
+            {([['NL', 'Nederland'], ['BE', 'België']] as const).map(([code, naam]) => (
+              <button
+                key={code}
+                type="button"
+                onClick={() => setGegevens({ ...gegevens, land: code })}
+                className={`rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors ${gegevens.land === code ? 'border-flame bg-flame/10 text-foreground' : 'border-border bg-card text-muted-foreground hover:border-foreground/30'}`}
+                aria-pressed={gegevens.land === code}
+              >
+                {naam}
+              </button>
+            ))}
+          </div>
+          <p className="text-[11px] text-muted-hex dark:text-muted-foreground/70">
+            {gegevens.land === 'BE'
+              ? 'doen. rekent dan met 21/12/6% btw, zet de wettelijke vermeldingen op je facturen en maakt e-facturatie via Peppol mogelijk.'
+              : 'doen. rekent dan met 21/9% btw en de Nederlandse standaarden. Later aan te passen bij Instellingen > Bedrijf.'}
+          </p>
+        </div>
+
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <Label style={labelStyle} className={labelClass}>Voornaam</Label>
@@ -241,13 +269,13 @@ function StepBedrijfsgegevens({
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <Label style={labelStyle} className={labelClass}>
-              KVK-nummer{' '}
+              {labels.ondernemingsnummer}{' '}
               <span className="text-muted-hex dark:text-muted-foreground/70 font-normal">optioneel</span>
             </Label>
             <Input
               value={gegevens.kvk_nummer}
               onChange={(e) => update('kvk_nummer', e.target.value)}
-              placeholder="12345678"
+              placeholder={labels.ondernemingsnummerPlaceholder}
               className={`${inputClass} font-mono`}
             />
           </div>
@@ -259,7 +287,7 @@ function StepBedrijfsgegevens({
             <Input
               value={gegevens.btw_nummer}
               onChange={(e) => update('btw_nummer', e.target.value)}
-              placeholder="NL123456789B01"
+              placeholder={labels.btwPlaceholder}
               className={`${inputClass} font-mono`}
             />
           </div>
@@ -277,7 +305,7 @@ function StepBedrijfsgegevens({
             <Input
               value={gegevens.postcode}
               onChange={(e) => update('postcode', e.target.value)}
-              placeholder="1234 AB"
+              placeholder={labels.postcodePlaceholder}
               className={inputClass}
             />
             <Input
@@ -295,7 +323,7 @@ function StepBedrijfsgegevens({
             <Input
               value={gegevens.email}
               onChange={(e) => update('email', e.target.value)}
-              placeholder="info@jouwbedrijf.nl"
+              placeholder={labels.emailPlaceholder}
               className={inputClass}
             />
           </div>
@@ -304,7 +332,7 @@ function StepBedrijfsgegevens({
             <Input
               value={gegevens.telefoon}
               onChange={(e) => update('telefoon', e.target.value)}
-              placeholder="06-12345678"
+              placeholder={labels.telefoonPlaceholder}
               className={`${inputClass} font-mono`}
             />
           </div>
@@ -318,7 +346,7 @@ function StepBedrijfsgegevens({
           <Input
             value={gegevens.iban}
             onChange={(e) => update('iban', e.target.value)}
-            placeholder="NL00 BANK 0123 4567 89"
+            placeholder={labels.ibanPlaceholder}
             className={`${inputClass} font-mono`}
           />
         </div>
@@ -480,7 +508,7 @@ export function OnboardingWizard() {
   // Step 1 state
   const [gegevens, setGegevens] = useState<BedrijfsgegevensState>({
     voornaam: '', achternaam: '',
-    naam: '', kvk_nummer: '', btw_nummer: '', adres: '', postcode: '', plaats: '', email: '', telefoon: '', iban: '',
+    land: 'NL', naam: '', kvk_nummer: '', btw_nummer: '', adres: '', postcode: '', plaats: '', email: '', telefoon: '', iban: '',
   })
 
   // Step 2 state
@@ -504,6 +532,7 @@ export function OnboardingWizard() {
         try {
           const profile = await getProfile(user.id)
           if (profile && !cancelled) {
+            if (profile.bedrijfs_land) setGegevens(prev => ({ ...prev, land: landOfStandaard(profile.bedrijfs_land) }))
             if (profile.voornaam) setGegevens(prev => ({ ...prev, voornaam: profile.voornaam || '' }))
             if (profile.achternaam) setGegevens(prev => ({ ...prev, achternaam: profile.achternaam || '' }))
             if (profile.bedrijfs_email) setGegevens(prev => ({ ...prev, email: profile.bedrijfs_email || '' }))
@@ -679,10 +708,20 @@ export function OnboardingWizard() {
           iban: gegevens.iban.trim(),
           kvk_nummer: gegevens.kvk_nummer.trim(),
           btw_nummer: gegevens.btw_nummer.trim(),
+          bedrijfs_land: gegevens.land,
         } as Parameters<typeof updateProfile>[1])
       } catch (err) {
         logger.error('Update profiel stap 1:', err)
         toast.error(err instanceof Error ? err.message : 'Persoonlijke gegevens konden niet opgeslagen worden.')
+      }
+      // Landgebonden standaarden (betaaltermijn, factuurvoorwaarden). NL is al
+      // de default; alleen België hoeft iets te zetten.
+      if (gegevens.land !== 'NL') {
+        try {
+          await updateAppSettings(user.id, standaardInstellingenVoorLand(gegevens.land))
+        } catch (err) {
+          logger.error('Landinstellingen stap 1:', err)
+        }
       }
     }
 
@@ -699,41 +738,17 @@ export function OnboardingWizard() {
     try {
       if (startKeuze === 'demo' && user?.id) {
         // Create demo data
-        const klant1 = await createKlant({
-          user_id: user.id,
-          bedrijfsnaam: 'Bakkerij De Gouden Korenaar',
-          contactpersoon: 'Jan Bakker',
-          email: 'jan@goudenkorenaar.nl',
-          telefoon: '020-1234567',
-          adres: 'Hoofdstraat 12', postcode: '1012 AB', stad: 'Amsterdam', land: 'NL',
-          website: '', debiteurennummer: '', kvk_nummer: '', btw_nummer: '',
-          status: 'actief', tags: [], notities: '', contactpersonen: [],
-          is_demo_data: true,
-        } as Parameters<typeof createKlant>[0])
-
-        await createKlant({
-          user_id: user.id,
-          bedrijfsnaam: 'Installatiebedrijf Jansen',
-          contactpersoon: 'Pieter Jansen',
-          email: 'info@jansen-installatie.nl',
-          telefoon: '010-7654321',
-          adres: 'Industrieweg 8', postcode: '3012 CD', stad: 'Rotterdam', land: 'NL',
-          website: '', debiteurennummer: '', kvk_nummer: '', btw_nummer: '',
-          status: 'actief', tags: [], notities: '', contactpersonen: [],
-          is_demo_data: true,
-        } as Parameters<typeof createKlant>[0])
-
-        await createKlant({
-          user_id: user.id,
-          bedrijfsnaam: 'Restaurant Het Anker',
-          contactpersoon: 'Lisa van Dijk',
-          email: 'info@hetanker.nl',
-          telefoon: '030-9876543',
-          adres: 'Havenstraat 3', postcode: '3511 AA', stad: 'Utrecht', land: 'NL',
-          website: '', debiteurennummer: '', kvk_nummer: '', btw_nummer: '',
-          status: 'actief', tags: [], notities: '', contactpersonen: [],
-          is_demo_data: true,
-        } as Parameters<typeof createKlant>[0])
+        const aangemaakteKlanten: Awaited<ReturnType<typeof createKlant>>[] = []
+        for (const dk of demoKlantenVoorLand(gegevens.land)) {
+          aangemaakteKlanten.push(await createKlant({
+            user_id: user.id,
+            ...dk,
+            website: '', debiteurennummer: '', kvk_nummer: '',
+            status: 'actief', tags: [], notities: '', contactpersonen: [],
+            is_demo_data: true,
+          } as Parameters<typeof createKlant>[0]))
+        }
+        const klant1 = aangemaakteKlanten[0]
 
         const demoProject = await createProject({
           user_id: user.id,
