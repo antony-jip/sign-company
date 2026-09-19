@@ -301,6 +301,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (gekozen_items) updateData.gekozen_items = gekozen_items
     if (gekozen_varianten) updateData.gekozen_varianten = gekozen_varianten
 
+    // Wat de klant aanvinkte, voor de mails: één regel per post waar iets te
+    // kiezen viel. Zonder dit weet de klant na het tekenen niet meer wat hij
+    // koos, en ziet de verkoper alleen een bedrag.
+    const keuzeOverzicht: { titel: string; uitvoeringen: string[]; bedrag: number }[] = []
+
     // Bij keuzes (optionele items en/of prijsvarianten): materialiseer de door
     // de klant gekozen configuratie op de items en herbereken de offerte-
     // totalen, zodat detailpagina én factuur het geaccepteerde bedrag tonen in
@@ -348,9 +353,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       // Herbereken over de geaccepteerde config: verplichte items + gekozen
       // optionele items, met de gekozen (of standaard) variant.
-      const finalRegels = items
+      const inbegrepen = items
         .filter((it) => isPrijs(it) && !(it.is_optioneel && !gekozenSet.has(it.id as string)))
-        .flatMap((it) => prijsRegels(it, varianten[it.id as string]))
+        .sort((a, b) => (Number(a.volgorde) || 0) - (Number(b.volgorde) || 0))
+      const finalRegels = inbegrepen.flatMap((it) => prijsRegels(it, varianten[it.id as string]))
+      for (const it of inbegrepen) {
+        const vs = Array.isArray(it.prijs_varianten) ? it.prijs_varianten as Array<Record<string, unknown>> : []
+        if (!it.is_optioneel && vs.length === 0) continue
+        const keuze = varianten[it.id as string]
+        const gekozen = gekozenVariantIds(vs, keuze)
+          ?? (typeof keuze === 'string' && vs.some((v) => v.id === keuze) && meetellendeVarianten(vs, it.actieve_variant_id as string | undefined).length <= 1
+            ? [keuze]
+            : meetellendeVarianten(vs, it.actieve_variant_id as string | undefined).map((v) => v.id as string))
+        keuzeOverzicht.push({
+          titel: String(it.beschrijving || '').split('\n')[0].trim() || 'Post',
+          uitvoeringen: vs.filter((v) => gekozen.includes(v.id as string)).map((v) => String(v.label || '')).filter(Boolean),
+          bedrag: r2(prijsRegels(it, keuze).reduce((sum, r) => sum + regelNetto(r), 0)),
+        })
+      }
       const afrondingskorting = Number(offerte.afrondingskorting_excl_btw) || 0
       const totalen = berekenGeaccepteerdeTotalen(finalRegels, afrondingskorting)
       updateData.subtotaal = totalen.subtotaal
@@ -548,7 +568,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const beschrijving = bedrijf
           ? `${escapeHtml(bedrijf)} — geaccepteerd door ${escapeHtml(klantNaam)}`
           : `Geaccepteerd door ${escapeHtml(klantNaam)}`
-        const itemBlock = `<tr><td style="padding: 0 0 16px 0;"><table width="100%" cellpadding="0" cellspacing="0" style="border: 1px solid #EBEBEB; border-radius: 8px;"><tr><td style="padding: 16px 20px; font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 15px; font-weight: 600; color: #1A1A1A;">${escapeHtml(notifItemTitel)}</td></tr><tr><td style="padding: 0 20px 16px 20px; font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 14px; color: #6B6B66;">${beschrijving}</td></tr></table></td></tr>`
+        const keuzeRijen = keuzeOverzicht.map((k) =>
+          `<tr><td style="padding: 4px 0; font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 13px; color: #1A1A1A;">${escapeHtml(k.titel)}${k.uitvoeringen.length ? `<span style="color: #6B6B66;">: ${escapeHtml(k.uitvoeringen.join(' + '))}</span>` : ''}</td><td align="right" style="padding: 4px 0 4px 12px; font-family: 'DM Mono', Menlo, monospace; font-size: 13px; color: #1A1A1A; white-space: nowrap;">${escapeHtml(formatCurrency(k.bedrag))}</td></tr>`
+        ).join('')
+        const keuzeBlok = keuzeRijen
+          ? `<tr><td style="padding: 0 20px 16px 20px;"><div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #9B9B95; padding: 0 0 6px 0;">Gekozen</div><table width="100%" cellpadding="0" cellspacing="0">${keuzeRijen}</table></td></tr>`
+          : ''
+        const itemBlock = `<tr><td style="padding: 0 0 16px 0;"><table width="100%" cellpadding="0" cellspacing="0" style="border: 1px solid #EBEBEB; border-radius: 8px;"><tr><td style="padding: 16px 20px; font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 15px; font-weight: 600; color: #1A1A1A;">${escapeHtml(notifItemTitel)}</td></tr><tr><td style="padding: 0 20px 16px 20px; font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 14px; color: #6B6B66;">${beschrijving}</td></tr>${keuzeBlok}</table></td></tr>`
         const ctaBlock = `<tr><td style="padding: 8px 0 0 0;" align="center"><a href="${escapeHtml(notifCtaUrl)}" target="_blank" style="display: inline-block; background-color: #1A535C; color: #FFFFFF; font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 15px; font-weight: 600; text-decoration: none; padding: 14px 32px; border-radius: 8px; line-height: 1;">Bekijk in doen. &rarr;</a></td></tr>`
         const html = `<!DOCTYPE html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body style="margin: 0; padding: 0; background-color: #F5F4F1;"><table width="100%" cellpadding="0" cellspacing="0" style="background-color: #F5F4F1; padding: 40px 20px;"><tr><td align="center"><table width="100%" cellpadding="0" cellspacing="0" style="max-width: 520px;"><tr><td style="padding: 0 0 24px 0; text-align: center;"><span style="font-size: 24px; font-weight: 800; color: #1A1A1A; letter-spacing: -0.5px;">doen</span><span style="font-size: 24px; font-weight: 800; color: #D24620;">.</span></td></tr><tr><td><table width="100%" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 2px 16px rgba(0,0,0,0.04);"><tr><td style="padding: 36px 36px 32px 36px;"><table width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding: 0 0 20px 0; font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 20px; font-weight: 700; color: #1A1A1A; line-height: 1.3;">${escapeHtml(notifHeading)}</td></tr>${itemBlock}${ctaBlock}</table></td></tr></table></td></tr><tr><td style="padding: 20px 0 0 0; text-align: center;"><div style="height: 3px; border-radius: 2px; background: linear-gradient(90deg, #1A535C, #D24620); margin-bottom: 16px;"></div><span style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 12px; color: #9B9B95;"><span style="font-weight: 700;">doen</span><span style="color: #D24620; font-weight: 700;">.</span> slim gedaan.</span></td></tr></table></td></tr></table></body></html>`
 
@@ -598,9 +624,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           itemTitel: `${offerte.nummer}${offerte.titel ? ` — ${offerte.titel}` : ''}`,
           beschrijving: `Geaccepteerd door ${naam.trim()} op ${formatDate(new Date())}${offerte.totaal ? ` · ${formatCurrency(offerte.subtotaal ?? offerte.totaal)} excl. btw` : ''}`,
           quote: 'We nemen zo snel mogelijk contact met je op over de vervolgstappen.',
-          extraHtml: handtekening
-            ? `<p style="margin: 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 13px; color: #5A5A55;">Digitaal ondertekend door ${escapeHtml(naam.trim())} op ${escapeHtml(formatDate(new Date()))}</p>`
-            : undefined,
+          extraHtml: [
+            keuzeOverzicht.length > 0
+              ? `<div style="font-family: 'DM Sans', Arial, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #9B9B95; padding: 0 0 6px 0;">Je keuze</div><table width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 12px 0;">${keuzeOverzicht.map((k) =>
+                `<tr><td style="padding: 3px 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 13px; color: #1A1A1A;">${escapeHtml(k.titel)}${k.uitvoeringen.length ? `<span style="color: #6B6B66;">: ${escapeHtml(k.uitvoeringen.join(' + '))}</span>` : ''}</td><td align="right" style="padding: 3px 0 3px 12px; font-family: 'DM Mono', Menlo, monospace; font-size: 13px; color: #1A1A1A; white-space: nowrap;">${escapeHtml(formatCurrency(k.bedrag))}</td></tr>`
+              ).join('')}</table>`
+              : '',
+            handtekening
+              ? `<p style="margin: 0; font-family: 'DM Sans', Arial, sans-serif; font-size: 13px; color: #5A5A55;">Digitaal ondertekend door ${escapeHtml(naam.trim())} op ${escapeHtml(formatDate(new Date()))}</p>`
+              : '',
+          ].filter(Boolean).join('') || undefined,
           bedrijfsnaam: bedrijfsnaam || undefined,
           logoUrl: bedrijfsProfiel?.logo_url || undefined,
         })
