@@ -342,10 +342,15 @@ export function QuoteHeader({
             </div>
           )}
           {ondertekening?.door && klantKeuze.length > 0 && (
-            <p className="mt-1 text-[12px] text-[#6B6B66]">
-              <span className="font-medium text-[#1A1A1A]">Klant koos</span>
-              <span className="text-[#D24620]">.</span>{' '}
-              {klantKeuze.join(' · ')}
+            <p className="mt-1 text-[12px] text-muted-foreground">
+              <span className="font-medium text-foreground">Klant koos</span>
+              <span className="text-flame">.</span>{' '}
+              {klantKeuze.map((regel, i) => (
+                <React.Fragment key={regel}>
+                  {i > 0 && ' · '}
+                  <span className="whitespace-nowrap">{regel}</span>
+                </React.Fragment>
+              ))}
             </p>
           )}
         </div>

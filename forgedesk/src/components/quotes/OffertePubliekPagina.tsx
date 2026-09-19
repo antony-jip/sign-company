@@ -271,7 +271,8 @@ function groepeerBtwMetSelectie(
 /** Een bedrag dat meetelt naar zijn nieuwe waarde als de keuze verandert. */
 function Bedrag({ waarde, locale, className }: { waarde: number; locale: string; className?: string }) {
   const getoond = useTelBedrag(waarde)
-  return <span className={className}>{formatCurrency(getoond, locale)}</span>
+  // Onderweg alleen hele euro's: de centen flikkeren anders mee.
+  return <span className={className}>{formatCurrency(getoond === waarde ? waarde : Math.round(getoond), locale)}</span>
 }
 
 function StatusKop({ kleur, children }: { kleur: string; children: React.ReactNode }) {
@@ -358,7 +359,7 @@ function OfferteRegel({
   const isDeselected = hasOptionalItems && !isSelected
   const kanKiezen = heeftUitvoeringen && kanActie && !isDeselected
 
-  const specs: KlantSpec[] = klantSpecs(item)
+  const specs: KlantSpec[] = klantSpecs(item).map((s) => (s.label === 'Afmeting' ? { ...s, label: t.afmeting } : s))
   if (!heeftUitvoeringen && waarden.korting_percentage > 0) {
     const korting = round2(waarden.aantal * waarden.eenheidsprijs * (waarden.korting_percentage / 100))
     specs.push({ label: t.korting, waarde: t.kortingPct(waarden.korting_percentage, formatCurrency(korting, t.locale)) })
@@ -444,7 +445,7 @@ function OfferteRegel({
               className="block w-full object-cover"
             />
             {afbeelding.onderschrift && (
-              <span className="mt-1.5 block text-left text-xs text-[#9B9B95]">{afbeelding.onderschrift}</span>
+              <span aria-hidden className="mt-1.5 block text-left text-xs text-[#9B9B95]">{afbeelding.onderschrift}</span>
             )}
           </button>
         ))}
@@ -491,11 +492,11 @@ function OfferteRegel({
                       {toonStuks && (
                         <span className="mt-0.5 block font-mono text-xs text-[#9B9B95]">
                           {v.aantal} x {formatCurrency(stuk, t.locale)}
-                          {(v.korting_percentage || 0) > 0 ? ` · ${v.korting_percentage}% korting` : ''}
+                          {(v.korting_percentage || 0) > 0 ? t.kortingKort(v.korting_percentage) : ''}
                         </span>
                       )}
-                      {kanKiezen && vast && (
-                        <span className="mt-0.5 block text-xs text-[#9B9B95]">{t.altijdInbegrepen}</span>
+                      {kanActie && vast && (
+                        <span className="mt-0.5 block text-xs text-[#1A535C]">{t.altijdInbegrepen}</span>
                       )}
                       {!kanActie && (
                         aan
@@ -523,7 +524,11 @@ function OfferteRegel({
                       </label>
                     ) : (
                       <div className="flex items-start gap-3 py-2">
-                        {aan ? (
+                        {vast && kanActie ? (
+                          <span aria-hidden className={`${VINKJE} flex items-center justify-center bg-[#1A535C]/10 text-[#1A535C]`}>
+                            <Check className="h-3 w-3" strokeWidth={3} />
+                          </span>
+                        ) : aan ? (
                           <span aria-hidden className={`${VINKJE} flex items-center justify-center bg-[#1A535C] text-white`}>
                             <Check className="h-3.5 w-3.5" />
                           </span>
@@ -971,7 +976,7 @@ export function OffertePubliekPagina() {
         (docStyle as Parameters<typeof generateOffertePDF>[4]) || undefined,
       )
 
-      doc.save(`Offerte-${offerte.nummer}.pdf`)
+      doc.save(t.pdfBestandsnaam(offerte.nummer))
     } catch (err) {
       logger.error('Fout bij PDF downloaden:', err)
       toast.error(t.pdfMislukt)
@@ -1252,7 +1257,7 @@ export function OffertePubliekPagina() {
             <p className="font-mono text-xs text-[#9B9B95]">{offerte.nummer}</p>
           </div>
           <div className="shrink-0 text-right">
-            <p className="font-mono text-xl font-bold text-[#1A1A1A]"><Bedrag waarde={totaalExclBedrag} locale={t.locale} /></p>
+            <p className="min-w-[7ch] font-mono text-xl font-bold tabular-nums text-[#1A1A1A]"><Bedrag waarde={totaalExclBedrag} locale={t.locale} /></p>
             <p className="text-xs text-[#9B9B95]">
               {t.exclBtw}{toonInclRegel ? t.inclSuffix(formatCurrency(totaalBedrag, t.locale)) : ''}
             </p>
@@ -1336,7 +1341,7 @@ export function OffertePubliekPagina() {
         <div className="min-w-0">
           <p className="text-sm font-semibold text-[#1A1A1A]">{t.vragenOverOfferte}</p>
           <p className="mt-0.5 text-sm text-[#6B6B66]">
-            {contactpersoon ? t.helptGraag(`${contactpersoon.naam}${contactpersoon.functie ? `, ${contactpersoon.functie.toLowerCase()}` : ''}`) : t.bedrijfHelpt(bedrijf?.bedrijfsnaam || '')}
+            {contactpersoon ? t.helptGraag(`${contactpersoon.naam}${contactpersoon.functie ? `, ${contactpersoon.functie.toLowerCase()},` : ''}`) : t.bedrijfHelpt(bedrijf?.bedrijfsnaam || '')}
           </p>
         </div>
       </div>
@@ -1374,7 +1379,7 @@ export function OffertePubliekPagina() {
           {kanActie && !akkoordToegestaan && (
             <Paneel>
               <StatusKop kleur="#1A535C">{t.akkoordGeven}</StatusKop>
-              <p className="mt-2 text-sm text-[#6B6B66]">{t.akkoordPersoonlijk(contactVoornaam || bedrijf?.bedrijfsnaam || (taal === 'fr' ? 'nous' : 'ons'))}</p>
+              <p className="mt-2 text-sm text-[#6B6B66]">{t.akkoordPersoonlijk(contactVoornaam || bedrijf?.bedrijfsnaam || '')}</p>
             </Paneel>
           )}
           {standVanZaken}
@@ -1415,8 +1420,8 @@ export function OffertePubliekPagina() {
 
           {/* Wijst de klant op wat er te kiezen valt, vóór hij gaat scrollen. */}
           {kanActie && keuzePosten > 0 && (
-            <p className="mt-4 text-sm text-[#1A1A1A]">
-              <span aria-hidden className="mr-2 inline-block h-1.5 w-1.5 rounded-full bg-[#D24620] align-middle" />
+            <p className="mt-4 text-sm text-[#6B6B66]">
+              <span className="font-semibold text-[#1A1A1A]">{t.keuzeKop}</span><span className="text-[#D24620]">.</span>{' '}
               {t.keuzeHint(keuzePosten)}
             </p>
           )}
@@ -1524,7 +1529,7 @@ export function OffertePubliekPagina() {
             {!akkoordToegestaan && (
               <Paneel>
                 <StatusKop kleur="#1A535C">{t.akkoordGeven}</StatusKop>
-                <p className="mt-2 text-sm text-[#6B6B66]">{t.akkoordPersoonlijk(contactVoornaam || bedrijf?.bedrijfsnaam || (taal === 'fr' ? 'nous' : 'ons'))}</p>
+                <p className="mt-2 text-sm text-[#6B6B66]">{t.akkoordPersoonlijk(contactVoornaam || bedrijf?.bedrijfsnaam || '')}</p>
               </Paneel>
             )}
             <div className="text-center">{aanpassingLink}</div>
@@ -1559,10 +1564,10 @@ export function OffertePubliekPagina() {
         <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-4 border-t border-[#EBEBEB] bg-[#FFFFFF]/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.06)] backdrop-blur">
           <div className="min-w-0">
             <p className="text-[11px] uppercase tracking-wider text-[#9B9B95]">{t.totaalExcl}</p>
-            <p className="truncate font-mono text-lg font-bold leading-tight text-[#1A1A1A]"><Bedrag waarde={totaalExclBedrag} locale={t.locale} /></p>
-            {uwKeuze.length > 0 && (
-              <p className="mt-0.5 truncate text-[11px] text-[#9B9B95]">
-                {uwKeuze.map((k) => (k.uitvoeringen.length > 0 ? `${k.titel}: ${k.uitvoeringen.join(' + ')}` : k.titel)).join(' · ')}
+            <p className="min-w-[7ch] truncate font-mono text-lg font-bold leading-tight tabular-nums text-[#1A1A1A]"><Bedrag waarde={totaalExclBedrag} locale={t.locale} /></p>
+            {uwKeuze.some((k) => k.uitvoeringen.length > 0) && (
+              <p className="mt-0.5 truncate text-[12px] text-[#6B6B66]">
+                {uwKeuze.filter((k) => k.uitvoeringen.length > 0).map((k) => `${k.titel}: ${k.uitvoeringen.join(' + ')}`).join(' · ')}
               </p>
             )}
           </div>
@@ -1571,7 +1576,7 @@ export function OffertePubliekPagina() {
             onClick={() => setShowAcceptModal(true)}
             className="ml-auto h-12 shrink-0 rounded-xl bg-[#D24620] px-6 text-base font-semibold text-white transition-colors active:bg-[#BD3F1C]"
           >
-            {t.akkoordGeven}
+            {t.akkoordKnop}
           </button>
         </div>
       )}

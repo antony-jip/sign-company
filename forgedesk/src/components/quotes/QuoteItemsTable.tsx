@@ -1718,7 +1718,8 @@ export function QuoteItemsTable({
                               <button
                                 type="button"
                                 onClick={() => toggleVariantVast(item.id, variant.id)}
-                                title={variant.vast ? 'Vast: de klant kan deze optie niet uitvinken — klik om los te maken' : 'Maak deze optie vast (klant kan hem niet uitvinken)'}
+                                title={variant.vast ? 'Vast voor de klant (klik om los te maken)' : 'Vast maken: klant kan deze optie niet uitvinken'}
+                                aria-label={`${variant.label || 'Prijsoptie'} vast voor de klant`}
                                 aria-pressed={!!variant.vast}
                                 className={cn(
                                   'flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md transition-colors',

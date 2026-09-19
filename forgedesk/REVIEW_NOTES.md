@@ -1733,3 +1733,26 @@ er per land meeverandert en welke wet erachter zit.
     elke uitvoering behalve de laatste is door de klant uit te vinken. Wil
     Antony een vaste uitvoering, dan is een `vast: true`-vlag per variant de
     kleinste vorm.
+
+### Portaal fase 2: vast, keuze-sturing, tel-animatie, "Klant koos", Frans
+
+- **Senior:** BLOKKADE 1 (selects met `klanten.taal`/`profiles.bedrijfs_land`
+  faalden vóór migratie 252/258, §10.3) en 2 (oude string-keuze liet een vaste
+  uitvoering vervallen; editor kon vast op telt_mee=false zetten) gefixt in
+  4eed83f. Opmerkingen (mailbedragen fr-BE, keuzePosten, tel-animatie
+  eindwaarde) verwerkt.
+- **QAA/design:** ❌ vaste uitvoering visueel gelijk aan aangevinkt → getinte
+  tegel + "Altijd inbegrepen" in Petrol; Frans nagekeken (Version i.p.v.
+  Exécution, toekomende tijd, NBSP vóór ?;:%, korte knoptekst "Accepter"),
+  keuze-hint als statuswoord "Kies zelf.", sticky balk 12px/#6B6B66 met
+  alleen posten met uitvoeringen, "Klant koos." op thema-tokens.
+- Foto per uitvoering is op verzoek van Antony weer verwijderd (fce164d): de
+  bijlage van de post zelf staat bij de post, met bijschrift.
+- Bewust open: PDF (inhoud en bestandsnaamtekst op de PDF zelf) blijft
+  Nederlands voor een Franse klant; Lightbox-tooltips en "mogelijk gemaakt
+  door" zijn NL-only; `Afmeting`-label komt uit klantSpecs en wordt op de
+  pagina vertaald, in de PDF niet; een oude `foto_url`-sleutel in
+  prijs_varianten-JSON wordt niet gestript (wordt nergens gerenderd);
+  `getMeetellendeVarianten` kent `vast` niet — de editor dwingt vast ⇒
+  telt_mee af.
+
