@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Hammer, FileText, Building2, Truck, ClipboardCheck, Ruler, Wand2,
   Banknote, Inbox, TrendingUp, Calendar, ListChecks, Mail, MessageSquare, Globe,
-  SlidersHorizontal, LifeBuoy, Newspaper, Calculator, BarChart3, LineChart, ShoppingCart,
+  SlidersHorizontal, LifeBuoy, Newspaper, BarChart3, LineChart, ShoppingCart,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -30,7 +30,6 @@ const WERK_ITEMS: NavItem[] = [
   { label: 'Werkbonnen', icon: ClipboardCheck, path: '/werkbonnen', color: '#C44830' },
   { label: 'Maatjes', icon: Ruler, path: '/maatjes', color: '#D24620' },
   { label: 'Studio', icon: Wand2, path: '/visualizer', color: '#9A5A48' },
-  { label: 'Nacalculatie', icon: Calculator, path: '/nacalculatie', color: '#1A535C' },
 ]
 
 const FINANCIEEL_ITEMS: NavItem[] = [
