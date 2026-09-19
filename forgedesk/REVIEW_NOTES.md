@@ -1801,4 +1801,13 @@ bewust:
   ongelezen/opvolgen-mail (per gebruiker), Daan-voorstellen als lijst,
   bezettingstegel, klant-top-5, uren geboekt vs gefactureerd. CSV-export uit
   het oude Rapportages is niet vervangen.
+- **Senior ronde 2: AKKOORD-MET-OPMERKINGEN** — verwerkt: "vandaag" in
+  Europe/Amsterdam (`cockpit_vandaag()`), datumhelpers als plpgsql die op een
+  vervuilde waarde NULL geven i.p.v. de hele RPC te laten omvallen, REVOKE op
+  anon, gekwalificeerde kolommen. Bewust gelaten: module-hexen op de
+  Pijplijn-tegel en in de grafiek (dat zijn de modulekleuren, ook in dark).
+  Signaal: `offertes.status = 'wijziging_gevraagd'` en
+  `portaal_items.type = 'opdrachtbevestiging'` staan niet in de CHECK-
+  constraints van de migratiemap terwijl de app ze schrijft — de live database
+  wijkt dus af van de map (§10.2).
 

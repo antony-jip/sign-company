@@ -17,19 +17,40 @@
 
 BEGIN;
 
+-- "Vandaag" in de tijdzone van het bedrijf, niet de UTC-dag van de server:
+-- anders verspringen peildatum en dagen-tellingen tussen 00:00 en 02:00.
+CREATE OR REPLACE FUNCTION cockpit_vandaag()
+RETURNS date
+LANGUAGE sql STABLE
+AS $$
+  SELECT (now() AT TIME ZONE 'Europe/Amsterdam')::date
+$$;
+
+-- Streng genoeg dat één vervuilde waarde ('2026-02-30', '2026-09-19 x') de
+-- hele cockpit niet omgooit: wat geen kalenderdag is wordt NULL, geen fout.
 CREATE OR REPLACE FUNCTION cockpit_datum(p TEXT)
 RETURNS date
-LANGUAGE sql IMMUTABLE STRICT
+LANGUAGE plpgsql STABLE STRICT
 AS $$
-  SELECT CASE WHEN p ~ '^\d{4}-\d{2}-\d{2}' THEN LEFT(p, 10)::date END
+BEGIN
+  IF p !~ '^\d{4}-\d{2}-\d{2}(T|\s|$)' THEN RETURN NULL; END IF;
+  RETURN LEFT(p, 10)::date;
+EXCEPTION WHEN OTHERS THEN
+  RETURN NULL;
+END
 $$;
 
 -- Zelfde regel voor tijdstempels die als TEXT zijn opgeslagen (offertes.verstuurd_op).
 CREATE OR REPLACE FUNCTION cockpit_tijdstip(p TEXT)
 RETURNS timestamptz
-LANGUAGE sql STABLE STRICT
+LANGUAGE plpgsql STABLE STRICT
 AS $$
-  SELECT CASE WHEN p ~ '^\d{4}-\d{2}-\d{2}' THEN p::timestamptz END
+BEGIN
+  IF cockpit_datum(p) IS NULL THEN RETURN NULL; END IF;
+  RETURN p::timestamptz;
+EXCEPTION WHEN OTHERS THEN
+  RETURN NULL;
+END
 $$;
 
 CREATE OR REPLACE FUNCTION cockpit_ex_btw(p_subtotaal NUMERIC, p_btw NUMERIC, p_totaal NUMERIC)
@@ -73,7 +94,7 @@ AS $$
     p.id, pr.organisatie_id,
     COALESCE(NULLIF(p.titel, ''), p.type)::text,
     pr.klant_naam::text,
-    (CURRENT_DATE - p.created_at::date)::int,
+    (cockpit_vandaag() - p.created_at::date)::int,
     jsonb_build_object('type', p.type, 'status', p.status, 'project_id', p.project_id, 'bekeken_op', p.bekeken_op),
     ('/projecten/' || p.project_id)::text,
     p.created_at
@@ -81,7 +102,7 @@ AS $$
   JOIN projecten pr ON pr.id = p.project_id
   WHERE p.status IN ('verstuurd', 'bekeken')
     AND p.type IN ('offerte', 'tekening', 'opdrachtbevestiging')
-    AND pr.organisatie_id = (SELECT organisatie_id FROM profiles WHERE id = auth.uid())
+    AND pr.organisatie_id = (SELECT pf.organisatie_id FROM profiles pf WHERE pf.id = auth.uid())
 $$;
 REVOKE EXECUTE ON FUNCTION cockpit_portaal_wacht() FROM anon, public;
 GRANT EXECUTE ON FUNCTION cockpit_portaal_wacht() TO authenticated;
@@ -100,13 +121,13 @@ SELECT
   COALESCE(NULLIF(o.titel, ''), o.nummer)                 AS titel,
   o.klant_naam                                            AS klant,
   cockpit_ex_btw(o.subtotaal, o.btw_bedrag, o.totaal)     AS bedrag,
-  (CURRENT_DATE - cockpit_datum(o.verstuurd_op))          AS dagen,
+  (cockpit_vandaag() - cockpit_datum(o.verstuurd_op))          AS dagen,
   jsonb_build_object(
     'nummer', o.nummer,
     'status', o.status,
     'keer_bekeken', COALESCE(o.aantal_keer_bekeken, 0),
     'verloopt_op', cockpit_datum(o.geldig_tot),
-    'verlopen', cockpit_datum(o.geldig_tot) < CURRENT_DATE
+    'verlopen', cockpit_datum(o.geldig_tot) < cockpit_vandaag()
   )                                                       AS detail,
   '/offertes/' || o.id || '/detail'                       AS href,
   cockpit_tijdstip(o.verstuurd_op)                        AS sinds
@@ -120,7 +141,7 @@ SELECT
   'offerte_check', o.id, o.organisatie_id,
   COALESCE(NULLIF(o.titel, ''), o.nummer), o.klant_naam,
   cockpit_ex_btw(o.subtotaal, o.btw_bedrag, o.totaal),
-  (CURRENT_DATE - COALESCE(o.check_gevraagd_op, o.updated_at)::date),
+  (cockpit_vandaag() - COALESCE(o.check_gevraagd_op, o.updated_at)::date),
   jsonb_build_object('nummer', o.nummer, 'gevraagd_aan', o.check_gevraagd_aan),
   '/offertes/' || o.id || '/bewerken',
   COALESCE(o.check_gevraagd_op, o.updated_at)
@@ -133,7 +154,7 @@ SELECT
   'factuur_open', f.id, f.organisatie_id,
   COALESCE(NULLIF(f.titel, ''), f.nummer), f.klant_naam,
   cockpit_openstaand_ex_btw(f.subtotaal, f.btw_bedrag, f.totaal, f.betaald_bedrag),
-  (CURRENT_DATE - cockpit_datum(f.vervaldatum)),
+  (cockpit_vandaag() - cockpit_datum(f.vervaldatum)),
   jsonb_build_object(
     'nummer', f.nummer,
     'status', f.status,
@@ -169,7 +190,7 @@ SELECT
   'werkbon_te_factureren', w.id, w.organisatie_id,
   COALESCE(NULLIF(w.werkbon_nummer, ''), 'Werkbon'), k.bedrijfsnaam,
   NULL::numeric,
-  (CURRENT_DATE - cockpit_datum(w.datum)),
+  (cockpit_vandaag() - cockpit_datum(w.datum)),
   jsonb_build_object('project_id', w.project_id, 'datum', cockpit_datum(w.datum)),
   '/werkbonnen/' || w.id,
   w.updated_at
@@ -191,7 +212,7 @@ SELECT
   'project_' || s.soort, pr.id, pr.organisatie_id,
   pr.naam, pr.klant_naam,
   pr.budget,
-  CASE WHEN s.soort = 'deadline' THEN (cockpit_datum(pr.eind_datum) - CURRENT_DATE) END,
+  CASE WHEN s.soort = 'deadline' THEN (cockpit_datum(pr.eind_datum) - cockpit_vandaag()) END,
   jsonb_build_object(
     'status', pr.status,
     'prioriteit', pr.prioriteit,
@@ -210,7 +231,7 @@ CROSS JOIN LATERAL (
   SELECT 'deadline'
   WHERE pr.status NOT IN ('afgerond', 'gefactureerd', 'on-hold')
     AND cockpit_datum(pr.eind_datum) IS NOT NULL
-    AND cockpit_datum(pr.eind_datum) <= CURRENT_DATE + 7
+    AND cockpit_datum(pr.eind_datum) <= cockpit_vandaag() + 7
   UNION ALL
   SELECT 'over_budget'
   WHERE pr.status NOT IN ('afgerond', 'gefactureerd')
@@ -225,7 +246,7 @@ SELECT
   'inkoop_review', i.id, i.organisatie_id,
   COALESCE(NULLIF(i.factuur_nummer, ''), 'Inkoopfactuur'), i.leverancier_naam,
   cockpit_ex_btw(i.subtotaal, i.btw_bedrag, i.totaal),
-  (CURRENT_DATE - i.created_at::date),
+  (cockpit_vandaag() - i.created_at::date),
   jsonb_build_object('status', i.status, 'vervaldatum', i.vervaldatum, 'vertrouwen', i.extractie_vertrouwen),
   '/facturen?tab=inkoop',
   i.created_at
@@ -238,13 +259,13 @@ SELECT
   'montage_niet_afgerond', m.id, m.organisatie_id,
   COALESCE(NULLIF(m.titel, ''), m.project_naam), m.klant_naam,
   NULL::numeric,
-  (CURRENT_DATE - cockpit_datum(m.datum)),
+  (cockpit_vandaag() - cockpit_datum(m.datum)),
   jsonb_build_object('datum', cockpit_datum(m.datum), 'monteurs', to_jsonb(m.monteurs), 'project_id', m.project_id),
   CASE WHEN m.project_id IS NOT NULL THEN '/projecten/' || m.project_id ELSE '/planning' END,
   m.updated_at
 FROM montage_afspraken m
 WHERE m.status IN ('gepland', 'onderweg', 'bezig')
-  AND cockpit_datum(m.datum) < CURRENT_DATE;
+  AND cockpit_datum(m.datum) < cockpit_vandaag();
 
 -- ── Cijfers per maand (12 maanden), voor de reeks in de cockpit ──
 CREATE VIEW cockpit_per_maand
@@ -285,12 +306,12 @@ AS $$
   ),
   open_facturen AS (
     SELECT cockpit_openstaand_ex_btw(subtotaal, btw_bedrag, totaal, betaald_bedrag) AS open_ex,
-           (CURRENT_DATE - cockpit_datum(vervaldatum)) AS dagen_over
+           (cockpit_vandaag() - cockpit_datum(vervaldatum)) AS dagen_over
     FROM facturen
     WHERE status IN ('verzonden', 'open', 'vervallen')
   )
   SELECT jsonb_build_object(
-    'peildatum', CURRENT_DATE,
+    'peildatum', cockpit_vandaag(),
     'periode', jsonb_build_object('van', p_van, 'tot', p_tot),
     'signalen', COALESCE((
       SELECT jsonb_agg(jsonb_build_object(
@@ -337,7 +358,7 @@ AS $$
       'per_maand', COALESCE((
         SELECT jsonb_agg(jsonb_build_object('maand', maand, 'gefactureerd', gefactureerd, 'ontvangen', ontvangen, 'inkoop', inkoop) ORDER BY maand)
         FROM cockpit_per_maand
-        WHERE maand >= to_char(CURRENT_DATE - INTERVAL '11 months', 'YYYY-MM')
+        WHERE maand >= to_char(cockpit_vandaag() - INTERVAL '11 months', 'YYYY-MM')
       ), '[]'::jsonb)
     ),
     'nu', jsonb_build_object(
@@ -348,11 +369,11 @@ AS $$
       'montages_vandaag', COALESCE((
         SELECT jsonb_agg(jsonb_build_object('id', id, 'titel', COALESCE(NULLIF(titel, ''), project_naam), 'klant', klant_naam, 'start', start_tijd, 'status', status, 'monteurs', to_jsonb(monteurs), 'project_id', project_id) ORDER BY start_tijd)
         FROM montage_afspraken
-        WHERE cockpit_datum(datum) = CURRENT_DATE
+        WHERE cockpit_datum(datum) = cockpit_vandaag()
       ), '[]'::jsonb),
       'montages_week', (
         SELECT COUNT(*) FROM montage_afspraken
-        WHERE cockpit_datum(datum) BETWEEN CURRENT_DATE AND CURRENT_DATE + 6
+        WHERE cockpit_datum(datum) BETWEEN cockpit_vandaag() AND cockpit_vandaag() + 6
       ),
       -- planning_afwezigheid.medewerker_id is TEXT (127): een medewerkers.id
       -- óf 'profile-<uuid>' voor een teamlid zonder medewerkerkaart.
@@ -364,7 +385,7 @@ AS $$
         FROM planning_afwezigheid a
         LEFT JOIN medewerkers m ON m.id::text = a.medewerker_id
         LEFT JOIN profiles pf ON a.medewerker_id = 'profile-' || pf.id::text
-        WHERE cockpit_datum(a.start_datum::text) <= CURRENT_DATE AND cockpit_datum(a.eind_datum::text) >= CURRENT_DATE
+        WHERE cockpit_datum(a.start_datum::text) <= cockpit_vandaag() AND cockpit_datum(a.eind_datum::text) >= cockpit_vandaag()
       ), '[]'::jsonb),
       'team_actief', (SELECT COUNT(*) FROM medewerkers WHERE status = 'actief'),
       'uitnodigingen_open', (SELECT COUNT(*) FROM uitnodigingen WHERE status = 'open' OR status = 'verstuurd')
@@ -388,6 +409,7 @@ $$;
 REVOKE EXECUTE ON FUNCTION cockpit_overzicht(date, date) FROM anon, public;
 GRANT EXECUTE ON FUNCTION cockpit_overzicht(date, date) TO authenticated;
 GRANT SELECT ON cockpit_signalen, cockpit_per_maand TO authenticated;
+REVOKE SELECT ON cockpit_signalen, cockpit_per_maand FROM anon;
 
 COMMIT;
 
