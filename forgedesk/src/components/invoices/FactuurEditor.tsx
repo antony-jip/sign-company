@@ -2031,6 +2031,7 @@ export function FactuurEditor() {
           voorwaarden: voorwaarden || '',
           kostenplaats_code: selectedKostenplaats ? `${selectedKostenplaats.code} - ${selectedKostenplaats.naam}` : undefined,
           credit_voor_nummer: creditVoorNummer || undefined,
+          klant_referentie: klantReferentie.trim() || undefined,
         },
         items: validItems.map((item, idx) => ({
           beschrijving: item.beschrijving,
@@ -2051,7 +2052,7 @@ export function FactuurEditor() {
       logger.error('Fout bij genereren UBL:', err)
       toast.error('Kon UBL XML niet genereren')
     }
-  }, [selectedKlant, profile, nummer, titel, factuurdatum, vervaldatum, subtotaal, btwBedrag, totaal, notities, voorwaarden, validItems, existingFactuur])
+  }, [selectedKlant, profile, nummer, titel, factuurdatum, vervaldatum, subtotaal, btwBedrag, totaal, notities, voorwaarden, validItems, existingFactuur, klantReferentie])
 
   // ============ STANDAARD FACTUUR-CONTACT ============
 
