@@ -88,12 +88,13 @@ async function fetchUserStats(
       .gte("created_at", from)
       .lt("created_at", to),
 
-    // Offertes with status akkoord (created this week)
+    // Offertes goedgekeurd (created this week). De status heet 'goedgekeurd';
+    // met 'akkoord' telde de digest structureel nul akkoorden.
     supabase
       .from("offertes")
       .select("subtotaal, btw_bedrag, totaal")
       .eq("user_id", userId)
-      .eq("status", "akkoord")
+      .in("status", ["goedgekeurd", "gefactureerd"])
       .gte("created_at", from)
       .lt("created_at", to),
 

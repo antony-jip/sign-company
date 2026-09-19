@@ -600,7 +600,10 @@ export async function getNotificaties(limit = 100): Promise<Notificatie[]> {
     if (!session?.user.id) return []
     const { data, error } = await supabase
       .from('notificaties')
-      .select('id, user_id, type, titel, bericht, link, gelezen, created_at')
+      // project_id en actie_genomen (migratie 026) horen erbij: zonder die
+      // twee werkt de "Ga naar project"-knop bij portaalmeldingen nooit en
+      // blijft een afgehandelde melding staan.
+      .select('id, user_id, type, titel, bericht, link, gelezen, created_at, project_id, actie_genomen')
       .eq('user_id', session.user.id)
       .order('created_at', { ascending: false })
       .limit(limit)
