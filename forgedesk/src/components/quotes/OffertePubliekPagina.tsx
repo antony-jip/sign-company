@@ -65,6 +65,8 @@ interface PubliekItemPrijsVariant {
   korting_percentage: number
   telt_mee?: boolean
   omschrijving?: string
+  vast?: boolean
+  foto_url?: string | null
 }
 
 interface PubliekItem {
@@ -208,7 +210,10 @@ function gekozenVarianten(item: PubliekItem, gekozen?: string[]): PubliekItemPri
   if (varianten.length === 0) return []
   const keuze = new Set(gekozen ?? [])
   const aangevinkt = varianten.filter((v) => keuze.has(v.id))
-  return aangevinkt.length > 0 ? aangevinkt : getMeetellendeVarianten(varianten, item.actieve_variant_id)
+  const basis = aangevinkt.length > 0 ? aangevinkt : getMeetellendeVarianten(varianten, item.actieve_variant_id)
+  // Een vaste uitvoering (montage, verplicht onderdeel) zit er altijd bij.
+  const ids = new Set(basis.map((v) => v.id))
+  return varianten.filter((v) => ids.has(v.id) || v.vast === true)
 }
 
 /** De prijsregels van een item: één per gekozen uitvoering, of de basisprijs. */
@@ -353,10 +358,13 @@ function OfferteRegel({
   // Het laatste vinkje blijft gewoon klikbaar (geen disabled-grijs dat als
   // "uit" leest); de hint eronder zegt waarom er niets gebeurt.
   const kiesUitvoering = (variantId: string, aan: boolean) => {
-    const volgende = varianten.map((v) => v.id).filter((id) => (id === variantId ? aan : gekozen.has(id)))
+    const volgende = varianten
+      .filter((v) => v.vast || (v.id === variantId ? aan : gekozen.has(v.id)))
+      .map((v) => v.id)
     if (volgende.length > 0) onKiesVarianten(item.id, volgende)
   }
-  const toonMinimumHint = kanKiezen && varianten.length > 1 && gekozen.size === 1
+  const heeftVaste = varianten.some((v) => v.vast)
+  const toonMinimumHint = kanKiezen && !heeftVaste && varianten.length > 1 && gekozen.size === 1
   const hintId = `${item.id}-minimum`
 
   const soort = bijlageSoort(item.bijlage_url, item.bijlage_type)
@@ -443,15 +451,26 @@ function OfferteRegel({
           <div className="mt-4" role="group" aria-label={`Uitvoering van ${titel}`}>
             <div className="flex items-baseline justify-between gap-4">
               <p className="text-[11px] font-medium uppercase tracking-wider text-[#9B9B95]">Uitvoering</p>
-              {kanKiezen && varianten.length > 1 && <p className="text-xs text-[#9B9B95]">Meerdere mogelijk</p>}
+              {kanKiezen && varianten.filter((v) => !v.vast).length > 1 && <p className="text-xs text-[#9B9B95]">Meerdere mogelijk</p>}
             </div>
             <ul className="mt-2 space-y-1">
               {varianten.map((v) => {
                 const aan = gekozen.has(v.id)
+                const vast = v.vast === true
                 const stuk = nettoStuksprijs(v)
                 const toonStuks = v.aantal !== 1 || (v.korting_percentage || 0) > 0
                 const inhoud = (
                   <>
+                    {v.foto_url && (
+                      <button
+                        type="button"
+                        onClick={(e) => { e.preventDefault(); onOpenAfbeelding(v.foto_url as string, v.label) }}
+                        aria-label={`${v.label} groter bekijken`}
+                        className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-[#F8F7F5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1A535C]"
+                      >
+                        <img src={v.foto_url} alt="" loading="lazy" className={`h-full w-full object-cover ${aan ? '' : 'opacity-60'}`} />
+                      </button>
+                    )}
                     <span className="min-w-0 flex-1">
                       <span className={`block break-words text-sm leading-snug ${aan ? 'font-semibold text-[#1A1A1A]' : 'font-medium text-[#6B6B66]'}`}>
                         {v.label}
@@ -467,6 +486,9 @@ function OfferteRegel({
                           {(v.korting_percentage || 0) > 0 ? ` · ${v.korting_percentage}% korting` : ''}
                         </span>
                       )}
+                      {kanKiezen && vast && (
+                        <span className="mt-0.5 block text-xs text-[#9B9B95]">Altijd inbegrepen</span>
+                      )}
                       {!kanActie && (
                         aan
                           ? <span className="sr-only">Inbegrepen</span>
@@ -480,7 +502,7 @@ function OfferteRegel({
                 )
                 return (
                   <li key={v.id}>
-                    {kanKiezen ? (
+                    {kanKiezen && !vast ? (
                       <label className="flex cursor-pointer items-start gap-3 py-2">
                         <Checkbox
                           checked={aan}

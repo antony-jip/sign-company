@@ -566,6 +566,10 @@ export interface OfferteItemPrijsVariant {
   telt_mee?: boolean;
   /** Toelichting voor de klant onder de optienaam, bv. de maat of wat erbij zit. */
   omschrijving?: string;
+  /** Kan de klant deze uitvoering in het portaal niet uitvinken. */
+  vast?: boolean;
+  /** Opslagpad van een foto van deze uitvoering. */
+  foto_url?: string;
   calculatie_regels?: CalculatieRegel[];
   heeft_calculatie?: boolean;
 }

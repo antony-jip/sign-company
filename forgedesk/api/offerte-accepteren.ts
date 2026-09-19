@@ -143,8 +143,11 @@ export type GekozenVariant = string | string[] | undefined
 
 export function gekozenVariantIds(vs: Array<Record<string, unknown>>, keuze: GekozenVariant): string[] | undefined {
   if (!Array.isArray(keuze)) return undefined
-  const geldig = keuze.filter((id) => typeof id === 'string' && vs.some((v) => v.id === id))
-  return geldig.length > 0 ? Array.from(new Set(geldig)) : undefined
+  const geldig = new Set(keuze.filter((id) => typeof id === 'string' && vs.some((v) => v.id === id)))
+  if (geldig.size === 0) return undefined
+  // Een vaste uitvoering kan de klant niet uitvinken; hij telt altijd mee, ook
+  // als een aangepaste client hem weglaat. In de volgorde van de post.
+  return vs.map((v) => v.id as string).filter((id) => geldig.has(id) || vs.some((v) => v.id === id && v.vast === true))
 }
 
 function variantRegel(v: Record<string, unknown>): PrijsRegel {

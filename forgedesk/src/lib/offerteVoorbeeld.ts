@@ -35,7 +35,7 @@ export const OFFERTE_VOORBEELD = {
       prijs_varianten: [
         { id: 'pv1', label: 'Freesletters', aantal: 1, eenheidsprijs: 2150, btw_percentage: 21, korting_percentage: 0, telt_mee: true, omschrijving: 'Aluminium 3 mm op afstandhouders, 3200 x 450 mm' },
         { id: 'pv2', label: 'LED frontverlichting', aantal: 1, eenheidsprijs: 1300, btw_percentage: 21, korting_percentage: 0, omschrijving: 'Warmwit, inclusief trafo en schemerschakelaar' },
-        { id: 'pv3', label: 'Montage met hoogwerker', aantal: 1, eenheidsprijs: 420, btw_percentage: 21, korting_percentage: 0, telt_mee: true, omschrijving: 'Buiten openingstijden' },
+        { id: 'pv3', label: 'Montage met hoogwerker', aantal: 1, eenheidsprijs: 420, btw_percentage: 21, korting_percentage: 0, telt_mee: true, vast: true, omschrijving: 'Buiten openingstijden' },
       ],
     },
     {

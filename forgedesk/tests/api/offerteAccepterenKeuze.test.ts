@@ -21,8 +21,8 @@ const varianten = [
 const item = { id: 'i1', aantal: 1, eenheidsprijs: 925, btw_percentage: 21, korting_percentage: 0, prijs_varianten: varianten, actieve_variant_id: 'a' }
 
 describe('gekozenVariantIds · alleen uitvoeringen die op de post staan', () => {
-  it('houdt bestaande ids, ontdubbelt, en negeert onbekende', () => {
-    expect(gekozenVariantIds(varianten, ['b', 'a', 'b', 'zzz'])).toEqual(['b', 'a'])
+  it('houdt bestaande ids in de volgorde van de post, ontdubbelt, en negeert onbekende', () => {
+    expect(gekozenVariantIds(varianten, ['b', 'a', 'b', 'zzz'])).toEqual(['a', 'b'])
   })
 
   it('geeft niets terug bij een lege of oude (enkele) keuze', () => {
@@ -64,5 +64,19 @@ describe('prijsRegels · wat de klant aanvinkte telt', () => {
     expect(prijsRegels({ aantal: 3, eenheidsprijs: 10, btw_percentage: 9, korting_percentage: 0 }, ['a'])).toEqual([
       { aantal: 3, eenheidsprijs: 10, btw_percentage: 9, korting_percentage: 0 },
     ])
+  })
+})
+
+describe('gekozenVariantIds · een vaste uitvoering zit er altijd bij', () => {
+  const metVast = [
+    { id: 'a', label: 'Banier', aantal: 1, eenheidsprijs: 925, btw_percentage: 21, korting_percentage: 0 },
+    { id: 'b', label: 'Montage', aantal: 1, eenheidsprijs: 845, btw_percentage: 21, korting_percentage: 0, vast: true },
+  ]
+  it('vult een weggelaten vaste uitvoering aan, in de volgorde van de post', () => {
+    expect(gekozenVariantIds(metVast, ['a'])).toEqual(['a', 'b'])
+    expect(gekozenVariantIds(metVast, ['b'])).toEqual(['b'])
+  })
+  it('blijft een lijst zonder geldig id weigeren', () => {
+    expect(gekozenVariantIds(metVast, ['zzz'])).toBeUndefined()
   })
 })

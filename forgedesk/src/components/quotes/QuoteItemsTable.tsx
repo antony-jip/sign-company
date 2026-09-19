@@ -83,6 +83,10 @@ export interface PrijsVariant {
    */
   telt_mee?: boolean
   omschrijving?: string
+  /** Kan de klant deze uitvoering niet uitvinken in het portaal (bv. montage). */
+  vast?: boolean
+  /** Opslagpad van een foto van deze uitvoering; het portaal toont hem naast het vinkje. */
+  foto_url?: string
   calculatie_regels?: CalculatieRegel[]
   heeft_calculatie?: boolean
 }
@@ -290,6 +294,25 @@ function useBijlageUrl(storagePath?: string): string {
     return () => { cancelled = true }
   }, [storagePath])
   return url
+}
+
+// ── Kleine foto bij een prijsoptie ──
+function VariantFotoThumb({ storagePath, alt, onVerwijder }: { storagePath: string; alt: string; onVerwijder: () => void }) {
+  const url = useBijlageUrl(storagePath)
+  return (
+    <span className="relative inline-flex h-7 w-7 flex-shrink-0 overflow-hidden rounded-md bg-muted/40">
+      {url && <img src={url} alt={alt} className="h-full w-full object-cover" />}
+      <button
+        type="button"
+        onClick={onVerwijder}
+        title="Foto verwijderen"
+        aria-label="Foto van deze optie verwijderen"
+        className="absolute inset-0 flex items-center justify-center bg-black/50 text-white opacity-0 transition-opacity hover:opacity-100"
+      >
+        <X className="h-3 w-3" />
+      </button>
+    </span>
+  )
 }
 
 // ── BijlageDropZone component ──
@@ -840,6 +863,46 @@ export function QuoteItemsTable({
     const eerste = updated.find((v) => v.telt_mee)
     if (eerste && eerste.id !== item.actieve_variant_id) {
       onUpdateItem(itemId, 'actieve_variant_id', eerste.id)
+    }
+  }
+
+  /**
+   * Een vaste optie kan de klant in het portaal niet uitvinken; hij telt dus
+   * altijd mee. Uitzetten laat telt_mee staan: de verkoper beslist zelf wat
+   * daarna nog standaard aan staat.
+   */
+  const toggleVariantVast = (itemId: string, variantId: string) => {
+    const item = items.find((i) => i.id === itemId)
+    if (!item?.prijs_varianten) return
+    const variant = item.prijs_varianten.find((v) => v.id === variantId)
+    if (!variant) return
+    const wordtVast = !variant.vast
+    const aan = new Set(getMeetellendeVarianten(item.prijs_varianten, item.actieve_variant_id).map((v) => v.id))
+    if (wordtVast) aan.add(variantId)
+    const updated = item.prijs_varianten.map((v) => ({
+      ...v,
+      vast: v.id === variantId ? wordtVast : v.vast,
+      telt_mee: aan.has(v.id),
+    }))
+    onUpdateItem(itemId, 'prijs_varianten', updated)
+    const eerste = updated.find((v) => v.telt_mee)
+    if (eerste && eerste.id !== item.actieve_variant_id) {
+      onUpdateItem(itemId, 'actieve_variant_id', eerste.id)
+    }
+  }
+
+  const [uploadingVariantId, setUploadingVariantId] = useState<string | null>(null)
+  const uploadVariantFoto = async (itemId: string, variantId: string, file: File) => {
+    if (!file.type.match(/^image\/(jpeg|png)$/)) { alert('Alleen JPG of PNG'); return }
+    if (file.size > 10 * 1024 * 1024) { alert('Bestand is te groot (max 10MB)'); return }
+    setUploadingVariantId(variantId)
+    try {
+      const result = await uploadBijlage(file, `${itemId}-${variantId}`, userId)
+      updatePrijsVariantField(itemId, variantId, 'foto_url', result.url)
+    } catch (err) {
+      alert('Uploaden mislukt: ' + (err instanceof Error ? err.message : 'onbekende fout'))
+    } finally {
+      setUploadingVariantId(null)
     }
   }
 
@@ -1679,6 +1742,51 @@ export function QuoteItemsTable({
                                 placeholder="Optie naam..."
                                 className="h-7 text-xs font-semibold border-transparent bg-transparent hover:border-border dark:hover:border-border focus-visible:border-border shadow-none flex-1 max-w-[180px]"
                               />
+
+                              {/* Vast: de klant kan deze optie in het portaal niet uitvinken. */}
+                              <button
+                                type="button"
+                                onClick={() => toggleVariantVast(item.id, variant.id)}
+                                title={variant.vast ? 'Vast: de klant kan deze optie niet uitvinken — klik om los te maken' : 'Maak deze optie vast (klant kan hem niet uitvinken)'}
+                                aria-pressed={!!variant.vast}
+                                className={cn(
+                                  'flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md transition-colors',
+                                  variant.vast
+                                    ? 'bg-[rgba(26,83,92,0.10)] text-petrol dark:bg-white/10 dark:text-foreground'
+                                    : 'text-muted-foreground/50 hover:bg-muted hover:text-foreground'
+                                )}
+                              >
+                                <Lock className="h-3 w-3" />
+                              </button>
+
+                              {variant.foto_url ? (
+                                <VariantFotoThumb
+                                  storagePath={variant.foto_url}
+                                  alt={variant.label || 'Prijsoptie'}
+                                  onVerwijder={() => updatePrijsVariantField(item.id, variant.id, 'foto_url', undefined as unknown as string)}
+                                />
+                              ) : (
+                                <label
+                                  title="Foto van deze optie (klant ziet hem in het portaal)"
+                                  className={cn(
+                                    'flex h-6 w-6 flex-shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground/50 transition-colors hover:bg-muted hover:text-foreground',
+                                    uploadingVariantId === variant.id && 'animate-pulse text-petrol'
+                                  )}
+                                >
+                                  <ImageIcon className="h-3 w-3" />
+                                  <input
+                                    type="file"
+                                    accept="image/jpeg,image/png"
+                                    className="sr-only"
+                                    disabled={uploadingVariantId === variant.id}
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0]
+                                      e.target.value = ''
+                                      if (file) void uploadVariantFoto(item.id, variant.id, file)
+                                    }}
+                                  />
+                                </label>
+                              )}
 
                               <span className="ml-auto mr-2 flex flex-col items-end leading-tight">
                                 <span className="text-sm font-bold font-mono text-foreground tabular-nums">

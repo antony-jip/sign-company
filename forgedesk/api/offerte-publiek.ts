@@ -279,6 +279,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const klantItem = zonderCalculatie(pick(item, ITEM_VELDEN) as Record<string, unknown>)
       if (klantItem.bijlage_url) klantItem.bijlage_url = await ondertekend(klantItem.bijlage_url)
       if (klantItem.foto_url && klantItem.foto_op_offerte) klantItem.foto_url = await ondertekend(klantItem.foto_url)
+      if (Array.isArray(klantItem.prijs_varianten)) {
+        klantItem.prijs_varianten = await Promise.all((klantItem.prijs_varianten as Array<Record<string, unknown>>).map(async (v) =>
+          v && typeof v === 'object' && v.foto_url ? { ...v, foto_url: await ondertekend(v.foto_url) } : v
+        ))
+      }
       return klantItem
     }))
 
