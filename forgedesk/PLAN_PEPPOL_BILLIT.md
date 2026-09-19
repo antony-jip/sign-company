@@ -1,8 +1,14 @@
 # Plan · Belgische klanten, Peppol en Billit
 
-Status: **in uitvoering**. Fase 1 (land + btw-tarieven) en fase 2 (UBL
-Peppol BIS 3.0) staan op de branch; fase 0 (Billit OAuth-credentials) is de
-volgende stap en blokkeert fase 3. Aanleiding is de vraag van een prospect uit Antwerpen: werkt
+Status: **gebouwd, wacht op fase 0.** Fase 1 t/m 6 staan op de branch.
+Wat nog moet gebeuren voordat het live kan: OAuth-credentials bij Billit
+aanvragen (env `BILLIT_CLIENT_ID`/`BILLIT_CLIENT_SECRET` en de
+`BILLIT_SANDBOX_*`-variant), de veldnamen uit §4 tegen de sandbox
+verifiëren (de api-bestanden lezen antwoorden tolerant, maar de
+OAuth-paden, `sendOrder`/`commands/send` en de webhook-body zijn niet
+getest), migraties 252 t/m 254 draaien, en `npm run build` +
+`npm run test:run` lokaal (de bouwomgeving van deze branch had geen
+npm-registry; typecheck en de UBL-/helper-tests zijn wel gedraaid). Aanleiding is de vraag van een prospect uit Antwerpen: werkt
 doen. met betaallinks in België, en is de facturatie te koppelen aan Peppol
 en Billit?
 
