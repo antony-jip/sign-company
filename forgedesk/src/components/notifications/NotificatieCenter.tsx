@@ -68,23 +68,8 @@ const typeConfig: Record<
     colorClass: "text-petrol",
     bgClass: "bg-[hsl(var(--status-green-bg))]",
   },
-  uren_herinnering: {
-    icon: Clock,
-    colorClass: "text-[#8A6A2A]",
-    bgClass: "bg-[hsl(var(--status-amber-bg))]",
-  },
   conceptfacturen_klaar: {
     icon: Banknote,
-    colorClass: "text-petrol",
-    bgClass: "bg-[hsl(var(--status-green-bg))]",
-  },
-  uren_week_ingediend: {
-    icon: Clock,
-    colorClass: "text-petrol",
-    bgClass: "bg-[hsl(var(--status-green-bg))]",
-  },
-  uren_week_goedgekeurd: {
-    icon: Clock,
     colorClass: "text-petrol",
     bgClass: "bg-[hsl(var(--status-green-bg))]",
   },

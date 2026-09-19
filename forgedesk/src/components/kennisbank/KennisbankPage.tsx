@@ -547,24 +547,6 @@ const ARTICLES: KbArticle[] = [
     link: '/planning',
   },
   {
-    id: 'uren-weekstaat',
-    category: 'uitvoering',
-    icon: Calendar,
-    iconColor: '#1A535C',
-    titel: 'Weekstaat en uren goedkeuren',
-    subtitel: 'Je week in één raster, goedkeuren als je dat wilt',
-    inhoud: [
-      'Bovenaan Tijdregistratie staat de **weekstaat**: rijen zijn de projecten en bewerkingen waar je deze of vorige week aan werkte, kolommen zijn de dagen. Typ een getal in een cel en het uur staat vast. Onder elke dag zie je het totaal en, als er werktijden zijn ingesteld, de dagnorm met de afwijking.',
-      'Inklokken blijft bestaan en vult dezelfde uren. De weekstaat is voor wie liever achteraf invult, of om een dag te corrigeren.',
-      '**Uren goedkeuren** is een aparte schakelaar in Functies, standaard uit. Aan betekent: nieuwe uren zijn concept, je dient je week in met één knop, een beheerder keurt goed in de kaart "Te keuren", en alleen goedgekeurde uren gaan naar de factuur. Uit betekent: elk uur telt meteen mee, zoals altijd.',
-    ],
-    tips: [
-      'Werktijden per medewerker stel je in bij Team, in het blok Werktijden; daar komt de dagnorm vandaan',
-      'Een teruggestuurde week krijgt de opmerking van de beheerder als melding',
-    ],
-    link: '/tijdregistratie',
-  },
-  {
     id: 'planning-bezetting',
     category: 'uitvoering',
     icon: Users,

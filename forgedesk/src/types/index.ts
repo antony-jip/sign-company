@@ -1331,7 +1331,7 @@ export interface Notificatie {
   id: string;
   user_id?: string;
   organisatie_id?: string;
-  type: 'offerte_bekeken' | 'offerte_verlopen' | 'offerte_geaccepteerd' | 'offerte_wijziging' | 'factuur_vervallen' | 'deadline_nadert' | 'nieuwe_email' | 'taak_voltooid' | 'montage_gepland' | 'betaling_ontvangen' | 'budget_waarschuwing' | 'algemeen' | 'goedkeuring' | 'herinnering' | 'portaal_goedkeuring' | 'portaal_revisie' | 'portaal_bericht' | 'portaal_bekeken' | 'portaal_herinnering' | 'taak_toegewezen' | 'offerte_check_gevraagd' | 'offerte_check_afgehandeld' | 'offerte_check_wijzigingen' | 'genoemd' | 'uren_herinnering' | 'conceptfacturen_klaar' | 'uren_week_ingediend' | 'uren_week_goedgekeurd';
+  type: 'offerte_bekeken' | 'offerte_verlopen' | 'offerte_geaccepteerd' | 'offerte_wijziging' | 'factuur_vervallen' | 'deadline_nadert' | 'nieuwe_email' | 'taak_voltooid' | 'montage_gepland' | 'betaling_ontvangen' | 'budget_waarschuwing' | 'algemeen' | 'goedkeuring' | 'herinnering' | 'portaal_goedkeuring' | 'portaal_revisie' | 'portaal_bericht' | 'portaal_bekeken' | 'portaal_herinnering' | 'taak_toegewezen' | 'offerte_check_gevraagd' | 'offerte_check_afgehandeld' | 'offerte_check_wijzigingen' | 'genoemd' | 'conceptfacturen_klaar';
   titel: string;
   bericht: string;
   link?: string;

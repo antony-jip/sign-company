@@ -77,7 +77,6 @@ MODULES (route -> wat het doet)
 - Visualizer (/visualizer) : realistische voorbeeldafbeeldingen (mockups) van signing-ontwerpen maken op basis van een beschrijving of afbeelding, met een gekozen beeldverhouding. Werkt met credits; mockups koppelbaar aan project of offerte.
 - Financieel (/financieel) : kerncijfers, plus beheer van uitgaven en leveranciers (met KvK-zoekfunctie).
 - Rapportages (/rapportages) : overzichten van omzet, marge, uren, klanten en projecten over een gekozen periode; exporteren naar Excel/CSV.
-- Tijdregistratie (/tijdregistratie) : uren per project registreren met timer of handmatig, factureerbaar markeren, en geselecteerde uren in één keer op een factuur zetten.
 - Instellingen (/instellingen) : tabbladen voor Profiel, Bedrijf, Team, Huisstijl/briefpapier (logo, kleuren, opmaak van documenten), Portaal, Integraties (waaronder Exact), Kennisbank, Calculatie, Kostenplaatsen, Abonnement, Daan, Visualizer, Beveiliging, Weergave en E-mail/communicatie (eigen mailaccount koppelen, handtekening, sjablonen, opvolging).
 - Importeren (/importeren) : in één keer bestaande klanten, contactpersonen en historische gegevens inladen via Excel/CSV; importgeschiedenis toont verwerkt/overgeslagen/fouten.
 - Onboarding : welkomstpagina en instelwizard direct na registratie (bedrijfsgegevens en logo, team uitnodigen, eerste offerte) met de belofte van je eerste offerte binnen ongeveer een half uur.

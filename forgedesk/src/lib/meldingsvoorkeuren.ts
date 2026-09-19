@@ -37,9 +37,9 @@ export const MELDING_CATEGORIEEN: MeldingCategorieDefinitie[] = [
   },
   {
     id: 'planning',
-    label: 'Planning en uren',
-    uitleg: 'Montage ingepland, deadlines en de urenherinnering.',
-    types: ['montage_gepland', 'deadline_nadert', 'herinnering', 'uren_herinnering'],
+    label: 'Planning',
+    uitleg: 'Montage ingepland en deadlines.',
+    types: ['montage_gepland', 'deadline_nadert', 'herinnering'],
   },
   {
     id: 'taken',

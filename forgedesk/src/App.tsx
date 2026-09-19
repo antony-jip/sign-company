@@ -50,7 +50,6 @@ const MaatjeBeheer = lazy(() => import('@/components/maatjes/MaatjeBeheer'), 'Ma
 const ProjectsList = lazy(() => import('@/components/projects/ProjectsList'), 'ProjectsList')
 const ProjectDetail = lazy(() => import('@/components/projects/ProjectDetail'), 'ProjectDetail')
 const ProjectCreate = lazy(() => import('@/components/projects/ProjectCreate'), 'ProjectCreate')
-const TijdregistratieLayout = lazy(() => import('@/components/projects/TijdregistratieLayout'), 'TijdregistratieLayout')
 
 // Clients
 const ClientsLayout = lazy(() => import('@/components/clients/ClientsLayout'), 'ClientsLayout')
@@ -310,7 +309,6 @@ function AppContent() {
         <Route path="facturen/:id" element={<FactuurEditor />} />
         <Route path="facturen/:id/bewerken" element={<FactuurEditor />} />
         <Route path="rapportages" element={<RapportagesLayout />} />
-        <Route path="tijdregistratie" element={<TijdregistratieLayout />} />
         <Route path="team" element={<TeamLayout />} />
 
         <Route path="importeren" element={<DataImportPage />} />

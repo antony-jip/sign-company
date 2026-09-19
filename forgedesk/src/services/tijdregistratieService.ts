@@ -123,7 +123,10 @@ export async function getTijdregistratiesByMedewerker(medewerkerId: string): Pro
   return getLocalData<Tijdregistratie>('tijdregistraties').filter((t) => t.medewerker_id === medewerkerId)
 }
 
-/** Zet meerdere regels in één keer op een andere status (week indienen, goedkeuren, terugsturen). */
+/**
+ * Koppelt uren aan een factuur. Sinds de Tijdregistratie-pagina weg is heeft
+ * dit geen aanroeper meer; blijft staan voor de urenkoppeling op de factuur.
+ */
 export async function markeerGefactureerd(ids: string[], factuurId: string): Promise<void> {
   if (ids.length === 0) return
   assertId(factuurId, 'factuur_id')

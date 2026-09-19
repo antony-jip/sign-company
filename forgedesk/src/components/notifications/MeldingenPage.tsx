@@ -54,10 +54,7 @@ const typeConfig: Record<
   portaal_bekeken:     { icon: Eye, colorClass: 'text-muted-foreground', bgClass: 'bg-muted', label: 'Portaal bekeken', categorie: 'portaal' },
   portaal_herinnering: { icon: BellRing, colorClass: 'text-orange-600', bgClass: 'bg-orange-100', label: 'Portaal herinnering', categorie: 'portaal' },
   genoemd:             { icon: MessageSquare, colorClass: 'text-petrol', bgClass: 'bg-petrol/10', label: 'Je bent genoemd', categorie: 'systeem' },
-  uren_herinnering:    { icon: Clock, colorClass: 'text-orange-600', bgClass: 'bg-orange-100', label: 'Uren schrijven', categorie: 'systeem' },
   conceptfacturen_klaar: { icon: Banknote, colorClass: 'text-emerald-600', bgClass: 'bg-emerald-100', label: 'Conceptfacturen', categorie: 'systeem' },
-  uren_week_ingediend: { icon: Clock, colorClass: 'text-petrol', bgClass: 'bg-petrol/10', label: 'Week ingediend', categorie: 'systeem' },
-  uren_week_goedgekeurd: { icon: CheckCircle2, colorClass: 'text-green-600', bgClass: 'bg-green-100', label: 'Week goedgekeurd', categorie: 'systeem' },
 }
 
 type FilterType = 'alle' | 'ongelezen' | 'portaal' | 'offertes' | 'systeem'
