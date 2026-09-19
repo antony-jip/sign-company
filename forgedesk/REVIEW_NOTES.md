@@ -1667,3 +1667,28 @@ Nog open uit de domeinreview (bewust, buiten deze branch):
   unitCode-mapping (m²→MTK, uur→HUR), mod-97-controle op KBO-nummers,
   Belgische betalingsvoorwaarden-default (€40 forfait, wettelijke interest),
   ICP-opgave voor doen. zelf.
+
+### Slotronde (na de Belgische aanvullingen)
+
+- **Domein ronde 2/3:** BLOKKADE (twee cbc:Note) en MOET (verlegd-klant met
+  21%-regels) gefixt in f6d3c7a; slotcheck "geen" bevindingen behalve één KAN
+  (korting op negatieve regel → in de prijs verwerkt). De vier gevallen
+  (NL, BE, creditnota, verlegd BE→BE) zijn naar het oordeel van de reviewer
+  BIS 3.0-/NLCIUS-geldig; definitieve bevestiging via de Billit-sandbox.
+- **QAA ronde 2/3:** KLAAR-MET-OPMERKINGEN. Regressies (negatieve
+  verrekenregels, NL→NL-tekst) gefixt in f6d3c7a; billit-connect + UI in
+  662d88a. Restpunten: UBL eist het "straat, postcode, stad"-formaat van
+  bedrijfs_adres (oude profielen één keer opnieuw opslaan), 'Engeland'-achtige
+  vrije tekst valt terug op NL.
+- **Senior slot:** BLOKKADE op de VIES-stempel (door eigenaar zelf te schrijven
+  via RLS) → migratie 257 (guard-trigger: alleen service_role zet hem, ander
+  nummer wist hem), vies-check stempelt alleen bij gelijk nummer en bewaart de
+  VIES-naam als bewijs; eigenaar-check op billit-connect; Client ID vereist
+  Secret. Bewust open: VIES bewijst bestaan, niet eigendom — de VIES-naam
+  naast de bedrijfsnaam is het zichtbare signaal; `requestIdentifier`
+  (consultatienummer) meesturen is een mogelijke aanvulling.
+
+### Landkeuze bij account aanmaken
+
+Onboarding stap 1 begint met Nederland/België; zie docs/BELGIE.md voor wat
+er per land meeverandert en welke wet erachter zit.
